@@ -1,0 +1,1128 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model admin_setting {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  name       String?   @db.VarChar(255)
+  type       Int       @default(1) @db.TinyInt
+  is_active  Int       @default(0) @db.TinyInt
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+}
+
+model all_months {
+  id         Int    @id @default(autoincrement())
+  month_no   Int
+  month_name String @db.VarChar(25)
+}
+
+model cache {
+  key        String @id @db.VarChar(255)
+  value      String @db.MediumText
+  expiration Int
+}
+
+model cache_locks {
+  key        String @id @db.VarChar(255)
+  owner      String @db.VarChar(255)
+  expiration Int
+}
+
+model cron_status {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  cron_name  String?   @db.VarChar(255)
+  cron_date  DateTime? @db.Date
+  updated_at DateTime? @db.DateTime(0)
+}
+
+model daily_issuer_cron_table {
+  id             BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  isin           String?   @db.VarChar(255)
+  allotment_date DateTime? @db.DateTime(0)
+  status         Int       @default(0) @db.TinyInt
+  created_at     DateTime? @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+
+  @@index([allotment_date], map: "daily_issuer_cron_table_allotment_date_index")
+  @@index([isin], map: "daily_issuer_cron_table_isin_index")
+}
+
+model failed_jobs {
+  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  uuid       String   @unique(map: "failed_jobs_uuid_unique") @db.VarChar(255)
+  connection String   @db.Text
+  queue      String   @db.Text
+  payload    String   @db.LongText
+  exception  String   @db.LongText
+  failed_at  DateTime @default(now()) @db.Timestamp(0)
+}
+
+model incorporatedate_cron {
+  id             BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  isin           String?   @db.VarChar(255)
+  allotment_date DateTime? @db.DateTime(0)
+  status         Int       @default(0) @db.TinyInt
+  created_at     DateTime? @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+
+  @@index([allotment_date], map: "incorporatedate_cron_allotment_date_index")
+  @@index([isin], map: "incorporatedate_cron_isin_index")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model issuer_arranger {
+  issuer_id   BigInt
+  arranger_id BigInt
+  smt_status  String? @db.VarChar(255)
+
+  @@index([arranger_id], map: "issuer_arranger_arranger_id_index")
+  @@index([issuer_id], map: "issuer_arranger_issuer_id_index")
+  @@ignore
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model issuer_coupon_details {
+  id               BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  issuer_id        BigInt
+  coupon_type      String?   @db.VarChar(255)
+  coupon_pay_date  String?   @db.VarChar(255)
+  coupon_rate_date String?   @db.VarChar(255)
+  coupon_rate      String?   @db.VarChar(255)
+  created_at       DateTime? @db.Timestamp(0)
+  updated_at       DateTime? @db.Timestamp(0)
+
+  @@index([coupon_type], map: "issuer_coupon_details_coupon_type_index")
+  @@index([issuer_id], map: "issuer_coupon_details_issuer_id_index")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model issuer_details {
+  id                 BigInt          @id @default(autoincrement()) @db.UnsignedBigInt
+  issuer_name        String?         @db.VarChar(255)
+  issuer_former_name String?         @db.VarChar(255)
+  parent_id          BigInt          @default(0)
+  created_by         BigInt?
+  updated_by         BigInt?
+  is_active          Int             @default(1) @db.TinyInt
+  is_deleted         Int             @default(0) @db.TinyInt
+  created_at         DateTime?       @db.Timestamp(0)
+  updated_at         DateTime?       @db.Timestamp(0)
+  master_issuers     master_issuer[]
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model issuer_redemption_details {
+  id                  BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  issuer_id           BigInt
+  redmp_premimum_date String?   @db.VarChar(255)
+  type_redmptn        Int?
+  defaultinredmptn    String?   @db.VarChar(255)
+  redmp_details       String?   @db.VarChar(255)
+  created_at          DateTime? @db.Timestamp(0)
+  updated_at          DateTime? @db.Timestamp(0)
+
+  @@index([issuer_id], map: "issuer_redemption_details_issuer_id_index")
+  @@index([type_redmptn], map: "issuer_redemption_details_type_redmptn_index")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model issuer_registrar {
+  issuer_id    BigInt
+  registrar_id BigInt
+
+  @@index([issuer_id], map: "issuer_registrar_issuer_id_index")
+  @@index([registrar_id], map: "issuer_registrar_registrar_id_index")
+  @@ignore
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model issuer_tenure_details {
+  id               BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  issuer_id        BigInt
+  tenure           Float?    @db.Float
+  tenure_no_years  Int?
+  tenure_no_months Int?
+  tenure_no_days   Int?
+  created_at       DateTime? @db.Timestamp(0)
+  updated_at       DateTime? @db.Timestamp(0)
+
+  @@index([issuer_id], map: "issuer_id")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model issuer_trustee {
+  issuer_id  BigInt
+  trustee_id BigInt
+
+  @@index([issuer_id], map: "issuer_trustee_issuer_id_index")
+  @@index([trustee_id], map: "issuer_trustee_trustee_id_index")
+  @@ignore
+}
+
+model issuers {
+  id          Int     @id @default(autoincrement())
+  name        String? @db.VarChar(255)
+  some_metric Int?
+
+  @@index([id], map: "ix_issuers_id")
+}
+
+model job_batches {
+  id             String    @id @db.VarChar(255)
+  name           String    @db.VarChar(255)
+  total_jobs     Int
+  pending_jobs   Int
+  failed_jobs    Int
+  failed_job_ids String    @db.LongText
+  options        String?   @db.MediumText
+  cancelled_at   Int?
+  created_at     DateTime  @default(now()) @db.Timestamp(0)
+  finished_at    DateTime? @db.Timestamp(0)
+}
+
+model jobs {
+  id           BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  queue        String   @db.VarChar(255)
+  payload      String   @db.LongText
+  attempts     Int      @db.UnsignedTinyInt
+  reserved_at  Int?     @db.UnsignedInt
+  available_at Int      @db.UnsignedInt
+  created_at   DateTime @default(now()) @db.Timestamp(0)
+
+  @@index([queue], map: "jobs_queue_index")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model master_agency {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  agency_code String?   @db.VarChar(255)
+  agency_name String?   @db.VarChar(255)
+  short_name  String?   @db.VarChar(255)
+  parent_id   BigInt    @default(0)
+  created_by  BigInt?
+  updated_by  BigInt?
+  is_active   Int       @default(1) @db.TinyInt
+  is_deleted  Int       @default(0) @db.TinyInt
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model master_arranger {
+  id            Int       @id @default(autoincrement())
+  arranger_name String    @db.Text
+  short_name    String?   @db.VarChar(255)
+  website       String?   @db.VarChar(100)
+  smt_status    String?   @db.VarChar(100)
+  parent_id     BigInt    @default(0)
+  created_by    Int?
+  created_at    DateTime? @db.Timestamp(0)
+  updated_by    Int?
+  updated_at    DateTime? @db.Timestamp(0)
+  is_active     Boolean   @default(true)
+  is_deleted    Boolean   @default(false)
+
+  @@index([arranger_name(length: 255)], map: "arranger_name")
+}
+
+model master_booking_basis {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  code        BigInt?
+  description String?   @db.VarChar(255)
+  created_by  BigInt?
+  updated_by  BigInt?
+  is_active   Int       @default(1) @db.TinyInt
+  is_deleted  Int       @default(0) @db.TinyInt
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+
+  @@index([code], map: "master_booking_basis_code_index")
+  @@index([id], map: "master_booking_basis_id_index")
+}
+
+model master_businees_sector_v1 {
+  id                   Int       @id @default(autoincrement())
+  category_code        String?   @db.VarChar(255)
+  category_name        String?   @db.VarChar(255)
+  category_type        String?   @db.VarChar(255)
+  parent_category      String?   @db.VarChar(255)
+  system_category_code String?   @db.VarChar(255)
+  description          String?   @db.VarChar(255)
+  is_active            Int       @default(1) @db.TinyInt
+  is_deleted           Int       @default(0) @db.TinyInt
+  created_by           BigInt?
+  updated_by           BigInt?
+  created_at           DateTime? @db.Timestamp(0)
+  updated_at           DateTime? @db.Timestamp(0)
+}
+
+model master_business_sector {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  code        BigInt?
+  description String?   @db.VarChar(255)
+  created_by  BigInt?
+  updated_by  BigInt?
+  is_active   Int       @default(1) @db.TinyInt
+  is_deleted  Int       @default(0) @db.TinyInt
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+
+  @@index([code], map: "master_business_sector_code_index")
+  @@index([id], map: "master_business_sector_id_index")
+}
+
+model master_call_option_details {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  code        BigInt?
+  description String?   @db.VarChar(255)
+  created_by  BigInt?
+  updated_by  BigInt?
+  is_active   Int       @default(1) @db.TinyInt
+  is_deleted  Int       @default(0) @db.TinyInt
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+
+  @@index([code], map: "master_call_option_details_code_index")
+  @@index([id], map: "master_call_option_details_id_index")
+}
+
+model master_contact {
+  id             BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  type           Int       @default(1) @db.TinyInt
+  master_id      BigInt
+  contact_person String?   @db.VarChar(255)
+  address        String?   @db.Text
+  contact_no     String?   @db.VarChar(50)
+  email_id       String?   @db.VarChar(255)
+  created_by     BigInt?
+  updated_by     BigInt?
+  is_active      Int       @default(1) @db.TinyInt
+  is_deleted     Int       @default(0) @db.TinyInt
+  created_at     DateTime? @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+
+  @@index([master_id], map: "master_contact_master_id_index")
+  @@index([type], map: "master_contact_type_index")
+}
+
+model master_convertible_type_a {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  code        BigInt?
+  description String?   @db.VarChar(255)
+  created_by  BigInt?
+  updated_by  BigInt?
+  is_active   Int       @default(1) @db.TinyInt
+  is_deleted  Int       @default(0) @db.TinyInt
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+
+  @@index([code], map: "master_convertible_type_a_code_index")
+  @@index([id], map: "master_convertible_type_a_id_index")
+}
+
+model master_convertible_type_b {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  code        BigInt?
+  description String?   @db.VarChar(255)
+  created_by  BigInt?
+  updated_by  BigInt?
+  is_active   Int       @default(1) @db.TinyInt
+  is_deleted  Int       @default(0) @db.TinyInt
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+
+  @@index([code], map: "master_convertible_type_b_code_index")
+  @@index([id], map: "master_convertible_type_b_id_index")
+}
+
+model master_coupon_basis {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  code        BigInt?
+  description String?   @db.VarChar(255)
+  created_by  BigInt?
+  updated_by  BigInt?
+  is_active   Int       @default(1) @db.TinyInt
+  is_deleted  Int       @default(0) @db.TinyInt
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+
+  @@index([code], map: "master_coupon_basis_code_index")
+  @@index([id], map: "master_coupon_basis_id_index")
+}
+
+model master_coupon_type {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  code        BigInt?
+  description String?   @db.VarChar(255)
+  created_by  BigInt?
+  updated_by  BigInt?
+  is_active   Int       @default(1) @db.TinyInt
+  is_deleted  Int       @default(0) @db.TinyInt
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+
+  @@index([code], map: "master_coupon_type_code_index")
+  @@index([id], map: "master_coupon_type_id_index")
+}
+
+model master_cra {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  code        String?   @db.VarChar(255)
+  description String?   @db.VarChar(255)
+  created_by  BigInt?
+  updated_by  BigInt?
+  is_active   Int       @default(1) @db.TinyInt
+  is_deleted  Int       @default(0) @db.TinyInt
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+
+  @@index([code], map: "master_cra_code_index")
+  @@index([id], map: "master_cra_id_index")
+}
+
+model master_cra_status {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  code        BigInt?
+  description String?   @db.VarChar(255)
+  created_by  BigInt?
+  updated_by  BigInt?
+  is_active   Int       @default(1) @db.TinyInt
+  is_deleted  Int       @default(0) @db.TinyInt
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+
+  @@index([code], map: "master_cra_status_code_index")
+  @@index([id], map: "master_cra_status_id_index")
+}
+
+model master_credit_rating_watch {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  code        BigInt?
+  description String?   @db.VarChar(255)
+  created_by  BigInt?
+  updated_by  BigInt?
+  is_active   Int       @default(1) @db.TinyInt
+  is_deleted  Int       @default(0) @db.TinyInt
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+
+  @@index([code], map: "master_credit_rating_watch_code_index")
+  @@index([id], map: "master_credit_rating_watch_id_index")
+}
+
+model master_day_count {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  code        BigInt?
+  description String?   @db.VarChar(255)
+  created_by  BigInt?
+  updated_by  BigInt?
+  is_active   Int       @default(1) @db.TinyInt
+  is_deleted  Int       @default(0) @db.TinyInt
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+
+  @@index([code], map: "master_day_count_code_index")
+  @@index([id], map: "master_day_count_id_index")
+}
+
+model master_depository_indicator {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  code        BigInt?
+  description String?   @db.VarChar(255)
+  created_by  BigInt?
+  updated_by  BigInt?
+  is_active   Int       @default(1) @db.TinyInt
+  is_deleted  Int       @default(0) @db.TinyInt
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+
+  @@index([code], map: "master_depository_indicator_code_index")
+  @@index([id], map: "master_depository_indicator_id_index")
+}
+
+model master_exchange_bp_id {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  code        String?   @db.VarChar(255)
+  description String?   @db.VarChar(255)
+  created_by  BigInt?
+  updated_by  BigInt?
+  is_active   Int       @default(1) @db.TinyInt
+  is_deleted  Int       @default(0) @db.TinyInt
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+
+  @@index([code], map: "master_exchange_bp_id_code_index")
+  @@index([id], map: "master_exchange_bp_id_id_index")
+}
+
+model master_frequency {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  code        BigInt?
+  description String?   @db.VarChar(255)
+  created_by  BigInt?
+  updated_by  BigInt?
+  is_active   Int       @default(1) @db.TinyInt
+  is_deleted  Int       @default(0) @db.TinyInt
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+
+  @@index([code], map: "master_frequency_code_index")
+  @@index([id], map: "master_frequency_id_index")
+}
+
+model master_guaranteed_type {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  code        BigInt?
+  description String?   @db.VarChar(255)
+  created_by  BigInt?
+  updated_by  BigInt?
+  is_active   Int       @default(1) @db.TinyInt
+  is_deleted  Int       @default(0) @db.TinyInt
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+
+  @@index([code], map: "master_guaranteed_type_code_index")
+  @@index([id], map: "master_guaranteed_type_id_index")
+}
+
+model master_interest_type {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  code        BigInt?
+  description String?   @db.VarChar(255)
+  created_by  BigInt?
+  updated_by  BigInt?
+  is_active   Int       @default(1) @db.TinyInt
+  is_deleted  Int       @default(0) @db.TinyInt
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+
+  @@index([code], map: "master_interest_type_code_index")
+  @@index([id], map: "master_interest_type_id_index")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model master_issuer {
+  id                    BigInt         @id @default(autoincrement()) @db.UnsignedBigInt
+  issuer_master_id      BigInt
+  isin                  String?        @db.VarChar(255)
+  security_class        String?        @db.VarChar(255)
+  security_name         String?        @db.VarChar(255)
+  series                String?        @db.VarChar(255)
+  allotment_date        DateTime?      @db.DateTime(0)
+  face_value            Float?         @db.Float
+  maturity_date         DateTime?      @db.DateTime(0)
+  convertible_flag      String?        @db.VarChar(255)
+  option_flag           String?        @db.VarChar(255)
+  tier_classification   String?        @db.VarChar(255)
+  day_count             Int?
+  seniority             Int?
+  secured_flag          Int?
+  compound_frequency    String?        @db.VarChar(255)
+  call_desc             String?        @db.VarChar(255)
+  put_desc              String?        @db.VarChar(255)
+  rated_flag            Int?
+  isin_desc             String?        @db.Text
+  convertible_type_a    Int?
+  convertible_type_b    Int?
+  convertible_details   String?        @db.VarChar(255)
+  stipulation_details   String?        @db.VarChar(255)
+  issue_size            Float?         @db.Float
+  guaranteed_type       Int?
+  guaranteed            String?        @db.VarChar(255)
+  tax_free              Float?         @db.Float
+  if_taxable            String?        @db.VarChar(255)
+  mode_issue            Int?
+  security_status       Int?
+  allotment_qty         Float?         @db.Float
+  stepupdwnbasis        Int?
+  stepupdwndtls         String?        @db.VarChar(255)
+  issuer_ownership_type Int?
+  nature_type           Int?
+  business_sector       Int?
+  perpetual_nature      Int?
+  call_option           Int?
+  put_option            Int?
+  infra_category        Int?
+  issue_price           Float?         @db.Float
+  interest_type         Int?
+  fintrpydte            DateTime?      @db.DateTime(0)
+  freq                  Int?
+  freq_dis              String?        @db.VarChar(255)
+  next_sch_date         DateTime?      @db.DateTime(0)
+  intratupto            String?        @db.VarChar(255)
+  intratlkto            String?        @db.VarChar(255)
+  created_by            BigInt?
+  updated_by            BigInt?
+  is_active             Int            @default(1) @db.TinyInt
+  is_deleted            Int            @default(0) @db.TinyInt
+  is_updated            Int            @default(1) @db.TinyInt
+  created_at            DateTime?      @db.Timestamp(0)
+  updated_at            DateTime?      @db.Timestamp(0)
+  issuer_details        issuer_details @relation(fields: [issuer_master_id], references: [id])
+
+  @@index([allotment_date], map: "allotment_date")
+  @@index([business_sector], map: "business_sector")
+  @@index([isin], map: "isin")
+  @@index([business_sector], map: "master_issuer_business_sector_index")
+  @@index([convertible_flag], map: "master_issuer_convertible_flag_index")
+  @@index([convertible_type_a], map: "master_issuer_convertible_type_a_index")
+  @@index([convertible_type_b], map: "master_issuer_convertible_type_b_index")
+  @@index([freq], map: "master_issuer_freq_index")
+  @@index([guaranteed_type], map: "master_issuer_guaranteed_type_index")
+  @@index([infra_category], map: "master_issuer_infra_category_index")
+  @@index([interest_type], map: "master_issuer_interest_type_index")
+  @@index([issuer_master_id], map: "master_issuer_issuer_master_id_index")
+  @@index([issuer_ownership_type], map: "master_issuer_issuer_ownership_type_index")
+  @@index([maturity_date], map: "master_issuer_maturity_date_index")
+  @@index([nature_type], map: "master_issuer_nature_type_index")
+  @@index([perpetual_nature], map: "master_issuer_perpetual_nature_index")
+  @@index([rated_flag], map: "master_issuer_rated_flag_index")
+  @@index([secured_flag], map: "master_issuer_secured_flag_index")
+  @@index([security_status], map: "master_issuer_security_status_index")
+  @@index([seniority], map: "master_issuer_seniority_index")
+  @@index([tax_free], map: "master_issuer_tax_free_index")
+  @@index([tier_classification], map: "master_issuer_tier_classification_index")
+  @@index([mode_issue], map: "mode_issue")
+  @@index([nature_type], map: "nature_type")
+  @@index([nature_type], map: "nature_type_2")
+  @@index([security_class], map: "security_class")
+}
+
+model master_issuer_additional {
+  id                   BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  issuer_id            BigInt
+  cin                  String?   @db.VarChar(255)
+  macro                String?   @db.VarChar(255)
+  sector               String?   @db.VarChar(255)
+  industry             String?   @db.VarChar(255)
+  basicIndustry        String?   @db.VarChar(255)
+  amountRaised         String?   @db.VarChar(255)
+  greenShoeOption      String?   @db.VarChar(255)
+  redemptionDate       String?   @db.VarChar(255)
+  category             String?   @db.VarChar(255)
+  trancheNumber        String?   @db.VarChar(255)
+  natureOfInstrument   String?   @db.VarChar(255)
+  objectOfIssue        String?   @db.VarChar(255)
+  scheduledOpeningDate String?   @db.VarChar(255)
+  scheduledClosingDate String?   @db.VarChar(255)
+  actualClosingDate    String?   @db.VarChar(255)
+  created_at           DateTime? @db.Timestamp(0)
+  updated_at           DateTime? @db.Timestamp(0)
+
+  @@index([issuer_id], map: "master_issuer_additional_issuer_id_index")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model master_issuer_daily {
+  id                     BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  issuer_master_id       BigInt
+  isin                   String?   @db.VarChar(255)
+  security_class         String?   @db.VarChar(255)
+  security_name          String?   @db.VarChar(255)
+  series                 String?   @db.VarChar(255)
+  allotment_date         DateTime? @db.DateTime(0)
+  face_value             Float?    @db.Float
+  maturity_date          DateTime? @db.DateTime(0)
+  convertible_flag       String?   @db.VarChar(255)
+  option_flag            String?   @db.VarChar(255)
+  tier_classification    String?   @db.VarChar(255)
+  day_count              Int?
+  seniority              Int?
+  secured_flag           Int?
+  compound_frequency     String?   @db.VarChar(255)
+  call_desc              String?   @db.VarChar(255)
+  put_desc               String?   @db.VarChar(255)
+  rated_flag             Int?
+  isin_desc              String?   @db.Text
+  convertible_type_a     Int?
+  convertible_type_b     Int?
+  convertible_details    String?   @db.VarChar(255)
+  debenture_trustee_name String?   @db.VarChar(255)
+  stipulation_details    String?   @db.VarChar(255)
+  issue_size             Float?    @db.Float
+  guaranteed_type        Int?
+  guaranteed             String?   @db.VarChar(255)
+  tax_free               Float?    @db.Float
+  if_taxable             String?   @db.VarChar(255)
+  mode_issue             Int?
+  security_status        Int?
+  allotment_qty          Float?    @db.Float
+  stepupdwnbasis         Int?
+  stepupdwndtls          String?   @db.VarChar(255)
+  issuer_ownership_type  Int?
+  nature_type            Int?
+  business_sector        Int?
+  perpetual_nature       Int?
+  call_option            Int?
+  put_option             Int?
+  infra_category         Int?
+  issue_price            Float?    @db.Float
+  interest_type          Int?
+  fintrpydte             DateTime? @db.DateTime(0)
+  freq                   Int?
+  freq_dis               String?   @db.VarChar(255)
+  next_sch_date          DateTime? @db.DateTime(0)
+  intratupto             String?   @db.VarChar(255)
+  intratlkto             String?   @db.VarChar(255)
+  created_by             BigInt?
+  updated_by             BigInt?
+  is_active              Int       @default(1) @db.TinyInt
+  is_deleted             Int       @default(0) @db.TinyInt
+  created_at             DateTime? @db.Timestamp(0)
+  updated_at             DateTime? @db.Timestamp(0)
+}
+
+model master_issuer_ownership_type {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  code        BigInt?
+  description String?   @db.VarChar(255)
+  created_by  BigInt?
+  updated_by  BigInt?
+  is_active   Int       @default(1) @db.TinyInt
+  is_deleted  Int       @default(0) @db.TinyInt
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+
+  @@index([code], map: "master_issuer_ownership_type_code_index")
+  @@index([id], map: "master_issuer_ownership_type_id_index")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model master_issuer_rating {
+  id           BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  agency_id    BigInt
+  issuer_id    BigInt    @db.UnsignedBigInt
+  rating       String?   @db.VarChar(255)
+  outlook      String?   @db.VarChar(255)
+  watch        String?   @db.VarChar(255)
+  rating_date  DateTime? @db.DateTime(0)
+  ratingAction String?   @db.VarChar(255)
+  created_by   BigInt?
+  updated_by   BigInt?
+  is_active    Int       @default(1) @db.TinyInt
+  is_deleted   Int       @default(0) @db.TinyInt
+  created_at   DateTime? @db.Timestamp(0)
+  updated_at   DateTime? @db.Timestamp(0)
+
+  @@index([agency_id], map: "master_issuer_rating_agency_id_index")
+  @@index([id], map: "master_issuer_rating_id_index")
+  @@index([issuer_id], map: "master_issuer_rating_issuer_id_index")
+  @@index([rating_date], map: "master_issuer_rating_rating_date_index")
+  @@index([rating], map: "master_issuer_rating_rating_index")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model master_issuer_stock_exchange {
+  id             BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  issuer_id      BigInt    @db.UnsignedBigInt
+  stock_exchange String?   @db.VarChar(255)
+  listing_status Int?
+  created_by     BigInt?
+  updated_by     BigInt?
+  is_active      Int       @default(1) @db.TinyInt
+  is_deleted     Int       @default(0) @db.TinyInt
+  created_at     DateTime? @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+
+  @@index([id], map: "master_issuer_stock_exchange_id_index")
+  @@index([issuer_id], map: "master_issuer_stock_exchange_issuer_id_index")
+  @@index([listing_status], map: "master_issuer_stock_exchange_listing_status_index")
+  @@index([stock_exchange], map: "master_issuer_stock_exchange_stock_exchange_index")
+}
+
+model master_issuer_type_nature {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  code        BigInt?
+  description String?   @db.VarChar(255)
+  created_by  BigInt?
+  updated_by  BigInt?
+  is_active   Int       @default(1) @db.TinyInt
+  is_deleted  Int       @default(0) @db.TinyInt
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+
+  @@index([code], map: "master_issuer_type_nature_code_index")
+  @@index([id], map: "master_issuer_type_nature_id_index")
+}
+
+model master_issuer_type_roles {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  name       String    @db.VarChar(255)
+  slug       String?   @db.VarChar(255)
+  created_by BigInt?
+  updated_by BigInt?
+  is_active  Int       @default(1) @db.TinyInt
+  is_deleted Int       @default(0) @db.TinyInt
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+}
+
+model master_law_firm {
+  id                BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  law_firm_name     String    @db.VarChar(255)
+  partner_name      String    @db.VarChar(255)
+  revenue           Int?
+  locations         String?   @db.VarChar(255)
+  total_transaction Int?
+  created_by        BigInt?
+  updated_by        BigInt?
+  is_active         Int       @default(1) @db.TinyInt
+  is_deleted        Int       @default(0) @db.TinyInt
+  created_at        DateTime? @db.Timestamp(0)
+  updated_at        DateTime? @db.Timestamp(0)
+
+  @@index([id], map: "master_law_firm_id_index")
+  @@index([law_firm_name], map: "master_law_firm_law_firm_name_index")
+  @@index([partner_name], map: "master_law_firm_partner_name_index")
+}
+
+model master_listing_status {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  code        BigInt?
+  description String?   @db.VarChar(255)
+  created_by  BigInt?
+  updated_by  BigInt?
+  is_active   Int       @default(1) @db.TinyInt
+  is_deleted  Int       @default(0) @db.TinyInt
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+
+  @@index([code], map: "master_listing_status_code_index")
+  @@index([id], map: "master_listing_status_id_index")
+}
+
+model master_mode_issue {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  code        BigInt?
+  description String?   @db.VarChar(255)
+  created_by  BigInt?
+  updated_by  BigInt?
+  is_active   Int       @default(1) @db.TinyInt
+  is_deleted  Int       @default(0) @db.TinyInt
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+
+  @@index([code], map: "master_mode_issue_code_index")
+  @@index([id], map: "master_mode_issue_id_index")
+}
+
+model master_perpetual_nature_indicator {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  code        BigInt?
+  description String?   @db.VarChar(255)
+  created_by  BigInt?
+  updated_by  BigInt?
+  is_active   Int       @default(1) @db.TinyInt
+  is_deleted  Int       @default(0) @db.TinyInt
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+
+  @@index([code], map: "master_perpetual_nature_indicator_code_index")
+  @@index([id], map: "master_perpetual_nature_indicator_id_index")
+}
+
+model master_put_option_details {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  code        BigInt?
+  description String?   @db.VarChar(255)
+  created_by  BigInt?
+  updated_by  BigInt?
+  is_active   Int       @default(1) @db.TinyInt
+  is_deleted  Int       @default(0) @db.TinyInt
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+
+  @@index([code], map: "master_put_option_details_code_index")
+  @@index([id], map: "master_put_option_details_id_index")
+}
+
+model master_redemption_type {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  code        BigInt?
+  description String?   @db.VarChar(255)
+  created_by  BigInt?
+  updated_by  BigInt?
+  is_active   Int       @default(1) @db.TinyInt
+  is_deleted  Int       @default(0) @db.TinyInt
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+
+  @@index([code], map: "master_redemption_type_code_index")
+  @@index([id], map: "master_redemption_type_id_index")
+}
+
+model master_registrar {
+  id             BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  registrar_name String?   @db.VarChar(255)
+  short_name     String?   @db.VarChar(255)
+  website        String?   @db.VarChar(255)
+  created_by     BigInt?
+  updated_by     BigInt?
+  is_active      Int       @default(1) @db.TinyInt
+  is_deleted     Int       @default(0) @db.TinyInt
+  parent_id      BigInt    @default(0)
+  created_at     DateTime? @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+}
+
+model master_secured_flag {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  code        BigInt?
+  description String?   @db.VarChar(255)
+  created_by  BigInt?
+  updated_by  BigInt?
+  is_active   Int       @default(1) @db.TinyInt
+  is_deleted  Int       @default(0) @db.TinyInt
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+
+  @@index([code], map: "master_secured_flag_code_index")
+  @@index([id], map: "master_secured_flag_id_index")
+}
+
+model master_security_status {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  code        BigInt?
+  description String?   @db.VarChar(255)
+  created_by  BigInt?
+  updated_by  BigInt?
+  is_active   Int       @default(1) @db.TinyInt
+  is_deleted  Int       @default(0) @db.TinyInt
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+
+  @@index([code], map: "master_security_status_code_index")
+  @@index([id], map: "master_security_status_id_index")
+}
+
+model master_security_type {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  code        BigInt?
+  description String?   @db.VarChar(255)
+  created_by  BigInt?
+  updated_by  BigInt?
+  is_active   Int       @default(1) @db.TinyInt
+  is_deleted  Int       @default(0) @db.TinyInt
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+
+  @@index([code], map: "master_security_type_code_index")
+  @@index([id], map: "master_security_type_id_index")
+}
+
+model master_seniority_tier_classification {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  code        BigInt?
+  description String?   @db.VarChar(255)
+  created_by  BigInt?
+  updated_by  BigInt?
+  is_active   Int       @default(1) @db.TinyInt
+  is_deleted  Int       @default(0) @db.TinyInt
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+
+  @@index([code], map: "master_seniority_tier_classification_code_index")
+  @@index([id], map: "master_seniority_tier_classification_id_index")
+}
+
+model master_step_up_down_coupon_basis {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  code        BigInt?
+  description String?   @db.VarChar(255)
+  created_by  BigInt?
+  updated_by  BigInt?
+  is_active   Int       @default(1) @db.TinyInt
+  is_deleted  Int       @default(0) @db.TinyInt
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+
+  @@index([code], map: "master_step_up_down_coupon_basis_code_index")
+  @@index([id], map: "master_step_up_down_coupon_basis_id_index")
+}
+
+model master_tax_free {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  code        BigInt?
+  description String?   @db.VarChar(255)
+  created_by  BigInt?
+  updated_by  BigInt?
+  is_active   Int       @default(1) @db.TinyInt
+  is_deleted  Int       @default(0) @db.TinyInt
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+
+  @@index([code], map: "master_tax_free_code_index")
+  @@index([id], map: "master_tax_free_id_index")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model master_trustee {
+  id           BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  trustee_name String?   @db.VarChar(255)
+  short_name   String?   @db.VarChar(255)
+  trustshpd    String?   @db.VarChar(255)
+  website      String?   @db.VarChar(255)
+  created_by   BigInt?
+  updated_by   BigInt?
+  is_active    Int       @default(1) @db.TinyInt
+  is_deleted   Int       @default(0) @db.TinyInt
+  parent_id    BigInt    @default(0)
+  created_at   DateTime? @db.Timestamp(0)
+  updated_at   DateTime? @db.Timestamp(0)
+}
+
+model migrations {
+  id        Int    @id @default(autoincrement()) @db.UnsignedInt
+  migration String @db.VarChar(255)
+  batch     Int
+}
+
+model password_reset_tokens {
+  email      String    @id @db.VarChar(255)
+  token      String    @db.VarChar(255)
+  created_at DateTime? @db.Timestamp(0)
+}
+
+model personal_access_tokens {
+  id             BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  tokenable_type String    @db.VarChar(255)
+  tokenable_id   BigInt    @db.UnsignedBigInt
+  name           String    @db.VarChar(255)
+  token          String    @unique(map: "personal_access_tokens_token_unique") @db.VarChar(64)
+  abilities      String?   @db.Text
+  last_used_at   DateTime? @db.Timestamp(0)
+  expires_at     DateTime? @db.Timestamp(0)
+  created_at     DateTime? @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+
+  @@index([tokenable_type, tokenable_id], map: "personal_access_tokens_tokenable_type_tokenable_id_index")
+}
+
+model redis_cron_table {
+  id                      BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  fy                      String?   @db.VarChar(255)
+  dashboard_issuer        Int       @default(0) @db.TinyInt
+  dashboard_arranger      Int       @default(0) @db.TinyInt
+  dashboard_trustee       Int       @default(0) @db.TinyInt
+  dashboard_registrar     Int       @default(0) @db.TinyInt
+  dashboard_rating_agency Int       @default(0) @db.TinyInt
+  heatmap_issuer          Int       @default(0) @db.TinyInt
+  heatmap_arranger        Int       @default(0) @db.TinyInt
+  heatmap_trustee         Int       @default(0) @db.TinyInt
+  heatmap_registrar       Int       @default(0) @db.TinyInt
+  top_issue_size_no_fy    Int       @default(0) @db.TinyInt
+  top_issue_size_no_h2    Int       @default(0) @db.TinyInt
+  top_issue_size_no_h1    Int       @default(0) @db.TinyInt
+  top_issue_size_no_q4    Int       @default(0) @db.TinyInt
+  top_issue_size_no_q3    Int       @default(0) @db.TinyInt
+  top_issue_size_no_q2    Int       @default(0) @db.TinyInt
+  top_issue_size_no_q1    Int       @default(0) @db.TinyInt
+  top_issue_size_no_m3    Int       @default(0) @db.TinyInt
+  top_issue_size_no_m2    Int       @default(0) @db.TinyInt
+  top_issue_size_no_m1    Int       @default(0) @db.TinyInt
+  top_issue_size_no_m12   Int       @default(0) @db.TinyInt
+  top_issue_size_no_m11   Int       @default(0) @db.TinyInt
+  top_issue_size_no_m10   Int       @default(0) @db.TinyInt
+  top_issue_size_no_m9    Int       @default(0) @db.TinyInt
+  top_issue_size_no_m8    Int       @default(0) @db.TinyInt
+  top_issue_size_no_m7    Int       @default(0) @db.TinyInt
+  top_issue_size_no_m6    Int       @default(0) @db.TinyInt
+  top_issue_size_no_m5    Int       @default(0) @db.TinyInt
+  top_issue_size_no_m4    Int       @default(0) @db.TinyInt
+  created_at              DateTime? @db.Timestamp(0)
+  updated_at              DateTime? @db.Timestamp(0)
+}
+
+model redis_iro_cron_table {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  fy         String?   @db.VarChar(255)
+  iro_fy     Int       @default(0) @db.TinyInt
+  iro_h2     Int       @default(0) @db.TinyInt
+  iro_h1     Int       @default(0) @db.TinyInt
+  iro_q4     Int       @default(0) @db.TinyInt
+  iro_q3     Int       @default(0) @db.TinyInt
+  iro_q2     Int       @default(0) @db.TinyInt
+  iro_q1     Int       @default(0) @db.TinyInt
+  iro_m3     Int       @default(0) @db.TinyInt
+  iro_m2     Int       @default(0) @db.TinyInt
+  iro_m1     Int       @default(0) @db.TinyInt
+  iro_m12    Int       @default(0) @db.TinyInt
+  iro_m11    Int       @default(0) @db.TinyInt
+  iro_m10    Int       @default(0) @db.TinyInt
+  iro_m9     Int       @default(0) @db.TinyInt
+  iro_m8     Int       @default(0) @db.TinyInt
+  iro_m7     Int       @default(0) @db.TinyInt
+  iro_m6     Int       @default(0) @db.TinyInt
+  iro_m5     Int       @default(0) @db.TinyInt
+  iro_m4     Int       @default(0) @db.TinyInt
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+}
+
+model sessions {
+  id            String  @id @db.VarChar(255)
+  user_id       BigInt? @db.UnsignedBigInt
+  ip_address    String? @db.VarChar(45)
+  user_agent    String? @db.Text
+  payload       String  @db.LongText
+  last_activity Int
+
+  @@index([last_activity], map: "sessions_last_activity_index")
+  @@index([user_id], map: "sessions_user_id_index")
+}
+
+model user_enquiry {
+  id             BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  name           String?   @db.VarChar(255)
+  company_name   String?   @db.VarChar(255)
+  email          String?   @db.VarChar(255)
+  contact_number String?   @db.VarChar(255)
+  message        String?   @db.VarChar(255)
+  created_at     DateTime? @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model users {
+  id                BigInt           @id @default(autoincrement()) @db.UnsignedBigInt
+  name              String?          @db.VarChar(255)
+  email             String?          @unique(map: "users_email_unique") @db.VarChar(255)
+  password          String?          @db.VarChar(500)
+  mobile            String?          @db.VarChar(255)
+  company_name      String?          @db.VarChar(255)
+  user_type         users_user_type?
+  role_id           BigInt?
+  email_verified_at DateTime?        @db.Timestamp(0)
+  date_registration DateTime?        @db.DateTime(0)
+  last_login_ip     String?          @db.VarChar(255)
+  last_login_date   DateTime?        @db.DateTime(0)
+  otp_login         BigInt?
+  otp_current_time  DateTime?        @db.DateTime(0)
+  device_token      String?          @db.Text
+  remember_token    String?          @db.VarChar(100)
+  created_by        BigInt?
+  updated_by        BigInt?
+  is_active         Int              @default(1) @db.TinyInt
+  is_deleted        Int              @default(0) @db.TinyInt
+  created_at        DateTime?        @db.Timestamp(0)
+  updated_at        DateTime?        @db.Timestamp(0)
+  firebase_uid      String?          @db.VarChar(255)
+  login_type        String?          @db.VarChar(255)
+  designation       String?          @db.VarChar(255)
+  utm_source        String?          @db.VarChar(255)
+
+  @@index([id], map: "users_id_index")
+  @@index([role_id], map: "users_role_id_index")
+}
+
+enum users_user_type {
+  TYPE_ONE @map("1")
+  TYPE_TWO @map("2")
+}
