@@ -329,13 +329,18 @@ app.post('/dashboard_specific_entity_details',async (req,res)=>{
       order by master_issuer_rating.rating_date asc
     `; 
 
-    const [sectorData, monthData, creditRatingData] = await Promise.all([
+    const issuerDetailQuery = `
+      select * from issuer_details where id = ${issuerId}
+    `;
+
+    const [sectorData, monthData, creditRatingData,issuerDetailsData] = await Promise.all([
       prisma.$queryRawUnsafe(sectorQuery),
       prisma.$queryRawUnsafe(monthQuery),
-      prisma.$queryRawUnsafe(creditRatingQuery)
+      prisma.$queryRawUnsafe(creditRatingQuery),
+      prisma.$queryRawUnsafe(issuerDetailQuery)
     ]);
     
-    res.status(200).json({sectorData, monthData, creditRatingData}); 
+    res.status(200).json({sectorData, monthData, creditRatingData, issuerDetailsData}); 
   } catch (error) {
     res.json({success:false,err:error.message})
   }
@@ -490,6 +495,7 @@ app.post('/issuePage_issuer_data', async (req, res) => {
 
     const finalResult = result?.map((item)=>{
       return  { 
+        id:item?.id || '-',
         rank: item?.cy_arr_rank || '-', 
         name: item?.issuer_name || '-', 
         currentSize: item?.cy_issue_size || '-', 
@@ -675,6 +681,7 @@ app.post('/issuePage_detailed_data', async (req, res) => {
     try {
       const result = await prisma.$queryRawUnsafe(`
         SELECT 
+          master_issuer.id,
           master_issuer.isin,
           master_issuer.security_name,
           master_issuer.issue_size,
@@ -792,6 +799,7 @@ app.post('/issuePage_detailed_data', async (req, res) => {
       const allotment = item?.allotment_date ? new Date(item?.allotment_date).toISOString().split('T')[0] : null;
       const maturity = item?.maturity_date ? new Date(item?.maturity_date).toISOString().split('T')[0] : null;
       return  { 
+        id:item?.id || '-',
         issuerName: item?.issuer_name || '-', 
         isin:item?.isin || '-',
         securityName: item?.security_name || '-',
@@ -1261,7 +1269,7 @@ app.post('/arrangerPage_arranger_data', async (req, res) => {
         previousDeals: Number(item?.py_issues) || null, 
         previousMarketShare: item?.py_mkt_share || null, 
         yoyChange: item?.yoy ||null,
-        id: item?.id ||index,
+        id: item?.id || '-',
       }
     })
 
@@ -1440,6 +1448,7 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
     try {
       const result = await prisma.$queryRawUnsafe(`
         select  
+        master_issuer.id,
         master_issuer.isin,
         master_issuer.security_name,
         master_issuer.issue_size,
@@ -1540,6 +1549,7 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
       const allotment = item?.allotment_date ? new Date(item?.allotment_date).toISOString().split('T')[0] : null;
       const maturity = item?.maturity_date ? new Date(item?.maturity_date).toISOString().split('T')[0] : null;
       return  { 
+        id:item?.id || '-',
         issuerName: item?.issuer_name || '-', 
         isin:item?.isin || '-',
         securityName: item?.security_name || '-',
@@ -1573,6 +1583,79 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
 
 });
 
+app.post('/arranger_specific_entity_details',async (req,res)=>{
+  try {
+    const {greaterYear,lessYear,arrangerId} = req.body;
+
+    const sectorQuery = `
+      select
+          b.description as business_name,
+          COALESCE((ROUND(SUM(issue_size)/10000000)),0) as issue_size,
+          concat("#", SUBSTRING((lpad(hex(round(rand() * 10000000)),6,0)),-6)) as color,
+          COUNT(isin) AS no_of_issue
+      from master_issuer
+      inner join master_business_sector as b on b.code = master_issuer.business_sector
+      inner join issuer_arranger on issuer_arranger.issuer_id = master_issuer.id
+      where allotment_date between '${lessYear}-04-01 00:00:00' AND '${greaterYear}-03-31 23:59:59'
+          and business_sector is not null
+          and issuer_arranger.arranger_id = ${arrangerId}
+      group by master_issuer.business_sector
+      order by issue_size DESC
+      limit 10
+    `;
+    const monthQuery = `
+      select
+      MONTH(master_issuer.allotment_date) as issue_month_no, 
+      MONTH(master_issuer.allotment_date) as allotment_month, 
+      a.month_name as issue_month,
+      ROUND(SUM(master_issuer.issue_size) / 10000000, 2) AS issue_size,
+      SUM(master_issuer.issue_size) AS actual_issue_size,
+      CONCAT('#', SUBSTRING(LPAD(HEX(ROUND(RAND() * 10000000)), 6, 0), -6)) AS color,
+      COUNT(master_issuer.isin) AS no_of_issue
+      from master_issuer
+      join all_months as a on a.month_no = MONTH(master_issuer.allotment_date)
+      join issuer_arranger on issuer_arranger.issuer_id = master_issuer.id
+      where master_issuer.allotment_date between '${lessYear}-04-01 00:00:00' AND '${greaterYear}-03-31 23:59:59'
+      and issuer_arranger.arranger_id = ${arrangerId}
+      group by allotment_month
+      order by a.id asc
+    `;
+
+    const totalRatingNo = await prisma.$queryRawUnsafe(`
+      select count(*) as aggregate from master_issuer_rating;
+    `)
+    const creditRatingQuery = `
+      select master_agency.short_name as label, 
+      ROUND((COUNT(master_issuer_rating.rating)/(${totalRatingNo[0]?.aggregate || 1 }) * 100) ,2) as percentage, 
+      COUNT(master_issuer_rating.id) as rating_no,
+      concat('#',SUBSTRING((lpad(hex(round(rand() * 10000000)),6,0)),-6)) as color,
+      master_issuer_rating.rating  as name
+      from master_agency 
+      inner join master_issuer_rating on master_issuer_rating.agency_id = master_agency.id 
+      left join master_issuer as i on i.id = master_issuer_rating.issuer_id 
+      inner join issuer_arranger on issuer_arranger.issuer_id = i.id 
+      where i.allotment_date between '${lessYear}-04-01 00:00:00' AND '${greaterYear}-03-31 23:59:59' 
+      and issuer_arranger.arranger_id = ${arrangerId} 
+      group by master_issuer_rating.agency_id
+    `; 
+
+    const arrangerDetailQuery = `
+      select * from master_arranger where id = ${arrangerId}
+    `;
+
+    const [sectorData, monthData, creditRatingData,arrangerDetailsData] = await Promise.all([
+      prisma.$queryRawUnsafe(sectorQuery),
+      prisma.$queryRawUnsafe(monthQuery),
+      prisma.$queryRawUnsafe(creditRatingQuery),
+      prisma.$queryRawUnsafe(arrangerDetailQuery)
+    ]);
+
+    res.status(200).json({sectorData, monthData, creditRatingData, arrangerDetailsData}); 
+  } catch (error) {
+    res.json({success:false,err:error.message})
+  }
+});
+
 
 //trustee page
 app.post('/trusteePage_detailed_data', async (req, res) => {
@@ -1600,6 +1683,7 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
     try {
       const result = await prisma.$queryRawUnsafe(`
         select 
+        master_issuer.id,
         master_issuer.isin,
         master_issuer.security_name,
         master_issuer.issue_size,
@@ -1698,6 +1782,7 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
       const allotment = item?.allotment_date ? new Date(item?.allotment_date).toISOString().split('T')[0] : null;
       const maturity = item?.maturity_date ? new Date(item?.maturity_date).toISOString().split('T')[0] : null;
       return  { 
+        id:item?.id || '-',
         issuerName: item?.issuer_name || '-', 
         isin:item?.isin || '-',
         securityName: item?.security_name || '-',
@@ -1875,6 +1960,7 @@ app.post('/trusteePage_agency_rating_data', async (req, res) => {
       res.status(500).json({ error: 'Failed to fetch agency rating',message:error.message });
     }
 });
+
 
 //ratig agencies
 
@@ -2078,6 +2164,7 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
     try {
       const result = await prisma.$queryRawUnsafe(`
         select 
+              master_issuer.id,
               master_issuer.isin,
               master_issuer.security_name,
               master_issuer.issue_size,
@@ -2178,6 +2265,7 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
       const allotment = item?.allotment_date ? new Date(item?.allotment_date).toISOString().split('T')[0] : null;
       const maturity = item?.maturity_date ? new Date(item?.maturity_date).toISOString().split('T')[0] : null;
       return  { 
+        id:item?.id || '-',
         issuerName: item?.issuer_name || '-', 
         isin:item?.isin || '-',
         securityName: item?.security_name || '-',
@@ -2411,6 +2499,7 @@ app.post('/registrarPage_detailed_data', async (req, res) => {
     try {
       const result = await prisma.$queryRawUnsafe(`
         select 
+              master_issuer.id,
               master_issuer.isin,
               master_issuer.security_name,
               master_issuer.issue_size,
@@ -2512,6 +2601,7 @@ app.post('/registrarPage_detailed_data', async (req, res) => {
       const allotment = item?.allotment_date ? new Date(item?.allotment_date).toISOString().split('T')[0] : null;
       const maturity = item?.maturity_date ? new Date(item?.maturity_date).toISOString().split('T')[0] : null;
       return  { 
+        id:item?.id || '-',
         issuerName: item?.issuer_name || '-', 
         isin:item?.isin || '-',
         securityName: item?.security_name || '-',
