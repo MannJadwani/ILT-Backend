@@ -1,5 +1,6 @@
 const express = require('express');
 const prisma = require('./db/mysqlDB');
+require('dotenv').config();
 const app = express();
 const cors = require('cors');
 app.use(express.json());
@@ -1961,6 +1962,78 @@ app.post('/trusteePage_agency_rating_data', async (req, res) => {
     }
 });
 
+app.post('/trustee_specific_entity_details',async (req,res)=>{
+  try {
+    const {greaterYear,lessYear,trusteeId} = req.body;
+
+    const sectorQuery = `
+      SELECT 
+          b.description AS business_name, 
+          COALESCE(ROUND(SUM(issue_size) / 10000000), 0) AS issue_size, 
+          CONCAT('#', SUBSTRING(LPAD(HEX(ROUND(RAND() * 10000000)), 6, 0), -6)) AS color ,
+          COUNT(isin) AS no_of_issue
+      FROM master_issuer 
+      INNER JOIN master_business_sector AS b ON b.code = master_issuer.business_sector 
+      INNER JOIN issuer_trustee ON issuer_trustee.issuer_id = master_issuer.id 
+      WHERE allotment_date BETWEEN '${lessYear}-04-01 00:00:00' AND '${greaterYear}-03-31 23:59:59' 
+          AND business_sector IS NOT NULL 
+          AND issuer_trustee.trustee_id = ${trusteeId} 
+      GROUP BY master_issuer.business_sector 
+      ORDER BY issue_size DESC 
+      LIMIT 10
+    `;
+    const monthQuery = `
+      select
+      MONTH(master_issuer.allotment_date) as issue_month_no,
+      MONTH(master_issuer.allotment_date) as allotment_month, 
+      a.month_name as issue_month,
+      ROUND(SUM(master_issuer.issue_size) / 10000000, 2) AS issue_size,
+      SUM(master_issuer.issue_size) AS actual_issue_size,
+      COUNT(master_issuer.isin) AS no_of_issue
+      from master_issuer
+      join all_months as a on a.month_no = MONTH(master_issuer.allotment_date)
+      join issuer_trustee on issuer_trustee.issuer_id = master_issuer.id
+      where master_issuer.allotment_date between '${lessYear}-04-01 00:00:00' AND '${greaterYear}-03-31 23:59:59'
+      and issuer_trustee.trustee_id = ${trusteeId}
+      group by allotment_month
+      order by a.id asc
+    `;
+
+    const totalRatingNo = await prisma.$queryRawUnsafe(`
+      select count(*) as aggregate from master_issuer_rating;
+    `)
+    const creditRatingQuery = `
+      select master_agency.short_name as label, 
+          ROUND((COUNT(master_issuer_rating.rating) / (${totalRatingNo[0]?.aggregate || 1 }) * 100), 2) as percentage, 
+          COUNT(master_issuer_rating.id) as rating_no,
+          concat('#', SUBSTRING((lpad(hex(round(rand() * 10000000)), 6, 0)), -6)) as color,
+          master_issuer_rating.rating as name
+      from master_agency 
+      inner join master_issuer_rating on master_issuer_rating.agency_id = master_agency.id 
+      left join master_issuer as i on i.id = master_issuer_rating.issuer_id 
+      inner join issuer_trustee on issuer_trustee.issuer_id = i.id 
+      where i.allotment_date between '${lessYear}-04-01 00:00:00' AND '${greaterYear}-03-31 23:59:59' 
+        and issuer_trustee.trustee_id = ${trusteeId} 
+      group by master_issuer_rating.agency_id
+    `; 
+
+    const trusteeDetailQuery = `
+      select * from master_trustee where id = ${trusteeId}
+    `;
+
+    const [sectorData, monthData, creditRatingData, trusteeDetailsData] = await Promise.all([
+      prisma.$queryRawUnsafe(sectorQuery),
+      prisma.$queryRawUnsafe(monthQuery),
+      prisma.$queryRawUnsafe(creditRatingQuery),
+      prisma.$queryRawUnsafe(trusteeDetailQuery)
+    ]);
+
+    res.status(200).json({sectorData, monthData, creditRatingData, trusteeDetailsData}); 
+  } catch (error) {
+    res.json({success:false,err:error.message})
+  }
+});
+
 
 //ratig agencies
 
@@ -2299,6 +2372,83 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
 
 });
 
+app.post('/agency_specific_entity_details',async (req,res)=>{
+  try {
+    const {greaterYear,lessYear,agencyId} = req.body;
+
+    const sectorQuery = `
+      SELECT 
+          b.description AS business_name, 
+          COALESCE(ROUND(SUM(issue_size) / 10000000), 0) AS issue_size, 
+          CONCAT('#', SUBSTRING(LPAD(HEX(ROUND(RAND() * 10000000)), 6, 0), -6)) AS color ,
+          COUNT(isin) AS no_of_issue
+      FROM 
+          master_issuer 
+          INNER JOIN master_business_sector AS b ON b.code = master_issuer.business_sector 
+          INNER JOIN master_issuer_rating ON master_issuer_rating.issuer_id = master_issuer.id 
+      WHERE 
+          allotment_date BETWEEN '${lessYear}-04-01 00:00:00' AND '${greaterYear}-03-31 23:59:59'
+          AND business_sector IS NOT NULL 
+          AND master_issuer_rating.agency_id = ${agencyId}  
+      GROUP BY 
+          master_issuer.business_sector 
+      ORDER BY 
+          issue_size DESC 
+      LIMIT 10;
+    `;
+    const monthQuery = `
+      select
+      MONTH(master_issuer.allotment_date) as issue_month_no,
+      MONTH(master_issuer.allotment_date) as allotment_month, 
+      a.month_name as issue_month,
+      ROUND(SUM(master_issuer.issue_size) / 10000000, 2) AS issue_size,
+      SUM(master_issuer.issue_size) AS actual_issue_size,
+      COUNT(master_issuer.isin) AS no_of_issue
+      from master_issuer
+      join all_months as a on a.month_no = MONTH(master_issuer.allotment_date)
+      join master_issuer_rating on master_issuer_rating.issuer_id=master_issuer.id
+      where master_issuer.allotment_date between '${lessYear}-04-01 00:00:00' AND '${greaterYear}-03-31 23:59:59'
+      and master_issuer_rating.agency_id = ${agencyId}
+      group by allotment_month
+      order by a.id asc
+    `;
+
+    const totalRatingNo = await prisma.$queryRawUnsafe(`
+      select count(*) as aggregate from master_issuer_rating;
+    `)
+    const creditRatingQuery = `
+      select master_agency.short_name as label, 
+          ROUND((COUNT(master_issuer_rating.rating) / (${totalRatingNo[0]?.aggregate || 1 }) * 100), 2) as percentage, 
+          COUNT(master_issuer_rating.id) as rating_no,
+          concat('#', SUBSTRING((lpad(hex(round(rand() * 10000000)), 6, 0)), -6)) as color,
+          master_issuer_rating.rating  as name
+      from master_agency 
+      inner join master_issuer_rating 
+          on master_issuer_rating.agency_id = master_agency.id 
+      left join master_issuer as i 
+          on i.id = master_issuer_rating.issuer_id 
+      where i.allotment_date between '${lessYear}-04-01 00:00:00' AND '${greaterYear}-03-31 23:59:59'  
+        and master_issuer_rating.agency_id = ${agencyId} 
+      group by master_issuer_rating.rating
+    `; 
+
+    const agencyDetailQuery = `
+      select * from master_agency where id = ${agencyId}
+    `;
+
+    const [sectorData, monthData, creditRatingData, agencyDetailsData] = await Promise.all([
+      prisma.$queryRawUnsafe(sectorQuery),
+      prisma.$queryRawUnsafe(monthQuery),
+      prisma.$queryRawUnsafe(creditRatingQuery),
+      prisma.$queryRawUnsafe(agencyDetailQuery)
+    ]);
+
+    res.status(200).json({sectorData, monthData, creditRatingData, agencyDetailsData}); 
+  } catch (error) {
+    res.json({success:false,err:error.message})
+  }
+});
+
 //registrar page
 
 app.post('/registrarPage_data', async (req, res) => {
@@ -2635,8 +2785,79 @@ app.post('/registrarPage_detailed_data', async (req, res) => {
 
 });
 
+app.post('/registrar_specific_entity_details',async (req,res)=>{
+  try {
+    const {greaterYear,lessYear,registrarId} = req.body;
 
-PORT=4000;
-app.listen(PORT,()=>{
-    console.log(`server running on port ${PORT}`)
-})  
+    const sectorQuery = `
+      SELECT 
+          b.description AS business_name,
+          COALESCE((ROUND(SUM(issue_size)/10000000)),0) AS issue_size,
+          CONCAT("#", SUBSTRING((LPAD(HEX(ROUND(RAND() * 10000000)), 6, 0)), -6)) AS color,
+          COUNT(isin) AS no_of_issue
+      FROM master_issuer
+      INNER JOIN master_business_sector AS b ON b.code = master_issuer.business_sector
+      INNER JOIN issuer_registrar ON issuer_registrar.issuer_id = master_issuer.id
+      WHERE allotment_date BETWEEN '${lessYear}-04-01 00:00:00' AND '${greaterYear}-03-31 23:59:59'
+        AND business_sector IS NOT NULL
+        AND issuer_registrar.registrar_id = ${registrarId} 
+      GROUP BY master_issuer.business_sector
+      ORDER BY issue_size DESC
+      LIMIT 10
+    `;
+    const monthQuery = `
+      select
+      MONTH(master_issuer.allotment_date) as issue_month_no,
+      MONTH(master_issuer.allotment_date) as allotment_month, 
+      a.month_name as issue_month,
+      ROUND(SUM(master_issuer.issue_size) / 10000000, 2) AS issue_size,
+      SUM(master_issuer.issue_size) AS actual_issue_size,
+      COUNT(master_issuer.isin) AS no_of_issue
+      from master_issuer
+      join all_months as a on a.month_no = MONTH(master_issuer.allotment_date)
+      join issuer_registrar on issuer_registrar.issuer_id = master_issuer.id
+      where master_issuer.allotment_date between '${lessYear}-04-01 00:00:00' AND '${greaterYear}-03-31 23:59:59'
+      and issuer_registrar.registrar_id = ${registrarId}
+      group by allotment_month
+      order by a.id asc
+    `;
+
+    const totalRatingNo = await prisma.$queryRawUnsafe(`
+      select count(*) as aggregate from master_issuer_rating;
+    `)
+    const creditRatingQuery = `
+      SELECT master_agency.short_name AS label,
+          ROUND((COUNT(master_issuer_rating.rating) / (${totalRatingNo[0]?.aggregate || 1 }) * 100), 2) AS percentage,
+          COUNT(master_issuer_rating.id) AS rating_no,
+          CONCAT('#', SUBSTRING((LPAD(HEX(ROUND(RAND() * 10000000)), 6, 0)), -6)) AS color,
+          master_issuer_rating.rating as name
+      FROM master_agency
+      INNER JOIN master_issuer_rating ON master_issuer_rating.agency_id = master_agency.id
+      LEFT JOIN master_issuer AS i ON i.id = master_issuer_rating.issuer_id
+      INNER JOIN issuer_registrar ON issuer_registrar.issuer_id = i.id
+      WHERE i.allotment_date BETWEEN '${lessYear}-04-01 00:00:00' AND '${greaterYear}-03-31 23:59:59'
+        AND issuer_registrar.registrar_id = ${registrarId} 
+      GROUP BY master_issuer_rating.agency_id
+    `; 
+
+    const registrarDetailQuery = `
+      select * from master_registrar where id = ${registrarId}
+    `;
+
+    const [sectorData, monthData, creditRatingData, registrarDetailsData] = await Promise.all([
+      prisma.$queryRawUnsafe(sectorQuery),
+      prisma.$queryRawUnsafe(monthQuery),
+      prisma.$queryRawUnsafe(creditRatingQuery),
+      prisma.$queryRawUnsafe(registrarDetailQuery)
+    ]);
+
+    res.status(200).json({sectorData, monthData, creditRatingData, registrarDetailsData}); 
+  } catch (error) {
+    res.json({success:false,err:error.message})
+  }
+});
+
+
+app.listen(4000, '127.0.0.1', () => {
+  console.log('Server running on port 4000');
+});
