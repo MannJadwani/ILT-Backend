@@ -580,7 +580,7 @@ app.post('/dashboard_top_stats_data', async (req, res) => {
         INNER JOIN master_business_sector b ON b.code = mi.business_sector
         WHERE mi.allotment_date BETWEEN '${startDate}' AND '${endDate}'
           AND mi.business_sector IS NOT NULL
-        GROUP BY mi.business_sector
+        GROUP BY mi.business_sector, b.description
         ORDER BY SUM(mi.issue_size) DESC
         LIMIT 1) as top_sector_by_volume
     FROM master_issuer
@@ -2281,7 +2281,7 @@ app.post('/issuers_page_outstanding_data', async (req, res) => {
         ${baseJoins}
         WHERE master_issuer.allotment_date BETWEEN ? AND ?${filterClause}
       ) AS mi
-      GROUP BY month
+      GROUP BY month, label
       ORDER BY month ASC
     `, cyStart, cyEnd, ...filterParams);
 
@@ -2298,7 +2298,7 @@ app.post('/issuers_page_outstanding_data', async (req, res) => {
         ${baseJoins}
         WHERE master_issuer.maturity_date BETWEEN ? AND ?${filterClause}
       ) AS mi
-      GROUP BY month
+      GROUP BY month, label
       ORDER BY month ASC
     `, cyStart, cyEnd, ...filterParams);
 
@@ -2390,7 +2390,7 @@ app.get('/issuers_page_current_year_debt_redemption_data', async (req, res) => {
           COUNT(isin) AS isin_count
         FROM master_issuer
         WHERE maturity_date BETWEEN '${formatDate(now)}' AND '${formatDate(nextYear)}'
-        GROUP BY month
+        GROUP BY month, label
         ORDER BY year,month ASC
       `);
 
@@ -2431,7 +2431,7 @@ app.get('/issuers_page_next_year_redemption_data', async (req, res) => {
           COUNT(isin) AS isin_count
         FROM master_issuer
         WHERE maturity_date BETWEEN '${start}' AND '${end}'
-        GROUP BY month
+        GROUP BY month, label
         ORDER BY year,month ASC
       `);
 
