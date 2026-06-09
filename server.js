@@ -251,7 +251,7 @@ app.post('/dashboard_sectors_data', async (req, res) => {
       FROM master_issuer
       INNER JOIN master_business_sector as b on b.code = master_issuer.business_sector
       WHERE allotment_date BETWEEN '${startDate}' AND '${endDate}' AND business_sector IS NOT NULL
-      GROUP BY master_issuer.business_sector
+      GROUP BY master_issuer.business_sector, b.description
       ORDER BY issue_size DESC
       LIMIT 10;
     `;
@@ -266,7 +266,7 @@ app.post('/dashboard_sectors_data', async (req, res) => {
       INNER JOIN master_business_sector as b on b.code = master_issuer.business_sector
       INNER JOIN issuer_arranger on issuer_arranger.issuer_id = master_issuer.id
       WHERE allotment_date BETWEEN '${startDate}' AND '${endDate}' AND business_sector IS NOT NULL
-      GROUP BY master_issuer.business_sector
+      GROUP BY master_issuer.business_sector, b.description
       ORDER BY issue_size DESC
       LIMIT 10;
     `;
@@ -281,7 +281,7 @@ app.post('/dashboard_sectors_data', async (req, res) => {
       INNER JOIN master_business_sector as b on b.code = master_issuer.business_sector
       INNER JOIN issuer_trustee on issuer_trustee.issuer_id = master_issuer.id
       WHERE allotment_date BETWEEN '${startDate}' AND '${endDate}' AND business_sector IS NOT NULL
-      GROUP BY master_issuer.business_sector
+      GROUP BY master_issuer.business_sector, b.description
       ORDER BY issue_size DESC
       LIMIT 10;
     `;
@@ -296,7 +296,7 @@ app.post('/dashboard_sectors_data', async (req, res) => {
       INNER JOIN master_business_sector as b on b.code = master_issuer.business_sector
       INNER JOIN issuer_registrar on issuer_registrar.issuer_id = master_issuer.id
       WHERE allotment_date BETWEEN '${startDate}' AND '${endDate}' AND business_sector IS NOT NULL
-      GROUP BY master_issuer.business_sector
+      GROUP BY master_issuer.business_sector, b.description
       ORDER BY issue_size DESC
       LIMIT 10;
     `;
@@ -311,7 +311,7 @@ app.post('/dashboard_sectors_data', async (req, res) => {
       INNER JOIN master_business_sector as b on b.code = master_issuer.business_sector
       INNER JOIN master_issuer_rating on master_issuer_rating.issuer_id = master_issuer.id
       WHERE allotment_date BETWEEN '${startDate}' AND '${endDate}' AND business_sector IS NOT NULL
-      GROUP BY master_issuer.business_sector
+      GROUP BY master_issuer.business_sector, b.description
       ORDER BY issue_size DESC
       LIMIT 10;
     `;
@@ -379,7 +379,7 @@ app.post('/dashboard_agency_rating_data', async (req, res) => {
       INNER JOIN master_issuer_rating ON master_issuer_rating.agency_id = master_agency.id
       LEFT JOIN master_issuer as i ON i.id = master_issuer_rating.issuer_id
       WHERE i.allotment_date BETWEEN '${startDate}' AND '${endDate}'
-      GROUP BY master_issuer_rating.agency_id
+      GROUP BY master_issuer_rating.agency_id, master_agency.short_name, master_issuer_rating.rating
     `;
 
     const arrangersQuery = `
@@ -394,7 +394,7 @@ app.post('/dashboard_agency_rating_data', async (req, res) => {
       LEFT JOIN master_issuer as i ON i.id = master_issuer_rating.issuer_id
       INNER JOIN issuer_arranger ON issuer_arranger.issuer_id = i.id
       WHERE i.allotment_date BETWEEN '${startDate}' AND '${endDate}'
-      GROUP BY master_issuer_rating.agency_id
+      GROUP BY master_issuer_rating.agency_id, master_agency.short_name, master_issuer_rating.rating
     `;
 
     const trusteeQuery = `
@@ -409,7 +409,7 @@ app.post('/dashboard_agency_rating_data', async (req, res) => {
       LEFT JOIN master_issuer as i ON i.id = master_issuer_rating.issuer_id
       INNER JOIN issuer_trustee ON issuer_trustee.issuer_id = i.id
       WHERE i.allotment_date BETWEEN '${startDate}' AND '${endDate}'
-      GROUP BY master_issuer_rating.agency_id
+      GROUP BY master_issuer_rating.agency_id, master_agency.short_name, master_issuer_rating.rating
     `;
 
     const registrarQuery = `
@@ -424,7 +424,7 @@ app.post('/dashboard_agency_rating_data', async (req, res) => {
       LEFT JOIN master_issuer as i ON i.id = master_issuer_rating.issuer_id
       INNER JOIN issuer_registrar ON issuer_registrar.issuer_id = i.id
       WHERE i.allotment_date BETWEEN '${startDate}' AND '${endDate}'
-      GROUP BY master_issuer_rating.agency_id
+      GROUP BY master_issuer_rating.agency_id, master_agency.short_name, master_issuer_rating.rating
     `;
 
     // The fifth query was identical to the first, so we'll run it as provided.
@@ -439,7 +439,7 @@ app.post('/dashboard_agency_rating_data', async (req, res) => {
       INNER JOIN master_issuer_rating ON master_issuer_rating.agency_id = master_agency.id
       LEFT JOIN master_issuer as i ON i.id = master_issuer_rating.issuer_id
       WHERE i.allotment_date BETWEEN '${startDate}' AND '${endDate}'
-      GROUP BY master_issuer_rating.agency_id
+      GROUP BY master_issuer_rating.agency_id, master_agency.short_name, master_issuer_rating.rating
     `;
 
     // Step 3: Create an array of promises and execute them concurrently
@@ -511,7 +511,7 @@ app.post('/dashboard_monthly_comparison_data', async (req, res) => {
       JOIN all_months as a ON a.month_no = MONTH(master_issuer.allotment_date)
       WHERE master_issuer.allotment_date BETWEEN '${formatDate(currentStartDate)}' AND '${formatDate(currentEndDate)}'
       GROUP BY allotment_month, a.month_name
-      ORDER BY a.id ASC
+      ORDER BY allotment_month ASC
     `;
 
     const previousYearQuery = `
@@ -524,7 +524,7 @@ app.post('/dashboard_monthly_comparison_data', async (req, res) => {
       JOIN all_months as a ON a.month_no = MONTH(master_issuer.allotment_date)
       WHERE master_issuer.allotment_date BETWEEN '${formatDate(previousStartDate)}' AND '${formatDate(previousEndDate)}'
       GROUP BY allotment_month, a.month_name
-      ORDER BY a.id ASC
+      ORDER BY allotment_month ASC
     `;
 
     // Step 3: Execute both queries concurrently using Promise.all
@@ -661,7 +661,7 @@ app.post('/dashboard_specific_entity_data', async (req, res) => {
   WHERE master_issuer.allotment_date BETWEEN '${formatDate(currentStartDate)}' AND '${formatDate(currentEndDate)}'
   AND issuer_master_id = ${id}
   GROUP BY allotment_month, a.month_name
-  ORDER BY a.id ASC
+  ORDER BY allotment_month ASC
         `;
         previousYearQuery = `
           SELECT
@@ -674,7 +674,7 @@ app.post('/dashboard_specific_entity_data', async (req, res) => {
   WHERE master_issuer.allotment_date BETWEEN '${formatDate(previousStartDate)}' AND '${formatDate(previousEndDate)}'
   AND issuer_master_id = ${id}
   GROUP BY allotment_month, a.month_name
-  ORDER BY a.id ASC
+  ORDER BY allotment_month ASC
         `;
         sectorsQuery = `
               SELECT
@@ -686,7 +686,7 @@ app.post('/dashboard_specific_entity_data', async (req, res) => {
       INNER JOIN master_business_sector as b on b.code = master_issuer.business_sector
       WHERE allotment_date BETWEEN '${startDate}' AND '${endDate}' AND business_sector IS NOT NULL
       and issuer_master_id = ${id}
-      GROUP BY master_issuer.business_sector
+      GROUP BY master_issuer.business_sector, b.description
       ORDER BY issue_size DESC
       LIMIT 10;
 
@@ -725,7 +725,7 @@ JOIN issuer_arranger AS ia
 WHERE mi.allotment_date BETWEEN '${formatDate(currentStartDate)}' AND '${formatDate(currentEndDate)}'
   AND ia.arranger_id = ${id}
 GROUP BY allotment_month, a.month_name
-ORDER BY a.id ASC;
+ORDER BY allotment_month ASC;
 
         `;
         previousYearQuery = `
@@ -741,8 +741,8 @@ JOIN issuer_arranger AS ia
     ON ia.issuer_id = mi.id
 WHERE mi.allotment_date BETWEEN '${formatDate(previousStartDate)}' AND '${formatDate(previousEndDate)}'
   AND ia.arranger_id = ${id}
-GROUP BY allotment_month, a.month_name
-ORDER BY a.id ASC;
+  GROUP BY allotment_month, a.month_name
+  ORDER BY allotment_month ASC;
         `;
         sectorsQuery = `
         SELECT 
@@ -814,7 +814,7 @@ JOIN issuer_trustee AS it
 WHERE mi.allotment_date BETWEEN '${formatDate(currentStartDate)}' AND '${formatDate(currentEndDate)}'
   AND it.trustee_id = ${id}
 GROUP BY allotment_month, a.month_name
-ORDER BY a.id ASC;
+ORDER BY allotment_month ASC;
 
         `;
         previousYearQuery = `
@@ -831,7 +831,7 @@ JOIN issuer_trustee AS it
 WHERE mi.allotment_date BETWEEN '${formatDate(previousStartDate)}' AND '${formatDate(previousEndDate)}'
   AND it.trustee_id = ${id}
 GROUP BY allotment_month, a.month_name
-ORDER BY a.id ASC;
+ORDER BY allotment_month ASC;
 
         `;
         sectorsQuery = `
@@ -851,7 +851,7 @@ INNER JOIN issuer_trustee AS it
 WHERE mi.allotment_date BETWEEN '${startDate}' AND '${endDate}'
   AND mi.business_sector IS NOT NULL
   AND it.trustee_id = ${id}
-GROUP BY mi.business_sector
+GROUP BY mi.business_sector, b.description
 ORDER BY issue_size DESC
 LIMIT 10;
 
@@ -903,7 +903,7 @@ JOIN issuer_registrar AS ir
 WHERE mi.allotment_date BETWEEN '${formatDate(currentStartDate)}' AND '${formatDate(currentEndDate)}'
   AND ir.registrar_id = ${id}
 GROUP BY allotment_month, a.month_name
-ORDER BY a.id ASC;
+ORDER BY allotment_month ASC;
 
 `;
         previousYearQuery = `
@@ -920,7 +920,7 @@ JOIN issuer_registrar AS ir
 WHERE mi.allotment_date BETWEEN '${formatDate(previousStartDate)}' AND '${formatDate(previousEndDate)}'
   AND ir.registrar_id = ${id}
 GROUP BY allotment_month, a.month_name
-ORDER BY a.id ASC;
+ORDER BY allotment_month ASC;
 
 `;
         sectorsQuery = `
@@ -940,7 +940,7 @@ INNER JOIN issuer_registrar AS ir
 WHERE mi.allotment_date BETWEEN '${startDate}' AND '${endDate}'
   AND mi.business_sector IS NOT NULL
   AND ir.registrar_id = ${id}
-GROUP BY mi.business_sector
+GROUP BY mi.business_sector, b.description
 ORDER BY issue_size DESC
 LIMIT 10;
 
@@ -993,7 +993,7 @@ JOIN master_issuer_rating AS mir
 WHERE mi.allotment_date BETWEEN '${formatDate(currentStartDate)}' AND '${formatDate(currentEndDate)}'
   AND mir.agency_id = ${id}
 GROUP BY allotment_month, a.month_name
-ORDER BY a.id ASC;
+ORDER BY allotment_month ASC;
 
       `;
         previousYearQuery = `
@@ -1010,7 +1010,7 @@ JOIN master_issuer_rating AS mir
 WHERE mi.allotment_date BETWEEN '${formatDate(previousStartDate)}' AND '${formatDate(previousEndDate)}'
   AND mir.agency_id = ${id}
 GROUP BY allotment_month, a.month_name
-ORDER BY a.id ASC;
+ORDER BY allotment_month ASC;
 
       `;
 
@@ -1031,7 +1031,7 @@ INNER JOIN master_issuer_rating AS mir
 WHERE mi.allotment_date BETWEEN '${startDate}' AND '${endDate}'
   AND mi.business_sector IS NOT NULL
   AND mir.agency_id = ${id}
-GROUP BY mi.business_sector
+GROUP BY mi.business_sector, b.description
 ORDER BY issue_size DESC
 LIMIT 10;
 
@@ -1078,7 +1078,7 @@ GROUP BY
   WHERE master_issuer.allotment_date BETWEEN '${formatDate(currentStartDate)}' AND '${formatDate(currentEndDate)}'
   AND issuer_master_id = ${id}
   GROUP BY allotment_month, a.month_name
-  ORDER BY a.id ASC
+  ORDER BY allotment_month ASC
         `;
         previousYearQuery = `
           SELECT
@@ -1091,7 +1091,7 @@ GROUP BY
   WHERE master_issuer.allotment_date BETWEEN '${formatDate(previousStartDate)}' AND '${formatDate(previousEndDate)}'
   AND issuer_master_id = ${id}
   GROUP BY allotment_month, a.month_name
-  ORDER BY a.id ASC
+  ORDER BY allotment_month ASC
         `;
         sectorsQuery = `
               SELECT
@@ -1103,7 +1103,7 @@ GROUP BY
       INNER JOIN master_business_sector as b on b.code = master_issuer.business_sector
       WHERE allotment_date BETWEEN '${startDate}' AND '${endDate}' AND business_sector IS NOT NULL
       and issuer_master_id = ${id}
-      GROUP BY master_issuer.business_sector
+      GROUP BY master_issuer.business_sector, b.description
       ORDER BY issue_size DESC
       LIMIT 10;
 
