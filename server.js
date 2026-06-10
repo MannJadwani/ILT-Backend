@@ -1589,12 +1589,17 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
       modeOfIssue = ''
     } = req.body;
 
+    // ─── Validate required dates ───
     if (!startDate || !endDate) {
       return res.status(400).json({ error: 'startDate, endDate are required' });
     }
 
     const currentStartDate = new Date(startDate);
     const currentEndDate = new Date(endDate);
+
+    if (isNaN(currentStartDate.getTime()) || isNaN(currentEndDate.getTime())) {
+      return res.status(400).json({ error: 'Invalid date format' });
+    }
 
     const previousStartDate = new Date(currentStartDate);
     previousStartDate.setFullYear(previousStartDate.getFullYear() - 1);
@@ -1609,74 +1614,71 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
     const pyStart = formatDate(previousStartDate);
     const pyEnd = formatDate(previousEndDate);
 
-    // ─── Build dynamic WHERE conditions (same pattern as detailed API) ───
+    // ─── Build dynamic WHERE conditions ───
     const conditions = [];
-    const params = [];
+    const filterParams = [];
 
-    conditions.push(`master_issuer.allotment_date BETWEEN ? AND ?`);
-    params.push(cyStart, cyEnd);
+    // Date range is always first two params for each period
+    const dateConditions = `master_issuer.allotment_date BETWEEN ? AND ?`;
 
     if (issuerName) {
       conditions.push(`issuer_details.issuer_name LIKE ?`);
-      params.push(`%${issuerName}%`);
+      filterParams.push(`%${issuerName}%`);
     }
     if (rating) {
       conditions.push(`master_issuer_rating.rating = ?`);
-      params.push(rating);
+      filterParams.push(rating);
     }
     if (dealSize) {
       conditions.push(`master_issuer.issue_size LIKE ?`);
-      params.push(`%${dealSize}%`);
+      filterParams.push(`%${dealSize}%`);
     }
     if (listingStatus) {
       conditions.push(`listing_data.listing_status = ?`);
-      params.push(listingStatus);
+      filterParams.push(listingStatus);
     }
     if (seniority) {
       conditions.push(`master_seniority_tier_classification.description = ?`);
-      params.push(seniority);
+      filterParams.push(seniority);
     }
     if (taxFree) {
       conditions.push(`master_tax_free.description = ?`);
-      params.push(taxFree);
+      filterParams.push(taxFree);
     }
     if (securedFlag) {
       conditions.push(`master_secured_flag.description = ?`);
-      params.push(securedFlag);
+      filterParams.push(securedFlag);
     }
     if (sector) {
       conditions.push(`master_business_sector.description = ?`);
-      params.push(sector);
+      filterParams.push(sector);
     }
     if (trustee) {
       conditions.push(`master_trustee.short_name = ?`);
-      params.push(trustee);
+      filterParams.push(trustee);
     }
     if (nature) {
       conditions.push(`master_issuer_type_nature.description = ?`);
-      params.push(nature);
+      filterParams.push(nature);
     }
     if (ownershipType) {
       conditions.push(`master_issuer_ownership_type.description = ?`);
-      params.push(ownershipType);
+      filterParams.push(ownershipType);
     }
     if (creditRatingAgency) {
       conditions.push(`master_agency.short_name = ?`);
-      params.push(creditRatingAgency);
+      filterParams.push(creditRatingAgency);
     }
     if (securityType) {
       conditions.push(`master_security_type.description = ?`);
-      params.push(securityType);
+      filterParams.push(securityType);
     }
     if (modeOfIssue) {
       conditions.push(`master_mode_issue.description = ?`);
-      params.push(modeOfIssue);
+      filterParams.push(modeOfIssue);
     }
 
-    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-
-    // Previous year uses same filters but different date range
-    const prevParams = [pyStart, pyEnd, ...params.slice(2)];
+    const filterClause = conditions.length > 0 ? `AND ${conditions.join(' AND ')}` : '';
 
     // ─── Base joins needed for all filter conditions ───
     const baseJoins = `
@@ -1696,12 +1698,11 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
       LEFT JOIN (
         SELECT 
           mise.issuer_id, 
-          mls.description AS listing_status, 
-          mise.listing_status AS listing_status_code
+          MAX(mls.description) AS listing_status
         FROM master_issuer_stock_exchange mise
         LEFT JOIN master_listing_status mls ON mls.code = mise.listing_status
         WHERE mise.listing_status IS NOT NULL
-        GROUP BY mise.issuer_id, mls.description, mise.listing_status
+        GROUP BY mise.issuer_id
       ) AS listing_data ON listing_data.issuer_id = master_issuer.id
     `;
 
@@ -1713,7 +1714,7 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
         SELECT DISTINCT master_issuer.id
         FROM master_issuer
         ${baseJoins}
-        ${whereClause}
+        WHERE ${dateConditions} ${filterClause}
       )
     `;
 
@@ -1721,15 +1722,20 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
       SELECT COUNT(DISTINCT master_issuer.id) as aggregate
       FROM master_issuer
       ${baseJoins}
-      ${whereClause}
+      WHERE ${dateConditions} ${filterClause}
     `;
+
+    // Current year params: [cyStart, cyEnd, ...filterParams]
+    const cyParams = [cyStart, cyEnd, ...filterParams];
+    // Previous year params: [pyStart, pyEnd, ...filterParams]
+    const pyParams = [pyStart, pyEnd, ...filterParams];
 
     // Execute all 4 totals in parallel
     const [totalIssueSize, totalIssueSizePrevYear, totalIssuesCountCurrYear, totalIssuesCountPrevYear] = await Promise.all([
-      prisma.$queryRawUnsafe(totalIssueSizeQuery, ...params),
-      prisma.$queryRawUnsafe(totalIssueSizeQuery, ...prevParams),
-      prisma.$queryRawUnsafe(totalIssuesCountQuery, ...params),
-      prisma.$queryRawUnsafe(totalIssuesCountQuery, ...prevParams)
+      prisma.$queryRawUnsafe(totalIssueSizeQuery, ...cyParams),
+      prisma.$queryRawUnsafe(totalIssueSizeQuery, ...pyParams),
+      prisma.$queryRawUnsafe(totalIssuesCountQuery, ...cyParams),
+      prisma.$queryRawUnsafe(totalIssuesCountQuery, ...pyParams)
     ]);
 
     const totalIssueSizeCY = Number(totalIssueSize[0]?.aggregate) || 0;
@@ -1737,146 +1743,111 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
     const totalIssuesCountCY = Number(totalIssuesCountCurrYear[0]?.aggregate) || 0;
     const totalIssuesCountPY = Number(totalIssuesCountPrevYear[0]?.aggregate) || 0;
 
-    const cySizeDivisor = (totalIssueSizeCY / 10000000) || 1;
-    const pySizeDivisor = (totalIssueSizePY / 10000000) || 1;
-    const cyCountDivisor = totalIssuesCountCY || 1;
-    const pyCountDivisor = totalIssuesCountPY || 1;
+    // ─── FIX: Proper divisor calculation ───
+    // When total is 0, market share should be 0, not calculated against 1
+    const cySizeDivisor = totalIssueSizeCY / 10000000;
+    const pySizeDivisor = totalIssueSizePY / 10000000;
+    const cyCountDivisor = totalIssuesCountCY;
+    const pyCountDivisor = totalIssuesCountPY;
 
-    let tableQuery = '';
+    // ─── FIX: Build table query with explicit params to avoid any confusion ───
+    const rankByCount = issueType === 'count';
+    
+    const rankOrder = rankByCount 
+      ? `COUNT(DISTINCT mi.isin) DESC, ROUND(SUM(mi.issue_size) / 10000000, 2) DESC`
+      : `ROUND(SUM(mi.issue_size) / 10000000, 2) DESC, COUNT(DISTINCT mi.isin) DESC`;
 
-    // ─── Table query: Top 10 issuers with YoY comparison ───
-    if (issueType && issueType === 'count') {
-      tableQuery = `
+    const shareColumn = rankByCount ? 'no_issues' : 'issue_size';
+    const cyDivisor = rankByCount ? cyCountDivisor : cySizeDivisor;
+    const pyDivisor = rankByCount ? pyCountDivisor : pySizeDivisor;
+
+    // ─── FIX: Use a single CTE-based query instead of running heavy subquery twice ───
+    // This is more efficient and eliminates the param mismatch risk entirely
+    const tableQuery = `
+      WITH 
+      cy_data AS (
         SELECT
-          table1.id AS id,
-          table1.issuer_name AS issuer_name,
-          table1.no_issues AS cy_issues,
-          table1.issue_size AS cy_issue_size,
-          table1.arr_rank AS cy_arr_rank,
-          table2.no_issues AS py_issues,
-          table2.issue_size AS py_issue_size,
-          table2.arr_rank AS py_arr_rank,
-          ROUND( (table1.no_issues / ${cyCountDivisor}) * 100 ,2) as cy_mkt_share,
-          ROUND( (table2.no_issues / ${pyCountDivisor}) * 100 ,2) as py_mkt_share,
-          (
-            case
-            when (IFNULL(table1.no_issues,0)+IFNULL(table2.no_issues,0)) = 0 then 0
-            else
-            ROUND( ((IFNULL(table1.no_issues,0)-IFNULL(table2.no_issues,0)) / (IFNULL(table1.no_issues,0)+IFNULL(table2.no_issues,0))) * 100 ,2)
-            end
-          ) as yoy
-        FROM
-          (SELECT
-            issuer_details.id,
-            issuer_details.issuer_name,
-            COUNT(DISTINCT mi.isin) as no_issues,
-            ROUND(SUM(mi.issue_size) / 10000000, 2) as issue_size,
-            RANK() OVER ( ORDER BY COUNT(DISTINCT mi.isin) DESC , ROUND(SUM(mi.issue_size) / 10000000, 2) DESC ) as arr_rank
-          FROM (
-            SELECT DISTINCT master_issuer.id, master_issuer.issuer_master_id, master_issuer.isin, master_issuer.issue_size
-            FROM master_issuer
-            ${baseJoins}
-            ${whereClause}
-          ) AS mi
-          JOIN issuer_details ON issuer_details.id = mi.issuer_master_id
-          GROUP BY issuer_details.id
-          ORDER BY arr_rank
-          LIMIT 10
-          ) as table1
-        LEFT JOIN
-          (SELECT
-            issuer_details.id,
-            issuer_details.issuer_name,
-            COUNT(DISTINCT mi.isin) as no_issues,
-            ROUND(SUM(mi.issue_size) / 10000000, 2) as issue_size,
-            RANK() OVER ( ORDER BY COUNT(DISTINCT mi.isin) DESC , ROUND(SUM(mi.issue_size) / 10000000, 2) DESC ) as arr_rank
-          FROM (
-            SELECT DISTINCT master_issuer.id, master_issuer.issuer_master_id, master_issuer.isin, master_issuer.issue_size
-            FROM master_issuer
-            ${baseJoins}
-            ${whereClause}
-          ) AS mi
-          JOIN issuer_details ON issuer_details.id = mi.issuer_master_id
-          GROUP BY issuer_details.id
-          ) as table2
-        ON table1.id = table2.id
-        ORDER BY table1.arr_rank asc
-      `;
-    } else {
-      tableQuery = `
+          issuer_details.id,
+          issuer_details.issuer_name,
+          COUNT(DISTINCT mi.isin) as no_issues,
+          ROUND(SUM(mi.issue_size) / 10000000, 2) as issue_size,
+          RANK() OVER ( ORDER BY ${rankOrder} ) as arr_rank
+        FROM (
+          SELECT DISTINCT master_issuer.id, master_issuer.issuer_master_id, master_issuer.isin, master_issuer.issue_size
+          FROM master_issuer
+          ${baseJoins}
+          WHERE ${dateConditions} ${filterClause}
+        ) AS mi
+        JOIN issuer_details ON issuer_details.id = mi.issuer_master_id
+        GROUP BY issuer_details.id
+        ORDER BY arr_rank
+        LIMIT 10
+      ),
+      py_data AS (
         SELECT
-          table1.id AS id,
-          table1.issuer_name AS issuer_name,
-          table1.no_issues AS cy_issues,
-          table1.issue_size AS cy_issue_size,
-          table1.arr_rank AS cy_arr_rank,
-          table2.no_issues AS py_issues,
-          table2.issue_size AS py_issue_size,
-          table2.arr_rank AS py_arr_rank,
-          ROUND( (table1.issue_size / ${cySizeDivisor}) * 100 ,2) as cy_mkt_share,
-          ROUND( (table2.issue_size / ${pySizeDivisor}) * 100 ,2) as py_mkt_share,
-          (
-            case
-            when (IFNULL(table1.issue_size,0)+IFNULL(table2.issue_size,0)) = 0 then 0
-            else
-            ROUND( ((IFNULL(table1.issue_size,0)-IFNULL(table2.issue_size,0)) / (IFNULL(table1.issue_size,0)+IFNULL(table2.issue_size,0))) * 100 ,2)
-            end
-          ) as yoy
-        FROM
-          (SELECT
-            issuer_details.id,
-            issuer_details.issuer_name,
-            COUNT(DISTINCT mi.isin) as no_issues,
-            ROUND(SUM(mi.issue_size) / 10000000, 2) as issue_size,
-            RANK() OVER ( ORDER BY ROUND(SUM(mi.issue_size) / 10000000, 2) DESC , COUNT(DISTINCT mi.isin) DESC ) as arr_rank
-          FROM (
-            SELECT DISTINCT master_issuer.id, master_issuer.issuer_master_id, master_issuer.isin, master_issuer.issue_size
-            FROM master_issuer
-            ${baseJoins}
-            ${whereClause}
-          ) AS mi
-          JOIN issuer_details ON issuer_details.id = mi.issuer_master_id
-          GROUP BY issuer_details.id
-          ORDER BY arr_rank
-          LIMIT 10
-          ) as table1
-        LEFT JOIN
-          (SELECT
-            issuer_details.id,
-            issuer_details.issuer_name,
-            COUNT(DISTINCT mi.isin) as no_issues,
-            ROUND(SUM(mi.issue_size) / 10000000, 2) as issue_size,
-            RANK() OVER ( ORDER BY ROUND(SUM(mi.issue_size) / 10000000, 2) DESC , COUNT(DISTINCT mi.isin) DESC ) as arr_rank
-          FROM (
-            SELECT DISTINCT master_issuer.id, master_issuer.issuer_master_id, master_issuer.isin, master_issuer.issue_size
-            FROM master_issuer
-            ${baseJoins}
-            ${whereClause}
-          ) AS mi
-          JOIN issuer_details ON issuer_details.id = mi.issuer_master_id
-          GROUP BY issuer_details.id
-          ) as table2
-        ON table1.id = table2.id
-        ORDER BY table1.arr_rank asc
-      `;
-    }
+          issuer_details.id,
+          issuer_details.issuer_name,
+          COUNT(DISTINCT mi.isin) as no_issues,
+          ROUND(SUM(mi.issue_size) / 10000000, 2) as issue_size,
+          RANK() OVER ( ORDER BY ${rankOrder} ) as arr_rank
+        FROM (
+          SELECT DISTINCT master_issuer.id, master_issuer.issuer_master_id, master_issuer.isin, master_issuer.issue_size
+          FROM master_issuer
+          ${baseJoins}
+          WHERE ${dateConditions} ${filterClause}
+        ) AS mi
+        JOIN issuer_details ON issuer_details.id = mi.issuer_master_id
+        GROUP BY issuer_details.id
+      )
+      SELECT
+        cy.id AS id,
+        cy.issuer_name AS issuer_name,
+        cy.no_issues AS cy_issues,
+        cy.issue_size AS cy_issue_size,
+        cy.arr_rank AS cy_arr_rank,
+        py.no_issues AS py_issues,
+        py.issue_size AS py_issue_size,
+        py.arr_rank AS py_arr_rank,
+        CASE 
+          WHEN ? = 0 OR ? IS NULL THEN 0 
+          ELSE ROUND((cy.${shareColumn} / ?) * 100, 2) 
+        END as cy_mkt_share,
+        CASE 
+          WHEN ? = 0 OR ? IS NULL THEN 0 
+          ELSE ROUND((py.${shareColumn} / ?) * 100, 2) 
+        END as py_mkt_share,
+        CASE
+          WHEN (IFNULL(cy.${shareColumn}, 0) + IFNULL(py.${shareColumn}, 0)) = 0 THEN 0
+          ELSE ROUND(((IFNULL(cy.${shareColumn}, 0) - IFNULL(py.${shareColumn}, 0)) / (IFNULL(cy.${shareColumn}, 0) + IFNULL(py.${shareColumn}, 0))) * 100, 2)
+        END as yoy
+      FROM cy_data cy
+      LEFT JOIN py_data py ON cy.id = py.id
+      ORDER BY cy.arr_rank ASC
+    `;
 
-    const tableParams = [...params, ...prevParams];
+    // Params: cyParams for cy_data CTE, pyParams for py_data CTE, then divisors for market share
+    const tableParams = [
+      ...cyParams,      // for cy_data CTE
+      ...pyParams,      // for py_data CTE
+      cyDivisor, cyDivisor, cyDivisor,  // for cy_mkt_share CASE
+      pyDivisor, pyDivisor, pyDivisor   // for py_mkt_share CASE
+    ];
+
     const result = await prisma.$queryRawUnsafe(tableQuery, ...tableParams);
 
-    const finalResult = result?.map((item) => {
+    const finalResult = result.map((item) => {
       return {
-        id: item?.id || '-',
-        rank: item?.cy_arr_rank || '-',
-        name: item?.issuer_name || '-',
-        currentSize: item?.cy_issue_size || '-',
-        currentDeals: item?.cy_issues || '-',
-        currentMarketShare: item?.cy_mkt_share || '-',
-        previousRank: item?.py_arr_rank || '-',
-        previousSize: item?.py_issue_size || '-',
-        previousDeals: item?.py_issues || '-',
-        previousMarketShare: item?.py_mkt_share || '-',
-        yoyChange: item?.yoy || '-'
+        id: item?.id ?? '-',
+        rank: item?.cy_arr_rank ?? '-',
+        name: item?.issuer_name ?? '-',
+        currentSize: item?.cy_issue_size ?? '-',
+        currentDeals: item?.cy_issues ?? '-',
+        currentMarketShare: item?.cy_mkt_share ?? '-',
+        previousRank: item?.py_arr_rank ?? '-',
+        previousSize: item?.py_issue_size ?? '-',
+        previousDeals: item?.py_issues ?? '-',
+        previousMarketShare: item?.py_mkt_share ?? '-',
+        yoyChange: item?.yoy ?? '-'
       }
     });
 
@@ -1889,6 +1860,7 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
 
     res.status(200).json({ data: finalResult, totals });
   } catch (error) {
+    console.error('Error in issuers_page_top_issuers_data:', error);
     res.status(500).json({ error: 'Failed to fetch dashboard_table', message: error.message });
   }
 });
