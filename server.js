@@ -5,7 +5,13 @@ const app = express();
 const cors = require('cors');
 const axios = require('axios');
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    '*'
+  ],
+  credentials: true
+}));
 
 BigInt.prototype.toJSON = function () {
   return this.toString();
