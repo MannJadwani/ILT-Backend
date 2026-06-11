@@ -33,9 +33,9 @@ app.get('/', async (req, res) => {
 });
 
 
-const getShortMonthName = (fullMonthName) => {
-  return fullMonthName.slice(0, 3);
-};
+// const getShortMonthName = (fullMonthName) => {
+//   return fullMonthName.slice(0, 3);
+// };
 
 function formatDate(date) {
   const year = date.getFullYear();
@@ -2309,14 +2309,14 @@ app.post('/issuers_page_outstanding_data', async (req, res) => {
     const outstandingMap = new Map(outstandingData.map(item => [item.label, item]));
 
     // ─── FIX: Define getShortMonthName (was missing!) ───
-    function getShortMonthName(fullMonthName) {
-      const monthMap = {
-        'January': 'Jan', 'February': 'Feb', 'March': 'Mar', 'April': 'Apr',
-        'May': 'May', 'June': 'Jun', 'July': 'Jul', 'August': 'Aug',
-        'September': 'Sep', 'October': 'Oct', 'November': 'Nov', 'December': 'Dec'
-      };
-      return monthMap[fullMonthName] || fullMonthName;
-    }
+    // function getShortMonthName(fullMonthName) {
+    //   const monthMap = {
+    //     'January': 'Jan', 'February': 'Feb', 'March': 'Mar', 'April': 'Apr',
+    //     'May': 'May', 'June': 'Jun', 'July': 'Jul', 'August': 'Aug',
+    //     'September': 'Sep', 'October': 'Oct', 'November': 'Nov', 'December': 'Dec'
+    //   };
+    //   return monthMap[fullMonthName] || fullMonthName;
+    // }
 
     const formattedData = allMonthRanges.map(({ label }) => {
       const issue = issueMap.get(label);
