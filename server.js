@@ -4684,12 +4684,19 @@ app.post('/arrangers_page_credit_rating_data', async (req, res) => {
       const params = [];
 
       if (rating) {
-        conditions.push(`master_issuer_rating.rating = ?`);
+        conditions.push(`EXISTS (
+          SELECT 1 FROM master_issuer_rating mir2
+          WHERE mir2.issuer_id = ${tableAlias}.id AND mir2.rating = ?
+        )`);
         params.push(rating);
       }
 
       if (creditRatingAgency) {
-        conditions.push(`master_agency.short_name = ?`);
+        conditions.push(`EXISTS (
+          SELECT 1 FROM master_issuer_rating mir2
+          JOIN master_agency mag2 ON mag2.id = mir2.agency_id
+          WHERE mir2.issuer_id = ${tableAlias}.id AND mag2.short_name = ?
+        )`);
         params.push(creditRatingAgency);
       }
 
@@ -4816,7 +4823,6 @@ app.post('/arrangers_page_credit_rating_data', async (req, res) => {
       : '';
 
     /* ---------------- TOTALS (percentage denominator) ---------------- */
-    // Fix: Use consistent JOIN pattern with main query
     const totalRatingQuery = `
       SELECT COUNT(master_issuer_rating.id) AS aggregate
       FROM master_issuer_rating
@@ -4834,54 +4840,89 @@ app.post('/arrangers_page_credit_rating_data', async (req, res) => {
 
     const totalRatingResult = await prisma.$queryRawUnsafe(totalRatingQuery, ...totalRatingParams);
     const totalRatingCount = Number(totalRatingResult[0]?.aggregate) || 0;
-    // Fix: Keep actual total for percentage calc. When 0, all percentages will be 0.
     const totalRatingNo = totalRatingCount || 1;
 
     /* ---------------- MAIN TABLE QUERY ---------------- */
 
-    // Fix: Deterministic color generation using hash of label+rating
-    // Fix: Consistent INNER JOIN for issuer_arranger to match total query
-    // Fix: Added ORDER BY for deterministic results
-    const creditRatingQuery = `
-      SELECT
-        master_agency.short_name AS label,
-        ROUND(
-          (COUNT(master_issuer_rating.rating) / ?) * 100,
-          2
-        ) AS percentage,
-        COUNT(master_issuer_rating.id) AS rating_no,
-        CONCAT(
-          '#',
-          SUBSTRING(
-            LPAD(
-              HEX(
-                MOD(
-                  ABS(CAST(CONV(SUBSTRING(MD5(CONCAT(master_agency.short_name, '-', master_issuer_rating.rating)), 1, 8), 16, 10) AS SIGNED)),
-                  16777215
-                )
+    // Fix: When hasId is false (grouping by agency), we can't select individual rating
+    // because one agency can have multiple ratings. We aggregate ratings with GROUP_CONCAT.
+    // When hasId is true (specific agency selected), we group by rating and show each rating.
+    const creditRatingQuery = hasId
+      ? `
+        SELECT
+          master_agency.short_name AS label,
+          ROUND(
+            (COUNT(master_issuer_rating.rating) / ?) * 100,
+            2
+          ) AS percentage,
+          COUNT(master_issuer_rating.id) AS rating_no,
+          CONCAT(
+            '#',
+            SUBSTRING(
+              LPAD(
+                HEX(
+                  MOD(
+                    ABS(CAST(CONV(SUBSTRING(MD5(CONCAT(master_agency.short_name, '-', master_issuer_rating.rating)), 1, 8), 16, 10) AS SIGNED)),
+                    16777215
+                  )
+                ),
+                6,
+                '0'
               ),
-              6,
-              '0'
-            ),
-            -6
-          )
-        ) AS color,
-        master_issuer_rating.rating
-      FROM master_agency
-      INNER JOIN master_issuer_rating
-        ON master_issuer_rating.agency_id = master_agency.id
-      INNER JOIN master_issuer AS i
-        ON i.id = master_issuer_rating.issuer_id
-      INNER JOIN issuer_arranger
-        ON issuer_arranger.issuer_id = i.id
-      WHERE i.allotment_date BETWEEN ? AND ?
-        ${hasId ? 'AND master_agency.id = ?' : ''}
-        ${filterSql}
-      ${hasId
-        ? 'GROUP BY master_issuer_rating.rating, master_agency.short_name'
-        : 'GROUP BY master_issuer_rating.agency_id, master_agency.short_name'}
-      ORDER BY percentage DESC, rating_no DESC
-    `;
+              -6
+            )
+          ) AS color,
+          master_issuer_rating.rating
+        FROM master_agency
+        INNER JOIN master_issuer_rating
+          ON master_issuer_rating.agency_id = master_agency.id
+        INNER JOIN master_issuer AS i
+          ON i.id = master_issuer_rating.issuer_id
+        INNER JOIN issuer_arranger
+          ON issuer_arranger.issuer_id = i.id
+        WHERE i.allotment_date BETWEEN ? AND ?
+          AND master_agency.id = ?
+          ${filterSql}
+        GROUP BY master_issuer_rating.rating, master_agency.short_name
+        ORDER BY percentage DESC, rating_no DESC
+      `
+      : `
+        SELECT
+          master_agency.short_name AS label,
+          ROUND(
+            (COUNT(master_issuer_rating.rating) / ?) * 100,
+            2
+          ) AS percentage,
+          COUNT(master_issuer_rating.id) AS rating_no,
+          CONCAT(
+            '#',
+            SUBSTRING(
+              LPAD(
+                HEX(
+                  MOD(
+                    ABS(CAST(CONV(SUBSTRING(MD5(master_agency.short_name), 1, 8), 16, 10) AS SIGNED)),
+                    16777215
+                  )
+                ),
+                6,
+                '0'
+              ),
+              -6
+            )
+          ) AS color,
+          GROUP_CONCAT(DISTINCT master_issuer_rating.rating ORDER BY master_issuer_rating.rating ASC SEPARATOR ', ') AS rating
+        FROM master_agency
+        INNER JOIN master_issuer_rating
+          ON master_issuer_rating.agency_id = master_agency.id
+        INNER JOIN master_issuer AS i
+          ON i.id = master_issuer_rating.issuer_id
+        INNER JOIN issuer_arranger
+          ON issuer_arranger.issuer_id = i.id
+        WHERE i.allotment_date BETWEEN ? AND ?
+          ${filterSql}
+        GROUP BY master_agency.id, master_agency.short_name
+        ORDER BY percentage DESC, rating_no DESC
+      `;
 
     const creditRatingParams = [totalRatingNo, cyStart, cyEnd];
     if (hasId) creditRatingParams.push(safeId);
