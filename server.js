@@ -2011,13 +2011,13 @@ app.post('/issuers_page_top_sectors_data', async (req, res) => {
     const orderColumn = rankByCount ? 'issue_no' : 'issue_size';
     const orderDirection = 'DESC';
 
-    // ─── CTE-based query: more efficient, no double subquery, correct dates ───
+    // ─── CTE-based query: FIXED only_full_group_by ───
     const sectorsQuery = `
       WITH 
       cy_data AS (
         SELECT
           mi.business_sector,
-          mbs.description AS sector_name,
+          MAX(mbs.description) AS sector_name,
           ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
           COUNT(DISTINCT mi.isin) AS issue_no
         FROM (
@@ -2034,7 +2034,7 @@ app.post('/issuers_page_top_sectors_data', async (req, res) => {
       py_data AS (
         SELECT
           mi.business_sector,
-          mbs.description AS sector_name,
+          MAX(mbs.description) AS sector_name,
           ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
           COUNT(DISTINCT mi.isin) AS issue_no
         FROM (
