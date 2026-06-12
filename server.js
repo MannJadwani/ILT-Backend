@@ -377,7 +377,7 @@ app.post('/dashboard_agency_rating_data', async (req, res) => {
         ROUND((COUNT(master_issuer_rating.id) / ${totalRatings} * 100), 2) as percentage,
         COUNT(master_issuer_rating.id) as rating_no,
         concat('#', SUBSTRING((lpad(hex(round(rand() * 10000000)), 6, 0)), -6)) as color,
-        master_issuer_rating.rating as name
+        GROUP_CONCAT(DISTINCT master_issuer_rating.rating SEPARATOR ', ') as name
       FROM master_agency
       INNER JOIN master_issuer_rating ON master_issuer_rating.agency_id = master_agency.id
       LEFT JOIN master_issuer as i ON i.id = master_issuer_rating.issuer_id
