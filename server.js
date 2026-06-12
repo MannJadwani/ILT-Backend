@@ -8225,6 +8225,11 @@ app.post('/trustee_page_monthly_detailed_data', async (req, res) => {
 
       ${whereClause}
 
+      GROUP BY i.id, it.trustee_id, mt.short_name, id.issuer_name, i.isin,
+           i.allotment_date, i.maturity_date, i.security_name, i.issue_size,
+           i.face_value, i.issuer_master_id, s.description, mi.description,
+           mstc.description, tf.description, msf.description
+
       ORDER BY id.issuer_name ASC
 
       LIMIT ? OFFSET ?
@@ -10059,16 +10064,30 @@ app.post('/rating_agencies_page_monthly_summary_data', async (req, res) => {
           COALESCE(fd.total_issue_size, 0) AS actual_issue_size
       FROM all_months am
       LEFT JOIN (
-          SELECT
-              MONTH(mi.allotment_date) AS issue_month,
-              COUNT(DISTINCT mi.id) AS no_of_issue,
-              SUM(mi.issue_size) AS total_issue_size
-          FROM master_issuer mi
-          WHERE mi.allotment_date BETWEEN ? AND ?
-          ${filterSql}
-          GROUP BY MONTH(mi.allotment_date)
-      ) fd ON fd.issue_month = am.month_no
-      ORDER BY CAST(am.month_no AS UNSIGNED) ASC
+SELECT
+    MONTH(mi.allotment_date) AS issue_month,
+
+    COUNT(
+        DISTINCT CONCAT(
+          mi.id,
+          '-',
+          COALESCE(mir.id, '')
+        )
+        ) AS no_of_issue,
+
+        SUM(mi.issue_size) AS total_issue_size
+
+        FROM master_issuer mi
+
+        LEFT JOIN master_issuer_rating mir
+            ON mir.issuer_id = mi.id
+
+        WHERE mi.allotment_date BETWEEN ? AND ?
+        ${filterSql}
+
+        GROUP BY MONTH(mi.allotment_date)
+        ) fd ON fd.issue_month = am.month_no
+        ORDER BY CAST(am.month_no AS UNSIGNED) ASC
     `;
 
     const result = await prisma.$queryRawUnsafe(query, ...params);
@@ -10197,7 +10216,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
     }
 
     if (rating) {
-      conditions.push(`EXISTS (SELECT 1 FROM master_issuer_rating mir WHERE mir.issuer_id = i.id AND mir.rating LIKE ?)`);
+      conditions.push(`mir.rating LIKE ?`);
       params.push(`%${rating}%`);
     }
 
@@ -10232,7 +10251,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
     }
 
     if (creditRatingAgency) {
-      conditions.push(`EXISTS (SELECT 1 FROM master_issuer_rating mir2 JOIN master_agency mag2 ON mag2.id = mir2.agency_id WHERE mir2.issuer_id = i.id AND mag2.short_name = ?)`);
+      conditions.push(`mag.short_name = ?`);
       params.push(creditRatingAgency);
     }
 
@@ -10284,6 +10303,8 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
       SELECT
         i.id AS issuerId,
         i.isin,
+        mag.short_name AS agency_name,
+        mir.rating AS rating_value,
         id.issuer_name,
         i.allotment_date,
         i.maturity_date,
@@ -10297,6 +10318,8 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
         mstc.description AS seniority,
         tf.description AS tax_free,
         msf.description AS secured_flag,
+
+        
 
         (
           SELECT GROUP_CONCAT(DISTINCT icd.coupon_rate SEPARATOR ', ')
@@ -10319,24 +10342,11 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
         ) AS registrar_detail,
 
         (
-          SELECT GROUP_CONCAT(DISTINCT mir.rating SEPARATOR ', ')
-          FROM master_issuer_rating mir
-          WHERE mir.issuer_id = i.id
-        ) AS rating,
-
-        (
           SELECT GROUP_CONCAT(DISTINCT ma.short_name SEPARATOR ', ')
           FROM issuer_arranger ia
           JOIN master_arranger ma ON ma.id = ia.arranger_id
           WHERE ia.issuer_id = i.id
         ) AS arranger_name,
-
-        (
-          SELECT GROUP_CONCAT(DISTINCT CONCAT(mag.short_name, ': ', mir.rating) SEPARATOR '; ')
-          FROM master_issuer_rating mir
-          JOIN master_agency mag ON mag.id = mir.agency_id
-          WHERE mir.issuer_id = i.id
-        ) AS agency_name,
 
         (
           SELECT mls.description
@@ -10368,7 +10378,18 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
       LEFT JOIN master_secured_flag AS msf
         ON msf.code = i.secured_flag
 
+      LEFT JOIN master_issuer_rating AS mir
+        ON mir.issuer_id = i.id
+
+      LEFT JOIN master_agency AS mag
+        ON mag.id = mir.agency_id
+
       ${whereClause}
+
+      GROUP BY i.id, mag.short_name, mir.rating, i.isin, id.issuer_name, i.allotment_date, i.maturity_date,
+               i.security_name, i.issue_size, i.face_value, i.issuer_master_id,
+               s.description, mi.description, mstc.description, tf.description,
+               msf.description, mag.short_name, mir.rating
 
       ORDER BY issuer_name ASC
 
@@ -10379,7 +10400,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
     // Count Query
     // -----------------------------------
     const countQuery = `
-      SELECT COUNT(DISTINCT i.id) AS total
+      SELECT COUNT(DISTINCT CONCAT(i.id, '-', COALESCE(mir.id, ''))) AS total
       FROM master_issuer AS i
 
       LEFT JOIN issuer_details AS id
@@ -10399,6 +10420,12 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
 
       LEFT JOIN master_secured_flag AS msf
         ON msf.code = i.secured_flag
+
+      LEFT JOIN master_issuer_rating AS mir
+        ON mir.issuer_id = i.id
+
+      LEFT JOIN master_agency AS mag
+        ON mag.id = mir.agency_id
 
       ${whereClause}
     `;
@@ -10442,7 +10469,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
         couponRate: item?.coupon_rate || '-',
         debentureTrustee: item?.debenture_trustee_name || '-',
         registrar: item?.registrar_detail || '-',
-        rating: item?.rating || '-',
+        rating: item?.rating_value || '-',
         arranger: item?.arranger_name || '-',
         issueSize: item?.issue_size || 0,
         faceValue: item?.face_value || 0,
