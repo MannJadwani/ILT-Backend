@@ -5952,9 +5952,9 @@ app.post('/arrangers_page_monthly_detailed_data', async (req, res) => {
 
     // Fix: Validate dates
     if (!startDate || !endDate) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        error: 'startDate and endDate are required' 
+        error: 'startDate and endDate are required'
       });
     }
 
@@ -5962,9 +5962,9 @@ app.post('/arrangers_page_monthly_detailed_data', async (req, res) => {
     const endDateObj = new Date(endDate);
 
     if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        error: 'Invalid date format' 
+        error: 'Invalid date format'
       });
     }
 
@@ -5975,9 +5975,9 @@ app.post('/arrangers_page_monthly_detailed_data', async (req, res) => {
     // Fix: Validate month if provided
     const safeMonth = month !== "" ? parseInt(month, 10) : null;
     if (safeMonth !== null && (isNaN(safeMonth) || safeMonth < 1 || safeMonth > 12)) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        error: 'month must be between 1 and 12' 
+        error: 'month must be between 1 and 12'
       });
     }
 
@@ -7875,13 +7875,20 @@ app.post('/trustee_page_monthly_summary_data', async (req, res) => {
       SELECT
           am.month_no AS issue_month_no,
           MONTHNAME(STR_TO_DATE(am.month_no, '%m')) AS issue_month,
-          COUNT(DISTINCT mi.isin) AS no_of_issue,
+          COUNT(DISTINCT CONCAT(mi.id, '-', it.trustee_id)) AS no_of_issue
           COALESCE(ROUND(SUM(mi.issue_size) / 10000000, 2), 0) AS issue_size,
           COALESCE(SUM(mi.issue_size), 0) AS actual_issue_size
       FROM all_months am
+      
       LEFT JOIN master_issuer mi
           ON am.month_no = MONTH(mi.allotment_date)
           AND mi.allotment_date BETWEEN ? AND ?
+
+      LEFT JOIN issuer_trustee it
+          ON it.issuer_id = mi.id
+
+      LEFT JOIN master_trustee mt
+          ON mt.id = it.trustee_id
       ${whereClause}
       GROUP BY am.month_no
       ORDER BY CAST(am.month_no AS UNSIGNED) ASC
