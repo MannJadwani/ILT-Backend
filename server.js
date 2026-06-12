@@ -362,124 +362,44 @@ app.post('/dashboard_agency_rating_data', async (req, res) => {
   try {
     const { startDate, endDate } = req.body;
 
-    // Basic validation
     if (!startDate || !endDate) {
       return res.status(400).json({ error: 'startDate and endDate are required' });
     }
 
-    // Step 1: Fetch the dynamic total count of ratings first
-    const totalRatingsQuery = `SELECT count(*) as aggregate FROM master_issuer_rating`;
-    const totalRatingsResult = await prisma.$queryRawUnsafe(totalRatingsQuery);
-    // Use the dynamic count, with a fallback of 1 to prevent division by zero
-    const totalRatings = totalRatingsResult[0]?.aggregate || 1;
+    // Dynamic count for percentage calculation
+    const totalRatingsResult = await prisma.$queryRawUnsafe(`SELECT count(*) as aggregate FROM master_issuer_rating`);
+    const totalRatings = Number(totalRatingsResult[0]?.aggregate) || 1;
 
-    // Step 2: Define all five SQL queries using the dynamic total and date range
-    const issuersQuery = `
+    // Helper function to build the query to reduce code repetition
+    const buildQuery = (joinClause = '') => `
       SELECT
         master_agency.short_name as label,
-        ROUND((COUNT(master_issuer_rating.rating) / ${totalRatings} * 100), 2) as percentage,
+        ROUND((COUNT(master_issuer_rating.id) / ${totalRatings} * 100), 2) as percentage,
         COUNT(master_issuer_rating.id) as rating_no,
         concat('#', SUBSTRING((lpad(hex(round(rand() * 10000000)), 6, 0)), -6)) as color,
         master_issuer_rating.rating as name
       FROM master_agency
       INNER JOIN master_issuer_rating ON master_issuer_rating.agency_id = master_agency.id
       LEFT JOIN master_issuer as i ON i.id = master_issuer_rating.issuer_id
+      ${joinClause}
       WHERE i.allotment_date BETWEEN '${startDate}' AND '${endDate}'
-      GROUP BY master_issuer_rating.agency_id, master_agency.short_name, master_issuer_rating.rating
+      GROUP BY master_agency.short_name
     `;
 
-    const arrangersQuery = `
-      SELECT
-        master_agency.short_name as label,
-        ROUND((COUNT(master_issuer_rating.rating) / ${totalRatings} * 100), 2) as percentage,
-        COUNT(master_issuer_rating.id) as rating_no,
-        concat('#', SUBSTRING((lpad(hex(round(rand() * 10000000)), 6, 0)), -6)) as color,
-        master_issuer_rating.rating as name
-      FROM master_agency
-      INNER JOIN master_issuer_rating ON master_issuer_rating.agency_id = master_agency.id
-      LEFT JOIN master_issuer as i ON i.id = master_issuer_rating.issuer_id
-      INNER JOIN issuer_arranger ON issuer_arranger.issuer_id = i.id
-      WHERE i.allotment_date BETWEEN '${startDate}' AND '${endDate}'
-      GROUP BY master_issuer_rating.agency_id, master_agency.short_name, master_issuer_rating.rating
-    `;
+    // Execute queries concurrently
+    const [issuers, arrangers, trustees, registrars, ratingAgencies] = await Promise.all([
+      prisma.$queryRawUnsafe(buildQuery()), // Base query
+      prisma.$queryRawUnsafe(buildQuery('INNER JOIN issuer_arranger ON issuer_arranger.issuer_id = i.id')),
+      prisma.$queryRawUnsafe(buildQuery('INNER JOIN issuer_trustee ON issuer_trustee.issuer_id = i.id')),
+      prisma.$queryRawUnsafe(buildQuery('INNER JOIN issuer_registrar ON issuer_registrar.issuer_id = i.id')),
+      prisma.$queryRawUnsafe(buildQuery())  // Duplicate of base query as requested
+    ]);
 
-    const trusteeQuery = `
-      SELECT
-        master_agency.short_name as label,
-        ROUND((COUNT(master_issuer_rating.rating) / ${totalRatings} * 100), 2) as percentage,
-        COUNT(master_issuer_rating.id) as rating_no,
-        concat('#', SUBSTRING((lpad(hex(round(rand() * 10000000)), 6, 0)), -6)) as color,
-        master_issuer_rating.rating as name
-      FROM master_agency
-      INNER JOIN master_issuer_rating ON master_issuer_rating.agency_id = master_agency.id
-      LEFT JOIN master_issuer as i ON i.id = master_issuer_rating.issuer_id
-      INNER JOIN issuer_trustee ON issuer_trustee.issuer_id = i.id
-      WHERE i.allotment_date BETWEEN '${startDate}' AND '${endDate}'
-      GROUP BY master_issuer_rating.agency_id, master_agency.short_name, master_issuer_rating.rating
-    `;
-
-    const registrarQuery = `
-      SELECT
-        master_agency.short_name as label,
-        ROUND((COUNT(master_issuer_rating.rating) / ${totalRatings} * 100), 2) as percentage,
-        COUNT(master_issuer_rating.id) as rating_no,
-        concat('#', SUBSTRING((lpad(hex(round(rand() * 10000000)), 6, 0)), -6)) as color,
-        master_issuer_rating.rating as name
-      FROM master_agency
-      INNER JOIN master_issuer_rating ON master_issuer_rating.agency_id = master_agency.id
-      LEFT JOIN master_issuer as i ON i.id = master_issuer_rating.issuer_id
-      INNER JOIN issuer_registrar ON issuer_registrar.issuer_id = i.id
-      WHERE i.allotment_date BETWEEN '${startDate}' AND '${endDate}'
-      GROUP BY master_issuer_rating.agency_id, master_agency.short_name, master_issuer_rating.rating
-    `;
-
-    // The fifth query was identical to the first, so we'll run it as provided.
-    const agencyQuery = `
-      SELECT
-        master_agency.short_name as label,
-        ROUND((COUNT(master_issuer_rating.rating) / ${totalRatings} * 100), 2) as percentage,
-        COUNT(master_issuer_rating.id) as rating_no,
-        concat('#', SUBSTRING((lpad(hex(round(rand() * 10000000)), 6, 0)), -6)) as color,
-        master_issuer_rating.rating as name
-      FROM master_agency
-      INNER JOIN master_issuer_rating ON master_issuer_rating.agency_id = master_agency.id
-      LEFT JOIN master_issuer as i ON i.id = master_issuer_rating.issuer_id
-      WHERE i.allotment_date BETWEEN '${startDate}' AND '${endDate}'
-      GROUP BY master_issuer_rating.agency_id, master_agency.short_name, master_issuer_rating.rating
-    `;
-
-    // Step 3: Create an array of promises and execute them concurrently
-    const queries = [
-      prisma.$queryRawUnsafe(issuersQuery),
-      prisma.$queryRawUnsafe(arrangersQuery),
-      prisma.$queryRawUnsafe(trusteeQuery),
-      prisma.$queryRawUnsafe(registrarQuery),
-      prisma.$queryRawUnsafe(agencyQuery),
-    ];
-
-    const [
-      issuers,
-      arrangers,
-      trustees,
-      registrars,
-      ratingAgencies
-    ] = await Promise.all(queries);
-
-    // Step 4: Construct the final response object
-    const result = {
-      issuers,
-      arrangers,
-      trustees,
-      registrars,
-      ratingAgencies
-    };
-
-    // Step 5: Send the successful response
-    res.status(200).json(result);
+    res.status(200).json({ issuers, arrangers, trustees, registrars, ratingAgencies });
 
   } catch (error) {
-    console.error('Error fetching dashboard agency rating share data:', error);
-    res.status(500).json({ error: 'Failed to fetch dashboard agency rating share data', message: error.message });
+    console.error('Error fetching dashboard data:', error);
+    res.status(500).json({ error: 'Failed to fetch dashboard data', message: error.message });
   }
 });
 
