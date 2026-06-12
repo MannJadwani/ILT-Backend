@@ -12295,7 +12295,7 @@ app.post('/registrar_page_monthly_summary_data', async (req, res) => {
           MONTHNAME(STR_TO_DATE(am.month_no, '%m'))
 
       ORDER BY
-          am.id ASC
+          am.month_no ASC
     `;
 
     const result = await prisma.$queryRawUnsafe(query, ...params);
