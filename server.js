@@ -7875,7 +7875,7 @@ app.post('/trustee_page_monthly_summary_data', async (req, res) => {
       SELECT
           am.month_no AS issue_month_no,
           MONTHNAME(STR_TO_DATE(am.month_no, '%m')) AS issue_month,
-          COUNT(DISTINCT CONCAT(mi.id, '-', it.trustee_id)) AS no_of_issue
+          COUNT(DISTINCT CONCAT(mi.id, '-', it.trustee_id)) AS no_of_issue,
           COALESCE(ROUND(SUM(mi.issue_size) / 10000000, 2), 0) AS issue_size,
           COALESCE(SUM(mi.issue_size), 0) AS actual_issue_size
       FROM all_months am
