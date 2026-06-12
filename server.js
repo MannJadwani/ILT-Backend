@@ -7779,15 +7779,11 @@ app.post('/trustee_page_monthly_summary_data', async (req, res) => {
     }
 
     /* ---------------------------------
-       BUILD DYNAMIC CONDITIONS
+       BUILD DYNAMIC CONDITIONS (filters only, no date)
     --------------------------------- */
 
     const conditions = [];
     const params = [];
-
-    // Base date filter
-    conditions.push(`mi.allotment_date BETWEEN ? AND ?`);
-    params.push(sqlStartDate, sqlEndDate);
 
     // Rating (use EXISTS to avoid join explosion)
     if (rating) {
@@ -7867,10 +7863,9 @@ app.post('/trustee_page_monthly_summary_data', async (req, res) => {
       params.push(`%${trustee}%`);
     }
 
-    const whereClause =
-      conditions.length > 0
-        ? `WHERE ${conditions.join(' AND ')}`
-        : '';
+    const whereClause = conditions.length > 0
+      ? `WHERE ${conditions.join(' AND ')}`
+      : '';
 
     /* ---------------------------------
        MAIN QUERY
@@ -7879,37 +7874,19 @@ app.post('/trustee_page_monthly_summary_data', async (req, res) => {
     const query = `
       SELECT
           am.month_no AS issue_month_no,
-
-          MONTHNAME(
-              STR_TO_DATE(am.month_no, '%m')
-          ) AS issue_month,
-
+          MONTHNAME(STR_TO_DATE(am.month_no, '%m')) AS issue_month,
           COUNT(DISTINCT mi.isin) AS no_of_issue,
-
-          IF(
-              SUM(mi.issue_size) > 0,
-              ROUND(SUM(mi.issue_size) / 10000000, 2),
-              0
-          ) AS issue_size,
-
-          SUM(mi.issue_size) AS actual_issue_size
-
+          COALESCE(ROUND(SUM(mi.issue_size) / 10000000, 2), 0) AS issue_size,
+          COALESCE(SUM(mi.issue_size), 0) AS actual_issue_size
       FROM all_months am
-
       LEFT JOIN master_issuer mi
           ON am.month_no = MONTH(mi.allotment_date)
           AND mi.allotment_date BETWEEN ? AND ?
-
       ${whereClause}
-
-      GROUP BY
-          am.month_no
-
-      ORDER BY
-          CAST(am.month_no AS UNSIGNED) ASC
+      GROUP BY am.month_no
+      ORDER BY CAST(am.month_no AS UNSIGNED) ASC
     `;
 
-    // Note: We push the date params again for the LEFT JOIN condition
     const queryParams = [sqlStartDate, sqlEndDate, ...params];
 
     const result = await prisma.$queryRawUnsafe(query, ...queryParams);
