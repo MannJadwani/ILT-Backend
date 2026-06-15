@@ -1409,11 +1409,11 @@ app.post('/analysisPage_entity_ranking_data', async (req, res) => {
     }
 
     const totalIssueSize = await prisma.$queryRawUnsafe(`
-        select sum(issue_size) as aggregate from master_issuer where allotment_date between '${startDate}' AND '${endDate}'
+        select sum(issue_size) as aggregate from master_issuer where allotment_date between '${startDate}' AND '${endDate}' AND (is_visible = 1)
       `)
 
     const totalIssueSizePrevYear = await prisma.$queryRawUnsafe(`
-        select sum(issue_size) as aggregate from master_issuer where allotment_date between '${formatDate(pyStartDate)}' AND '${formatDate(pyEndDate)}'
+        select sum(issue_size) as aggregate from master_issuer where allotment_date between '${formatDate(pyStartDate)}' AND '${formatDate(pyEndDate)}' AND (is_visible = 1)
       `)
 
     const query = `
