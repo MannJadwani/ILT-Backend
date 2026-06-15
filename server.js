@@ -1450,7 +1450,7 @@ app.post('/analysisPage_entity_ranking_data', async (req, res) => {
           ) AS arr_rank
         FROM master_issuer
         ${config.joins}
-        WHERE allotment_date BETWEEN '${startDate}' AND '${endDate}'
+        WHERE allotment_date BETWEEN '${startDate}' AND '${endDate}' AND (is_visible = 1)
         GROUP BY ${config.groupBy}
         ORDER BY arr_rank
         LIMIT 0, ${limit}
@@ -1468,8 +1468,7 @@ app.post('/analysisPage_entity_ranking_data', async (req, res) => {
           ) AS arr_rank
         FROM master_issuer
         ${config.joins}
-        WHERE allotment_date BETWEEN '${formatDate(pyStartDate)}'
-        AND '${formatDate(pyEndDate)}'
+        WHERE allotment_date BETWEEN '${formatDate(pyStartDate)}' AND '${formatDate(pyEndDate)}' AND (is_visible = 1)
         GROUP BY ${config.groupBy}
       ) AS table2
       ON table1.id = table2.id
