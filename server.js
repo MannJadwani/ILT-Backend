@@ -1416,6 +1416,8 @@ app.post('/analysisPage_entity_ranking_data', async (req, res) => {
         select sum(issue_size) as aggregate from master_issuer where allotment_date between '${formatDate(pyStartDate)}' AND '${formatDate(pyEndDate)}' AND (is_visible = 1)
       `)
 
+      
+
     const query = `
       SELECT
         table1.id,
