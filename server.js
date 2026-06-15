@@ -3935,28 +3935,28 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
     const totalIssueSize = await prisma.$queryRawUnsafe(`
       SELECT SUM(mi.issue_size) AS aggregate
       FROM master_issuer mi
-      WHERE mi.allotment_date BETWEEN ? AND ?
+      WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${filterSql}
     `, cyStart, cyEnd, ...filterParams);
 
     const totalIssueSizePrevYear = await prisma.$queryRawUnsafe(`
       SELECT SUM(mi.issue_size) AS aggregate
       FROM master_issuer mi
-      WHERE mi.allotment_date BETWEEN ? AND ?
+      WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${filterSql}
     `, pyStart, pyEnd, ...filterParams);
 
     const totalIssuesCountCurrYear = await prisma.$queryRawUnsafe(`
       SELECT COUNT(*) AS aggregate
       FROM master_issuer mi
-      WHERE mi.allotment_date BETWEEN ? AND ?
+      WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${filterSql}
     `, cyStart, cyEnd, ...filterParams);
 
     const totalIssuesCountPrevYear = await prisma.$queryRawUnsafe(`
       SELECT COUNT(*) AS aggregate
       FROM master_issuer mi
-      WHERE mi.allotment_date BETWEEN ? AND ?
+      WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${filterSql}
     `, pyStart, pyEnd, ...filterParams);
 
@@ -4017,7 +4017,7 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
           FROM master_issuer mi
           JOIN issuer_arranger ia ON ia.issuer_id = mi.id
           JOIN master_arranger ma ON ma.id = ia.arranger_id
-          WHERE mi.allotment_date BETWEEN ? AND ?
+          WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
           ${filterSql}
           GROUP BY ia.arranger_id, ma.id, ma.short_name
           ORDER BY arr_rank
@@ -4034,7 +4034,7 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
           FROM master_issuer mi
           JOIN issuer_arranger ia ON ia.issuer_id = mi.id
           JOIN master_arranger ma ON ma.id = ia.arranger_id
-          WHERE mi.allotment_date BETWEEN ? AND ?
+          WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
           ${filterSql}
           GROUP BY ia.arranger_id, ma.id, ma.short_name
         ) t2 ON t1.id = t2.id
@@ -4081,7 +4081,7 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
           FROM master_issuer mi
           JOIN issuer_arranger ia ON ia.issuer_id = mi.id
           JOIN master_arranger ma ON ma.id = ia.arranger_id
-          WHERE mi.allotment_date BETWEEN ? AND ?
+          WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
           ${filterSql}
           GROUP BY ia.arranger_id, ma.id, ma.short_name
           ORDER BY arr_rank
@@ -4098,7 +4098,7 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
           FROM master_issuer mi
           JOIN issuer_arranger ia ON ia.issuer_id = mi.id
           JOIN master_arranger ma ON ma.id = ia.arranger_id
-          WHERE mi.allotment_date BETWEEN ? AND ?
+          WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
           ${filterSql}
           GROUP BY ia.arranger_id, ma.id, ma.short_name
         ) t2 ON t1.id = t2.id
@@ -4123,7 +4123,7 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
       SELECT COUNT(DISTINCT ia.arranger_id) AS total
       FROM master_issuer mi
       JOIN issuer_arranger ia ON ia.issuer_id = mi.id
-      WHERE mi.allotment_date BETWEEN ? AND ?
+      WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${filterSql}
     `, cyStart, cyEnd, ...filterParams);
 
@@ -4148,7 +4148,7 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
           FROM master_issuer mi
           JOIN issuer_arranger ia ON ia.issuer_id = mi.id
           JOIN master_arranger ma ON ma.id = ia.arranger_id
-          WHERE mi.allotment_date BETWEEN ? AND ?
+          WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
           ${filterSql}
           GROUP BY ia.arranger_id, ma.id, ma.short_name
           ORDER BY arr_rank
@@ -4164,7 +4164,7 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
           FROM master_issuer mi
           JOIN issuer_arranger ia ON ia.issuer_id = mi.id
           JOIN master_arranger ma ON ma.id = ia.arranger_id
-          WHERE mi.allotment_date BETWEEN ? AND ?
+          WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
           ${filterSql}
           GROUP BY ia.arranger_id, ma.id, ma.short_name
           ORDER BY arr_rank
@@ -4183,7 +4183,7 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
       JOIN issuer_arranger ia ON ia.arranger_id = r.arranger_id
       JOIN master_issuer mi ON mi.id = ia.issuer_id
       JOIN master_business_sector mbs ON mi.business_sector = mbs.code
-      WHERE mi.allotment_date BETWEEN ? AND ?
+      WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${filterSql}
       GROUP BY
         r.arranger_id,
@@ -4444,7 +4444,7 @@ app.post('/arrangers_page_credit_rating_data', async (req, res) => {
       INNER JOIN master_issuer i ON i.id = master_issuer_rating.issuer_id
       INNER JOIN issuer_arranger ON issuer_arranger.issuer_id = i.id
       INNER JOIN master_agency ON master_agency.id = master_issuer_rating.agency_id
-      WHERE i.allotment_date BETWEEN ? AND ?
+      WHERE i.allotment_date BETWEEN ? AND ? AND (i.is_visible = 1)
         ${hasId ? 'AND master_agency.id = ?' : ''}
         ${filterSql}
     `;
@@ -4495,7 +4495,7 @@ app.post('/arrangers_page_credit_rating_data', async (req, res) => {
           ON i.id = master_issuer_rating.issuer_id
         INNER JOIN issuer_arranger
           ON issuer_arranger.issuer_id = i.id
-        WHERE i.allotment_date BETWEEN ? AND ?
+        WHERE i.allotment_date BETWEEN ? AND ? AND (i.is_visible = 1)
           AND master_agency.id = ?
           ${filterSql}
         GROUP BY master_issuer_rating.rating, master_agency.short_name
@@ -4533,7 +4533,7 @@ app.post('/arrangers_page_credit_rating_data', async (req, res) => {
           ON i.id = master_issuer_rating.issuer_id
         INNER JOIN issuer_arranger
           ON issuer_arranger.issuer_id = i.id
-        WHERE i.allotment_date BETWEEN ? AND ?
+        WHERE i.allotment_date BETWEEN ? AND ? AND (i.is_visible = 1)
           ${filterSql}
         GROUP BY master_agency.id, master_agency.short_name
         ORDER BY percentage DESC, rating_no DESC
@@ -4944,7 +4944,7 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
     const conditions = [];
     const params = [];
 
-    conditions.push(`mi.allotment_date BETWEEN ? AND ?`);
+    conditions.push(`mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)`);
     params.push(startDate, endDate);
 
     // Fix: Use EXISTS for arranger check to avoid JOIN duplication issues
@@ -5329,7 +5329,7 @@ app.post('/arranger_page_monthly_summary_data', async (req, res) => {
     const params = [];
 
     // Base date filter
-    conditions.push(`mi.allotment_date BETWEEN ? AND ?`);
+    conditions.push(`mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)`);
     params.push(startDate, endDate);
 
     // Fix: Use EXISTS subqueries for filters to prevent JOIN duplication
@@ -5612,7 +5612,7 @@ app.post('/arrangers_page_monthly_detailed_data', async (req, res) => {
     const params = [];
 
     // Date Range
-    conditions.push(`i.allotment_date BETWEEN ? AND ?`);
+    conditions.push(`i.allotment_date BETWEEN ? AND ? AND (i.is_visible = 1)`);
     params.push(`${startDate} 00:00:00`, `${endDate} 23:59:59`);
 
     // Month Filter
@@ -6151,7 +6151,8 @@ app.post('/arranger_top_participants_details', async (req, res) => {
           ON ia.arranger_id = ma.id
 
       WHERE ia.arranger_id = ?
-        AND i.allotment_date BETWEEN ? AND ?
+        AND i.allotment_date BETWEEN ? AND ? 
+        AND i.is_visible = 1
 
       GROUP BY
           i.id,
