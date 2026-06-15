@@ -3284,7 +3284,7 @@ app.post('/issuer_page_monthly_summary_data', async (req, res) => {
     const conditions = [];
     const params = [];
 
-    conditions.push(`mi.allotment_date BETWEEN ? AND ?`);
+    conditions.push(`mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)`);
     params.push(cyStart, cyEnd);
 
     if (rating) {
