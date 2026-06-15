@@ -2266,8 +2266,8 @@ app.get('/issuers_page_current_year_debt_redemption_data', async (req, res) => {
     const now = new Date();
     const nextYear = getUpcomingMarch31(now);
 
-    // const startStr = formatDateForSQL(now);
-    const startStr = '2026-06-15 00:00:00'; // Hardcoded for testing
+    const startStr = formatDateForSQL(now);
+    // const startStr = '2026-06-15 00:00:00'; // Hardcoded for testing
     const endStr = formatDateForSQL(nextYear);
 
     console.log('Current Year Redemption Data:', {startStr, endStr});
@@ -2286,16 +2286,6 @@ app.get('/issuers_page_current_year_debt_redemption_data', async (req, res) => {
       GROUP BY YEAR(maturity_date), MONTH(maturity_date), MONTHNAME(maturity_date)
       ORDER BY YEAR(maturity_date) ASC, MONTH(maturity_date) ASC
     `, startStr, endStr);
-
-    // ─── FIX: Clean and format the result ───
-    const formattedData = redemptionData.map((item) => ({
-      month: item.month,
-      monthShort: getShortMonthName(item.label),
-      label: item.label,
-      year: item.year,
-      issueSize: Number(item.issue_size) || 0,
-      isinCount: Number(item.isin_count) || 0
-    }));
 
     res.status(200).json(redemptionData);
   } catch (error) {
@@ -13020,10 +13010,7 @@ function formatDateForSQL(date) {
   const year = date.getUTCFullYear();
   const month = String(date.getUTCMonth() + 1).padStart(2, '0');
   const day = String(date.getUTCDate()).padStart(2, '0');
-  const hours = String(date.getUTCHours()).padStart(2, '0');
-  const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-  const seconds = String(date.getUTCSeconds()).padStart(2, '0');
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  return `${year}-${month}-${day}`;
 }
 
 function generateColor(str) {
