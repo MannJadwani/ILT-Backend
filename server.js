@@ -1416,7 +1416,7 @@ app.post('/analysisPage_entity_ranking_data', async (req, res) => {
         select sum(issue_size) as aggregate from master_issuer where allotment_date between '${formatDate(pyStartDate)}' AND '${formatDate(pyEndDate)}' AND (is_visible = 1)
       `)
 
-      
+
 
     const query = `
       SELECT
@@ -1546,7 +1546,7 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
     const filterParams = [];
 
     // Date range is always first two params for each period
-    const dateConditions = `master_issuer.allotment_date BETWEEN ? AND ?`;
+    const dateConditions = `master_issuer.allotment_date BETWEEN ? AND ? AND (is_visible = 1)`;
 
     if (issuerName) {
       conditions.push(`issuer_details.issuer_name LIKE ?`);
@@ -1945,7 +1945,7 @@ app.post('/issuers_page_top_sectors_data', async (req, res) => {
           SELECT DISTINCT master_issuer.id, master_issuer.business_sector, master_issuer.isin, master_issuer.issue_size
           FROM master_issuer
           ${baseJoins}
-          WHERE master_issuer.allotment_date BETWEEN ? AND ? ${filterClause}
+          WHERE master_issuer.allotment_date BETWEEN ? AND ? AND (is_visible = 1) ${filterClause}
         ) AS mi
         JOIN master_business_sector mbs ON mi.business_sector = mbs.code
         GROUP BY mi.business_sector
@@ -1962,7 +1962,7 @@ app.post('/issuers_page_top_sectors_data', async (req, res) => {
           SELECT DISTINCT master_issuer.id, master_issuer.business_sector, master_issuer.isin, master_issuer.issue_size
           FROM master_issuer
           ${baseJoins}
-          WHERE master_issuer.allotment_date BETWEEN ? AND ? ${filterClause}
+          WHERE master_issuer.allotment_date BETWEEN ? AND ? AND (is_visible = 1) ${filterClause}
         ) AS mi
         JOIN master_business_sector mbs ON mi.business_sector = mbs.code
         GROUP BY mi.business_sector
@@ -2148,7 +2148,7 @@ app.post('/issuers_page_outstanding_data', async (req, res) => {
         SELECT DISTINCT master_issuer.id, master_issuer.allotment_date, master_issuer.isin, master_issuer.issue_size
         FROM master_issuer
         ${baseJoins}
-        WHERE master_issuer.allotment_date BETWEEN ? AND ?${filterClause}
+        WHERE master_issuer.allotment_date BETWEEN ? AND ? AND (is_visible = 1) ${filterClause}
       ) AS mi
       GROUP BY month, label
       ORDER BY month ASC
@@ -2165,7 +2165,7 @@ app.post('/issuers_page_outstanding_data', async (req, res) => {
         SELECT DISTINCT master_issuer.id, master_issuer.maturity_date, master_issuer.isin, master_issuer.issue_size
         FROM master_issuer
         ${baseJoins}
-        WHERE master_issuer.maturity_date BETWEEN ? AND ?${filterClause}
+        WHERE master_issuer.maturity_date BETWEEN ? AND ? AND (is_visible = 1) ${filterClause}
       ) AS mi
       GROUP BY month, label
       ORDER BY month ASC
@@ -2210,7 +2210,7 @@ app.post('/issuers_page_outstanding_data', async (req, res) => {
           SELECT DISTINCT master_issuer.id, master_issuer.issue_size
           FROM master_issuer
           ${baseJoins}
-          WHERE master_issuer.allotment_date <= ?
+          WHERE master_issuer.allotment_date <= ?  AND (is_visible = 1)
             AND (master_issuer.maturity_date > ? OR master_issuer.maturity_date IS NULL)
             AND master_issuer.security_status = 1${filterClause}
         ) AS mi
@@ -2277,7 +2277,7 @@ app.get('/issuers_page_current_year_debt_redemption_data', async (req, res) => {
         ROUND(SUM(issue_size) / 10000000, 2) AS issue_size,
         COUNT(DISTINCT isin) AS isin_count
       FROM master_issuer
-      WHERE maturity_date BETWEEN ? AND ?
+      WHERE maturity_date BETWEEN ? AND ? AND (is_visible = 1)
       GROUP BY YEAR(maturity_date), MONTH(maturity_date), MONTHNAME(maturity_date)
       ORDER BY YEAR(maturity_date) ASC, MONTH(maturity_date) ASC
     `, startStr, endStr);
@@ -2313,7 +2313,7 @@ app.get('/issuers_page_next_year_redemption_data', async (req, res) => {
         ROUND(SUM(issue_size) / 10000000, 2) AS issue_size,
         COUNT(DISTINCT isin) AS isin_count
       FROM master_issuer
-      WHERE maturity_date BETWEEN ? AND ?
+      WHERE maturity_date BETWEEN ? AND ? AND (is_visible = 1)
       GROUP BY YEAR(maturity_date), MONTH(maturity_date), MONTHNAME(maturity_date)
       ORDER BY YEAR(maturity_date) ASC, MONTH(maturity_date) ASC
     `, start, end);
@@ -2384,7 +2384,7 @@ app.post('/issuers_page_agency_rating_data', async (req, res) => {
     const conditions = [];
     const params = [];
 
-    conditions.push(`i.allotment_date BETWEEN ? AND ?`);
+    conditions.push(`i.allotment_date BETWEEN ? AND ?  AND (is_visible = 1)`);
     params.push(cyStart, cyEnd);
 
     if (issuerName) {
