@@ -1159,143 +1159,7 @@ GROUP BY
   }
 });
 
-app.post('/debt_redemption_specific_month_data', async (req, res) => {
-  try {
-    const { startDate, endDate, limit = 25, offset = 0 } = req.body;
 
-    const countQuery = `
-    SELECT COUNT(*) AS aggregate
-FROM (
-    SELECT
-        i.id AS issuerId,
-        i.isin,
-        id.issuer_name,
-        i.allotment_date,
-        icd.coupon_rate,
-        mt.short_name AS debenture_trustee_name,
-        mr.short_name AS registrar_detail,
-        i.maturity_date,
-        GROUP_CONCAT(mir.rating) AS rating,
-        ma.short_name AS arranger_name,
-        i.security_name,
-        s.description AS security_type,
-        mi.description AS mode_issue,
-        i.issue_size,
-        i.face_value,
-        GROUP_CONCAT(mag.short_name) AS agency_name,
-        mstc.description AS seniority,
-        tf.description AS tax_free,
-        msf.description AS secured_flag,
-        (
-            SELECT description
-            FROM master_issuer_stock_exchange AS mise
-            LEFT JOIN master_listing_status AS mls
-                ON mls.code = mise.listing_status
-            WHERE issuer_id = i.id
-            ORDER BY listing_status
-            LIMIT 1
-        ) AS listing_status,
-        i.issuer_master_id
-    FROM all_months
-    INNER JOIN master_issuer AS i
-        ON all_months.month_no = MONTH(i.allotment_date)
-    LEFT JOIN issuer_details AS id
-        ON i.issuer_master_id = id.id
-    LEFT JOIN master_security_type AS s
-        ON i.security_class = s.code
-    LEFT JOIN master_mode_issue AS mi
-        ON i.mode_issue = mi.code
-    LEFT JOIN issuer_coupon_details AS icd
-        ON i.id = icd.issuer_id
-    LEFT JOIN master_seniority_tier_classification AS mstc
-        ON mstc.code = i.seniority
-    LEFT JOIN master_tax_free AS tf
-        ON tf.code = i.tax_free
-    LEFT JOIN master_secured_flag AS msf
-        ON msf.code = i.secured_flag
-    LEFT JOIN issuer_arranger AS ia
-        ON i.id = ia.issuer_id
-    LEFT JOIN master_arranger AS ma
-        ON ia.arranger_id = ma.id
-    LEFT JOIN issuer_trustee AS it
-        ON i.id = it.issuer_id
-    LEFT JOIN master_trustee AS mt
-        ON it.trustee_id = mt.id
-    LEFT JOIN issuer_registrar AS ir1
-        ON i.id = ir1.issuer_id
-    LEFT JOIN master_registrar AS mr
-        ON ir1.registrar_id = mr.id
-    LEFT JOIN master_issuer_rating AS mir
-        ON i.id = mir.issuer_id
-    LEFT JOIN master_agency AS mag
-        ON mag.id = mir.agency_id
-    WHERE
-        i.maturity_date BETWEEN '${startDate}' AND '${endDate}' AND (is_visible = 1)
-        AND isin LIKE '%%'
-    GROUP BY
-        i.isin
-) AS aggregate_table;`
-
-    const count = await prisma.$queryRawUnsafe(countQuery);
-
-    const monthRedemptionData = await prisma.$queryRawUnsafe(`     
-        SELECT 
-            i.id AS id,
-            i.isin,
-            id.issuer_name AS issuerName,
-            i.allotment_date AS allotmentDate,
-            icd.coupon_rate AS couponRate,
-            mt.short_name AS debentureTrustee,
-            mr.short_name AS registrar,
-            i.maturity_date AS maturityDate,
-            GROUP_CONCAT(mir.rating) AS creditRating,
-            ma.short_name AS arranger,
-            i.security_name AS securityName,
-            s.description AS securityType ,
-            mi.description AS modeOfIssue,
-            i.issue_size AS issueSize,
-            i.face_value AS faceValue,
-            GROUP_CONCAT(mag.short_name) AS creditRatingAgency,
-            mstc.description AS seniority,
-            tf.description AS taxFree,
-            msf.description AS securedFlag,
-            (
-                SELECT description
-                FROM master_issuer_stock_exchange AS mise
-                LEFT JOIN master_listing_status AS mls ON mls.code = mise.listing_status
-                WHERE issuer_id = i.id
-                ORDER BY listing_status
-                LIMIT 1
-            ) AS listingStatus
-        FROM all_months
-        INNER JOIN master_issuer AS i ON all_months.month_no = MONTH(i.allotment_date)
-        LEFT JOIN issuer_details AS id ON i.issuer_master_id = id.id
-        LEFT JOIN master_security_type AS s ON i.security_class = s.code
-        LEFT JOIN master_mode_issue AS mi ON i.mode_issue = mi.code
-        LEFT JOIN issuer_coupon_details AS icd ON i.id = icd.issuer_id
-        LEFT JOIN master_seniority_tier_classification AS mstc ON mstc.code = i.seniority
-        LEFT JOIN master_tax_free AS tf ON tf.code = i.tax_free
-        LEFT JOIN master_secured_flag AS msf ON msf.code = i.secured_flag
-        LEFT JOIN issuer_arranger AS ia ON i.id = ia.issuer_id
-        LEFT JOIN master_arranger AS ma ON ia.arranger_id = ma.id
-        LEFT JOIN issuer_trustee AS it ON i.id = it.issuer_id
-        LEFT JOIN master_trustee AS mt ON it.trustee_id = mt.id
-        LEFT JOIN issuer_registrar AS ir1 ON i.id = ir1.issuer_id
-        LEFT JOIN master_registrar AS mr ON ir1.registrar_id = mr.id
-        LEFT JOIN master_issuer_rating AS mir ON i.id = mir.issuer_id
-        LEFT JOIN master_agency AS mag ON mag.id = mir.agency_id
-        WHERE i.maturity_date BETWEEN '${startDate}' AND '${endDate}' AND (is_visible = 1)
-        GROUP BY i.isin
-        ORDER BY issuer_name ASC
-        LIMIT ${limit} OFFSET ${offset};
-        
-      `);
-
-    res.json({ data: monthRedemptionData, total: Number(count[0]?.aggregate) || 0 });
-  } catch (error) {
-    res.json({ success: false, err: error.message })
-  }
-})
 
 
 app.post('/testing', async (req, res) => {
@@ -2270,7 +2134,6 @@ app.get('/issuers_page_current_year_debt_redemption_data', async (req, res) => {
     // const startStr = '2026-06-15 00:00:00'; // Hardcoded for testing
     const endStr = formatDateForSQL(nextYear);
 
-    console.log('Current Year Redemption Data:', {startStr, endStr});
     
 
     // ─── FIX: Use parameterized query to prevent SQL injection ───
@@ -2939,291 +2802,428 @@ app.post('/issuepage_filterinputs_data', async (req, res) => {
   }
 });
 
-app.post('/specific_month_redemption_data', async (req, res) => {
-  const {
-    startDate = '2026-03-01',
-    endDate = '2026-03-31',
-    limit = 25,
-    offset = 0,
-    issuerName = "",
-    rating = "",
-    registrar = "",
-    arranger = "",
-    seniority = "",
-    taxFree = "",
-    securedFlag = "",
-    sector = "",
-    trustee = "",
-    nature = "",
-    ownershipType = "",
-    creditRatingAgency = "",
-    dealSize = "",
-    listingStatus = ""
-  } = req.body;
-
+app.post('/debt_redemption_specific_month_data', async (req, res) => {
   try {
-    // ─── Validate and sanitize inputs ───
-    const parsedLimit = Math.min(Math.max(parseInt(limit) || 25, 1), 1000);
-    const parsedOffset = Math.max(parseInt(offset) || 0, 0);
+    const { startDate, endDate, limit = 25, offset = 0 } = req.body;
 
+    // ── VALIDATION ──
     if (!startDate || !endDate) {
-      return res.status(400).json({ error: 'startDate, endDate are required' });
+      return res.status(400).json({
+        success: false,
+        err: 'startDate and endDate are required'
+      });
     }
 
-    const currentStartDate = new Date(startDate);
-    const currentEndDate = new Date(endDate);
+    const start = new Date(startDate);
+    const end = new Date(endDate);
 
-    if (isNaN(currentStartDate.getTime()) || isNaN(currentEndDate.getTime())) {
-      return res.status(400).json({ error: 'Invalid date format' });
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return res.status(400).json({
+        success: false,
+        err: 'Invalid date format'
+      });
     }
 
-    if (currentStartDate > currentEndDate) {
-      return res.status(400).json({ error: 'startDate must be before endDate' });
+    if (start > end) {
+      return res.status(400).json({
+        success: false,
+        err: 'startDate must be before or equal to endDate'
+      });
     }
 
-    const cyStart = formatDateForSQL(currentStartDate);
-    const cyEnd = formatDateForSQL(currentEndDate);
+    const parsedLimit = parseInt(limit, 10);
+    const parsedOffset = parseInt(offset, 10);
 
-    // ─── Build dynamic filter conditions ───
-    const conditions = [];
-    const params = [];
-
-    conditions.push(`i.maturity_date BETWEEN ? AND ? AND (is_visible = 1)`);
-    params.push(cyStart, cyEnd);
-
-    if (issuerName) {
-      conditions.push(`id.issuer_name LIKE ?`);
-      params.push(`%${issuerName}%`);
+    if (isNaN(parsedLimit) || parsedLimit < 0) {
+      return res.status(400).json({
+        success: false,
+        err: 'Invalid limit value'
+      });
+    }
+    if (isNaN(parsedOffset) || parsedOffset < 0) {
+      return res.status(400).json({
+        success: false,
+        err: 'Invalid offset value'
+      });
     }
 
-    if (rating) {
-      conditions.push(`mir.rating = ?`);
-      params.push(rating);
-    }
+    // ── SAFE NUMBER HELPER ──
+    const safeNumber = (val) => {
+      if (val === null || val === undefined) return 0;
+      return typeof val === 'bigint' ? Number(val) : Number(val) || 0;
+    };
 
-    if (registrar) {
-      conditions.push(`mr.short_name = ?`);
-      params.push(registrar);
-    }
-
-    if (arranger) {
-      conditions.push(`ma.short_name = ?`);
-      params.push(arranger);
-    }
-
-    if (seniority) {
-      conditions.push(`mstc.description = ?`);
-      params.push(seniority);
-    }
-
-    if (taxFree) {
-      conditions.push(`tf.description = ?`);
-      params.push(taxFree);
-    }
-
-    if (securedFlag) {
-      conditions.push(`msf.description = ?`);
-      params.push(securedFlag);
-    }
-
-    if (trustee) {
-      conditions.push(`mt.short_name = ?`);
-      params.push(trustee);
-    }
-
-    if (creditRatingAgency) {
-      conditions.push(`mag.short_name = ?`);
-      params.push(creditRatingAgency);
-    }
-
-    if (dealSize) {
-      conditions.push(`i.issue_size LIKE ?`);
-      params.push(`%${dealSize}%`);
-    }
-
-    if (sector) {
-      conditions.push(`mbs.description = ?`);
-      params.push(sector);
-    }
-
-    if (nature) {
-      conditions.push(`mitn.description = ?`);
-      params.push(nature);
-    }
-
-    if (ownershipType) {
-      conditions.push(`miot.description = ?`);
-      params.push(ownershipType);
-    }
-
-    if (listingStatus) {
-      conditions.push(`listing_data.listing_status = ?`);
-      params.push(listingStatus);
-    }
-
-    const whereClause = conditions.length
-      ? `WHERE ${conditions.join(' AND ')}`
-      : '';
-
-    // ─── Shared listing data subquery ───
-    const listingDataJoin = `
-      LEFT JOIN (
-        SELECT 
-          mise.issuer_id, 
-          MAX(mls.description) AS listing_status
-        FROM master_issuer_stock_exchange mise
-        LEFT JOIN master_listing_status mls ON mls.code = mise.listing_status
-        WHERE mise.listing_status IS NOT NULL
-        GROUP BY mise.issuer_id
-      ) AS listing_data ON listing_data.issuer_id = i.id
+    // ── COUNT QUERY (simplified) ──
+    const countQuery = `
+      SELECT COUNT(DISTINCT i.isin) AS aggregate
+      FROM master_issuer AS i
+      WHERE i.maturity_date BETWEEN ? AND ?
+        AND i.is_visible = 1
     `;
 
-    // ─── Shared base joins ───
-    const baseJoins = `
-      LEFT JOIN issuer_details id ON i.issuer_master_id = id.id
-      LEFT JOIN master_security_type s ON i.security_class = s.code
-      LEFT JOIN master_mode_issue mi ON i.mode_issue = mi.code
-      LEFT JOIN issuer_coupon_details icd ON i.id = icd.issuer_id
-      LEFT JOIN master_seniority_tier_classification mstc ON mstc.code = i.seniority
-      LEFT JOIN master_tax_free tf ON tf.code = i.tax_free
-      LEFT JOIN master_secured_flag msf ON msf.code = i.secured_flag
-      LEFT JOIN master_business_sector mbs ON mbs.code = i.business_sector
-      LEFT JOIN master_issuer_type_nature mitn ON mitn.code = i.nature_type
-      LEFT JOIN master_issuer_ownership_type miot ON miot.code = i.issuer_ownership_type
-      LEFT JOIN issuer_arranger ia ON i.id = ia.issuer_id
-      LEFT JOIN master_arranger ma ON ia.arranger_id = ma.id
-      LEFT JOIN issuer_trustee it ON i.id = it.issuer_id
-      LEFT JOIN master_trustee mt ON it.trustee_id = mt.id
-      LEFT JOIN issuer_registrar ir ON i.id = ir.issuer_id
-      LEFT JOIN master_registrar mr ON ir.registrar_id = mr.id
-      LEFT JOIN master_issuer_rating mir ON i.id = mir.issuer_id
-      LEFT JOIN master_agency mag ON mag.id = mir.agency_id
-      ${listingDataJoin}
-    `;
+    const count = await prisma.$queryRawUnsafe(countQuery, startDate, endDate);
 
-    /* =========================
-       DATA QUERY
-    ========================= */
+    // ── DATA QUERY ──
     const dataQuery = `
-      SELECT
-        i.id AS issuerId,
-        i.isin,
-        id.issuer_name,
-        i.allotment_date,
-        i.maturity_date,
-        GROUP_CONCAT(DISTINCT icd.coupon_rate SEPARATOR ', ') AS coupon_rate,
-        GROUP_CONCAT(DISTINCT mt.short_name SEPARATOR ', ') AS debenture_trustee_name,
-        GROUP_CONCAT(DISTINCT mr.short_name SEPARATOR ', ') AS registrar_detail,
-        GROUP_CONCAT(DISTINCT mir.rating ORDER BY mir.rating ASC SEPARATOR ', ') AS rating,
-        GROUP_CONCAT(DISTINCT ma.short_name SEPARATOR ', ') AS arranger_name,
-        i.security_name,
-        s.description AS security_type,
-        mi.description AS mode_issue,
-        i.issue_size,
-        i.face_value,
-        GROUP_CONCAT(DISTINCT mag.short_name ORDER BY mag.short_name ASC SEPARATOR ', ') AS agency_name,
-        mstc.description AS seniority,
-        tf.description AS tax_free,
-        msf.description AS secured_flag,
-        mbs.description AS sector,
-        mitn.description AS nature,
-        miot.description AS ownership_type,
-        listing_data.listing_status
-      FROM master_issuer i
-      ${baseJoins}
-      ${whereClause}
-      GROUP BY 
-        i.id, 
-        i.isin, 
-        id.issuer_name, 
-        i.allotment_date, 
-        i.maturity_date,
-        i.security_name, 
-        s.description, 
-        mi.description, 
-        i.issue_size, 
-        i.face_value, 
-        mstc.description, 
-        tf.description, 
-        msf.description, 
-        mbs.description, 
-        mitn.description, 
-        miot.description, 
-        listing_data.listing_status
-      ORDER BY id.issuer_name ASC
+      SELECT 
+          MIN(i.id) AS id,
+          i.isin,
+          MIN(id.issuer_name) AS issuerName,
+          MIN(i.allotment_date) AS allotmentDate,
+          MIN(icd.coupon_rate) AS couponRate,
+          MIN(mt.short_name) AS debentureTrustee,
+          MIN(mr.short_name) AS registrar,
+          MIN(i.maturity_date) AS maturityDate,
+          GROUP_CONCAT(DISTINCT mir.rating) AS creditRating,
+          MIN(ma.short_name) AS arranger,
+          MIN(i.security_name) AS securityName,
+          MIN(s.description) AS securityType,
+          MIN(mi.description) AS modeOfIssue,
+          MIN(i.issue_size) AS issueSize,
+          MIN(i.face_value) AS faceValue,
+          GROUP_CONCAT(DISTINCT mag.short_name) AS creditRatingAgency,
+          MIN(mstc.description) AS seniority,
+          MIN(tf.description) AS taxFree,
+          MIN(msf.description) AS securedFlag,
+          MIN((
+              SELECT mls.description
+              FROM master_issuer_stock_exchange AS mise
+              LEFT JOIN master_listing_status AS mls ON mls.code = mise.listing_status
+              WHERE mise.issuer_id = i.id
+              ORDER BY mise.listing_status
+              LIMIT 1
+          )) AS listingStatus
+      FROM master_issuer AS i
+      LEFT JOIN issuer_details AS id ON i.issuer_master_id = id.id
+      LEFT JOIN master_security_type AS s ON i.security_class = s.code
+      LEFT JOIN master_mode_issue AS mi ON i.mode_issue = mi.code
+      LEFT JOIN issuer_coupon_details AS icd ON i.id = icd.issuer_id
+      LEFT JOIN master_seniority_tier_classification AS mstc ON mstc.code = i.seniority
+      LEFT JOIN master_tax_free AS tf ON tf.code = i.tax_free
+      LEFT JOIN master_secured_flag AS msf ON msf.code = i.secured_flag
+      LEFT JOIN issuer_arranger AS ia ON i.id = ia.issuer_id
+      LEFT JOIN master_arranger AS ma ON ia.arranger_id = ma.id
+      LEFT JOIN issuer_trustee AS it ON i.id = it.issuer_id
+      LEFT JOIN master_trustee AS mt ON it.trustee_id = mt.id
+      LEFT JOIN issuer_registrar AS ir1 ON i.id = ir1.issuer_id
+      LEFT JOIN master_registrar AS mr ON ir1.registrar_id = mr.id
+      LEFT JOIN master_issuer_rating AS mir ON i.id = mir.issuer_id
+      LEFT JOIN master_agency AS mag ON mag.id = mir.agency_id
+      WHERE i.maturity_date BETWEEN ? AND ?
+        AND i.is_visible = 1
+      GROUP BY i.isin
+      ORDER BY MIN(id.issuer_name) ASC
       LIMIT ? OFFSET ?
     `;
 
-    /* =========================
-       COUNT QUERY
-    ========================= */
-    // Using COUNT(DISTINCT) guarantees identical behavior to the grouped dataQuery without subquery mess
-    const countQuery = `
-      SELECT COUNT(DISTINCT i.id) AS total
-      FROM master_issuer i
-      ${baseJoins}
-      ${whereClause}
-    `;
+    const monthRedemptionData = await prisma.$queryRawUnsafe(
+      dataQuery,
+      startDate,
+      endDate,
+      parsedLimit,
+      parsedOffset
+    );
 
-    const [rows, countResult] = await Promise.all([
-      prisma.$queryRawUnsafe(dataQuery, ...params, parsedLimit, parsedOffset),
-      prisma.$queryRawUnsafe(countQuery, ...params)
-    ]);
-
-    const total = Number(countResult?.[0]?.total) || 0;
-
-    // ─── Format response data ───
-    const finalResult = rows.map((item) => {
-      const allotment = item?.allotment_date ? new Date(item?.allotment_date).toISOString().split('T')[0] : null;
-      const maturity = item?.maturity_date ? new Date(item?.maturity_date).toISOString().split('T')[0] : null;
-
-      return {
-        issuerId: item?.issuerId ?? null,
-        isin: item?.isin ?? '-',
-        issuerName: item?.issuer_name ?? '-',
-        securityName: item?.security_name ?? '-',
-        securityType: item?.security_type ?? '-',
-        modeOfIssue: item?.mode_issue ?? '-',
-        allotmentDate: item?.allotment_date ? allotment : '-',
-        maturityDate: item?.maturity_date ? maturity : '-',
-        couponRate: item?.coupon_rate !== null && item?.coupon_rate !== undefined ? item.coupon_rate : '-',
-        issueSize: item?.issue_size ?? null,
-        faceValue: item?.face_value ?? null,
-        rating: item?.rating ?? '-',
-        agencyName: item?.agency_name ?? '-',
-        creditRatingAgency: item?.agency_name ?? '-',
-        arrangerName: item?.arranger_name ?? '-',
-        debentureTrusteeName: item?.debenture_trustee_name ?? '-',
-        registrarDetail: item?.registrar_detail ?? '-',
-        seniority: item?.seniority ?? '-',
-        taxFree: item?.tax_free ?? '-',
-        securedFlag: item?.secured_flag ?? '-',
-        sector: item?.sector ?? '-',
-        nature: item?.nature ?? '-',
-        ownershipType: item?.ownership_type ?? '-',
-        listingStatus: item?.listing_status ?? '-'
-      }
-    });
-
-    res.status(200).json({
-      success: true,
-      data: finalResult, // FIXED: Sent formatted results instead of raw rows
-      pagination: {
-        total,
-        limit: parsedLimit,
-        offset: parsedOffset,
-        hasMore: (parsedOffset + parsedLimit) < total
-      }
+    res.json({
+      data: monthRedemptionData,
+      total: safeNumber(count[0]?.aggregate)
     });
 
   } catch (error) {
-    console.error('Error in specific_month_redemption_data:', error);
+    console.error('debt_redemption_specific_month_data error:', error);
+
     res.status(500).json({
-      error: 'Failed to fetch redemption data',
-      message: error.message
+      success: false,
+      err: error.message
     });
   }
 });
+
+// app.post('/specific_month_redemption_data', async (req, res) => {
+//   const {
+//     startDate = '2026-03-01',
+//     endDate = '2026-03-31',
+//     limit = 25,
+//     offset = 0,
+//     issuerName = "",
+//     rating = "",
+//     registrar = "",
+//     arranger = "",
+//     seniority = "",
+//     taxFree = "",
+//     securedFlag = "",
+//     sector = "",
+//     trustee = "",
+//     nature = "",
+//     ownershipType = "",
+//     creditRatingAgency = "",
+//     dealSize = "",
+//     listingStatus = ""
+//   } = req.body;
+
+//   try {
+//     // ─── Validate and sanitize inputs ───
+//     const parsedLimit = Math.min(Math.max(parseInt(limit) || 25, 1), 1000);
+//     const parsedOffset = Math.max(parseInt(offset) || 0, 0);
+
+//     if (!startDate || !endDate) {
+//       return res.status(400).json({ error: 'startDate, endDate are required' });
+//     }
+
+//     const currentStartDate = new Date(startDate);
+//     const currentEndDate = new Date(endDate);
+
+//     if (isNaN(currentStartDate.getTime()) || isNaN(currentEndDate.getTime())) {
+//       return res.status(400).json({ error: 'Invalid date format' });
+//     }
+
+//     if (currentStartDate > currentEndDate) {
+//       return res.status(400).json({ error: 'startDate must be before endDate' });
+//     }
+
+//     const cyStart = formatDateForSQL(currentStartDate);
+//     const cyEnd = formatDateForSQL(currentEndDate);
+
+//     // ─── Build dynamic filter conditions ───
+//     const conditions = [];
+//     const params = [];
+
+//     conditions.push(`i.maturity_date BETWEEN ? AND ? AND (is_visible = 1)`);
+//     params.push(cyStart, cyEnd);
+
+//     if (issuerName) {
+//       conditions.push(`id.issuer_name LIKE ?`);
+//       params.push(`%${issuerName}%`);
+//     }
+
+//     if (rating) {
+//       conditions.push(`mir.rating = ?`);
+//       params.push(rating);
+//     }
+
+//     if (registrar) {
+//       conditions.push(`mr.short_name = ?`);
+//       params.push(registrar);
+//     }
+
+//     if (arranger) {
+//       conditions.push(`ma.short_name = ?`);
+//       params.push(arranger);
+//     }
+
+//     if (seniority) {
+//       conditions.push(`mstc.description = ?`);
+//       params.push(seniority);
+//     }
+
+//     if (taxFree) {
+//       conditions.push(`tf.description = ?`);
+//       params.push(taxFree);
+//     }
+
+//     if (securedFlag) {
+//       conditions.push(`msf.description = ?`);
+//       params.push(securedFlag);
+//     }
+
+//     if (trustee) {
+//       conditions.push(`mt.short_name = ?`);
+//       params.push(trustee);
+//     }
+
+//     if (creditRatingAgency) {
+//       conditions.push(`mag.short_name = ?`);
+//       params.push(creditRatingAgency);
+//     }
+
+//     if (dealSize) {
+//       conditions.push(`i.issue_size LIKE ?`);
+//       params.push(`%${dealSize}%`);
+//     }
+
+//     if (sector) {
+//       conditions.push(`mbs.description = ?`);
+//       params.push(sector);
+//     }
+
+//     if (nature) {
+//       conditions.push(`mitn.description = ?`);
+//       params.push(nature);
+//     }
+
+//     if (ownershipType) {
+//       conditions.push(`miot.description = ?`);
+//       params.push(ownershipType);
+//     }
+
+//     if (listingStatus) {
+//       conditions.push(`listing_data.listing_status = ?`);
+//       params.push(listingStatus);
+//     }
+
+//     const whereClause = conditions.length
+//       ? `WHERE ${conditions.join(' AND ')}`
+//       : '';
+
+//     // ─── Shared listing data subquery ───
+//     const listingDataJoin = `
+//       LEFT JOIN (
+//         SELECT 
+//           mise.issuer_id, 
+//           MAX(mls.description) AS listing_status
+//         FROM master_issuer_stock_exchange mise
+//         LEFT JOIN master_listing_status mls ON mls.code = mise.listing_status
+//         WHERE mise.listing_status IS NOT NULL
+//         GROUP BY mise.issuer_id
+//       ) AS listing_data ON listing_data.issuer_id = i.id
+//     `;
+
+//     // ─── Shared base joins ───
+//     const baseJoins = `
+//       LEFT JOIN issuer_details id ON i.issuer_master_id = id.id
+//       LEFT JOIN master_security_type s ON i.security_class = s.code
+//       LEFT JOIN master_mode_issue mi ON i.mode_issue = mi.code
+//       LEFT JOIN issuer_coupon_details icd ON i.id = icd.issuer_id
+//       LEFT JOIN master_seniority_tier_classification mstc ON mstc.code = i.seniority
+//       LEFT JOIN master_tax_free tf ON tf.code = i.tax_free
+//       LEFT JOIN master_secured_flag msf ON msf.code = i.secured_flag
+//       LEFT JOIN master_business_sector mbs ON mbs.code = i.business_sector
+//       LEFT JOIN master_issuer_type_nature mitn ON mitn.code = i.nature_type
+//       LEFT JOIN master_issuer_ownership_type miot ON miot.code = i.issuer_ownership_type
+//       LEFT JOIN issuer_arranger ia ON i.id = ia.issuer_id
+//       LEFT JOIN master_arranger ma ON ia.arranger_id = ma.id
+//       LEFT JOIN issuer_trustee it ON i.id = it.issuer_id
+//       LEFT JOIN master_trustee mt ON it.trustee_id = mt.id
+//       LEFT JOIN issuer_registrar ir ON i.id = ir.issuer_id
+//       LEFT JOIN master_registrar mr ON ir.registrar_id = mr.id
+//       LEFT JOIN master_issuer_rating mir ON i.id = mir.issuer_id
+//       LEFT JOIN master_agency mag ON mag.id = mir.agency_id
+//       ${listingDataJoin}
+//     `;
+
+//     /* =========================
+//        DATA QUERY
+//     ========================= */
+//     const dataQuery = `
+//       SELECT
+//         i.id AS issuerId,
+//         i.isin,
+//         id.issuer_name,
+//         i.allotment_date,
+//         i.maturity_date,
+//         GROUP_CONCAT(DISTINCT icd.coupon_rate SEPARATOR ', ') AS coupon_rate,
+//         GROUP_CONCAT(DISTINCT mt.short_name SEPARATOR ', ') AS debenture_trustee_name,
+//         GROUP_CONCAT(DISTINCT mr.short_name SEPARATOR ', ') AS registrar_detail,
+//         GROUP_CONCAT(DISTINCT mir.rating ORDER BY mir.rating ASC SEPARATOR ', ') AS rating,
+//         GROUP_CONCAT(DISTINCT ma.short_name SEPARATOR ', ') AS arranger_name,
+//         i.security_name,
+//         s.description AS security_type,
+//         mi.description AS mode_issue,
+//         i.issue_size,
+//         i.face_value,
+//         GROUP_CONCAT(DISTINCT mag.short_name ORDER BY mag.short_name ASC SEPARATOR ', ') AS agency_name,
+//         mstc.description AS seniority,
+//         tf.description AS tax_free,
+//         msf.description AS secured_flag,
+//         mbs.description AS sector,
+//         mitn.description AS nature,
+//         miot.description AS ownership_type,
+//         listing_data.listing_status
+//       FROM master_issuer i
+//       ${baseJoins}
+//       ${whereClause}
+//       GROUP BY 
+//         i.id, 
+//         i.isin, 
+//         id.issuer_name, 
+//         i.allotment_date, 
+//         i.maturity_date,
+//         i.security_name, 
+//         s.description, 
+//         mi.description, 
+//         i.issue_size, 
+//         i.face_value, 
+//         mstc.description, 
+//         tf.description, 
+//         msf.description, 
+//         mbs.description, 
+//         mitn.description, 
+//         miot.description, 
+//         listing_data.listing_status
+//       ORDER BY id.issuer_name ASC
+//       LIMIT ? OFFSET ?
+//     `;
+
+//     /* =========================
+//        COUNT QUERY
+//     ========================= */
+//     // Using COUNT(DISTINCT) guarantees identical behavior to the grouped dataQuery without subquery mess
+//     const countQuery = `
+//       SELECT COUNT(DISTINCT i.id) AS total
+//       FROM master_issuer i
+//       ${baseJoins}
+//       ${whereClause}
+//     `;
+
+//     const [rows, countResult] = await Promise.all([
+//       prisma.$queryRawUnsafe(dataQuery, ...params, parsedLimit, parsedOffset),
+//       prisma.$queryRawUnsafe(countQuery, ...params)
+//     ]);
+
+//     const total = Number(countResult?.[0]?.total) || 0;
+
+//     // ─── Format response data ───
+//     const finalResult = rows.map((item) => {
+//       const allotment = item?.allotment_date ? new Date(item?.allotment_date).toISOString().split('T')[0] : null;
+//       const maturity = item?.maturity_date ? new Date(item?.maturity_date).toISOString().split('T')[0] : null;
+
+//       return {
+//         issuerId: item?.issuerId ?? null,
+//         isin: item?.isin ?? '-',
+//         issuerName: item?.issuer_name ?? '-',
+//         securityName: item?.security_name ?? '-',
+//         securityType: item?.security_type ?? '-',
+//         modeOfIssue: item?.mode_issue ?? '-',
+//         allotmentDate: item?.allotment_date ? allotment : '-',
+//         maturityDate: item?.maturity_date ? maturity : '-',
+//         couponRate: item?.coupon_rate !== null && item?.coupon_rate !== undefined ? item.coupon_rate : '-',
+//         issueSize: item?.issue_size ?? null,
+//         faceValue: item?.face_value ?? null,
+//         rating: item?.rating ?? '-',
+//         agencyName: item?.agency_name ?? '-',
+//         creditRatingAgency: item?.agency_name ?? '-',
+//         arrangerName: item?.arranger_name ?? '-',
+//         debentureTrusteeName: item?.debenture_trustee_name ?? '-',
+//         registrarDetail: item?.registrar_detail ?? '-',
+//         seniority: item?.seniority ?? '-',
+//         taxFree: item?.tax_free ?? '-',
+//         securedFlag: item?.secured_flag ?? '-',
+//         sector: item?.sector ?? '-',
+//         nature: item?.nature ?? '-',
+//         ownershipType: item?.ownership_type ?? '-',
+//         listingStatus: item?.listing_status ?? '-'
+//       }
+//     });
+
+//     res.status(200).json({
+//       success: true,
+//       data: finalResult, // FIXED: Sent formatted results instead of raw rows
+//       pagination: {
+//         total,
+//         limit: parsedLimit,
+//         offset: parsedOffset,
+//         hasMore: (parsedOffset + parsedLimit) < total
+//       }
+//     });
+
+//   } catch (error) {
+//     console.error('Error in specific_month_redemption_data:', error);
+//     res.status(500).json({
+//       error: 'Failed to fetch redemption data',
+//       message: error.message
+//     });
+//   }
+// });
 
 
 app.post('/issuer_page_monthly_summary_data', async (req, res) => {
