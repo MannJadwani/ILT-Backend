@@ -2210,8 +2210,9 @@ app.post('/issuers_page_outstanding_data', async (req, res) => {
           SELECT DISTINCT master_issuer.id, master_issuer.issue_size
           FROM master_issuer
           ${baseJoins}
-          WHERE master_issuer.allotment_date <= ?  AND (is_visible = 1)
-            AND (master_issuer.maturity_date > ? OR master_issuer.maturity_date IS NULL)
+          WHERE master_issuer.allotment_date < ?
+            AND master_issuer.maturity_date > ? 
+            AND master_issuer.is_visible = 1
             AND master_issuer.security_status = 1${filterClause}
         ) AS mi
       `, end, end, ...filterParams);
@@ -2267,6 +2268,9 @@ app.get('/issuers_page_current_year_debt_redemption_data', async (req, res) => {
 
     const startStr = formatDateForSQL(now);
     const endStr = formatDateForSQL(nextYear);
+
+    console.log('Current Year Redemption Data:', {startStr, endStr});
+    
 
     // ─── FIX: Use parameterized query to prevent SQL injection ───
     const redemptionData = await prisma.$queryRawUnsafe(`
