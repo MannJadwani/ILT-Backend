@@ -3505,7 +3505,7 @@ app.post('/issuer_page_monthly_detailed_data', async (req, res) => {
     const conditions = [];
     const params = [];
 
-    conditions.push(`i.allotment_date BETWEEN ? AND ?`);
+    conditions.push(`i.allotment_date BETWEEN ? AND ? AND (i.is_visible = 1)`);
     params.push(cyStart, cyEnd);
 
     if (issuerName) {
