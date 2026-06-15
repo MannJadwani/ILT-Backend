@@ -2469,7 +2469,7 @@ app.post('/issuePage_detailed_data', async (req, res) => {
     const conditions = [];
     const params = [];
 
-    conditions.push(`master_issuer.allotment_date BETWEEN ? AND ?`);
+    conditions.push(`master_issuer.allotment_date BETWEEN ? AND ? AND (master_issuer.is_visible = 1)`);
     params.push(cyStart, cyEnd);
 
     if (issuerName) {
