@@ -2490,7 +2490,7 @@ app.post('/issuers_page_agency_rating_data', async (req, res) => {
       LEFT JOIN (
         SELECT 
           mise.issuer_id, 
-          MAX(mls.description) AS listing_status
+          MAX(mls.description) AS listing_status 
         FROM master_issuer_stock_exchange mise
         LEFT JOIN master_listing_status mls ON mls.code = mise.listing_status
         WHERE mise.listing_status IS NOT NULL
