@@ -2281,10 +2281,10 @@ app.get('/issuers_page_current_year_debt_redemption_data', async (req, res) => {
         ROUND(SUM(issue_size) / 10000000, 2) AS issue_size,
         COUNT(DISTINCT isin) AS isin_count
       FROM master_issuer
-      WHERE maturity_date BETWEEN ? AND ? AND (is_visible = 1)
+      WHERE maturity_date BETWEEN ${startStr} AND ${endStr} AND (is_visible = 1)
       GROUP BY YEAR(maturity_date), MONTH(maturity_date), MONTHNAME(maturity_date)
       ORDER BY YEAR(maturity_date) ASC, MONTH(maturity_date) ASC
-    `, startStr, endStr);
+    `);
 
     // ─── FIX: Clean and format the result ───
     const formattedData = redemptionData.map((item) => ({
