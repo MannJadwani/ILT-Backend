@@ -2266,7 +2266,8 @@ app.get('/issuers_page_current_year_debt_redemption_data', async (req, res) => {
     const now = new Date();
     const nextYear = getUpcomingMarch31(now);
 
-    const startStr = formatDateForSQL(now);
+    // const startStr = formatDateForSQL(now);
+    const startStr = '2026-06-15 00:00:00'; // Hardcoded for testing
     const endStr = formatDateForSQL(nextYear);
 
     console.log('Current Year Redemption Data:', {startStr, endStr});
