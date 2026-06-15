@@ -2988,8 +2988,7 @@ app.post('/specific_month_redemption_data', async (req, res) => {
     const conditions = [];
     const params = [];
 
-    // ─── FIX: Filter by maturity_date for redemption data ───
-    conditions.push(`i.maturity_date BETWEEN ? AND ?`);
+    conditions.push(`i.maturity_date BETWEEN ? AND ? AND (is_visible = 1)`);
     params.push(cyStart, cyEnd);
 
     if (issuerName) {
@@ -3042,26 +3041,21 @@ app.post('/specific_month_redemption_data', async (req, res) => {
       params.push(`%${dealSize}%`);
     }
 
-    // ─── FIX: Added missing sector filter ───
     if (sector) {
       conditions.push(`mbs.description = ?`);
       params.push(sector);
     }
 
-    // ─── FIX: Added missing nature filter ───
     if (nature) {
       conditions.push(`mitn.description = ?`);
       params.push(nature);
     }
 
-    // ─── FIX: Added missing ownershipType filter ───
     if (ownershipType) {
       conditions.push(`miot.description = ?`);
       params.push(ownershipType);
     }
 
-    // ─── FIX: listingStatus filter using JOIN instead of correlated subquery ───
-    // Note: This requires the listing_data CTE/join to be available
     if (listingStatus) {
       conditions.push(`listing_data.listing_status = ?`);
       params.push(listingStatus);
@@ -3071,7 +3065,7 @@ app.post('/specific_month_redemption_data', async (req, res) => {
       ? `WHERE ${conditions.join(' AND ')}`
       : '';
 
-    // ─── Shared listing data subquery (used by both data and count queries) ───
+    // ─── Shared listing data subquery ───
     const listingDataJoin = `
       LEFT JOIN (
         SELECT 
@@ -3086,49 +3080,30 @@ app.post('/specific_month_redemption_data', async (req, res) => {
 
     // ─── Shared base joins ───
     const baseJoins = `
-      LEFT JOIN issuer_details id
-        ON i.issuer_master_id = id.id
-      LEFT JOIN master_security_type s
-        ON i.security_class = s.code
-      LEFT JOIN master_mode_issue mi
-        ON i.mode_issue = mi.code
-      LEFT JOIN issuer_coupon_details icd
-        ON i.id = icd.issuer_id
-      LEFT JOIN master_seniority_tier_classification mstc
-        ON mstc.code = i.seniority
-      LEFT JOIN master_tax_free tf
-        ON tf.code = i.tax_free
-      LEFT JOIN master_secured_flag msf
-        ON msf.code = i.secured_flag
-      LEFT JOIN master_business_sector mbs
-        ON mbs.code = i.business_sector
-      LEFT JOIN master_issuer_type_nature mitn
-        ON mitn.code = i.nature_type
-      LEFT JOIN master_issuer_ownership_type miot
-        ON miot.code = i.issuer_ownership_type
-      LEFT JOIN issuer_arranger ia
-        ON i.id = ia.issuer_id
-      LEFT JOIN master_arranger ma
-        ON ia.arranger_id = ma.id
-      LEFT JOIN issuer_trustee it
-        ON i.id = it.issuer_id
-      LEFT JOIN master_trustee mt
-        ON it.trustee_id = mt.id
-      LEFT JOIN issuer_registrar ir
-        ON i.id = ir.issuer_id
-      LEFT JOIN master_registrar mr
-        ON ir.registrar_id = mr.id
-      LEFT JOIN master_issuer_rating mir
-        ON i.id = mir.issuer_id
-      LEFT JOIN master_agency mag
-        ON mag.id = mir.agency_id
+      LEFT JOIN issuer_details id ON i.issuer_master_id = id.id
+      LEFT JOIN master_security_type s ON i.security_class = s.code
+      LEFT JOIN master_mode_issue mi ON i.mode_issue = mi.code
+      LEFT JOIN issuer_coupon_details icd ON i.id = icd.issuer_id
+      LEFT JOIN master_seniority_tier_classification mstc ON mstc.code = i.seniority
+      LEFT JOIN master_tax_free tf ON tf.code = i.tax_free
+      LEFT JOIN master_secured_flag msf ON msf.code = i.secured_flag
+      LEFT JOIN master_business_sector mbs ON mbs.code = i.business_sector
+      LEFT JOIN master_issuer_type_nature mitn ON mitn.code = i.nature_type
+      LEFT JOIN master_issuer_ownership_type miot ON miot.code = i.issuer_ownership_type
+      LEFT JOIN issuer_arranger ia ON i.id = ia.issuer_id
+      LEFT JOIN master_arranger ma ON ia.arranger_id = ma.id
+      LEFT JOIN issuer_trustee it ON i.id = it.issuer_id
+      LEFT JOIN master_trustee mt ON it.trustee_id = mt.id
+      LEFT JOIN issuer_registrar ir ON i.id = ir.issuer_id
+      LEFT JOIN master_registrar mr ON ir.registrar_id = mr.id
+      LEFT JOIN master_issuer_rating mir ON i.id = mir.issuer_id
+      LEFT JOIN master_agency mag ON mag.id = mir.agency_id
       ${listingDataJoin}
     `;
 
     /* =========================
        DATA QUERY
     ========================= */
-    // ─── FIX: Removed all_months (unnecessary), added DISTINCT, proper GROUP BY ───
     const dataQuery = `
       SELECT
         i.id AS issuerId,
@@ -3136,17 +3111,17 @@ app.post('/specific_month_redemption_data', async (req, res) => {
         id.issuer_name,
         i.allotment_date,
         i.maturity_date,
-        icd.coupon_rate,
-        mt.short_name AS debenture_trustee_name,
-        mr.short_name AS registrar_detail,
-        GROUP_CONCAT(DISTINCT mir.rating ORDER BY mir.rating ASC) AS rating,
-        ma.short_name AS arranger_name,
+        GROUP_CONCAT(DISTINCT icd.coupon_rate SEPARATOR ', ') AS coupon_rate,
+        GROUP_CONCAT(DISTINCT mt.short_name SEPARATOR ', ') AS debenture_trustee_name,
+        GROUP_CONCAT(DISTINCT mr.short_name SEPARATOR ', ') AS registrar_detail,
+        GROUP_CONCAT(DISTINCT mir.rating ORDER BY mir.rating ASC SEPARATOR ', ') AS rating,
+        GROUP_CONCAT(DISTINCT ma.short_name SEPARATOR ', ') AS arranger_name,
         i.security_name,
         s.description AS security_type,
         mi.description AS mode_issue,
         i.issue_size,
         i.face_value,
-        GROUP_CONCAT(DISTINCT mag.short_name ORDER BY mag.short_name ASC) AS agency_name,
+        GROUP_CONCAT(DISTINCT mag.short_name ORDER BY mag.short_name ASC SEPARATOR ', ') AS agency_name,
         mstc.description AS seniority,
         tf.description AS tax_free,
         msf.description AS secured_flag,
@@ -3157,11 +3132,24 @@ app.post('/specific_month_redemption_data', async (req, res) => {
       FROM master_issuer i
       ${baseJoins}
       ${whereClause}
-      GROUP BY i.id, i.isin, id.issuer_name, i.allotment_date, i.maturity_date,
-               icd.coupon_rate, mt.short_name, mr.short_name, ma.short_name,
-               i.security_name, s.description, mi.description, i.issue_size,
-               i.face_value, mstc.description, tf.description, msf.description,
-               mbs.description, mitn.description, miot.description, listing_data.listing_status
+      GROUP BY 
+        i.id, 
+        i.isin, 
+        id.issuer_name, 
+        i.allotment_date, 
+        i.maturity_date,
+        i.security_name, 
+        s.description, 
+        mi.description, 
+        i.issue_size, 
+        i.face_value, 
+        mstc.description, 
+        tf.description, 
+        msf.description, 
+        mbs.description, 
+        mitn.description, 
+        miot.description, 
+        listing_data.listing_status
       ORDER BY id.issuer_name ASC
       LIMIT ? OFFSET ?
     `;
@@ -3169,15 +3157,12 @@ app.post('/specific_month_redemption_data', async (req, res) => {
     /* =========================
        COUNT QUERY
     ========================= */
-    // ─── FIX: Uses same joins and filters as data query for accurate count ───
+    // Using COUNT(DISTINCT) guarantees identical behavior to the grouped dataQuery without subquery mess
     const countQuery = `
-      SELECT COUNT(*) AS total FROM (
-        SELECT i.isin
-        FROM master_issuer i
-        ${baseJoins}
-        ${whereClause}
-        GROUP BY i.isin
-      ) AS aggregate_table
+      SELECT COUNT(DISTINCT i.id) AS total
+      FROM master_issuer i
+      ${baseJoins}
+      ${whereClause}
     `;
 
     const [rows, countResult] = await Promise.all([
@@ -3187,7 +3172,7 @@ app.post('/specific_month_redemption_data', async (req, res) => {
 
     const total = Number(countResult?.[0]?.total) || 0;
 
-    // ─── FIX: Format response data ───
+    // ─── Format response data ───
     const finalResult = rows.map((item) => {
       const allotment = item?.allotment_date ? new Date(item?.allotment_date).toISOString().split('T')[0] : null;
       const maturity = item?.maturity_date ? new Date(item?.maturity_date).toISOString().split('T')[0] : null;
@@ -3222,7 +3207,7 @@ app.post('/specific_month_redemption_data', async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: rows,
+      data: finalResult, // FIXED: Sent formatted results instead of raw rows
       pagination: {
         total,
         limit: parsedLimit,
