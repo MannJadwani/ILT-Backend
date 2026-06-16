@@ -8236,7 +8236,7 @@ app.post('/trustee_top_participants_details', async (req, res) => {
 
           WHERE
               it.trustee_id = ?
-              AND i.allotment_date BETWEEN ? AND ?
+              AND i.allotment_date BETWEEN ? AND ? AND (i.is_visible = 1)
       ) x
       WHERE 1=1
       ${searchPattern ? `
@@ -8287,7 +8287,7 @@ app.post('/trustee_top_participants_details', async (req, res) => {
     // =========================
 
     const countQuery = `
-      SELECT COUNT(*) AS total
+      SELECT COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS total
       FROM (
           SELECT
               i.id
@@ -8319,7 +8319,7 @@ app.post('/trustee_top_participants_details', async (req, res) => {
 
           WHERE
               it.trustee_id = ?
-              AND i.allotment_date BETWEEN ? AND ?
+              AND i.allotment_date BETWEEN ? AND ? AND (i.is_visible = 1)
       ) x
       WHERE 1=1
       ${searchPattern ? `
