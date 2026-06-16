@@ -6456,7 +6456,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
     const totalIssueSizeRaw = await prisma.$queryRawUnsafe(`
       SELECT COALESCE(SUM(mi.issue_size), 0) AS aggregate
       FROM master_issuer mi
-      WHERE mi.allotment_date BETWEEN ? AND ?
+      WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${trusteeExistsSql}
       ${baseFilterSql}
     `, formatDate(currentStartDate), formatDate(currentEndDate), ...trusteeExistsParams, ...baseFilterParams);
@@ -6464,7 +6464,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
     const totalIssueSizePrevYearRaw = await prisma.$queryRawUnsafe(`
       SELECT COALESCE(SUM(mi.issue_size), 0) AS aggregate
       FROM master_issuer mi
-      WHERE mi.allotment_date BETWEEN ? AND ?
+      WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${trusteeExistsSql}
       ${baseFilterSql}
     `, formatDate(previousStartDate), formatDate(previousEndDate), ...trusteeExistsParams, ...baseFilterParams);
@@ -6472,7 +6472,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
 const totalIssuesCountCurrYearRaw = await prisma.$queryRawUnsafe(`
       SELECT COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS aggregate
       FROM master_issuer mi
-      WHERE mi.allotment_date BETWEEN ? AND ?
+      WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${trusteeExistsSql}
       ${baseFilterSql}
     `, formatDate(currentStartDate), formatDate(currentEndDate), ...trusteeExistsParams, ...baseFilterParams);
@@ -6480,7 +6480,7 @@ const totalIssuesCountCurrYearRaw = await prisma.$queryRawUnsafe(`
     const totalIssuesCountPrevYearRaw = await prisma.$queryRawUnsafe(`
       SELECT COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS aggregate
       FROM master_issuer mi
-      WHERE mi.allotment_date BETWEEN ? AND ?
+      WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${trusteeExistsSql}
       ${baseFilterSql}
     `, formatDate(previousStartDate), formatDate(previousEndDate), ...trusteeExistsParams, ...baseFilterParams);
@@ -6554,7 +6554,7 @@ const totalIssuesCountCurrYearRaw = await prisma.$queryRawUnsafe(`
         FROM master_issuer mi
         JOIN issuer_trustee it ON it.issuer_id = mi.id
         JOIN master_trustee mt ON mt.id = it.trustee_id
-        WHERE mi.allotment_date BETWEEN ? AND ?
+        WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
         ${trusteeDirectSql}
         ${baseFilterSql}
         GROUP BY it.trustee_id, mt.id, mt.short_name
@@ -6612,7 +6612,7 @@ const totalIssuesCountCurrYearRaw = await prisma.$queryRawUnsafe(`
         FROM master_issuer mi
         JOIN issuer_trustee it ON it.issuer_id = mi.id
         JOIN master_trustee mt ON mt.id = it.trustee_id
-        WHERE mi.allotment_date BETWEEN ? AND ?
+        WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
         ${trusteeDirectSql}
         ${baseFilterSql}
         GROUP BY it.trustee_id, mt.id, mt.short_name
@@ -6632,7 +6632,7 @@ const totalIssuesCountCurrYearRaw = await prisma.$queryRawUnsafe(`
       FROM master_issuer mi
       JOIN issuer_trustee it ON it.issuer_id = mi.id
       JOIN master_trustee mt ON mt.id = it.trustee_id
-      WHERE mi.allotment_date BETWEEN ? AND ?
+      WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${trusteeDirectSql}
       ${baseFilterSql}
     `,
@@ -6660,7 +6660,7 @@ const sectorValueSelect =
       FROM master_issuer mi
       JOIN issuer_trustee it ON it.issuer_id = mi.id
       JOIN master_trustee mt ON mt.id = it.trustee_id
-      WHERE mi.allotment_date BETWEEN ? AND ?
+      WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${trusteeDirectSql}
       ${baseFilterSql}
       GROUP BY it.trustee_id, mt.id, mt.short_name
@@ -6676,7 +6676,7 @@ const sectorValueSelect =
       FROM master_issuer mi
       JOIN issuer_trustee it ON it.issuer_id = mi.id
       JOIN master_trustee mt ON mt.id = it.trustee_id
-      WHERE mi.allotment_date BETWEEN ? AND ?
+      WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${trusteeDirectSql}
       ${baseFilterSql}
       GROUP BY it.trustee_id, mt.id, mt.short_name
@@ -6695,7 +6695,7 @@ const sectorValueSelect =
       JOIN issuer_trustee it ON it.trustee_id = r.trustee_id
       JOIN master_issuer mi ON mi.id = it.issuer_id
       JOIN master_business_sector mbs ON mi.business_sector = mbs.code
-      WHERE mi.allotment_date BETWEEN ? AND ?
+      WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${baseFilterSql}
       GROUP BY
         r.trustee_id,
