@@ -6536,7 +6536,7 @@ const totalIssuesCountCurrYearRaw = await prisma.$queryRawUnsafe(`
         FROM master_issuer mi
         JOIN issuer_trustee it ON it.issuer_id = mi.id
         JOIN master_trustee mt ON mt.id = it.trustee_id
-        WHERE mi.allotment_date BETWEEN ? AND ?
+        WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
         ${trusteeDirectSql}
         ${baseFilterSql}
         GROUP BY it.trustee_id, mt.id, mt.short_name
@@ -6594,7 +6594,7 @@ const totalIssuesCountCurrYearRaw = await prisma.$queryRawUnsafe(`
         FROM master_issuer mi
         JOIN issuer_trustee it ON it.issuer_id = mi.id
         JOIN master_trustee mt ON mt.id = it.trustee_id
-        WHERE mi.allotment_date BETWEEN ? AND ?
+        WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
         ${trusteeDirectSql}
         ${baseFilterSql}
         GROUP BY it.trustee_id, mt.id, mt.short_name
