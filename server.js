@@ -7515,7 +7515,7 @@ app.post('/trustee_page_monthly_summary_data', async (req, res) => {
       
       LEFT JOIN master_issuer mi
           ON am.month_no = MONTH(mi.allotment_date)
-          AND mi.allotment_date BETWEEN ? AND ?
+          AND mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1
 
       LEFT JOIN issuer_trustee it
           ON it.issuer_id = mi.id
