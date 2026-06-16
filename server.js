@@ -2134,7 +2134,7 @@ app.get('/issuers_page_current_year_debt_redemption_data', async (req, res) => {
     // const startStr = '2026-06-15 00:00:00'; // Hardcoded for testing
     const endStr = formatDateForSQL(nextYear);
 
-    
+
 
     // ─── FIX: Use parameterized query to prevent SQL injection ───
     const redemptionData = await prisma.$queryRawUnsafe(`
@@ -6469,8 +6469,8 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
       ${baseFilterSql}
     `, formatDate(previousStartDate), formatDate(previousEndDate), ...trusteeExistsParams, ...baseFilterParams);
 
-    const totalIssuesCountCurrYearRaw = await prisma.$queryRawUnsafe(`
-      SELECT COUNT(*) AS aggregate
+const totalIssuesCountCurrYearRaw = await prisma.$queryRawUnsafe(`
+      SELECT COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS aggregate
       FROM master_issuer mi
       WHERE mi.allotment_date BETWEEN ? AND ?
       ${trusteeExistsSql}
@@ -6478,7 +6478,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
     `, formatDate(currentStartDate), formatDate(currentEndDate), ...trusteeExistsParams, ...baseFilterParams);
 
     const totalIssuesCountPrevYearRaw = await prisma.$queryRawUnsafe(`
-      SELECT COUNT(*) AS aggregate
+      SELECT COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS aggregate
       FROM master_issuer mi
       WHERE mi.allotment_date BETWEEN ? AND ?
       ${trusteeExistsSql}
@@ -6528,10 +6528,10 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
         SELECT
           mt.id,
           mt.short_name AS issuer_name,
-          COUNT(mi.isin) AS no_issues,
+          COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS no_issues,
           ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
           RANK() OVER (
-            ORDER BY COUNT(mi.isin) DESC, SUM(mi.issue_size) DESC
+            ORDER BY COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC, SUM(mi.issue_size) DESC
           ) AS arr_rank
         FROM master_issuer mi
         JOIN issuer_trustee it ON it.issuer_id = mi.id
@@ -6546,10 +6546,10 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
       LEFT JOIN (
         SELECT
           mt.id,
-          COUNT(mi.isin) AS no_issues,
+          COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS no_issues,
           ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
           RANK() OVER (
-            ORDER BY COUNT(mi.isin) DESC, SUM(mi.issue_size) DESC
+            ORDER BY COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC, SUM(mi.issue_size) DESC
           ) AS arr_rank
         FROM master_issuer mi
         JOIN issuer_trustee it ON it.issuer_id = mi.id
@@ -6586,10 +6586,10 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
         SELECT
           mt.id,
           mt.short_name AS issuer_name,
-          COUNT(mi.isin) AS no_issues,
+          COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS no_issues,
           ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
           RANK() OVER (
-            ORDER BY SUM(mi.issue_size) DESC, COUNT(mi.isin) DESC
+            ORDER BY COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC, SUM(mi.issue_size) DESC
           ) AS arr_rank
         FROM master_issuer mi
         JOIN issuer_trustee it ON it.issuer_id = mi.id
@@ -6604,10 +6604,10 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
       LEFT JOIN (
         SELECT
           mt.id,
-          COUNT(mi.isin) AS no_issues,
+          COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS no_issues,
           ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
           RANK() OVER (
-            ORDER BY SUM(mi.issue_size) DESC, COUNT(mi.isin) DESC
+            ORDER BY COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC, SUM(mi.issue_size) DESC
           ) AS arr_rank
         FROM master_issuer mi
         JOIN issuer_trustee it ON it.issuer_id = mi.id
@@ -6643,10 +6643,10 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
 
     /* ---------------- SECTOR BREAKUP QUERY ---------------- */
 
-    const sectorValueSelect =
-      issueType === 'count'
-        ? 'COUNT(mi.isin)'
-        : 'ROUND(SUM(mi.issue_size) / 10000000, 2)';
+const sectorValueSelect =
+  issueType === 'count'
+    ? 'COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date)'
+    : 'ROUND(SUM(mi.issue_size) / 10000000, 2)';
 
     const rankedTrusteesSubQuery =
       issueType === 'count'
@@ -6655,7 +6655,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
         mt.id AS trustee_id,
         mt.short_name AS trustee_name,
         RANK() OVER (
-          ORDER BY COUNT(mi.isin) DESC, SUM(mi.issue_size) DESC
+          ORDER BY COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC, SUM(mi.issue_size) DESC
         ) AS arr_rank
       FROM master_issuer mi
       JOIN issuer_trustee it ON it.issuer_id = mi.id
@@ -6671,7 +6671,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
         mt.id AS trustee_id,
         mt.short_name AS trustee_name,
         RANK() OVER (
-          ORDER BY SUM(mi.issue_size) DESC, COUNT(mi.isin) DESC
+          ORDER BY SUM(mi.issue_size) DESC, COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC
         ) AS arr_rank
       FROM master_issuer mi
       JOIN issuer_trustee it ON it.issuer_id = mi.id
