@@ -3731,7 +3731,7 @@ app.post('/issuePage_specific_isin_detailed_data', async (req, res) => {
 });
 
 
-//updated arranger APIs DONE
+//updated arranger APIs DONE✅
 
 app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
   try {
