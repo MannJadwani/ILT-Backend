@@ -6469,7 +6469,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
       ${baseFilterSql}
     `, formatDate(previousStartDate), formatDate(previousEndDate), ...trusteeExistsParams, ...baseFilterParams);
 
-const totalIssuesCountCurrYearRaw = await prisma.$queryRawUnsafe(`
+    const totalIssuesCountCurrYearRaw = await prisma.$queryRawUnsafe(`
       SELECT COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS aggregate
       FROM master_issuer mi
       WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
@@ -6643,10 +6643,10 @@ const totalIssuesCountCurrYearRaw = await prisma.$queryRawUnsafe(`
 
     /* ---------------- SECTOR BREAKUP QUERY ---------------- */
 
-const sectorValueSelect =
-  issueType === 'count'
-    ? 'COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date)'
-    : 'ROUND(SUM(mi.issue_size) / 10000000, 2)';
+    const sectorValueSelect =
+      issueType === 'count'
+        ? 'COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date)'
+        : 'ROUND(SUM(mi.issue_size) / 10000000, 2)';
 
     const rankedTrusteesSubQuery =
       issueType === 'count'
@@ -6730,10 +6730,19 @@ const sectorValueSelect =
       previousMarketShare: item.py_mkt_share ?? '-',
       yoyChange: item.yoy ?? '-'
     }));
+    
+
+    const totals = {
+      currentSize: Number(totalIssueSize[0]?.aggregate / 10000000) || 0,
+      previousSize: Number(totalIssueSizePrevYear[0]?.aggregate / 10000000) || 0,
+      currentDeals: Number(totalIssuesCountCurrYear[0]?.aggregate) || 0,
+      previousDeals: Number(totalIssuesCountPrevYear[0]?.aggregate) || 0,
+    };
 
     res.status(200).json({
       tableData: finalResult,
       sectorData,
+      totals,
       pagination: {
         total: totalRecords,
         limit: parsedLimit,
