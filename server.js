@@ -6733,10 +6733,10 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
     
 
     const totals = {
-      currentSize: Number(totalIssueSize[0]?.aggregate / 10000000) || 0,
-      previousSize: Number(totalIssueSizePrevYear[0]?.aggregate / 10000000) || 0,
-      currentDeals: Number(totalIssuesCountCurrYear[0]?.aggregate) || 0,
-      previousDeals: Number(totalIssuesCountPrevYear[0]?.aggregate) || 0,
+      currentSize: Number(safeTotalIssueSize) || 0,
+      previousSize: Number(safeTotalIssueSizePrevYear) || 0,
+      currentDeals: Number(safeTotalIssuesCount) || 0,
+      previousDeals: Number(safeTotalIssuesCountPrevYear) || 0,
     };
 
     res.status(200).json({
