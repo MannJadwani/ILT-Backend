@@ -8286,11 +8286,37 @@ app.post('/trustee_top_participants_details', async (req, res) => {
     // COUNT QUERY
     // =========================
 
+    // =========================
+    // COUNT QUERY (Corrected)
+    // =========================
+
     const countQuery = `
-      SELECT COUNT(DISTINCT i.issuer_master_id, i.allotment_date) AS total
+      SELECT COUNT(DISTINCT x.issuer_master_id, x.allotment_date) AS total
       FROM (
           SELECT
-              i.id
+              i.id,
+              i.issuer_master_id,
+              i.allotment_date,
+              id.issuer_name,
+              i.isin,
+              mt.short_name AS debenture_trustee_name,
+              i.security_name,
+              s.description AS security_type,
+              mi.description AS mode_issue,
+              i.issue_size,
+              i.face_value,
+              mstc.description AS seniority,
+              tf.description AS tax_free,
+              msf.description AS secured_flag,
+              (
+                  SELECT mls.description
+                  FROM master_issuer_stock_exchange mise
+                  LEFT JOIN master_listing_status mls
+                      ON mls.code = mise.listing_status
+                  WHERE mise.issuer_id = i.id
+                  ORDER BY mise.listing_status
+                  LIMIT 1
+              ) AS listing_status
           FROM master_issuer i
 
           INNER JOIN issuer_trustee it
@@ -8324,14 +8350,14 @@ app.post('/trustee_top_participants_details', async (req, res) => {
       WHERE 1=1
       ${searchPattern ? `
         AND (
-          issuer_name LIKE ?
-          OR isin LIKE ?
+          x.issuer_name LIKE ?
+          OR x.isin LIKE ?
           OR (
             SELECT GROUP_CONCAT(DISTINCT icd.coupon_rate SEPARATOR ', ')
             FROM issuer_coupon_details icd
             WHERE icd.issuer_id = x.id
           ) LIKE ?
-          OR mt.short_name LIKE ?
+          OR x.debenture_trustee_name LIKE ?
           OR (
             SELECT GROUP_CONCAT(DISTINCT mr.registrar_name SEPARATOR ', ')
             FROM issuer_registrar ir
@@ -8349,29 +8375,21 @@ app.post('/trustee_top_participants_details', async (req, res) => {
             JOIN master_arranger ma ON ma.id = ia.arranger_id
             WHERE ia.issuer_id = x.id
           ) LIKE ?
-          OR security_name LIKE ?
-          OR s.description LIKE ?
-          OR mi.description LIKE ?
-          OR CAST(issue_size AS CHAR) LIKE ?
-          OR CAST(face_value AS CHAR) LIKE ?
+          OR x.security_name LIKE ?
+          OR x.security_type LIKE ?
+          OR x.mode_issue LIKE ?
+          OR CAST(x.issue_size AS CHAR) LIKE ?
+          OR CAST(x.face_value AS CHAR) LIKE ?
           OR (
             SELECT GROUP_CONCAT(DISTINCT mag.short_name SEPARATOR ', ')
             FROM master_issuer_rating mir
             JOIN master_agency mag ON mag.id = mir.agency_id
             WHERE mir.issuer_id = x.id
           ) LIKE ?
-          OR mstc.description LIKE ?
-          OR tf.description LIKE ?
-          OR msf.description LIKE ?
-          OR (
-            SELECT mls.description
-            FROM master_issuer_stock_exchange mise
-            LEFT JOIN master_listing_status mls
-                ON mls.code = mise.listing_status
-            WHERE mise.issuer_id = x.id
-            ORDER BY mise.listing_status
-            LIMIT 1
-          ) LIKE ?
+          OR x.seniority LIKE ?
+          OR x.tax_free LIKE ?
+          OR x.secured_flag LIKE ?
+          OR x.listing_status LIKE ?
         )
       ` : ''}
     `;
