@@ -8287,7 +8287,7 @@ app.post('/trustee_top_participants_details', async (req, res) => {
     // =========================
 
     const countQuery = `
-      SELECT COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS total
+      SELECT COUNT(DISTINCT i.issuer_master_id, i.allotment_date) AS total
       FROM (
           SELECT
               i.id
