@@ -9949,6 +9949,9 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
     // -----------------------------------
     // Main Data Query
     // -----------------------------------
+    // -----------------------------------
+    // Main Data Query
+    // -----------------------------------
     const dataQuery = `
       SELECT
         i.id AS issuerId,
@@ -9966,7 +9969,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
         tf.description AS tax_free,
         msf.description AS secured_flag,
 
-        /* Revert to GROUP_CONCAT to prevent duplicate rows per issuer */
+        /* Aggregated fields (these do NOT go in the GROUP BY) */
         GROUP_CONCAT(DISTINCT mag.short_name SEPARATOR ', ') AS agency_name,
         GROUP_CONCAT(DISTINCT mir.rating SEPARATOR ', ') AS rating_value,
 
@@ -10022,7 +10025,6 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
       LEFT JOIN master_secured_flag AS msf
         ON msf.code = i.secured_flag
         
-      /* Note: Change these back to INNER JOIN if you only want issuers WITH ratings */
       LEFT JOIN master_issuer_rating AS mir
         ON mir.issuer_id = i.id
       LEFT JOIN master_agency AS mag
@@ -10030,14 +10032,27 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
 
       ${whereClause}
 
-      /* Group ONLY by the primary key to ensure one row per issuer */
-      GROUP BY i.id
+      /* Explicitly group by all non-aggregated SELECT columns to satisfy ONLY_FULL_GROUP_BY */
+      GROUP BY 
+        i.id,
+        i.isin,
+        id.issuer_name,
+        i.allotment_date,
+        i.maturity_date,
+        i.security_name,
+        i.issue_size,
+        i.face_value,
+        i.issuer_master_id,
+        s.description,
+        mi.description,
+        mstc.description,
+        tf.description,
+        msf.description
 
       ORDER BY id.issuer_name ASC
 
       LIMIT ? OFFSET ?
     `;
-
     // -----------------------------------
     // Count Query
     // -----------------------------------
