@@ -9898,7 +9898,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
     // Use DISTINCT count to avoid overcounting due to multiple ratings/agencies per issuer
     const countQuery = `
       SELECT 
-        COUNT(DISTINCT i.id) AS aggregate 
+        COUNT(*) AS aggregate 
       FROM all_months 
       INNER JOIN master_issuer AS i 
         ON all_months.month_no = MONTH(i.allotment_date) 
