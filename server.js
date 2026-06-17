@@ -7117,7 +7117,7 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
       conditions.push(`EXISTS (SELECT 1 FROM issuer_registrar ir2 JOIN master_registrar mr2 ON mr2.id = ir2.registrar_id WHERE ir2.issuer_id = master_issuer.id AND mr2.registrar_name LIKE ?)`);
       params.push(`%${registrar}%`);
     }
-
+   
     const whereClause =
       conditions.length > 0
         ? `WHERE ${conditions.join(' AND ')}`
