@@ -10265,7 +10265,7 @@ app.post('/rating_agency_top_participants_details', async (req, res) => {
     const searchPattern = searchTerm ? `%${searchTerm}%` : null;
 
     // =========================
-    // DATA QUERY (parameterized, no Cartesian product)
+    // DATA QUERY (no GROUP BY needed)
     // =========================
     const dataQuery = `
       SELECT *
@@ -10343,10 +10343,6 @@ app.post('/rating_agency_top_participants_details', async (req, res) => {
 
           FROM master_issuer i
 
-          INNER JOIN master_issuer_rating mir
-              ON i.id = mir.issuer_id
-              AND mir.agency_id = ?
-
           LEFT JOIN issuer_details id
               ON i.issuer_master_id = id.id
 
@@ -10365,9 +10361,14 @@ app.post('/rating_agency_top_participants_details', async (req, res) => {
           LEFT JOIN master_secured_flag msf
               ON msf.code = i.secured_flag
 
-          WHERE i.allotment_date BETWEEN ? AND ? AND (i.is_visible = 1)
-
-          GROUP BY i.id, i.isin
+          WHERE i.allotment_date BETWEEN ? AND ?
+            AND i.is_visible = 1
+            AND EXISTS (
+                SELECT 1
+                FROM master_issuer_rating mir
+                WHERE mir.issuer_id = i.id
+                  AND mir.agency_id = ?
+            )
       ) x
 
       WHERE 1 = 1
@@ -10399,9 +10400,9 @@ app.post('/rating_agency_top_participants_details', async (req, res) => {
     `;
 
     const dataParams = [
-      parsedAgencyId,
       sqlStartDate,
       sqlEndDate,
+      parsedAgencyId,
     ];
 
     if (searchPattern) {
@@ -10417,102 +10418,102 @@ app.post('/rating_agency_top_participants_details', async (req, res) => {
     dataParams.push(parsedLimit, parsedOffset);
 
     // =========================
-    // COUNT QUERY
+    // COUNT QUERY (no GROUP BY needed)
     // =========================
     const countQuery = `
-      SELECT COUNT(*) AS total
-      FROM (
-          SELECT i.id
-          FROM master_issuer i
+      SELECT COUNT(DISTINCT i.isin) AS total
+      FROM master_issuer i
 
-          INNER JOIN master_issuer_rating mir
-              ON i.id = mir.issuer_id
+      LEFT JOIN issuer_details id
+          ON i.issuer_master_id = id.id
+
+      LEFT JOIN master_security_type s
+          ON i.security_class = s.code
+
+      LEFT JOIN master_mode_issue mi
+          ON i.mode_issue = mi.code
+
+      LEFT JOIN master_seniority_tier_classification mstc
+          ON mstc.code = i.seniority
+
+      LEFT JOIN master_tax_free tf
+          ON tf.code = i.tax_free
+
+      LEFT JOIN master_secured_flag msf
+          ON msf.code = i.secured_flag
+
+      WHERE i.allotment_date BETWEEN ? AND ?
+        AND i.is_visible = 1
+        AND EXISTS (
+            SELECT 1
+            FROM master_issuer_rating mir
+            WHERE mir.issuer_id = i.id
               AND mir.agency_id = ?
+        )
 
-          LEFT JOIN issuer_details id
-              ON i.issuer_master_id = id.id
-
-          LEFT JOIN master_security_type s
-              ON i.security_class = s.code
-
-          LEFT JOIN master_mode_issue mi
-              ON i.mode_issue = mi.code
-
-          LEFT JOIN master_seniority_tier_classification mstc
-              ON mstc.code = i.seniority
-
-          LEFT JOIN master_tax_free tf
-              ON tf.code = i.tax_free
-
-          LEFT JOIN master_secured_flag msf
-              ON msf.code = i.secured_flag
-
-          WHERE i.allotment_date BETWEEN ? AND ? AND (i.is_visible = 1)
-
-          ${searchPattern ? `
-            AND (
-              id.issuer_name LIKE ?
-              OR i.isin LIKE ?
-              OR (
-                SELECT GROUP_CONCAT(DISTINCT icd.coupon_rate SEPARATOR ', ')
-                FROM issuer_coupon_details icd
-                WHERE icd.issuer_id = i.id
-              ) LIKE ?
-              OR (
-                SELECT GROUP_CONCAT(DISTINCT mt.short_name SEPARATOR ', ')
-                FROM issuer_trustee it
-                JOIN master_trustee mt ON mt.id = it.trustee_id
-                WHERE it.issuer_id = i.id
-              ) LIKE ?
-              OR (
-                SELECT GROUP_CONCAT(DISTINCT mr.registrar_name SEPARATOR ', ')
-                FROM issuer_registrar ir
-                JOIN master_registrar mr ON mr.id = ir.registrar_id
-                WHERE ir.issuer_id = i.id
-              ) LIKE ?
-              OR (
-                SELECT GROUP_CONCAT(DISTINCT mir.rating SEPARATOR ', ')
-                FROM master_issuer_rating mir
-                WHERE mir.issuer_id = i.id
-              ) LIKE ?
-              OR (
-                SELECT GROUP_CONCAT(DISTINCT ma.short_name SEPARATOR ', ')
-                FROM issuer_arranger ia
-                JOIN master_arranger ma ON ma.id = ia.arranger_id
-                WHERE ia.issuer_id = i.id
-              ) LIKE ?
-              OR i.security_name LIKE ?
-              OR s.description LIKE ?
-              OR mi.description LIKE ?
-              OR CAST(i.issue_size AS CHAR) LIKE ?
-              OR CAST(i.face_value AS CHAR) LIKE ?
-              OR (
-                SELECT GROUP_CONCAT(DISTINCT mag.short_name SEPARATOR ', ')
-                FROM master_issuer_rating mir
-                JOIN master_agency mag ON mag.id = mir.agency_id
-                WHERE mir.issuer_id = i.id
-              ) LIKE ?
-              OR mstc.description LIKE ?
-              OR tf.description LIKE ?
-              OR msf.description LIKE ?
-              OR (
-                SELECT mls.description
-                FROM master_issuer_stock_exchange mise
-                LEFT JOIN master_listing_status mls
-                    ON mls.code = mise.listing_status
-                WHERE mise.issuer_id = i.id
-                ORDER BY mise.listing_status
-                LIMIT 1
-              ) LIKE ?
-            )
-          ` : ''}
-      ) t
+      ${searchPattern ? `
+        AND (
+          id.issuer_name LIKE ?
+          OR i.isin LIKE ?
+          OR (
+            SELECT GROUP_CONCAT(DISTINCT icd.coupon_rate SEPARATOR ', ')
+            FROM issuer_coupon_details icd
+            WHERE icd.issuer_id = i.id
+          ) LIKE ?
+          OR (
+            SELECT GROUP_CONCAT(DISTINCT mt.short_name SEPARATOR ', ')
+            FROM issuer_trustee it
+            JOIN master_trustee mt ON mt.id = it.trustee_id
+            WHERE it.issuer_id = i.id
+          ) LIKE ?
+          OR (
+            SELECT GROUP_CONCAT(DISTINCT mr.registrar_name SEPARATOR ', ')
+            FROM issuer_registrar ir
+            JOIN master_registrar mr ON mr.id = ir.registrar_id
+            WHERE ir.issuer_id = i.id
+          ) LIKE ?
+          OR (
+            SELECT GROUP_CONCAT(DISTINCT mir.rating SEPARATOR ', ')
+            FROM master_issuer_rating mir
+            WHERE mir.issuer_id = i.id
+          ) LIKE ?
+          OR (
+            SELECT GROUP_CONCAT(DISTINCT ma.short_name SEPARATOR ', ')
+            FROM issuer_arranger ia
+            JOIN master_arranger ma ON ma.id = ia.arranger_id
+            WHERE ia.issuer_id = i.id
+          ) LIKE ?
+          OR i.security_name LIKE ?
+          OR s.description LIKE ?
+          OR mi.description LIKE ?
+          OR CAST(i.issue_size AS CHAR) LIKE ?
+          OR CAST(i.face_value AS CHAR) LIKE ?
+          OR (
+            SELECT GROUP_CONCAT(DISTINCT mag.short_name SEPARATOR ', ')
+            FROM master_issuer_rating mir
+            JOIN master_agency mag ON mag.id = mir.agency_id
+            WHERE mir.issuer_id = i.id
+          ) LIKE ?
+          OR mstc.description LIKE ?
+          OR tf.description LIKE ?
+          OR msf.description LIKE ?
+          OR (
+            SELECT mls.description
+            FROM master_issuer_stock_exchange mise
+            LEFT JOIN master_listing_status mls
+                ON mls.code = mise.listing_status
+            WHERE mise.issuer_id = i.id
+            ORDER BY mise.listing_status
+            LIMIT 1
+          ) LIKE ?
+        )
+      ` : ''}
     `;
 
     const countParams = [
-      parsedAgencyId,
       sqlStartDate,
       sqlEndDate,
+      parsedAgencyId,
     ];
 
     if (searchPattern) {
