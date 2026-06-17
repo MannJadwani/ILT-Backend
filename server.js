@@ -9855,7 +9855,6 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
       FROM all_months 
       INNER JOIN master_issuer AS i 
         ON all_months.month_no = MONTH(i.allotment_date) 
-        AND i.allotment_date BETWEEN ? AND ? 
       LEFT JOIN issuer_details AS id 
         ON i.issuer_master_id = id.id 
       LEFT JOIN master_security_type AS s 
@@ -9903,7 +9902,6 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
       FROM all_months 
       INNER JOIN master_issuer AS i 
         ON all_months.month_no = MONTH(i.allotment_date) 
-        AND i.allotment_date BETWEEN ? AND ? 
       LEFT JOIN issuer_details AS id 
         ON i.issuer_master_id = id.id 
       LEFT JOIN issuer_coupon_details AS icd 
