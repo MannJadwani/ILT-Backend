@@ -12049,7 +12049,7 @@ app.post('/registrars_page_monthly_detailed_data', async (req, res) => {
 
     // Date Range
     conditions.push(`i.allotment_date BETWEEN ? AND ? AND i.is_visible = 1`);
-    params.push(`${startDate} 00:00:00`, `${endDate} 23:59:59`);
+    params.push(`${startDate}`, `${endDate}`);
 
     // Month Filter
     if (parsedMonth !== null) {
@@ -12248,7 +12248,10 @@ app.post('/registrars_page_monthly_detailed_data', async (req, res) => {
 
       ${whereClause}
 
-      GROUP BY ir1.registrar_id, i.isin, i.id, i.allotment_date, i.maturity_date, i.issue_size, i.face_value, i.issuer_master_id
+      GROUP BY i.id, ir1.registrar_id, mr.short_name, id.issuer_name, i.isin, 
+               i.allotment_date, i.maturity_date, i.security_name, i.issue_size, 
+               i.face_value, i.issuer_master_id, s.description, mi.description,
+               mstc.description, tf.description, msf.description
 
       ORDER BY id.issuer_name ASC
 
@@ -12257,9 +12260,10 @@ app.post('/registrars_page_monthly_detailed_data', async (req, res) => {
 
     // ── COUNT QUERY ──
     const countQuery = `
-      SELECT COUNT(DISTINCT CONCAT(ir1.registrar_id, '-', i.isin)) AS total
+      SELECT COUNT(*) AS total
 
-      FROM master_issuer AS i
+        SELECT DISTINCT i.id, i.isin
+         FROM master_issuer AS i
 
       LEFT JOIN issuer_details AS id
           ON i.issuer_master_id = id.id
