@@ -10040,14 +10040,8 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
       LEFT JOIN master_secured_flag AS msf
         ON msf.code = i.secured_flag
 
-      -- FIX: Removed LEFT JOIN on master_issuer_rating and master_agency
-      -- (moved to correlated subqueries above to avoid cartesian product)
 
       ${whereClause}
-
-      -- FIX: Simplified GROUP BY to just i.id
-      -- (all one-to-many relationships are now handled via subqueries)
-      GROUP BY i.id
 
       ORDER BY issuer_name ASC
 
@@ -10058,7 +10052,6 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
     // Count Query
     // -----------------------------------
     const countQuery = `
-      -- FIX: Use COUNT(DISTINCT i.id) to avoid inflated counts from joins
       SELECT COUNT(DISTINCT i.id) AS total
       FROM master_issuer AS i
 
@@ -10079,8 +10072,6 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
 
       LEFT JOIN master_secured_flag AS msf
         ON msf.code = i.secured_flag
-
-      -- FIX: Removed LEFT JOIN on master_issuer_rating and master_agency from count query too
 
       ${whereClause}
     `;
