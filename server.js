@@ -12584,11 +12584,6 @@ app.post('/registrar_top_participants_details', async (req, res) => {
           WHERE
               ir1.registrar_id = ?
               AND i.allotment_date BETWEEN ? AND ? AND i.is_visible = 1
-
-          GROUP BY
-              ir1.registrar_id,
-              i.isin,
-              i.id
       ) x
 
       WHERE 1 = 1
@@ -12602,7 +12597,7 @@ app.post('/registrar_top_participants_details', async (req, res) => {
 
     // ── COUNT QUERY ──
     const countQuery = `
-      SELECT COUNT(*) AS total
+      SELECT COUNT(DISTINCT t.issuer_master_id, t.allotment_date) AS total
       FROM (
           SELECT i.id
           FROM master_issuer i
@@ -12655,11 +12650,6 @@ app.post('/registrar_top_participants_details', async (req, res) => {
           WHERE
               ir1.registrar_id = ?
               AND i.allotment_date BETWEEN ? AND ? AND i.is_visible = 1
-
-          GROUP BY
-              ir1.registrar_id,
-              i.isin,
-              i.id
 
           HAVING
               1 = 1
