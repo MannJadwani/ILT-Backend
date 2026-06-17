@@ -10366,6 +10366,8 @@ app.post('/rating_agency_top_participants_details', async (req, res) => {
               ON msf.code = i.secured_flag
 
           WHERE i.allotment_date BETWEEN ? AND ? AND (i.is_visible = 1)
+
+          GROUP BY i.id, i.isin
       ) x
 
       WHERE 1 = 1
