@@ -12248,10 +12248,7 @@ app.post('/registrars_page_monthly_detailed_data', async (req, res) => {
 
       ${whereClause}
 
-      GROUP BY i.id, ir1.registrar_id, mr.short_name, id.issuer_name, i.isin, 
-               i.allotment_date, i.maturity_date, i.security_name, i.issue_size, 
-               i.face_value, i.issuer_master_id, s.description, mi.description,
-               mstc.description, tf.description, msf.description
+      GROUP BY ir1.registrar_id, i.isin, i.id, i.allotment_date, i.maturity_date, i.issue_size, i.face_value, i.issuer_master_id
 
       ORDER BY id.issuer_name ASC
 
