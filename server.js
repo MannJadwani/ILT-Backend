@@ -9847,7 +9847,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
     const params = [];
 
     // Base conditions
-    conditions.push(`i.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)`);
+    conditions.push(`i.allotment_date BETWEEN ? AND ? AND (i.is_visible = 1)`);
     params.push(sqlStartDate, sqlEndDate);
 
     // -----------------------------------
