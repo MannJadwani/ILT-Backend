@@ -9726,9 +9726,9 @@ app.post('/rating_agencies_page_monthly_summary_data', async (req, res) => {
           SUM(i.issue_size) AS actual_issue_size
       FROM
           all_months
-          INNER JOIN isin_re_issuance AS i ON all_months.month_no = MONTH(i.allotment_date)
+          INNER JOIN master_issuer AS i ON all_months.month_no = MONTH(i.allotment_date)
           AND i.allotment_date BETWEEN ? AND ?
-          INNER JOIN master_issuer_rating AS mir ON i.isin_id = mir.issuer_id
+          INNER JOIN master_issuer_rating AS mir ON i.id = mir.issuer_id
           INNER JOIN master_agency AS mag ON mag.id = mir.agency_id
       WHERE
           (is_visible = 1)
