@@ -9736,7 +9736,7 @@ app.post('/rating_agencies_page_monthly_summary_data', async (req, res) => {
       GROUP BY
           all_months.month_no
       ORDER BY
-          all_months.id ASC;
+          all_months.month_no ASC;
     `;
 
     const result = await prisma.$queryRawUnsafe(query, ...params);
