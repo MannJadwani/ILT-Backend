@@ -9923,12 +9923,12 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
 
     // Execute both queries in parallel
     const [dataRows, countRows] = await Promise.all([
-      prisma.$queryRawUnsafe(dataQuery, queryParams),
-      prisma.$queryRawUnsafe(countQuery, countParams)
+      prisma.$queryRawUnsafe(dataQuery, ...queryParams),
+      prisma.$queryRawUnsafe(countQuery, ...countParams)
     ]);
 
 
-    
+
     const total = countRows[0]?.aggregate || 0;
 
     // Format response data
