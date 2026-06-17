@@ -7638,7 +7638,7 @@ app.post('/trustee_page_monthly_detailed_data', async (req, res) => {
     const params = [];
 
     // Date Range
-    conditions.push(`i.allotment_date BETWEEN ? AND ?`);
+    conditions.push(`i.allotment_date BETWEEN ? AND ? AND i.is_visible = 1`);
     params.push(sqlStartDate, sqlEndDate);
 
     // Month Filter
