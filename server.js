@@ -12584,6 +12584,8 @@ app.post('/registrar_top_participants_details', async (req, res) => {
           WHERE
               ir1.registrar_id = ?
               AND i.allotment_date BETWEEN ? AND ? AND i.is_visible = 1
+
+          GROUP BY i.id, i.isin
       ) x
 
       WHERE 1 = 1
