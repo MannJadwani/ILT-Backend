@@ -7497,7 +7497,7 @@ app.post('/trustee_page_monthly_summary_data', async (req, res) => {
     }
 
     const whereClause = conditions.length > 0
-      ? `WHERE ${conditions.join(' AND ')}`
+      ? `AND ${conditions.join(' AND ')}`
       : '';
 
     /* ---------------------------------
@@ -7508,23 +7508,22 @@ app.post('/trustee_page_monthly_summary_data', async (req, res) => {
       SELECT
           am.month_no AS issue_month_no,
           MONTHNAME(STR_TO_DATE(am.month_no, '%m')) AS issue_month,
-          COUNT(DISTINCT CONCAT(mi.id, '-', it.trustee_id)) AS no_of_issue,
+          COUNT(mi.isin) AS no_of_issue,
           COALESCE(ROUND(SUM(mi.issue_size) / 10000000, 2), 0) AS issue_size,
           COALESCE(SUM(mi.issue_size), 0) AS actual_issue_size
       FROM all_months am
-      
-      LEFT JOIN master_issuer mi
+      INNER JOIN master_issuer mi
           ON am.month_no = MONTH(mi.allotment_date)
-          AND mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1
-
-      LEFT JOIN issuer_trustee it
-          ON it.issuer_id = mi.id
-
-      LEFT JOIN master_trustee mt
-          ON mt.id = it.trustee_id
+          AND mi.allotment_date BETWEEN ? AND ?
+          AND mi.is_visible = 1
+      INNER JOIN issuer_trustee it
+          ON mi.id = it.issuer_id
+      INNER JOIN master_trustee mt
+          ON it.trustee_id = mt.id
+      WHERE 1=1
       ${whereClause}
-      GROUP BY am.month_no
-      ORDER BY CAST(am.month_no AS UNSIGNED) ASC
+      GROUP BY am.id, am.month_no
+      ORDER BY am.id ASC
     `;
 
     const queryParams = [sqlStartDate, sqlEndDate, ...params];
