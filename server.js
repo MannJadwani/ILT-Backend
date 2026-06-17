@@ -9764,7 +9764,7 @@ app.post('/rating_agencies_page_monthly_summary_data', async (req, res) => {
   }
 });
 
-app.get('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
+app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
   try {
     let {
       startDate = '2026-04-01',
