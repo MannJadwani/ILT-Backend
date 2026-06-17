@@ -9766,7 +9766,7 @@ app.post('/rating_agencies_page_monthly_summary_data', async (req, res) => {
 
 app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
   try {
-    // 1. Destructure the request body with defaults for pagination
+    // 1. Destructure the request body with defaults
     const {
       startDate,
       endDate,
@@ -9803,10 +9803,10 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
     const params = [];
 
     // Allotment Date Range
-    if (sqlStartDate && sqlEndDate) {
-      conditions.push(`i.allotment_date BETWEEN ? AND ?`);
-      params.push(sqlStartDate, sqlEndDate);
-    }
+    // if (sqlStartDate && sqlEndDate) {
+    //   conditions.push(`i.allotment_date BETWEEN ? AND ?`);
+    //   params.push(sqlStartDate, sqlEndDate);
+    // }
 
     // Filter by Issuer Name
     if (issuerName) {
@@ -9823,12 +9823,13 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
     const filterSql = conditions.length > 0 ? ' AND ' + conditions.join(' AND ') : '';
 
     /* ---------------------------------
-       COMMON JOINS 
+       COMMON JOINS (Using master_issuer and i.id)
     --------------------------------- */
     const baseJoins = `
       FROM all_months 
       INNER JOIN master_issuer AS i 
           ON all_months.month_no = MONTH(i.allotment_date) 
+          AND i.allotment_date BETWEEN ${startDate} AND ${endDate} 
       LEFT JOIN issuer_details AS id 
           ON i.issuer_master_id = id.id 
       LEFT JOIN master_security_type AS s 
@@ -9865,7 +9866,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
        MAIN QUERIES
     --------------------------------- */
     
-    // Data Query - WRAPPED NON-GROUPED COLUMNS IN MAX() TO FIX ONLY_FULL_GROUP_BY
+    // Data Query (Wrapped non-grouped fields in MAX to satisfy Prisma strict mode)
     const dataQuery = `
       SELECT 
           i.id AS issuerId, 
@@ -9903,7 +9904,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
       LIMIT ${Number(limit)} OFFSET ${Number(offset)};
     `;
 
-    // Total Count Query
+    // Total Count Query (Matches the data query's unique rows)
     const countQuery = `
       SELECT COUNT(DISTINCT i.id) AS aggregate 
       ${baseJoins}
@@ -9916,7 +9917,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
       prisma.$queryRawUnsafe(countQuery, ...params)
     ]);
 
-    // Format count safely
+    // Parse BigInt aggregate safely
     const totalCount = countResult.length > 0 ? Number(countResult[0].aggregate) : 0;
 
     /* ---------------------------------
