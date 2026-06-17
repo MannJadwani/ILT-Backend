@@ -10043,13 +10043,26 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
 
   ${whereClause}
 
-  GROUP BY i.id  
+  GROUP BY 
+    i.id, 
+    i.isin, 
+    id.issuer_name,
+    i.allotment_date, 
+    i.maturity_date, 
+    i.security_name,
+    i.issue_size, 
+    i.face_value, 
+    i.issuer_master_id,
+    s.description,
+    mi.description,
+    mstc.description,
+    tf.description,
+    msf.description
 
-  ORDER BY issuer_name ASC
+  ORDER BY id.issuer_name ASC
 
   LIMIT ? OFFSET ?
 `;
-
     // -----------------------------------
     // Count Query (FIXED)
     // -----------------------------------
