@@ -11642,7 +11642,7 @@ app.post('/registrarPage_detailed_data', async (req, res) => {
       prisma.$queryRawUnsafe(dataQuery, ...params, parsedLimit, parsedOffset),
       prisma.$queryRawUnsafe(countQuery, ...params)
     ]);
-
+ 
     // Safe number extraction from BigInt
     const safeNumber = (val) => {
       if (val === null || val === undefined) return 0;
