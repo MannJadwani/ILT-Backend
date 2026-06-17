@@ -9824,7 +9824,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
     // ==================== DATA QUERY ====================
     const dataQuery = `
       SELECT 
-        i.isin_id AS issuerId, 
+        i.id AS issuerId, 
         i.isin, 
         id.issuer_name, 
         i.allotment_date, 
@@ -9847,13 +9847,13 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
           SELECT description 
           FROM master_issuer_stock_exchange AS mise
           LEFT JOIN master_listing_status AS mls ON mls.code = mise.listing_status 
-          WHERE mise.issuer_id = i.isin_id 
+          WHERE mise.issuer_id = i.id 
           ORDER BY mise.listing_status 
           LIMIT 1
         ) AS listing_status, 
         i.issuer_master_id 
       FROM all_months 
-      INNER JOIN isin_re_issuance AS i 
+      INNER JOIN master_issuer AS i 
         ON all_months.month_no = MONTH(i.allotment_date) 
         AND i.allotment_date BETWEEN ? AND ? 
       LEFT JOIN issuer_details AS id 
@@ -9863,7 +9863,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
       LEFT JOIN master_mode_issue AS mi 
         ON i.mode_issue = mi.code 
       LEFT JOIN issuer_coupon_details AS icd 
-        ON i.isin_id = icd.issuer_id 
+        ON i.id = icd.issuer_id 
       LEFT JOIN master_seniority_tier_classification AS mstc 
         ON mstc.code = i.seniority 
       LEFT JOIN master_tax_free AS tf 
@@ -9871,23 +9871,23 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
       LEFT JOIN master_secured_flag AS msf 
         ON msf.code = i.secured_flag 
       LEFT JOIN issuer_arranger AS ia 
-        ON i.isin_id = ia.issuer_id 
+        ON i.id = ia.issuer_id 
       LEFT JOIN master_arranger AS ma 
         ON ia.arranger_id = ma.id 
       LEFT JOIN issuer_trustee AS it 
-        ON i.isin_id = it.issuer_id 
+        ON i.id = it.issuer_id 
       LEFT JOIN master_trustee AS mt 
         ON it.trustee_id = mt.id 
       LEFT JOIN issuer_registrar AS ir1 
-        ON i.isin_id = ir1.issuer_id 
+        ON i.id = ir1.issuer_id 
       LEFT JOIN master_registrar AS mr 
         ON ir1.registrar_id = mr.id 
       INNER JOIN master_issuer_rating AS mir 
-        ON i.isin_id = mir.issuer_id 
+        ON i.id = mir.issuer_id 
       INNER JOIN master_agency AS mag 
         ON mag.id = mir.agency_id 
       WHERE ${whereConditions}
-      GROUP BY i.isin_id
+      GROUP BY i.id
       ORDER BY id.issuer_name ASC 
       LIMIT ? OFFSET ?
     `;
@@ -9899,23 +9899,23 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
     // Use DISTINCT count to avoid overcounting due to multiple ratings/agencies per issuer
     const countQuery = `
       SELECT 
-        COUNT(DISTINCT i.isin_id) AS aggregate 
+        COUNT(DISTINCT i.id) AS aggregate 
       FROM all_months 
-      INNER JOIN isin_re_issuance AS i 
+      INNER JOIN master_issuer AS i 
         ON all_months.month_no = MONTH(i.allotment_date) 
         AND i.allotment_date BETWEEN ? AND ? 
       LEFT JOIN issuer_details AS id 
         ON i.issuer_master_id = id.id 
       LEFT JOIN issuer_coupon_details AS icd 
-        ON i.isin_id = icd.issuer_id 
+        ON i.id = icd.issuer_id 
       LEFT JOIN issuer_arranger AS ia 
-        ON i.isin_id = ia.issuer_id 
+        ON i.id = ia.issuer_id 
       LEFT JOIN issuer_trustee AS it 
-        ON i.isin_id = it.issuer_id 
+        ON i.id = it.issuer_id 
       LEFT JOIN issuer_registrar AS ir1 
-        ON i.isin_id = ir1.issuer_id 
+        ON i.id = ir1.issuer_id 
       INNER JOIN master_issuer_rating AS mir 
-        ON i.isin_id = mir.issuer_id 
+        ON i.id = mir.issuer_id 
       INNER JOIN master_agency AS mag 
         ON mag.id = mir.agency_id 
       WHERE ${countWhereConditions}
