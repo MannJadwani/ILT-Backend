@@ -9946,14 +9946,13 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
       : '';
 
     // -----------------------------------
-    // Main Data Query (no Cartesian product)
+    // -----------------------------------
+    // Main Data Query
     // -----------------------------------
     const dataQuery = `
       SELECT
         i.id AS issuerId,
         i.isin,
-        mag.short_name AS agency_name,
-        mir.rating AS rating_value,
         id.issuer_name,
         i.allotment_date,
         i.maturity_date,
@@ -9961,14 +9960,15 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
         i.issue_size,
         i.face_value,
         i.issuer_master_id,
-
         s.description AS security_type,
         mi.description AS mode_issue,
         mstc.description AS seniority,
         tf.description AS tax_free,
         msf.description AS secured_flag,
 
-        
+        /* Revert to GROUP_CONCAT to prevent duplicate rows per issuer */
+        GROUP_CONCAT(DISTINCT mag.short_name SEPARATOR ', ') AS agency_name,
+        GROUP_CONCAT(DISTINCT mir.rating SEPARATOR ', ') AS rating_value,
 
         (
           SELECT GROUP_CONCAT(DISTINCT icd.coupon_rate SEPARATOR ', ')
@@ -10011,36 +10011,29 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
 
       LEFT JOIN issuer_details AS id
         ON i.issuer_master_id = id.id
-
       LEFT JOIN master_security_type AS s
         ON i.security_class = s.code
-
       LEFT JOIN master_mode_issue AS mi
         ON i.mode_issue = mi.code
-
       LEFT JOIN master_seniority_tier_classification AS mstc
         ON mstc.code = i.seniority
-
       LEFT JOIN master_tax_free AS tf
         ON tf.code = i.tax_free
-
       LEFT JOIN master_secured_flag AS msf
         ON msf.code = i.secured_flag
-
+        
+      /* Note: Change these back to INNER JOIN if you only want issuers WITH ratings */
       LEFT JOIN master_issuer_rating AS mir
         ON mir.issuer_id = i.id
-
       LEFT JOIN master_agency AS mag
         ON mag.id = mir.agency_id
 
       ${whereClause}
 
-      GROUP BY i.id, mag.short_name, mir.rating, i.isin, id.issuer_name, i.allotment_date, i.maturity_date,
-               i.security_name, i.issue_size, i.face_value, i.issuer_master_id,
-               s.description, mi.description, mstc.description, tf.description,
-               msf.description, mag.short_name, mir.rating
+      /* Group ONLY by the primary key to ensure one row per issuer */
+      GROUP BY i.id
 
-      ORDER BY issuer_name ASC
+      ORDER BY id.issuer_name ASC
 
       LIMIT ? OFFSET ?
     `;
@@ -10049,30 +10042,24 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
     // Count Query
     // -----------------------------------
     const countQuery = `
-      SELECT COUNT(*) AS total
+      /* Use COUNT(DISTINCT i.id) to avoid overcounting due to LEFT JOINS */
+      SELECT COUNT(DISTINCT i.id) AS total
       FROM master_issuer AS i
 
       LEFT JOIN issuer_details AS id
         ON i.issuer_master_id = id.id
-
       LEFT JOIN master_security_type AS s
         ON i.security_class = s.code
-
       LEFT JOIN master_mode_issue AS mi
         ON i.mode_issue = mi.code
-
       LEFT JOIN master_seniority_tier_classification AS mstc
         ON mstc.code = i.seniority
-
       LEFT JOIN master_tax_free AS tf
         ON tf.code = i.tax_free
-
       LEFT JOIN master_secured_flag AS msf
         ON msf.code = i.secured_flag
-
       LEFT JOIN master_issuer_rating AS mir
         ON mir.issuer_id = i.id
-
       LEFT JOIN master_agency AS mag
         ON mag.id = mir.agency_id
 
