@@ -9864,8 +9864,9 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
       params.push(`%${issuerName}%`);
     }
 
+    // FIX: rating filter now uses EXISTS subquery instead of joining on mir table
     if (rating) {
-      conditions.push(`mir.rating LIKE ?`);
+      conditions.push(`EXISTS (SELECT 1 FROM master_issuer_rating mir2 WHERE mir2.issuer_id = i.id AND mir2.rating LIKE ?)`);
       params.push(`%${rating}%`);
     }
 
@@ -9899,8 +9900,9 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
       params.push(`%${trustee}%`);
     }
 
+    // FIX: creditRatingAgency filter now uses EXISTS subquery
     if (creditRatingAgency) {
-      conditions.push(`mag.short_name = ?`);
+      conditions.push(`EXISTS (SELECT 1 FROM master_issuer_rating mir2 JOIN master_agency mag2 ON mag2.id = mir2.agency_id WHERE mir2.issuer_id = i.id AND mag2.short_name = ?)`);
       params.push(creditRatingAgency);
     }
 
@@ -9946,11 +9948,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
       : '';
 
     // -----------------------------------
-    // -----------------------------------
-    // Main Data Query
-    // -----------------------------------
-    // -----------------------------------
-    // Main Data Query
+    // Main Data Query (no Cartesian product)
     // -----------------------------------
     const dataQuery = `
       SELECT
@@ -9963,15 +9961,27 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
         i.issue_size,
         i.face_value,
         i.issuer_master_id,
+
         s.description AS security_type,
         mi.description AS mode_issue,
         mstc.description AS seniority,
         tf.description AS tax_free,
         msf.description AS secured_flag,
 
-        /* Aggregated fields (these do NOT go in the GROUP BY) */
-        GROUP_CONCAT(DISTINCT mag.short_name SEPARATOR ', ') AS agency_name,
-        GROUP_CONCAT(DISTINCT mir.rating SEPARATOR ', ') AS rating_value,
+        -- FIX: rating and agency now use subqueries with GROUP_CONCAT
+        -- (matches old query behavior: aggregates all ratings into one string)
+        (
+          SELECT GROUP_CONCAT(DISTINCT mir.rating SEPARATOR ', ')
+          FROM master_issuer_rating mir
+          WHERE mir.issuer_id = i.id
+        ) AS rating_value,
+
+        (
+          SELECT GROUP_CONCAT(DISTINCT mag.short_name SEPARATOR ', ')
+          FROM master_issuer_rating mir
+          JOIN master_agency mag ON mag.id = mir.agency_id
+          WHERE mir.issuer_id = i.id
+        ) AS agency_name,
 
         (
           SELECT GROUP_CONCAT(DISTINCT icd.coupon_rate SEPARATOR ', ')
@@ -10014,69 +10024,63 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
 
       LEFT JOIN issuer_details AS id
         ON i.issuer_master_id = id.id
+
       LEFT JOIN master_security_type AS s
         ON i.security_class = s.code
+
       LEFT JOIN master_mode_issue AS mi
         ON i.mode_issue = mi.code
+
       LEFT JOIN master_seniority_tier_classification AS mstc
         ON mstc.code = i.seniority
+
       LEFT JOIN master_tax_free AS tf
         ON tf.code = i.tax_free
+
       LEFT JOIN master_secured_flag AS msf
         ON msf.code = i.secured_flag
-        
-      LEFT JOIN master_issuer_rating AS mir
-        ON mir.issuer_id = i.id
-      LEFT JOIN master_agency AS mag
-        ON mag.id = mir.agency_id
+
+      -- FIX: Removed LEFT JOIN on master_issuer_rating and master_agency
+      -- (moved to correlated subqueries above to avoid cartesian product)
 
       ${whereClause}
 
-      /* Explicitly group by all non-aggregated SELECT columns to satisfy ONLY_FULL_GROUP_BY */
-      GROUP BY 
-        i.id,
-        i.isin,
-        id.issuer_name,
-        i.allotment_date,
-        i.maturity_date,
-        i.security_name,
-        i.issue_size,
-        i.face_value,
-        i.issuer_master_id,
-        s.description,
-        mi.description,
-        mstc.description,
-        tf.description,
-        msf.description
+      -- FIX: Simplified GROUP BY to just i.id
+      -- (all one-to-many relationships are now handled via subqueries)
+      GROUP BY i.id
 
-      ORDER BY id.issuer_name ASC
+      ORDER BY issuer_name ASC
 
       LIMIT ? OFFSET ?
     `;
+
     // -----------------------------------
     // Count Query
     // -----------------------------------
     const countQuery = `
-      /* Use COUNT(DISTINCT i.id) to avoid overcounting due to LEFT JOINS */
+      -- FIX: Use COUNT(DISTINCT i.id) to avoid inflated counts from joins
       SELECT COUNT(DISTINCT i.id) AS total
       FROM master_issuer AS i
 
       LEFT JOIN issuer_details AS id
         ON i.issuer_master_id = id.id
+
       LEFT JOIN master_security_type AS s
         ON i.security_class = s.code
+
       LEFT JOIN master_mode_issue AS mi
         ON i.mode_issue = mi.code
+
       LEFT JOIN master_seniority_tier_classification AS mstc
         ON mstc.code = i.seniority
+
       LEFT JOIN master_tax_free AS tf
         ON tf.code = i.tax_free
+
       LEFT JOIN master_secured_flag AS msf
         ON msf.code = i.secured_flag
-      LEFT JOIN master_issuer_rating AS mir
-        ON mir.issuer_id = i.id
-      LEFT JOIN master_agency AS mag
-        ON mag.id = mir.agency_id
+
+      -- FIX: Removed LEFT JOIN on master_issuer_rating and master_agency from count query too
 
       ${whereClause}
     `;
