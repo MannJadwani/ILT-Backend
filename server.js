@@ -9783,7 +9783,6 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
       if (!dateStr) return null;
       const date = new Date(dateStr);
       if (isNaN(date.getTime())) return null;
-      // Append start of day to match the format "YYYY-MM-DD 00:00:00"
       return date.toISOString().slice(0, 10) + " 00:00:00";
     };
 
@@ -9791,7 +9790,6 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
       if (!dateStr) return null;
       const date = new Date(dateStr);
       if (isNaN(date.getTime())) return null;
-      // Append end of day to match the format "YYYY-MM-DD 23:59:59"
       return date.toISOString().slice(0, 10) + " 23:59:59";
     };
 
@@ -9827,7 +9825,6 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
     /* ---------------------------------
        COMMON JOINS 
     --------------------------------- */
-    // Using a shared joins string to prevent code duplication between data and count queries
     const baseJoins = `
       FROM all_months 
       INNER JOIN master_issuer AS i 
@@ -9868,28 +9865,28 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
        MAIN QUERIES
     --------------------------------- */
     
-    // Data Query
+    // Data Query - WRAPPED NON-GROUPED COLUMNS IN MAX() TO FIX ONLY_FULL_GROUP_BY
     const dataQuery = `
       SELECT 
           i.id AS issuerId, 
-          i.isin, 
-          id.issuer_name, 
-          i.allotment_date, 
-          icd.coupon_rate, 
-          mt.short_name AS debenture_trustee_name, 
-          mr.short_name AS registrar_detail, 
-          i.maturity_date, 
-          GROUP_CONCAT(mir.rating) AS rating_value, 
-          ma.short_name AS arranger_name, 
-          i.security_name, 
-          s.description AS security_type, 
-          mi.description AS mode_issue, 
-          i.issue_size, 
-          i.face_value, 
-          GROUP_CONCAT(mag.short_name) AS agency_name, 
-          mstc.description AS seniority, 
-          tf.description AS tax_free, 
-          msf.description AS secured_flag, 
+          MAX(i.isin) AS isin, 
+          MAX(id.issuer_name) AS issuer_name, 
+          MAX(i.allotment_date) AS allotment_date, 
+          MAX(icd.coupon_rate) AS coupon_rate, 
+          MAX(mt.short_name) AS debenture_trustee_name, 
+          MAX(mr.short_name) AS registrar_detail, 
+          MAX(i.maturity_date) AS maturity_date, 
+          GROUP_CONCAT(DISTINCT mir.rating) AS rating_value, 
+          MAX(ma.short_name) AS arranger_name, 
+          MAX(i.security_name) AS security_name, 
+          MAX(s.description) AS security_type, 
+          MAX(mi.description) AS mode_issue, 
+          MAX(i.issue_size) AS issue_size, 
+          MAX(i.face_value) AS face_value, 
+          GROUP_CONCAT(DISTINCT mag.short_name) AS agency_name, 
+          MAX(mstc.description) AS seniority, 
+          MAX(tf.description) AS tax_free, 
+          MAX(msf.description) AS secured_flag, 
           (
               SELECT description 
               FROM master_issuer_stock_exchange AS mise
@@ -9898,29 +9895,28 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
               ORDER BY listing_status 
               LIMIT 1
           ) AS listing_status, 
-          i.issuer_master_id 
+          MAX(i.issuer_master_id) AS issuer_master_id 
       ${baseJoins}
       WHERE 1=1 ${filterSql}
       GROUP BY i.id
-      ORDER BY id.issuer_name ASC 
+      ORDER BY issuer_name ASC 
       LIMIT ${Number(limit)} OFFSET ${Number(offset)};
     `;
 
     // Total Count Query
-    // Note: We use COUNT(DISTINCT i.id) because the main query groups by id
     const countQuery = `
       SELECT COUNT(DISTINCT i.id) AS aggregate 
       ${baseJoins}
       WHERE 1=1 ${filterSql};
     `;
 
-    // Execute queries concurrently for better performance
+    // Execute queries concurrently
     const [result, countResult] = await Promise.all([
       prisma.$queryRawUnsafe(dataQuery, ...params),
       prisma.$queryRawUnsafe(countQuery, ...params)
     ]);
 
-    // Prisma returns COUNT() as a BigInt. We must convert it to a Number.
+    // Format count safely
     const totalCount = countResult.length > 0 ? Number(countResult[0].aggregate) : 0;
 
     /* ---------------------------------
@@ -9938,7 +9934,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
       couponRate: item?.coupon_rate || '-',
       debentureTrustee: item?.debenture_trustee_name || '-',
       registrar: item?.registrar_detail || '-',
-      rating: item?.rating_value || '-', // Mapped to alias from GROUP_CONCAT
+      rating: item?.rating_value || '-', 
       arranger: item?.arranger_name || '-',
       issueSize: Number(item?.issue_size) || 0,
       faceValue: Number(item?.face_value) || 0,
