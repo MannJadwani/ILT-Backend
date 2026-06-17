@@ -6730,7 +6730,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
       previousMarketShare: item.py_mkt_share ?? '-',
       yoyChange: item.yoy ?? '-'
     }));
-    
+
 
     const totals = {
       currentSize: Number(safeTotalIssueSize) || 0,
@@ -7866,7 +7866,7 @@ app.post('/trustee_page_monthly_detailed_data', async (req, res) => {
     const countQuery = `
       SELECT COUNT(*) AS total
       FROM (
-        SELECT i.id
+        SELECT DISTINCT i.id
         FROM master_issuer AS i
 
         INNER JOIN issuer_trustee AS it
@@ -7894,8 +7894,6 @@ app.post('/trustee_page_monthly_detailed_data', async (req, res) => {
             ON msf.code = i.secured_flag
 
         ${whereClause}
-
-        GROUP BY i.id, it.trustee_id
       ) AS aggregate_table
     `;
 
