@@ -9715,37 +9715,28 @@ app.post('/rating_agencies_page_monthly_summary_data', async (req, res) => {
 
     const query = `
       SELECT
-          am.month_no AS issue_month_no,
-          MONTHNAME(STR_TO_DATE(CONCAT(am.month_no, '-01'), '%m-%d')) AS issue_month,
-          COALESCE(fd.no_of_issue, 0) AS no_of_issue,
-          COALESCE(ROUND(fd.total_issue_size / 10000000, 2), 0) AS issue_size,
-          COALESCE(fd.total_issue_size, 0) AS actual_issue_size
-      FROM all_months am
-      LEFT JOIN (
-SELECT
-    MONTH(mi.allotment_date) AS issue_month,
-
-    COUNT(
-        DISTINCT CONCAT(
-          mi.id,
-          '-',
-          COALESCE(mir.id, '')
-        )
-        ) AS no_of_issue,
-
-        SUM(mi.issue_size) AS total_issue_size
-
-        FROM master_issuer mi
-
-        LEFT JOIN master_issuer_rating mir
-            ON mir.issuer_id = mi.id
-
-        WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-        ${filterSql}
-
-        GROUP BY MONTH(mi.allotment_date)
-        ) fd ON fd.issue_month = am.month_no
-        ORDER BY CAST(am.month_no AS UNSIGNED) ASC
+          all_months.month_no AS issue_month_no,
+          MONTHNAME(STR_TO_DATE(all_months.month_no, '%m')) AS issue_month,
+          COUNT(i.isin) AS no_of_issue,
+          IF(
+              SUM(i.issue_size) > 0,
+              ROUND(SUM(i.issue_size) / 10000000, 2),
+              0
+          ) AS issue_size,
+          SUM(i.issue_size) AS actual_issue_size
+      FROM
+          all_months
+          INNER JOIN isin_re_issuance AS i ON all_months.month_no = MONTH(i.allotment_date)
+          AND i.allotment_date BETWEEN ? AND ?
+          INNER JOIN master_issuer_rating AS mir ON i.isin_id = mir.issuer_id
+          INNER JOIN master_agency AS mag ON mag.id = mir.agency_id
+      WHERE
+          (is_visible = 1)
+          ${filterSql}
+      GROUP BY
+          all_months.month_no
+      ORDER BY
+          all_months.id ASC;
     `;
 
     const result = await prisma.$queryRawUnsafe(query, ...params);
@@ -10058,7 +10049,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
     // Count Query
     // -----------------------------------
     const countQuery = `
-      SELECT COUNT(DISTINCT CONCAT(i.id, '-', COALESCE(mir.id, ''))) AS total
+      SELECT COUNT(*) AS total
       FROM master_issuer AS i
 
       LEFT JOIN issuer_details AS id
