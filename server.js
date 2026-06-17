@@ -10705,7 +10705,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
       SELECT SUM(issue_size) AS aggregate
       FROM master_issuer mi
       ${commonJoinsSql}
-      WHERE mi.allotment_date BETWEEN ? AND ?
+      WHERE mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1
       ${commonWhereSql}
     `, currStartStr, currEndStr, ...commonParams);
 
@@ -10713,7 +10713,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
       SELECT SUM(issue_size) AS aggregate
       FROM master_issuer mi
       ${commonJoinsSql}
-      WHERE mi.allotment_date BETWEEN ? AND ?
+      WHERE mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1
       ${commonWhereSql}
     `, prevStartStr, prevEndStr, ...commonParams);
 
@@ -10721,7 +10721,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
       SELECT COUNT(*) AS aggregate
       FROM master_issuer mi
       ${commonJoinsSql}
-      WHERE mi.allotment_date BETWEEN ? AND ?
+      WHERE mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1
       ${commonWhereSql}
     `, currStartStr, currEndStr, ...commonParams);
 
@@ -10729,7 +10729,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
       SELECT COUNT(*) AS aggregate
       FROM master_issuer mi
       ${commonJoinsSql}
-      WHERE mi.allotment_date BETWEEN ? AND ?
+      WHERE mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1
       ${commonWhereSql}
     `, prevStartStr, prevEndStr, ...commonParams);
 
@@ -10804,7 +10804,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
         JOIN issuer_registrar ir ON ir.issuer_id = mi.id
         JOIN master_registrar mr ON mr.id = ir.registrar_id
         ${t1t2Joins}
-        WHERE mi.allotment_date BETWEEN ? AND ?
+        WHERE mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1
         ${t1t2Where}
         GROUP BY ir.registrar_id
         ORDER BY arr_rank
@@ -10822,7 +10822,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
         JOIN issuer_registrar ir ON ir.issuer_id = mi.id
         JOIN master_registrar mr ON mr.id = ir.registrar_id
         ${t1t2Joins}
-        WHERE mi.allotment_date BETWEEN ? AND ?
+        WHERE mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1
         ${t1t2Where}
         GROUP BY ir.registrar_id
       ) t2 ON t1.id = t2.id
@@ -10861,7 +10861,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
         JOIN issuer_registrar ir ON ir.issuer_id = mi.id
         JOIN master_registrar mr ON mr.id = ir.registrar_id
         ${t1t2Joins}
-        WHERE mi.allotment_date BETWEEN ? AND ?
+        WHERE mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1
         ${t1t2Where}
         GROUP BY ir.registrar_id
         ORDER BY arr_rank
@@ -10879,7 +10879,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
         JOIN issuer_registrar ir ON ir.issuer_id = mi.id
         JOIN master_registrar mr ON mr.id = ir.registrar_id
         ${t1t2Joins}
-        WHERE mi.allotment_date BETWEEN ? AND ?
+        WHERE mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1
         ${t1t2Where}
         GROUP BY ir.registrar_id
       ) t2 ON t1.id = t2.id
@@ -10904,7 +10904,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
       FROM master_issuer mi
       JOIN issuer_registrar ir ON ir.issuer_id = mi.id
       ${countJoins}
-      WHERE mi.allotment_date BETWEEN ? AND ?
+      WHERE mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1
       ${countWhere}
     `, currStartStr, currEndStr, ...countParams);
 
@@ -10933,7 +10933,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
       JOIN issuer_registrar ir ON ir.issuer_id = mi.id
       JOIN master_registrar mr ON mr.id = ir.registrar_id
       ${rankJoins}
-      WHERE mi.allotment_date BETWEEN ? AND ?
+      WHERE mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1
       ${rankWhere}
       GROUP BY ir.registrar_id
       ORDER BY arr_rank
@@ -10950,7 +10950,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
       JOIN issuer_registrar ir ON ir.issuer_id = mi.id
       JOIN master_registrar mr ON mr.id = ir.registrar_id
       ${rankJoins}
-      WHERE mi.allotment_date BETWEEN ? AND ?
+      WHERE mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1
       ${rankWhere}
       GROUP BY ir.registrar_id
       ORDER BY arr_rank
@@ -10975,7 +10975,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
       JOIN master_issuer mi ON mi.id = ir.issuer_id
       JOIN master_business_sector mbs ON mi.business_sector = mbs.code
       ${sectorJoins}
-      WHERE mi.allotment_date BETWEEN ? AND ?
+      WHERE mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1
       ${sectorWhere}
       GROUP BY
         r.registrar_id,
@@ -11179,7 +11179,7 @@ app.post('/registrars_page_credit_rating_data', async (req, res) => {
       INNER JOIN issuer_registrar
         ON issuer_registrar.issuer_id = master_issuer.id
       ${joinsSql}
-      WHERE master_issuer.allotment_date BETWEEN ? AND ?
+      WHERE master_issuer.allotment_date BETWEEN ? AND ? AND master_issuer.is_visible = 1
       ${conditionsSql}
     `;
 
@@ -11256,7 +11256,7 @@ app.post('/registrars_page_credit_rating_data', async (req, res) => {
 
       ${joinsSql}
 
-      WHERE master_issuer.allotment_date BETWEEN ? AND ?
+      WHERE master_issuer.allotment_date BETWEEN ? AND ? AND master_issuer.is_visible = 1
 
       ${conditionsSql}
 
@@ -11344,7 +11344,7 @@ app.post('/registrarPage_detailed_data', async (req, res) => {
     const conditions = [];
     const params = [];
 
-    conditions.push(`master_issuer.allotment_date BETWEEN ? AND ?`);
+    conditions.push(`master_issuer.allotment_date BETWEEN ? AND ? AND master_issuer.is_visible = 1`);
     params.push(startDate, endDate);
 
     conditions.push(`
@@ -11736,7 +11736,7 @@ app.post('/registrar_page_monthly_summary_data', async (req, res) => {
     const params = [];
 
     // Base date filter
-    conditions.push(`mi.allotment_date BETWEEN ? AND ?`);
+    conditions.push(`mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1`);
     params.push(startDate, endDate);
 
     // Rating
@@ -12053,7 +12053,7 @@ app.post('/registrars_page_monthly_detailed_data', async (req, res) => {
     const params = [];
 
     // Date Range
-    conditions.push(`i.allotment_date BETWEEN ? AND ?`);
+    conditions.push(`i.allotment_date BETWEEN ? AND ? AND i.is_visible = 1`);
     params.push(`${startDate} 00:00:00`, `${endDate} 23:59:59`);
 
     // Month Filter
@@ -12495,8 +12495,8 @@ app.post('/registrar_top_participants_details', async (req, res) => {
       : [];
 
     // ── BASE PARAMETERS ──
-    const startDateTime = `${startDate} 00:00:00`;
-    const endDateTime = `${endDate} 23:59:59`;
+    const startDateTime = `${startDate}`;
+    const endDateTime = `${endDate}`;
     const baseParams = [parsedRegistrarId, startDateTime, endDateTime];
 
     // ── DATA QUERY ──
@@ -12583,7 +12583,7 @@ app.post('/registrar_top_participants_details', async (req, res) => {
 
           WHERE
               ir1.registrar_id = ?
-              AND i.allotment_date BETWEEN ? AND ?
+              AND i.allotment_date BETWEEN ? AND ? AND i.is_visible = 1
 
           GROUP BY
               ir1.registrar_id,
@@ -12654,7 +12654,7 @@ app.post('/registrar_top_participants_details', async (req, res) => {
 
           WHERE
               ir1.registrar_id = ?
-              AND i.allotment_date BETWEEN ? AND ?
+              AND i.allotment_date BETWEEN ? AND ? AND i.is_visible = 1
 
           GROUP BY
               ir1.registrar_id,
