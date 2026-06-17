@@ -9948,133 +9948,138 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
       : '';
 
     // -----------------------------------
-    // Main Data Query (no Cartesian product)
+    // Main Data Query (FIXED)
     // -----------------------------------
     const dataQuery = `
-      SELECT
-        i.id AS issuerId,
-        i.isin,
-        id.issuer_name,
-        i.allotment_date,
-        i.maturity_date,
-        i.security_name,
-        i.issue_size,
-        i.face_value,
-        i.issuer_master_id,
+  SELECT
+    i.id AS issuerId,
+    i.isin,
+    id.issuer_name,
+    i.allotment_date,
+    i.maturity_date,
+    i.security_name,
+    i.issue_size,
+    i.face_value,
+    i.issuer_master_id,
 
-        s.description AS security_type,
-        mi.description AS mode_issue,
-        mstc.description AS seniority,
-        tf.description AS tax_free,
-        msf.description AS secured_flag,
+    s.description AS security_type,
+    mi.description AS mode_issue,
+    mstc.description AS seniority,
+    tf.description AS tax_free,
+    msf.description AS secured_flag,
 
-        -- FIX: rating and agency now use subqueries with GROUP_CONCAT
-        -- (matches old query behavior: aggregates all ratings into one string)
-        (
-          SELECT GROUP_CONCAT(DISTINCT mir.rating SEPARATOR ', ')
-          FROM master_issuer_rating mir
-          WHERE mir.issuer_id = i.id
-        ) AS rating_value,
+    (
+      SELECT GROUP_CONCAT(DISTINCT mir.rating SEPARATOR ', ')
+      FROM master_issuer_rating mir
+      WHERE mir.issuer_id = i.id
+    ) AS rating_value,
 
-        (
-          SELECT GROUP_CONCAT(DISTINCT mag.short_name SEPARATOR ', ')
-          FROM master_issuer_rating mir
-          JOIN master_agency mag ON mag.id = mir.agency_id
-          WHERE mir.issuer_id = i.id
-        ) AS agency_name,
+    (
+      SELECT GROUP_CONCAT(DISTINCT mag.short_name SEPARATOR ', ')
+      FROM master_issuer_rating mir
+      JOIN master_agency mag ON mag.id = mir.agency_id
+      WHERE mir.issuer_id = i.id
+    ) AS agency_name,
 
-        (
-          SELECT GROUP_CONCAT(DISTINCT icd.coupon_rate SEPARATOR ', ')
-          FROM issuer_coupon_details icd
-          WHERE icd.issuer_id = i.id
-        ) AS coupon_rate,
+    (
+      SELECT GROUP_CONCAT(DISTINCT icd.coupon_rate SEPARATOR ', ')
+      FROM issuer_coupon_details icd
+      WHERE icd.issuer_id = i.id
+    ) AS coupon_rate,
 
-        (
-          SELECT GROUP_CONCAT(DISTINCT mt.short_name SEPARATOR ', ')
-          FROM issuer_trustee it
-          JOIN master_trustee mt ON mt.id = it.trustee_id
-          WHERE it.issuer_id = i.id
-        ) AS debenture_trustee_name,
+    (
+      SELECT GROUP_CONCAT(DISTINCT mt.short_name SEPARATOR ', ')
+      FROM issuer_trustee it
+      JOIN master_trustee mt ON mt.id = it.trustee_id
+      WHERE it.issuer_id = i.id
+    ) AS debenture_trustee_name,
 
-        (
-          SELECT GROUP_CONCAT(DISTINCT mr.registrar_name SEPARATOR ', ')
-          FROM issuer_registrar ir
-          JOIN master_registrar mr ON mr.id = ir.registrar_id
-          WHERE ir.issuer_id = i.id
-        ) AS registrar_detail,
+    (
+      SELECT GROUP_CONCAT(DISTINCT mr.registrar_name SEPARATOR ', ')
+      FROM issuer_registrar ir
+      JOIN master_registrar mr ON mr.id = ir.registrar_id
+      WHERE ir.issuer_id = i.id
+    ) AS registrar_detail,
 
-        (
-          SELECT GROUP_CONCAT(DISTINCT ma.short_name SEPARATOR ', ')
-          FROM issuer_arranger ia
-          JOIN master_arranger ma ON ma.id = ia.arranger_id
-          WHERE ia.issuer_id = i.id
-        ) AS arranger_name,
+    (
+      SELECT GROUP_CONCAT(DISTINCT ma.short_name SEPARATOR ', ')
+      FROM issuer_arranger ia
+      JOIN master_arranger ma ON ma.id = ia.arranger_id
+      WHERE ia.issuer_id = i.id
+    ) AS arranger_name,
 
-        (
-          SELECT mls.description
-          FROM master_issuer_stock_exchange mise
-          LEFT JOIN master_listing_status mls
-            ON mls.code = mise.listing_status
-          WHERE mise.issuer_id = i.id
-          ORDER BY mise.listing_status
-          LIMIT 1
-        ) AS listing_status
+    (
+      SELECT mls.description
+      FROM master_issuer_stock_exchange mise
+      LEFT JOIN master_listing_status mls
+        ON mls.code = mise.listing_status
+      WHERE mise.issuer_id = i.id
+      ORDER BY mise.listing_status
+      LIMIT 1
+    ) AS listing_status
 
-      FROM master_issuer AS i
+  FROM master_issuer AS i
 
-      LEFT JOIN issuer_details AS id
-        ON i.issuer_master_id = id.id
+  INNER JOIN master_issuer_rating AS mir ON i.id = mir.issuer_id
+  INNER JOIN master_agency AS mag ON mag.id = mir.agency_id
 
-      LEFT JOIN master_security_type AS s
-        ON i.security_class = s.code
+  LEFT JOIN issuer_details AS id
+    ON i.issuer_master_id = id.id
 
-      LEFT JOIN master_mode_issue AS mi
-        ON i.mode_issue = mi.code
+  LEFT JOIN master_security_type AS s
+    ON i.security_class = s.code
 
-      LEFT JOIN master_seniority_tier_classification AS mstc
-        ON mstc.code = i.seniority
+  LEFT JOIN master_mode_issue AS mi
+    ON i.mode_issue = mi.code
 
-      LEFT JOIN master_tax_free AS tf
-        ON tf.code = i.tax_free
+  LEFT JOIN master_seniority_tier_classification AS mstc
+    ON mstc.code = i.seniority
 
-      LEFT JOIN master_secured_flag AS msf
-        ON msf.code = i.secured_flag
+  LEFT JOIN master_tax_free AS tf
+    ON tf.code = i.tax_free
 
+  LEFT JOIN master_secured_flag AS msf
+    ON msf.code = i.secured_flag
 
-      ${whereClause}
+  ${whereClause}
 
-      ORDER BY issuer_name ASC
+  GROUP BY i.id  
 
-      LIMIT ? OFFSET ?
-    `;
+  ORDER BY issuer_name ASC
+
+  LIMIT ? OFFSET ?
+`;
 
     // -----------------------------------
-    // Count Query
+    // Count Query (FIXED)
     // -----------------------------------
     const countQuery = `
-      SELECT COUNT(DISTINCT i.id) AS total
-      FROM master_issuer AS i
+  SELECT COUNT(DISTINCT i.id) AS total
+  FROM master_issuer AS i
 
-      LEFT JOIN issuer_details AS id
-        ON i.issuer_master_id = id.id
+  INNER JOIN master_issuer_rating AS mir ON i.id = mir.issuer_id
+  INNER JOIN master_agency AS mag ON mag.id = mir.agency_id
 
-      LEFT JOIN master_security_type AS s
-        ON i.security_class = s.code
+  LEFT JOIN issuer_details AS id
+    ON i.issuer_master_id = id.id
 
-      LEFT JOIN master_mode_issue AS mi
-        ON i.mode_issue = mi.code
+  LEFT JOIN master_security_type AS s
+    ON i.security_class = s.code
 
-      LEFT JOIN master_seniority_tier_classification AS mstc
-        ON mstc.code = i.seniority
+  LEFT JOIN master_mode_issue AS mi
+    ON i.mode_issue = mi.code
 
-      LEFT JOIN master_tax_free AS tf
-        ON tf.code = i.tax_free
+  LEFT JOIN master_seniority_tier_classification AS mstc
+    ON mstc.code = i.seniority
 
-      LEFT JOIN master_secured_flag AS msf
-        ON msf.code = i.secured_flag
+  LEFT JOIN master_tax_free AS tf
+    ON tf.code = i.tax_free
 
-      ${whereClause}
-    `;
+  LEFT JOIN master_secured_flag AS msf
+    ON msf.code = i.secured_flag
+
+  ${whereClause}
+`;
 
     // -----------------------------------
     // Execute Queries
