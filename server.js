@@ -8594,7 +8594,7 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
         FROM master_issuer mi
         JOIN master_issuer_rating mir ON mir.issuer_id = mi.id
         LEFT JOIN master_agency ma ON ma.id = mir.agency_id
-        WHERE mi.allotment_date BETWEEN ? AND ?
+        WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1) 
         ${filterSql}
       ) t
     `, sqlCurrentStart, sqlCurrentEnd, ...filterParams);
@@ -8606,7 +8606,7 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
         FROM master_issuer mi
         JOIN master_issuer_rating mir ON mir.issuer_id = mi.id
         LEFT JOIN master_agency ma ON ma.id = mir.agency_id
-        WHERE mi.allotment_date BETWEEN ? AND ?
+        WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
         ${filterSql}
       ) t
     `, sqlPreviousStart, sqlPreviousEnd, ...filterParams);
@@ -8618,7 +8618,7 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
         FROM master_issuer mi
         JOIN master_issuer_rating mir ON mir.issuer_id = mi.id
         LEFT JOIN master_agency ma ON ma.id = mir.agency_id
-        WHERE mi.allotment_date BETWEEN ? AND ?
+        WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
         ${filterSql}
       ) t
     `, sqlCurrentStart, sqlCurrentEnd, ...filterParams);
@@ -8630,7 +8630,7 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
         FROM master_issuer mi
         JOIN master_issuer_rating mir ON mir.issuer_id = mi.id
         LEFT JOIN master_agency ma ON ma.id = mir.agency_id
-        WHERE mi.allotment_date BETWEEN ? AND ?
+        WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
         ${filterSql}
       ) t
     `, sqlPreviousStart, sqlPreviousEnd, ...filterParams);
@@ -8685,7 +8685,7 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
         FROM master_issuer mi
         JOIN master_issuer_rating mir ON mir.issuer_id = mi.id
         JOIN master_agency ma ON ma.id = mir.agency_id
-        WHERE mi.allotment_date BETWEEN ? AND ?
+        WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
         ${filterSql}
         GROUP BY ma.id, ma.short_name
         ORDER BY arr_rank
@@ -8702,7 +8702,7 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
         FROM master_issuer mi
         JOIN master_issuer_rating mir ON mir.issuer_id = mi.id
         JOIN master_agency ma ON ma.id = mir.agency_id
-        WHERE mi.allotment_date BETWEEN ? AND ?
+        WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
         ${filterSql}
         GROUP BY ma.id, ma.short_name
       ) t2 ON t1.id = t2.id
@@ -8741,7 +8741,7 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
         FROM master_issuer mi
         JOIN master_issuer_rating mir ON mir.issuer_id = mi.id
         JOIN master_agency ma ON ma.id = mir.agency_id
-        WHERE mi.allotment_date BETWEEN ? AND ?
+        WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
         ${filterSql}
         GROUP BY ma.id, ma.short_name
         ORDER BY arr_rank
@@ -8758,7 +8758,7 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
         FROM master_issuer mi
         JOIN master_issuer_rating mir ON mir.issuer_id = mi.id
         JOIN master_agency ma ON ma.id = mir.agency_id
-        WHERE mi.allotment_date BETWEEN ? AND ?
+        WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
         ${filterSql}
         GROUP BY ma.id, ma.short_name
       ) t2 ON t1.id = t2.id
@@ -8778,7 +8778,7 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
       FROM master_issuer mi
       JOIN master_issuer_rating mir ON mir.issuer_id = mi.id
       JOIN master_agency ma ON ma.id = mir.agency_id
-      WHERE mi.allotment_date BETWEEN ? AND ?
+      WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${filterSql}
     `, sqlCurrentStart, sqlCurrentEnd, ...filterParams);
 
@@ -8803,7 +8803,7 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
       FROM master_issuer mi
       JOIN master_issuer_rating mir ON mir.issuer_id = mi.id
       JOIN master_agency ma ON ma.id = mir.agency_id
-      WHERE mi.allotment_date BETWEEN ? AND ?
+      WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${filterSql}
       GROUP BY ma.id, ma.short_name
       ORDER BY arr_rank
@@ -8819,7 +8819,7 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
       FROM master_issuer mi
       JOIN master_issuer_rating mir ON mir.issuer_id = mi.id
       JOIN master_agency ma ON ma.id = mir.agency_id
-      WHERE mi.allotment_date BETWEEN ? AND ?
+      WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${filterSql}
       GROUP BY ma.id, ma.short_name
       ORDER BY arr_rank
@@ -8838,7 +8838,7 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
       JOIN master_issuer_rating mir ON mir.agency_id = r.agency_id
       JOIN master_issuer mi ON mi.id = mir.issuer_id
       JOIN master_business_sector mbs ON mi.business_sector = mbs.code
-      WHERE mi.allotment_date BETWEEN ? AND ?
+      WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${filterSql}
       GROUP BY
         r.agency_id,
@@ -9036,7 +9036,7 @@ app.post('/rating_agencies_page_credit_rating_data', async (req, res) => {
       FROM master_issuer_rating mir
       INNER JOIN master_issuer i ON i.id = mir.issuer_id
       LEFT JOIN master_agency ON master_agency.id = mir.agency_id
-      WHERE i.allotment_date BETWEEN ? AND ?
+      WHERE i.allotment_date BETWEEN ? AND ? AND (i.is_visible = 1)
       ${filterSql}
       ${idFilterSql}
     `, sqlStartDate, sqlEndDate, ...filterParams, ...idFilterParams);
@@ -9061,7 +9061,7 @@ app.post('/rating_agencies_page_credit_rating_data', async (req, res) => {
         FROM master_agency
         INNER JOIN master_issuer_rating mir ON mir.agency_id = master_agency.id
         LEFT JOIN master_issuer i ON i.id = mir.issuer_id
-        WHERE i.allotment_date BETWEEN ? AND ?
+        WHERE i.allotment_date BETWEEN ? AND ? AND (i.is_visible = 1)
           ${filterSql}
           AND master_agency.id = ?
         GROUP BY mir.rating
@@ -9084,7 +9084,7 @@ app.post('/rating_agencies_page_credit_rating_data', async (req, res) => {
           FROM master_agency ma
           INNER JOIN master_issuer_rating mir ON mir.agency_id = ma.id
           INNER JOIN master_issuer i ON i.id = mir.issuer_id
-          WHERE i.allotment_date BETWEEN ? AND ?
+          WHERE i.allotment_date BETWEEN ? AND ? AND (i.is_visible = 1)
             ${filterSql}
           GROUP BY ma.id, ma.short_name, mir.rating
         ),
@@ -9197,7 +9197,7 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
     const params = [];
 
     // Base conditions
-    conditions.push(`master_issuer.allotment_date BETWEEN ? AND ?`);
+    conditions.push(`master_issuer.allotment_date BETWEEN ? AND ? AND (master_issuer.is_visible = 1)`);
     params.push(sqlStartDate, sqlEndDate);
 
     conditions.push(`
@@ -9722,7 +9722,7 @@ SELECT
         LEFT JOIN master_issuer_rating mir
             ON mir.issuer_id = mi.id
 
-        WHERE mi.allotment_date BETWEEN ? AND ?
+        WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
         ${filterSql}
 
         GROUP BY MONTH(mi.allotment_date)
@@ -9838,7 +9838,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
     const params = [];
 
     // Base conditions
-    conditions.push(`i.allotment_date BETWEEN ? AND ?`);
+    conditions.push(`i.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)`);
     params.push(sqlStartDate, sqlEndDate);
 
     // -----------------------------------
@@ -10347,7 +10347,7 @@ app.post('/rating_agency_top_participants_details', async (req, res) => {
           LEFT JOIN master_secured_flag msf
               ON msf.code = i.secured_flag
 
-          WHERE i.allotment_date BETWEEN ? AND ?
+          WHERE i.allotment_date BETWEEN ? AND ? AND (i.is_visible = 1)
       ) x
 
       WHERE 1 = 1
@@ -10427,7 +10427,7 @@ app.post('/rating_agency_top_participants_details', async (req, res) => {
           LEFT JOIN master_secured_flag msf
               ON msf.code = i.secured_flag
 
-          WHERE i.allotment_date BETWEEN ? AND ?
+          WHERE i.allotment_date BETWEEN ? AND ? AND (i.is_visible = 1)
 
           ${searchPattern ? `
             AND (
