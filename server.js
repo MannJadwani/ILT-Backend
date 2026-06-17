@@ -11009,9 +11009,17 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
       yoyChange: item.yoy ?? '-'
     }));
 
+    const totals = {
+      currentSize: Number(safeTotalIssueSize) || 0,
+      previousSize: Number(safeTotalIssueSizePrev) || 0,
+      currentDeals: Number(safeTotalIssuesCount) || 0,
+      previousDeals: Number(safeTotalIssuesCountPrev) || 0,
+    };
+
     res.status(200).json({
       tableData: finalResult,
       sectorData,
+      totals,
       pagination: {
         total: totalRecords,
         limit: parsedLimit,
@@ -11828,21 +11836,11 @@ app.post('/registrar_page_monthly_summary_data', async (req, res) => {
               STR_TO_DATE(am.month_no, '%m')
           ) AS issue_month,
 
-          COUNT(
-              DISTINCT CONCAT(
-                  filtered_data.registrar_id,
-                  '-',
-                  filtered_data.isin
-              )
-          ) AS no_of_issue,
+          COUNT(filtered_data.isin) AS no_of_issue,
 
-          IF(
-              SUM(filtered_data.issue_size) > 0,
-              ROUND(SUM(filtered_data.issue_size) / 10000000, 2),
-              0
-          ) AS issue_size,
+          COALESCE(ROUND(SUM(filtered_data.issue_size) / 10000000, 2), 0) AS issue_size,
 
-          IFNULL(SUM(filtered_data.issue_size), 0) AS actual_issue_size
+          COALESCE(SUM(filtered_data.issue_size), 0) AS actual_issue_size
 
       FROM all_months am
 
@@ -11930,12 +11928,9 @@ app.post('/registrar_page_monthly_summary_data', async (req, res) => {
 
       ON am.month_no = MONTH(filtered_data.allotment_date)
 
-      GROUP BY
-          am.month_no,
-          MONTHNAME(STR_TO_DATE(am.month_no, '%m'))
+      GROUP BY am.id, am.month_no
 
-      ORDER BY
-          am.month_no ASC
+      ORDER BY am.id ASC
     `;
 
     const result = await prisma.$queryRawUnsafe(query, ...params);
