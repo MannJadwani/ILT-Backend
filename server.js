@@ -12599,7 +12599,7 @@ app.post('/registrar_top_participants_details', async (req, res) => {
     const countQuery = `
       SELECT COUNT(DISTINCT t.issuer_master_id, t.allotment_date) AS total
       FROM (
-          SELECT i.id
+          SELECT i.issuer_master_id, i.allotment_date
           FROM master_issuer i
 
           LEFT JOIN issuer_details id
