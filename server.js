@@ -7864,38 +7864,38 @@ app.post('/trustee_page_monthly_detailed_data', async (req, res) => {
     // =========================
 
     const countQuery = `
-      SELECT COUNT(*) AS total
-      FROM (
-        SELECT DISTINCT i.id
-        FROM master_issuer AS i
+  SELECT COUNT(*) AS total
+  FROM (
+    SELECT DISTINCT i.id, i.isin
+    FROM master_issuer AS i
 
-        INNER JOIN issuer_trustee AS it
-            ON i.id = it.issuer_id
+    INNER JOIN issuer_trustee AS it
+        ON i.id = it.issuer_id
 
-        INNER JOIN master_trustee AS mt
-            ON it.trustee_id = mt.id
+    INNER JOIN master_trustee AS mt
+        ON it.trustee_id = mt.id
 
-        LEFT JOIN issuer_details AS id
-            ON i.issuer_master_id = id.id
+    LEFT JOIN issuer_details AS id
+        ON i.issuer_master_id = id.id
 
-        LEFT JOIN master_security_type AS s
-            ON i.security_class = s.code
+    LEFT JOIN master_security_type AS s
+        ON i.security_class = s.code
 
-        LEFT JOIN master_mode_issue AS mi
-            ON i.mode_issue = mi.code
+    LEFT JOIN master_mode_issue AS mi
+        ON i.mode_issue = mi.code
 
-        LEFT JOIN master_seniority_tier_classification AS mstc
-            ON mstc.code = i.seniority
+    LEFT JOIN master_seniority_tier_classification AS mstc
+        ON mstc.code = i.seniority
 
-        LEFT JOIN master_tax_free AS tf
-            ON tf.code = i.tax_free
+    LEFT JOIN master_tax_free AS tf
+        ON tf.code = i.tax_free
 
-        LEFT JOIN master_secured_flag AS msf
-            ON msf.code = i.secured_flag
+    LEFT JOIN master_secured_flag AS msf
+        ON msf.code = i.secured_flag
 
-        ${whereClause}
-      ) AS aggregate_table
-    `;
+    ${whereClause}
+  ) AS aggregate_table
+`;
 
     // =========================
     // EXECUTE QUERIES
