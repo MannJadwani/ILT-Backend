@@ -489,33 +489,57 @@ app.post('/dashboard_monthly_comparison_data', async (req, res) => {
 app.post('/dashboard_top_stats_data', async (req, res) => {
   try {
     const { startDate, endDate } = req.body;
+
     const result = await prisma.$queryRawUnsafe(`
       SELECT
-        (SELECT COALESCE((ROUND(MAX(issue_size)/10000000)),0)
-        FROM master_issuer 
-        WHERE allotment_date BETWEEN '${startDate}' AND '${endDate}' AND (is_visible = 1)) as largest_issue_size, 
-        
-        COALESCE((ROUND(SUM(issue_size)/10000000)), 0) as total_issue_size_in_cr,
-        
-        COALESCE((ROUND(AVG(issue_size)/10000000)), 0) as avg_issue_size_in_cr,
-        
-        COUNT(*) as total_issues,
-        
-        (SELECT b.description 
-        FROM master_issuer mi
-        INNER JOIN master_business_sector b ON b.code = mi.business_sector
-        WHERE mi.allotment_date BETWEEN '${startDate}' AND '${endDate}' AND (is_visible = 1)
-          AND mi.business_sector IS NOT NULL
-        GROUP BY mi.business_sector, b.description
-        ORDER BY SUM(mi.issue_size) DESC
-        LIMIT 1) as top_sector_by_volume
-    FROM master_issuer
-    WHERE allotment_date BETWEEN '${startDate}' AND '${endDate}' AND (is_visible = 1);
+        (
+          SELECT COALESCE(ROUND(MAX(mi.issue_size) / 10000000), 0)
+          FROM master_issuer mi
+          WHERE mi.allotment_date BETWEEN '${startDate}' AND '${endDate}'
+            AND mi.is_visible = 1
+        ) AS largest_issue_size,
+
+        (
+          SELECT id.issuer_name
+          FROM master_issuer mi
+          INNER JOIN issuer_details id
+            ON id.id = mi.issuer_master_id
+          WHERE mi.allotment_date BETWEEN '${startDate}' AND '${endDate}'
+            AND mi.is_visible = 1
+          ORDER BY mi.issue_size DESC
+          LIMIT 1
+        ) AS largest_issue_issuer_name,
+
+        COALESCE(ROUND(SUM(issue_size) / 10000000), 0) AS total_issue_size_in_cr,
+
+        COALESCE(ROUND(AVG(issue_size) / 10000000), 0) AS avg_issue_size_in_cr,
+
+        COUNT(*) AS total_issues,
+
+        (
+          SELECT b.description
+          FROM master_issuer mi
+          INNER JOIN master_business_sector b
+            ON b.code = mi.business_sector
+          WHERE mi.allotment_date BETWEEN '${startDate}' AND '${endDate}'
+            AND mi.is_visible = 1
+            AND mi.business_sector IS NOT NULL
+          GROUP BY mi.business_sector, b.description
+          ORDER BY SUM(mi.issue_size) DESC
+          LIMIT 1
+        ) AS top_sector_by_volume
+
+      FROM master_issuer
+      WHERE allotment_date BETWEEN '${startDate}' AND '${endDate}'
+        AND is_visible = 1;
     `);
 
     res.status(200).json(result);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch dashboard stats  data', message: error.message });
+    res.status(500).json({
+      error: 'Failed to fetch dashboard stats data',
+      message: error.message
+    });
   }
 });
 
