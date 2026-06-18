@@ -9467,7 +9467,7 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
     // Count query
     // ---------------------
     const countQuery = `
-      SELECT COUNT(DISTINCT master_issuer.id) AS total
+      SELECT COUNT(*) AS total
       FROM master_issuer
 
       LEFT JOIN issuer_details
