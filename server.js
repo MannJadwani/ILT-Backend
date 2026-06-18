@@ -9783,14 +9783,14 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
       if (!dateStr) return null;
       const date = new Date(dateStr);
       if (isNaN(date.getTime())) return null;
-      return date.toISOString().slice(0, 10) + " 00:00:00";
+      return date.toISOString().slice(0, 10);
     };
 
     const formatDateForSqlEnd = (dateStr) => {
       if (!dateStr) return null;
       const date = new Date(dateStr);
       if (isNaN(date.getTime())) return null;
-      return date.toISOString().slice(0, 10) + " 23:59:59";
+      return date.toISOString().slice(0, 10);
     };
 
     const sqlStartDate = formatDateForSqlStart(startDate);
@@ -9799,8 +9799,12 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
     /* ---------------------------------
        BUILD DYNAMIC CONDITIONS
     --------------------------------- */
-    const conditions = ["(is_visible = 1)"];
+    const conditions = [];
     const params = [];
+
+    // Date Range
+    conditions.push(`i.allotment_date BETWEEN ? AND ? AND i.is_visible = 1`);
+    params.push(sqlStartDate, sqlEndDate);
 
     // Allotment Date Range
     // if (sqlStartDate && sqlEndDate) {
@@ -9820,7 +9824,11 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
       params.push(`%${isin}%`);
     }
 
-    const filterSql = conditions.length > 0 ? ' AND ' + conditions.join(' AND ') : '';
+    // const filterSql = conditions.length > 0 ? ' AND ' + conditions.join(' AND ') : '';
+
+    const whereClause = conditions.length
+      ? `WHERE ${conditions.join(' AND ')}`
+      : '';
 
     /* ---------------------------------
        COMMON JOINS (Using master_issuer and i.id)
@@ -9829,7 +9837,6 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
       FROM all_months 
       INNER JOIN master_issuer AS i 
           ON all_months.month_no = MONTH(i.allotment_date) 
-          AND i.allotment_date BETWEEN ${startDate} AND ${endDate} 
       LEFT JOIN issuer_details AS id 
           ON i.issuer_master_id = id.id 
       LEFT JOIN master_security_type AS s 
@@ -9898,7 +9905,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
           ) AS listing_status, 
           MAX(i.issuer_master_id) AS issuer_master_id 
       ${baseJoins}
-      WHERE 1=1 ${filterSql}
+      ${whereClause}
       GROUP BY i.id
       ORDER BY issuer_name ASC 
       LIMIT ${Number(limit)} OFFSET ${Number(offset)};
@@ -9906,9 +9913,9 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
 
     // Total Count Query (Matches the data query's unique rows)
     const countQuery = `
-      SELECT COUNT(DISTINCT i.id) AS aggregate 
+      SELECT COUNT(*) AS aggregate 
       ${baseJoins}
-      WHERE 1=1 ${filterSql};
+      ${whereClause}
     `;
 
     // Execute queries concurrently
