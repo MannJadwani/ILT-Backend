@@ -2450,17 +2450,17 @@ app.post('/issuePage_detailed_data', async (req, res) => {
     endDate = '2026-01-01',
     limit = 25,
     offset = 0,
-    issuerName = "",
+    search = "",        // ← NEW: replaces issuerName
     rating = "",
     seniority = "",
-    taxFree = "",
+    // taxFree = "",     // ← REMOVE
     securedFlag = "",
     sector = "",
     trustee = "",
     nature = "",
     ownershipType = "",
     creditRatingAgency = "",
-    dealSize = "",
+    // dealSize = "",    // ← REMOVE
     listingStatus = "",
     securityType = "",
     modeOfIssue = ""
@@ -2496,18 +2496,18 @@ app.post('/issuePage_detailed_data', async (req, res) => {
     conditions.push(`master_issuer.allotment_date BETWEEN ? AND ? AND (master_issuer.is_visible = 1)`);
     params.push(cyStart, cyEnd);
 
-    if (issuerName) {
-      conditions.push(`issuer_details.issuer_name LIKE ?`);
-      params.push(`%${issuerName}%`);
+
+    if (search && search.trim() !== "") {
+      conditions.push(`(master_issuer.isin LIKE ? OR issuer_details.issuer_name LIKE ?)`);
+      const searchPattern = `%${search.trim()}%`;
+      params.push(searchPattern, searchPattern);
     }
+
     if (rating) {
       conditions.push(`master_issuer_rating.rating = ?`);
       params.push(rating);
     }
-    if (dealSize) {
-      conditions.push(`master_issuer.issue_size LIKE ?`);
-      params.push(`%${dealSize}%`);
-    }
+
     if (listingStatus) {
       conditions.push(`listing_data.listing_status = ?`);
       params.push(listingStatus);
@@ -2516,10 +2516,7 @@ app.post('/issuePage_detailed_data', async (req, res) => {
       conditions.push(`master_seniority_tier_classification.description = ?`);
       params.push(seniority);
     }
-    if (taxFree) {
-      conditions.push(`master_tax_free.description = ?`);
-      params.push(taxFree);
-    }
+
     if (securedFlag) {
       conditions.push(`master_secured_flag.description = ?`);
       params.push(securedFlag);
@@ -9896,7 +9893,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
     /* ---------------------------------
        MAIN QUERIES
     --------------------------------- */
-    
+
     // Data Query (Wrapped non-grouped fields in MAX to satisfy Prisma strict mode)
     const dataQuery = `
       SELECT 
@@ -9966,7 +9963,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
       couponRate: item?.coupon_rate || '-',
       debentureTrustee: item?.debenture_trustee_name || '-',
       registrar: item?.registrar_detail || '-',
-      rating: item?.rating_value || '-', 
+      rating: item?.rating_value || '-',
       arranger: item?.arranger_name || '-',
       issueSize: Number(item?.issue_size) || 0,
       faceValue: Number(item?.face_value) || 0,
@@ -9994,7 +9991,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
 
   } catch (error) {
     console.error('Re-issuance data API error:', error);
-    
+
     return res.status(500).json({
       success: false,
       error: 'Failed to fetch re-issuance data',
