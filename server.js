@@ -4923,23 +4923,20 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
     endDate = '2026-03-31',
     limit = 25,
     offset = 0,
-    issuerName = "",
+    search = "",
     rating = "",
     registrar = "",
     arranger = "",
     seniority = "",
-    taxFree = "",
     securedFlag = "",
     sector = "",
     trustee = "",
     nature = "",
     ownershipType = "",
     creditRatingAgency = "",
-    dealSize = "",
     listingStatus = "",
     securityType = "",
-    modeOfIssue = "",
-    isin = ""
+    modeOfIssue = ""
   } = req.body;
 
   try {
@@ -4980,12 +4977,17 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
     // ---------------------
     // Filters (using EXISTS to prevent JOIN duplication)
     // ---------------------
-    if (issuerName) {
-      conditions.push(`EXISTS (
-        SELECT 1 FROM issuer_details id2 
-        WHERE id2.id = mi.issuer_master_id AND id2.issuer_name LIKE ?
+
+    // NEW: Search by issuerName or ISIN (replaces separate issuerName and isin filters)
+    if (search) {
+      conditions.push(`(
+        EXISTS (
+          SELECT 1 FROM issuer_details id2 
+          WHERE id2.id = mi.issuer_master_id AND id2.issuer_name LIKE ?
+        )
+        OR mi.isin LIKE ?
       )`);
-      params.push(`%${issuerName}%`);
+      params.push(`%${search}%`, `%${search}%`);
     }
 
     if (rating) {
@@ -5005,10 +5007,7 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
       params.push(creditRatingAgency);
     }
 
-    if (dealSize) {
-      conditions.push(`mi.issue_size LIKE ?`);
-      params.push(`%${dealSize}%`);
-    }
+    // REMOVED: dealSize filter no longer sent from frontend
 
     if (listingStatus) {
       conditions.push(`EXISTS (
@@ -5027,13 +5026,7 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
       params.push(seniority);
     }
 
-    if (taxFree) {
-      conditions.push(`EXISTS (
-        SELECT 1 FROM master_tax_free mtf2
-        WHERE mtf2.code = mi.tax_free AND mtf2.description = ?
-      )`);
-      params.push(taxFree);
-    }
+    // REMOVED: taxFree filter no longer sent from frontend
 
     if (securedFlag) {
       conditions.push(`EXISTS (
@@ -5092,10 +5085,7 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
       params.push(modeOfIssue);
     }
 
-    if (isin) {
-      conditions.push(`mi.isin LIKE ?`);
-      params.push(`%${isin}%`);
-    }
+    // REMOVED: isin filter — now handled by unified search above
 
     if (arranger) {
       conditions.push(`EXISTS (
@@ -5148,7 +5138,6 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
         icd.coupon_rate,
 
         mstc.description AS seniority,
-        mtf.description AS tax_free,
         msf.description AS secured_flag,
 
         -- Fix: Aggregate arrangers to prevent duplication
@@ -5184,7 +5173,6 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
       LEFT JOIN master_mode_issue mmi ON mmi.code = mi.mode_issue
       LEFT JOIN issuer_coupon_details icd ON icd.issuer_id = mi.id
       LEFT JOIN master_seniority_tier_classification mstc ON mstc.code = mi.seniority
-      LEFT JOIN master_tax_free mtf ON mtf.code = mi.tax_free
       LEFT JOIN master_secured_flag msf ON msf.code = mi.secured_flag
 
       -- One-to-many relationships: use LEFT JOIN but GROUP BY mi.id
@@ -5218,7 +5206,6 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
         mmi.description,
         icd.coupon_rate,
         mstc.description,
-        mtf.description,
         msf.description
 
       ORDER BY mi.allotment_date ASC
@@ -5276,7 +5263,6 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
         registrar: item?.Registrar || '-',
         arranger: item?.Arranger || '-',
         seniority: item?.seniority || '-',
-        taxFree: item?.tax_free || '-',
         securedFlag: item?.secured_flag || '-',
         listingStatus: item?.listing_status || '-',
         nature: item?.nature || '-',
@@ -6990,23 +6976,19 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
     endDate = '2026-03-31',
     limit = 25,
     offset = 0,
-    issuerName = "",
+    search = "",
     rating = "",
     registrar = "",
-    arranger = "",
     seniority = "",
-    taxFree = "",
     securedFlag = "",
     sector = "",
     trustee = "",
     nature = "",
     ownershipType = "",
     creditRatingAgency = "",
-    dealSize = "",
     listingStatus = "",
     securityType = "",
-    modeOfIssue = "",
-    isin = ""
+    modeOfIssue = ""
   } = req.body;
 
   try {
@@ -7054,19 +7036,19 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
       )
     `);
 
-    if (issuerName) {
-      conditions.push(`issuer_details.issuer_name LIKE ?`);
-      params.push(`%${issuerName}%`);
+    // Combined search for issuerName and isin
+    if (search && search.trim() !== '') {
+      conditions.push(`(
+        issuer_details.issuer_name LIKE ? 
+        OR master_issuer.isin LIKE ?
+      )`);
+      const searchParam = `%${search}%`;
+      params.push(searchParam, searchParam);
     }
 
     if (rating) {
       conditions.push(`EXISTS (SELECT 1 FROM master_issuer_rating mir WHERE mir.issuer_id = master_issuer.id AND mir.rating = ?)`, rating);
       params.push(rating);
-    }
-
-    if (dealSize) {
-      conditions.push(`master_issuer.issue_size LIKE ?`);
-      params.push(`%${dealSize}%`);
     }
 
     if (listingStatus) {
@@ -7077,11 +7059,6 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
     if (seniority) {
       conditions.push(`master_seniority_tier_classification.description = ?`);
       params.push(seniority);
-    }
-
-    if (taxFree) {
-      conditions.push(`master_tax_free.description = ?`);
-      params.push(taxFree);
     }
 
     if (securedFlag) {
@@ -7124,16 +7101,6 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
       params.push(modeOfIssue);
     }
 
-    if (isin) {
-      conditions.push(`master_issuer.isin LIKE ?`);
-      params.push(`%${isin}%`);
-    }
-
-    if (arranger) {
-      conditions.push(`EXISTS (SELECT 1 FROM issuer_arranger ia2 JOIN master_arranger ma2 ON ma2.id = ia2.arranger_id WHERE ia2.issuer_id = master_issuer.id AND ma2.short_name LIKE ?)`);
-      params.push(`%${arranger}%`);
-    }
-
     if (registrar) {
       conditions.push(`EXISTS (SELECT 1 FROM issuer_registrar ir2 JOIN master_registrar mr2 ON mr2.id = ir2.registrar_id WHERE ir2.issuer_id = master_issuer.id AND mr2.registrar_name LIKE ?)`);
       params.push(`%${registrar}%`);
@@ -7170,8 +7137,6 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
         master_mode_issue.description AS mode_of_issue,
 
         master_seniority_tier_classification.description AS Seniority,
-
-        master_tax_free.description AS tax_free,
 
         master_secured_flag.description AS secured_flag,
 
@@ -7271,9 +7236,6 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
       LEFT JOIN master_seniority_tier_classification
         ON master_seniority_tier_classification.code = master_issuer.seniority
 
-      LEFT JOIN master_tax_free
-        ON master_tax_free.code = master_issuer.tax_free
-
       LEFT JOIN master_secured_flag
         ON master_secured_flag.code = master_issuer.secured_flag
 
@@ -7311,9 +7273,6 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
 
       LEFT JOIN master_seniority_tier_classification
         ON master_seniority_tier_classification.code = master_issuer.seniority
-
-      LEFT JOIN master_tax_free
-        ON master_tax_free.code = master_issuer.tax_free
 
       LEFT JOIN master_secured_flag
         ON master_secured_flag.code = master_issuer.secured_flag
@@ -7361,7 +7320,6 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
         registrar: item?.Registrar || '-',
         arranger: item?.Arranger || '-',
         seniority: item?.Seniority || '-',
-        taxFree: item?.tax_free || '-',
         securedFlag: item?.secured_flag || '-',
         listingStatus: item?.listing_status || '-',
         nature: item?.nature || '-',
@@ -9177,19 +9135,18 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
     endDate = '2026-01-01',
     limit = 25,
     offset = 0,
+    search = "",
     issuerName = "",
     rating = "",
     registrar = "",
     arranger = "",
     seniority = "",
-    taxFree = "",
     securedFlag = "",
     sector = "",
     trustee = "",
     nature = "",
     ownershipType = "",
     creditRatingAgency = "",
-    dealSize = "",
     listingStatus = "",
     securityType = "",
     modeOfIssue = "",
@@ -9260,11 +9217,6 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
       params.push(rating);
     }
 
-    if (dealSize) {
-      conditions.push(`master_issuer.issue_size LIKE ?`);
-      params.push(`%${dealSize}%`);
-    }
-
     if (listingStatus) {
       conditions.push(`EXISTS (
         SELECT 1
@@ -9278,11 +9230,6 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
     if (seniority) {
       conditions.push(`EXISTS (SELECT 1 FROM master_seniority_tier_classification mstc WHERE mstc.code = master_issuer.seniority AND mstc.description = ?)`);
       params.push(seniority);
-    }
-
-    if (taxFree) {
-      conditions.push(`EXISTS (SELECT 1 FROM master_tax_free mtf WHERE mtf.code = master_issuer.tax_free AND mtf.description = ?)`);
-      params.push(taxFree);
     }
 
     if (securedFlag) {
@@ -9328,6 +9275,11 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
     if (isin) {
       conditions.push(`master_issuer.isin LIKE ?`);
       params.push(`%${isin}%`);
+    }
+
+    if (search) {
+      conditions.push(`(issuer_details.issuer_name LIKE ? OR master_issuer.isin LIKE ?)`);
+      params.push(`%${search}%`, `%${search}%`);
     }
 
     if (arranger) {
@@ -11166,23 +11118,18 @@ app.post('/registrarPage_detailed_data', async (req, res) => {
     endDate = '2026-01-01',
     limit = 25,
     offset = 0,
-    issuerName = "",
+    search = "",
     rating = "",
     registrar = "",
-    arranger = "",
     seniority = "",
-    taxFree = "",
     securedFlag = "",
     sector = "",
-    trustee = "",
     nature = "",
     ownershipType = "",
     creditRatingAgency = "",
-    dealSize = "",
     listingStatus = "",
     securityType = "",
-    modeOfIssue = "",
-    isin = ""
+    modeOfIssue = ""
   } = req.body;
 
   try {
@@ -11219,19 +11166,18 @@ app.post('/registrarPage_detailed_data', async (req, res) => {
       )
     `);
 
-    if (issuerName) {
-      conditions.push(`issuer_details.issuer_name LIKE ?`);
-      params.push(`%${issuerName}%`);
+    // Search by issuer name or ISIN
+    if (search) {
+      conditions.push(`(
+        issuer_details.issuer_name LIKE ? 
+        OR master_issuer.isin LIKE ?
+      )`);
+      params.push(`%${search}%`, `%${search}%`);
     }
 
     if (rating) {
       conditions.push(`master_issuer_rating.rating = ?`);
       params.push(rating);
-    }
-
-    if (dealSize) {
-      conditions.push(`master_issuer.issue_size LIKE ?`);
-      params.push(`%${dealSize}%`);
     }
 
     if (listingStatus) {
@@ -11244,11 +11190,6 @@ app.post('/registrarPage_detailed_data', async (req, res) => {
       params.push(seniority);
     }
 
-    if (taxFree) {
-      conditions.push(`master_tax_free.description = ?`);
-      params.push(taxFree);
-    }
-
     if (securedFlag) {
       conditions.push(`master_secured_flag.description = ?`);
       params.push(securedFlag);
@@ -11257,11 +11198,6 @@ app.post('/registrarPage_detailed_data', async (req, res) => {
     if (sector) {
       conditions.push(`master_business_sector.description = ?`);
       params.push(sector);
-    }
-
-    if (trustee) {
-      conditions.push(`master_trustee.short_name LIKE ?`);
-      params.push(`%${trustee}%`);
     }
 
     if (nature) {
@@ -11287,16 +11223,6 @@ app.post('/registrarPage_detailed_data', async (req, res) => {
     if (modeOfIssue) {
       conditions.push(`master_mode_issue.description = ?`);
       params.push(modeOfIssue);
-    }
-
-    if (isin) {
-      conditions.push(`master_issuer.isin LIKE ?`);
-      params.push(`%${isin}%`);
-    }
-
-    if (arranger) {
-      conditions.push(`master_arranger.short_name LIKE ?`);
-      params.push(`%${arranger}%`);
     }
 
     if (registrar) {
