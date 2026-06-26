@@ -4273,8 +4273,6 @@ app.post('/arrangers_page_credit_rating_data', async (req, res) => {
     const {
       startDate,
       endDate,
-      id,
-      // Filters from detailed page (issuerName excluded)
       rating = "",
       registrar = "",
       arranger = "",
@@ -4309,10 +4307,6 @@ app.post('/arrangers_page_credit_rating_data', async (req, res) => {
 
     const cyStart = formatDate(currentStartDate);
     const cyEnd = formatDate(currentEndDate);
-
-    // Fix: Validate id properly
-    const safeId = id !== undefined && id !== null && id !== '' ? Number(id) : null;
-    const hasId = safeId !== null && !isNaN(safeId) && safeId > 0;
 
     /* ---------------- DYNAMIC FILTER BUILDER ---------------- */
     const buildFilterConditions = (tableAlias = 'i') => {
@@ -4466,12 +4460,10 @@ app.post('/arrangers_page_credit_rating_data', async (req, res) => {
       INNER JOIN issuer_arranger ON issuer_arranger.issuer_id = i.id
       INNER JOIN master_agency ON master_agency.id = master_issuer_rating.agency_id
       WHERE i.allotment_date BETWEEN ? AND ? AND (i.is_visible = 1)
-        ${hasId ? 'AND master_agency.id = ?' : ''}
         ${filterSql}
     `;
 
     const totalRatingParams = [cyStart, cyEnd];
-    if (hasId) totalRatingParams.push(safeId);
     totalRatingParams.push(...filterParams);
 
     const totalRatingResult = await prisma.$queryRawUnsafe(totalRatingQuery, ...totalRatingParams);
@@ -4480,51 +4472,9 @@ app.post('/arrangers_page_credit_rating_data', async (req, res) => {
 
     /* ---------------- MAIN TABLE QUERY ---------------- */
 
-    // Fix: When hasId is false (grouping by agency), we can't select individual rating
-    // because one agency can have multiple ratings. We aggregate ratings with GROUP_CONCAT.
-    // When hasId is true (specific agency selected), we group by rating and show each rating.
-    const creditRatingQuery = hasId
-      ? `
+    const creditRatingQuery = `
         SELECT
-          master_agency.short_name AS label,
-          ROUND(
-            (COUNT(master_issuer_rating.rating) / ?) * 100,
-            2
-          ) AS percentage,
-          COUNT(master_issuer_rating.id) AS rating_no,
-          CONCAT(
-            '#',
-            SUBSTRING(
-              LPAD(
-                HEX(
-                  MOD(
-                    ABS(CAST(CONV(SUBSTRING(MD5(CONCAT(master_agency.short_name, '-', master_issuer_rating.rating)), 1, 8), 16, 10) AS SIGNED)),
-                    16777215
-                  )
-                ),
-                6,
-                '0'
-              ),
-              -6
-            )
-          ) AS color,
-          master_issuer_rating.rating
-        FROM master_agency
-        INNER JOIN master_issuer_rating
-          ON master_issuer_rating.agency_id = master_agency.id
-        INNER JOIN master_issuer AS i
-          ON i.id = master_issuer_rating.issuer_id
-        INNER JOIN issuer_arranger
-          ON issuer_arranger.issuer_id = i.id
-        WHERE i.allotment_date BETWEEN ? AND ? AND (i.is_visible = 1)
-          AND master_agency.id = ?
-          ${filterSql}
-        GROUP BY master_issuer_rating.rating, master_agency.short_name
-        ORDER BY percentage DESC, rating_no DESC
-      `
-      : `
-        SELECT
-          master_agency.short_name AS label,
+          MAX(master_agency.short_name) AS label,
           ROUND(
             (COUNT(master_issuer_rating.rating) / ?) * 100,
             2
@@ -4550,29 +4500,28 @@ app.post('/arrangers_page_credit_rating_data', async (req, res) => {
         FROM master_agency
         INNER JOIN master_issuer_rating
           ON master_issuer_rating.agency_id = master_agency.id
-        INNER JOIN master_issuer AS i
+        LEFT JOIN master_issuer AS i
           ON i.id = master_issuer_rating.issuer_id
         INNER JOIN issuer_arranger
           ON issuer_arranger.issuer_id = i.id
         WHERE i.allotment_date BETWEEN ? AND ? AND (i.is_visible = 1)
           ${filterSql}
-        GROUP BY master_agency.id, master_agency.short_name
+        GROUP BY master_issuer_rating.rating
         ORDER BY percentage DESC, rating_no DESC
-      `;
+    `;
 
     const creditRatingParams = [totalRatingNo, cyStart, cyEnd];
-    if (hasId) creditRatingParams.push(safeId);
     creditRatingParams.push(...filterParams);
 
     const creditRatingResult = await prisma.$queryRawUnsafe(creditRatingQuery, ...creditRatingParams);
 
     const finalResult = creditRatingResult?.map((item) => {
       return {
-        name: item?.rating || '-',
+        name: item?.label || '-',
         percentage: totalRatingCount === 0 ? 0 : (Number(item?.percentage) || 0),
         rating_no: Number(item?.rating_no) || 0,
         color: item?.color || '-',
-        label: item?.label || '-'
+        label: item?.rating || '-'
       }
     });
 
