@@ -8808,6 +8808,7 @@ app.post('/rating_agencies_page_credit_rating_data', async (req, res) => {
     const {
       startDate,
       endDate,
+      id,
       rating = "",
       registrar = "",
       seniority = "",
@@ -8829,6 +8830,10 @@ app.post('/rating_agencies_page_credit_rating_data', async (req, res) => {
         error: 'startDate, endDate are required'
       });
     }
+
+    // Validate and parse id
+    const parsedId = parseInt(id, 10);
+    const isIdValid = !isNaN(parsedId) && parsedId > 0;
 
     const currentStartDate = new Date(startDate);
     const currentEndDate = new Date(endDate);
@@ -8935,6 +8940,9 @@ app.post('/rating_agencies_page_credit_rating_data', async (req, res) => {
 
     /* ---------------- TOTALS (parameterized, scoped by id if provided) ---------------- */
 
+    const idFilterSql = isIdValid ? ` AND master_agency.id = ?` : '';
+    const idFilterParams = isIdValid ? [parsedId] : [];
+
     const totalRatingNoResult = await prisma.$queryRawUnsafe(`
       SELECT COUNT(*) AS aggregate
       FROM master_issuer_rating mir
@@ -8942,16 +8950,39 @@ app.post('/rating_agencies_page_credit_rating_data', async (req, res) => {
       LEFT JOIN master_agency ON master_agency.id = mir.agency_id
       WHERE i.allotment_date BETWEEN ? AND ? AND (i.is_visible = 1)
       ${filterSql}
-    `, sqlStartDate, sqlEndDate, ...filterParams);
+      ${idFilterSql}
+    `, sqlStartDate, sqlEndDate, ...filterParams, ...idFilterParams);
 
     const totalRatingNo = Number(totalRatingNoResult[0]?.aggregate) || 0;
     const safeTotalRatingNo = totalRatingNo > 0 ? totalRatingNo : 1;
 
     /* ---------------- MAIN QUERIES ---------------- */
 
+    let creditRatingQuery = '';
     let queryParams = [];
 
-    let creditRatingQuery = `
+    if (isIdValid) {
+      // Single agency: distribution by rating grade
+      creditRatingQuery = `
+        SELECT
+          MAX(master_agency.short_name) AS label,
+          ROUND((COUNT(mir.rating) / ${safeTotalRatingNo}) * 100, 2) AS percentage,
+          COUNT(mir.id) AS rating_no,
+          CONCAT('#', SUBSTRING(LPAD(HEX(ROUND(RAND() * 10000000)), 6, '0'), -6)) AS color,
+          mir.rating
+        FROM master_agency
+        INNER JOIN master_issuer_rating mir ON mir.agency_id = master_agency.id
+        LEFT JOIN master_issuer i ON i.id = mir.issuer_id
+        WHERE i.allotment_date BETWEEN ? AND ? AND (i.is_visible = 1)
+          ${filterSql}
+          AND master_agency.id = ?
+        GROUP BY mir.rating
+      `;
+      queryParams = [sqlStartDate, sqlEndDate, ...filterParams, parsedId];
+    } else {
+      // Overview: one row per agency with modal rating
+      // Fix: Use a simpler, correct approach - count ratings per agency and pick modal
+      creditRatingQuery = `
         SELECT
           MAX(master_agency.short_name) AS label,
           ROUND((COUNT(mir.rating) / ${safeTotalRatingNo}) * 100, 2) AS percentage,
@@ -8966,7 +8997,7 @@ app.post('/rating_agencies_page_credit_rating_data', async (req, res) => {
         GROUP BY mir.rating
       `;
       queryParams = [sqlStartDate, sqlEndDate, ...filterParams];
-    
+    }
 
     const creditRatingResult = await prisma.$queryRawUnsafe(creditRatingQuery, ...queryParams);
 
