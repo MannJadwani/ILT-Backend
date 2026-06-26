@@ -6705,7 +6705,6 @@ app.post('/trustees_page_credit_rating_data', async (req, res) => {
     const {
       startDate,
       endDate,
-      id,
       rating = "",
       registrar = "",
       seniority = "",
@@ -6726,10 +6725,6 @@ app.post('/trustees_page_credit_rating_data', async (req, res) => {
     if (!startDate || !endDate) {
       return res.status(400).json({ error: 'startDate, endDate are required' });
     }
-
-    // Parse and validate id
-    const parsedId = parseInt(id, 10);
-    const isIdValid = !isNaN(parsedId) && parsedId > 0;
 
     const currentStartDate = new Date(startDate);
     const currentEndDate = new Date(endDate);
@@ -6817,35 +6812,24 @@ app.post('/trustees_page_credit_rating_data', async (req, res) => {
 
     /* ---------------- FILTERED TOTALS ---------------- */
 
-    // Total must match the same population as the main query:
-    // - include only issuers that have at least one trustee
-    // - when id > 0, count only that agency's ratings so percentages sum to 100%
-    const idFilterSql = isIdValid ? ` AND master_agency.id = ?` : '';
-    const idFilterParams = isIdValid ? [parsedId] : [];
-
     const totalRatingNoResult = await prisma.$queryRawUnsafe(`
       SELECT COUNT(DISTINCT master_issuer_rating.id) AS aggregate
       FROM master_issuer_rating
       JOIN master_issuer i ON i.id = master_issuer_rating.issuer_id
       JOIN master_agency ON master_agency.id = master_issuer_rating.agency_id
       JOIN issuer_trustee ON issuer_trustee.issuer_id = i.id
-      WHERE i.allotment_date BETWEEN ? AND ?
+      WHERE i.allotment_date BETWEEN ? AND ? AND (is_visible = 1)
       ${filterSql}
-      ${idFilterSql}
-    `, formatDate(currentStartDate), formatDate(currentEndDate), ...filterParams, ...idFilterParams);
+    `, formatDate(currentStartDate), formatDate(currentEndDate), ...filterParams);
 
     const totalRatingNo = Number(totalRatingNoResult[0]?.aggregate) || 0;
     const safeTotalRatingNo = totalRatingNo > 0 ? totalRatingNo : 1;
 
     /* ---------------- MAIN TABLE QUERY ---------------- */
 
-    const idFilterAndGroupSql = isIdValid
-      ? `AND master_agency.id = ? GROUP BY master_issuer_rating.rating`
-      : `GROUP BY master_issuer_rating.agency_id`;
-
     const creditRatingQuery = `
       SELECT
-        master_agency.short_name AS label,
+        MAX(master_agency.short_name) AS label,
         ROUND(
           (COUNT(DISTINCT master_issuer_rating.id) / ${safeTotalRatingNo}) * 100,
           2
@@ -6862,13 +6846,14 @@ app.post('/trustees_page_credit_rating_data', async (req, res) => {
       FROM master_agency
       INNER JOIN master_issuer_rating
         ON master_issuer_rating.agency_id = master_agency.id
-      INNER JOIN master_issuer AS i
+      LEFT JOIN master_issuer AS i
         ON i.id = master_issuer_rating.issuer_id
       INNER JOIN issuer_trustee
         ON issuer_trustee.issuer_id = i.id
-      WHERE i.allotment_date BETWEEN ? AND ?
+      WHERE i.allotment_date BETWEEN ? AND ? AND (is_visible = 1)
       ${filterSql}
-      ${idFilterAndGroupSql}
+      GROUP BY 
+      master_issuer_rating.rating;
     `;
 
     const queryParams = [
@@ -6877,19 +6862,15 @@ app.post('/trustees_page_credit_rating_data', async (req, res) => {
       ...filterParams
     ];
 
-    if (isIdValid) {
-      queryParams.push(parsedId);
-    }
-
     const creditRatingResult = await prisma.$queryRawUnsafe(creditRatingQuery, ...queryParams);
 
     const finalResult = creditRatingResult?.map((item) => {
       return {
-        name: item?.rating || '-',
+        name: item?.label || '-',
         percentage: Number(item?.percentage) || 0,
         rating_no: Number(item?.rating_no) || 0,
         color: item?.color || '-',
-        label: item?.label || '-'
+        label: item?.rating || '-'
       }
     });
 
