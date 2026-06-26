@@ -4480,22 +4480,7 @@ app.post('/arrangers_page_credit_rating_data', async (req, res) => {
             2
           ) AS percentage,
           COUNT(master_issuer_rating.id) AS rating_no,
-          CONCAT(
-            '#',
-            SUBSTRING(
-              LPAD(
-                HEX(
-                  MOD(
-                    ABS(CAST(CONV(SUBSTRING(MD5(master_agency.short_name), 1, 8), 16, 10) AS SIGNED)),
-                    16777215
-                  )
-                ),
-                6,
-                '0'
-              ),
-              -6
-            )
-          ) AS color,
+          CONCAT('#', SUBSTRING((LPAD(HEX(ROUND(RAND() * 10000000)), 6, 0)), -6)) AS color,   
           GROUP_CONCAT(DISTINCT master_issuer_rating.rating ORDER BY master_issuer_rating.rating ASC SEPARATOR ', ') AS rating
         FROM master_agency
         INNER JOIN master_issuer_rating
