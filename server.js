@@ -10764,7 +10764,6 @@ app.post('/registrars_page_credit_rating_data', async (req, res) => {
     const {
       startDate,
       endDate,
-      id,
       rating = "",
       registrar = "",
       seniority = "",
@@ -10793,10 +10792,6 @@ app.post('/registrars_page_credit_rating_data', async (req, res) => {
     if (isNaN(currentStartDate.getTime()) || isNaN(currentEndDate.getTime())) {
       return res.status(400).json({ error: 'Invalid date format' });
     }
-
-    // Validate id
-    const parsedId = id !== undefined && id !== null ? parseInt(id, 10) : 0;
-    const hasAgencyFilter = !isNaN(parsedId) && parsedId > 0;
 
     // Format dates for MySQL (YYYY-MM-DD HH:MM:SS) — use local time to avoid UTC shift
     const pad = (n) => String(n).padStart(2, '0');
@@ -10930,26 +10925,11 @@ app.post('/registrars_page_credit_rating_data', async (req, res) => {
     const totalCount = safeNumber(totalRatingNo[0]?.aggregate) || 1;
 
     // ── MAIN QUERY ──
-    const agencyFilterSql = hasAgencyFilter ? 'AND master_agency.id = ?' : '';
-
-    // When filtering by agency (id > 0), group by rating to show rating distribution for that agency
-    // When no agency filter, group by agency_id to show agency distribution
-    // Use MIN(rating) when grouping by agency to make GROUP BY deterministic
-    const groupBySql = hasAgencyFilter
-      ? 'GROUP BY master_issuer_rating.rating'
-      : 'GROUP BY master_issuer_rating.agency_id';
-
-    const ratingSelectSql = hasAgencyFilter
-      ? 'master_issuer_rating.rating'
-      : 'MIN(master_issuer_rating.rating) AS rating';
 
     const mainParams = [...filterParams];
-    if (hasAgencyFilter) mainParams.push(parsedId);
-
     const creditRatingQuery = `
       SELECT
-        master_agency.short_name AS label,
-
+        MAX(master_agency.short_name) AS label,
         ROUND(
           (
             COUNT(master_issuer_rating.rating) /
@@ -10971,15 +10951,14 @@ app.post('/registrars_page_credit_rating_data', async (req, res) => {
             -6
           )
         ) AS color,
-
-        ${ratingSelectSql}
+        master_issuer_rating.rating AS rating
 
       FROM master_agency
 
       INNER JOIN master_issuer_rating
         ON master_issuer_rating.agency_id = master_agency.id
 
-      INNER JOIN master_issuer
+      LEFT JOIN master_issuer
         ON master_issuer.id = master_issuer_rating.issuer_id
 
       INNER JOIN issuer_registrar
@@ -10991,9 +10970,8 @@ app.post('/registrars_page_credit_rating_data', async (req, res) => {
 
       ${conditionsSql}
 
-      ${agencyFilterSql}
-
-      ${groupBySql}
+      GROUP BY 
+      master_issuer_rating.rating;
     `;
 
     const creditRatingResult = await prisma.$queryRawUnsafe(
@@ -11007,11 +10985,11 @@ app.post('/registrars_page_credit_rating_data', async (req, res) => {
     // ── FINAL RESPONSE ──
     const finalResult = creditRatingResult?.map((item) => {
       return {
-        name: item?.rating || '-',
+        name: item?.label || '-',
         percentage: Number(item?.percentage) || 0,
         rating_no: Number(item?.rating_no) || 0,
         color: item?.color || '-',
-        label: item?.label || '-'
+        label: item?.rating || '-'
       };
     });
 
