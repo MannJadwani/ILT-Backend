@@ -8743,7 +8743,6 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
       JOIN master_issuer mi ON mi.id = mir.issuer_id
       JOIN master_business_sector mbs ON mi.business_sector = mbs.code
       WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-      ${filterSql}
       GROUP BY
         r.agency_id,
         r.agency_name,
@@ -8755,9 +8754,10 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
         value DESC;
     `;
 
-    const sectorData = await prisma.$queryRawUnsafe(sectorQuery,
-      sqlCurrentStart, sqlCurrentEnd, ...filterParams,
-      sqlCurrentStart, sqlCurrentEnd, ...filterParams
+    const sectorData = await prisma.$queryRawUnsafe(
+      sectorQuery,
+      sqlCurrentStart, sqlCurrentEnd, ...filterParams,  // for the subquery
+      sqlCurrentStart, sqlCurrentEnd                    // for the outer query
     );
 
     /* ---------------- RESPONSE FORMAT ---------------- */
