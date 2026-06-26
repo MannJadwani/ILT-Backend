@@ -9003,11 +9003,11 @@ app.post('/rating_agencies_page_credit_rating_data', async (req, res) => {
 
     const finalResult = creditRatingResult?.map((item) => {
       return {
-        name: item?.label || '-',
+        name: item?.rating || '-',
         percentage: Number(item?.percentage) || 0,
         rating_no: Number(item?.rating_no) || 0,
         color: item?.color || '-',
-        label: item?.rating || '-'
+        label: item?.label || '-'
       };
     });
 
