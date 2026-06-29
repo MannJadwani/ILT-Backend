@@ -2736,7 +2736,7 @@ app.post('/issuepage_filterinputs_data', async (req, res) => {
         AND master_business_sector.description IS NOT NULL;
       `);
     const securityTypeOptions = await prisma.$queryRawUnsafe(`
-      SELECT master_security_type.description AS security_type
+      SELECT DISTINCT master_security_type.description AS security_type
       FROM master_issuer
       LEFT JOIN master_security_type 
         ON master_security_type.code = master_issuer.security_class
