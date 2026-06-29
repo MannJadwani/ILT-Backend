@@ -2740,14 +2740,14 @@ app.post('/issuepage_filterinputs_data', async (req, res) => {
         FROM master_issuer
         LEFT JOIN master_security_type 
           ON master_security_type.code = master_issuer.security_class
-        WHERE master_security_type.description IS NOT NULL;
+        WHERE master_security_type.description IS NOT NULL AND is_active = 1;
       `);
     const modeissueOptions = await prisma.$queryRawUnsafe(`
         SELECT DISTINCT master_mode_issue.description AS mode_of_issue
         FROM master_issuer
         LEFT JOIN master_mode_issue
           ON master_mode_issue.code = master_issuer.mode_issue
-        WHERE master_mode_issue.description IS NOT NULL;
+        WHERE master_mode_issue.description IS NOT NULL AND is_active = 1;
       `);
 
     const creditRatingOptions = await prisma.$queryRawUnsafe(`
