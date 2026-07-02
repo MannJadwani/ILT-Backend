@@ -9671,7 +9671,8 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
     const params = [];
 
     // Date Range
-    conditions.push(`i.allotment_date BETWEEN ? AND ? AND i.is_visible = 1`);
+    // conditions.push(`i.allotment_date BETWEEN ? AND ? AND i.is_visible = 1`);
+    conditions.push(`i.is_visible = 1`);
     params.push(sqlStartDate, sqlEndDate);
 
     // Allotment Date Range
@@ -9703,8 +9704,9 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
     --------------------------------- */
     const baseJoins = `
       FROM all_months 
-      INNER JOIN master_issuer AS i 
-          ON all_months.month_no = MONTH(i.allotment_date) 
+      INNER JOIN master_issuer AS i
+        ON all_months.month_no = MONTH(i.allotment_date)
+        AND i.allotment_date BETWEEN ? AND ?
       LEFT JOIN issuer_details AS id 
           ON i.issuer_master_id = id.id 
       LEFT JOIN master_security_type AS s 
@@ -9743,52 +9745,53 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
 
     // Data Query (Wrapped non-grouped fields in MAX to satisfy Prisma strict mode)
     const dataQuery = `
-      SELECT 
-          i.id AS issuerId, 
-          MAX(i.isin) AS isin, 
-          MAX(id.issuer_name) AS issuer_name, 
-          MAX(i.allotment_date) AS allotment_date, 
-          MAX(icd.coupon_rate) AS coupon_rate, 
-          MAX(mt.short_name) AS debenture_trustee_name, 
-          MAX(mr.short_name) AS registrar_detail, 
-          MAX(i.maturity_date) AS maturity_date, 
-          GROUP_CONCAT(DISTINCT mir.rating) AS rating_value, 
-          MAX(ma.short_name) AS arranger_name, 
-          MAX(i.security_name) AS security_name, 
-          MAX(s.description) AS security_type, 
-          MAX(mi.description) AS mode_issue, 
-          MAX(i.issue_size) AS issue_size, 
-          MAX(i.face_value) AS face_value, 
-          GROUP_CONCAT(DISTINCT mag.short_name) AS agency_name, 
-          MAX(mstc.description) AS seniority, 
-          MAX(tf.description) AS tax_free, 
-          MAX(msf.description) AS secured_flag, 
+      SELECT
+          i.id AS issuerId,
+          i.isin,
+          id.issuer_name,
+          i.allotment_date,
+          icd.coupon_rate,
+          mt.short_name AS debenture_trustee_name,
+          mr.short_name AS registrar_detail,
+          i.maturity_date,
+          mir.rating AS rating_value,
+          ma.short_name AS arranger_name,
+          i.security_name,
+          s.description AS security_type,
+          mi.description AS mode_issue,
+          i.issue_size,
+          i.face_value,
+          mag.short_name AS agency_name,
+          mstc.description AS seniority,
+          tf.description AS tax_free,
+          msf.description AS secured_flag,
           (
-              SELECT description 
-              FROM master_issuer_stock_exchange AS mise
-              LEFT JOIN master_listing_status AS mls ON mls.code = mise.listing_status 
-              WHERE issuer_id = i.id 
-              ORDER BY listing_status 
+              SELECT description
+              FROM master_issuer_stock_exchange mise
+              LEFT JOIN master_listing_status mls
+                  ON mls.code = mise.listing_status
+              WHERE mise.issuer_id = i.id
+              ORDER BY mise.listing_status
               LIMIT 1
-          ) AS listing_status, 
-          MAX(i.issuer_master_id) AS issuer_master_id 
+          ) AS listing_status,
+          i.issuer_master_id
       ${baseJoins}
       ${whereClause}
-      GROUP BY i.id
-      ORDER BY issuer_name ASC 
-      LIMIT ${Number(limit)} OFFSET ${Number(offset)};
+      ORDER BY id.issuer_name ASC
+      LIMIT ? OFFSET ?;
     `;
 
     // Total Count Query (Matches the data query's unique rows)
     const countQuery = `
-      SELECT COUNT(*) AS aggregate 
+      SELECT
+          COUNT(*) AS aggregate
       ${baseJoins}
-      ${whereClause}
+      ${whereClause};
     `;
 
     // Execute queries concurrently
     const [result, countResult] = await Promise.all([
-      prisma.$queryRawUnsafe(dataQuery, ...params),
+      prisma.$queryRawUnsafe(dataQuery, ...params, Number(limit),Number(offset)),
       prisma.$queryRawUnsafe(countQuery, ...params)
     ]);
 
