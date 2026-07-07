@@ -8510,51 +8510,51 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
     /* ---------------- TOTALS (parameterized, no Cartesian product) ---------------- */
 
     const totalIssueSizeResult = await prisma.$queryRawUnsafe(`
-      SELECT COALESCE(SUM(t.issue_size), 0) AS aggregate
-      FROM (
-        SELECT DISTINCT mi.id, mi.issue_size
+        SELECT COALESCE(SUM(mi.issue_size),0) AS aggregate
         FROM master_issuer mi
-        JOIN master_issuer_rating mir ON mir.issuer_id = mi.id
-        LEFT JOIN master_agency ma ON ma.id = mir.agency_id
-        WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1) 
-        ${filterSql}
-      ) t
+        JOIN master_issuer_rating mir
+            ON mir.issuer_id = mi.id
+        JOIN master_agency ma
+            ON ma.id = mir.agency_id
+        WHERE mi.allotment_date BETWEEN ? AND ?
+          AND mi.is_visible = 1
+          ${filterSql}
     `, sqlCurrentStart, sqlCurrentEnd, ...filterParams);
 
     const totalIssueSizePrevYearResult = await prisma.$queryRawUnsafe(`
-      SELECT COALESCE(SUM(t.issue_size), 0) AS aggregate
-      FROM (
-        SELECT DISTINCT mi.id, mi.issue_size
+        SELECT COALESCE(SUM(mi.issue_size),0) AS aggregate
         FROM master_issuer mi
-        JOIN master_issuer_rating mir ON mir.issuer_id = mi.id
-        LEFT JOIN master_agency ma ON ma.id = mir.agency_id
-        WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-        ${filterSql}
-      ) t
+        JOIN master_issuer_rating mir
+            ON mir.issuer_id = mi.id
+        JOIN master_agency ma
+            ON ma.id = mir.agency_id
+        WHERE mi.allotment_date BETWEEN ? AND ?
+          AND mi.is_visible = 1
+          ${filterSql}
     `, sqlPreviousStart, sqlPreviousEnd, ...filterParams);
 
     const totalIssuesCountCurrYearResult = await prisma.$queryRawUnsafe(`
-      SELECT COUNT(*) AS aggregate
-      FROM (
-        SELECT DISTINCT mi.id
+        SELECT COUNT(DISTINCT mi.isin) AS aggregate
         FROM master_issuer mi
-        JOIN master_issuer_rating mir ON mir.issuer_id = mi.id
-        LEFT JOIN master_agency ma ON ma.id = mir.agency_id
-        WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-        ${filterSql}
-      ) t
+        JOIN master_issuer_rating mir
+            ON mir.issuer_id = mi.id
+        JOIN master_agency ma
+            ON ma.id = mir.agency_id
+        WHERE mi.allotment_date BETWEEN ? AND ?
+          AND mi.is_visible = 1
+          ${filterSql}
     `, sqlCurrentStart, sqlCurrentEnd, ...filterParams);
 
     const totalIssuesCountPrevYearResult = await prisma.$queryRawUnsafe(`
-      SELECT COUNT(*) AS aggregate
-      FROM (
-        SELECT DISTINCT mi.id
+        SELECT COUNT(DISTINCT mi.isin) AS aggregate
         FROM master_issuer mi
-        JOIN master_issuer_rating mir ON mir.issuer_id = mi.id
-        LEFT JOIN master_agency ma ON ma.id = mir.agency_id
-        WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-        ${filterSql}
-      ) t
+        JOIN master_issuer_rating mir
+            ON mir.issuer_id = mi.id
+        JOIN master_agency ma
+            ON ma.id = mir.agency_id
+        WHERE mi.allotment_date BETWEEN ? AND ?
+          AND mi.is_visible = 1
+          ${filterSql}
     `, sqlPreviousStart, sqlPreviousEnd, ...filterParams);
 
     // Safely extract totals
