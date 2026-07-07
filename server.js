@@ -10434,36 +10434,72 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
 
     /* ── TOTALS (common filters only) ── */
     const totalIssueSizePromise = prisma.$queryRawUnsafe(`
-      SELECT SUM(issue_size) AS aggregate
-      FROM master_issuer mi
-      ${commonJoinsSql}
-      WHERE mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1
-      ${commonWhereSql}
-    `, currStartStr, currEndStr, ...commonParams);
+        SELECT COALESCE(SUM(mi.issue_size), 0) AS aggregate
+        FROM master_issuer mi
+        JOIN issuer_registrar ir
+          ON ir.issuer_id = mi.id
+        ${commonJoinsSql}
+        WHERE mi.allotment_date BETWEEN ? AND ?
+          AND mi.is_visible = 1
+          ${commonWhereSql}
+          ${registrar ? 'AND EXISTS (SELECT 1 FROM master_registrar mr WHERE mr.id = ir.registrar_id AND mr.registrar_name LIKE ?)' : ''}
+      `,
+      currStartStr,
+      currEndStr,
+      ...commonParams,
+      ...(registrar ? [`%${registrar}%`] : [])
+    );
 
     const totalIssueSizePrevYearPromise = prisma.$queryRawUnsafe(`
-      SELECT SUM(issue_size) AS aggregate
+      SELECT COALESCE(SUM(mi.issue_size), 0) AS aggregate
       FROM master_issuer mi
+      JOIN issuer_registrar ir
+        ON ir.issuer_id = mi.id
       ${commonJoinsSql}
-      WHERE mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1
-      ${commonWhereSql}
-    `, prevStartStr, prevEndStr, ...commonParams);
+      WHERE mi.allotment_date BETWEEN ? AND ?
+        AND mi.is_visible = 1
+        ${commonWhereSql}
+        ${registrar ? 'AND EXISTS (SELECT 1 FROM master_registrar mr WHERE mr.id = ir.registrar_id AND mr.registrar_name LIKE ?)' : ''}
+    `,
+      prevStartStr,
+      prevEndStr,
+      ...commonParams,
+      ...(registrar ? [`%${registrar}%`] : [])
+    );
 
     const totalIssuesCountCurrYearPromise = prisma.$queryRawUnsafe(`
       SELECT COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS aggregate
       FROM master_issuer mi
+      JOIN issuer_registrar ir
+        ON ir.issuer_id = mi.id
       ${commonJoinsSql}
-      WHERE mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1
-      ${commonWhereSql}
-    `, currStartStr, currEndStr, ...commonParams);
+      WHERE mi.allotment_date BETWEEN ? AND ?
+        AND mi.is_visible = 1
+        ${commonWhereSql}
+        ${registrar ? 'AND EXISTS (SELECT 1 FROM master_registrar mr WHERE mr.id = ir.registrar_id AND mr.registrar_name LIKE ?)' : ''}
+    `,
+      currStartStr,
+      currEndStr,
+      ...commonParams,
+      ...(registrar ? [`%${registrar}%`] : [])
+    );
 
     const totalIssuesCountPrevYearPromise = prisma.$queryRawUnsafe(`
       SELECT COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS aggregate
       FROM master_issuer mi
+      JOIN issuer_registrar ir
+        ON ir.issuer_id = mi.id
       ${commonJoinsSql}
-      WHERE mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1
-      ${commonWhereSql}
-    `, prevStartStr, prevEndStr, ...commonParams);
+      WHERE mi.allotment_date BETWEEN ? AND ?
+        AND mi.is_visible = 1
+        ${commonWhereSql}
+        ${registrar ? 'AND EXISTS (SELECT 1 FROM master_registrar mr WHERE mr.id = ir.registrar_id AND mr.registrar_name LIKE ?)' : ''}
+    `,
+      prevStartStr,
+      prevEndStr,
+      ...commonParams,
+      ...(registrar ? [`%${registrar}%`] : [])
+    );
 
     // Run all totals in parallel
     const [
