@@ -6408,14 +6408,24 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
     const totalIssueSizeRaw = await prisma.$queryRawUnsafe(`
       SELECT COALESCE(SUM(mi.issue_size), 0) AS aggregate
       FROM master_issuer mi
-      WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-      ${trusteeExistsSql}
-      ${baseFilterSql}
-    `, formatDate(currentStartDate), formatDate(currentEndDate), ...trusteeExistsParams, ...baseFilterParams);
+      JOIN issuer_trustee it
+        ON it.issuer_id = mi.id
+      WHERE mi.allotment_date BETWEEN ? AND ?
+        AND mi.is_visible = 1
+        ${trusteeExistsSql}
+        ${baseFilterSql}
+    `,
+      formatDate(currentStartDate),
+      formatDate(currentEndDate),
+      ...trusteeExistsParams,
+      ...baseFilterParams
+    );
 
     const totalIssueSizePrevYearRaw = await prisma.$queryRawUnsafe(`
       SELECT COALESCE(SUM(mi.issue_size), 0) AS aggregate
       FROM master_issuer mi
+      JOIN issuer_trustee it
+        ON it.issuer_id = mi.id
       WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${trusteeExistsSql}
       ${baseFilterSql}
@@ -6424,6 +6434,8 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
     const totalIssuesCountCurrYearRaw = await prisma.$queryRawUnsafe(`
       SELECT COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS aggregate
       FROM master_issuer mi
+      JOIN issuer_trustee it
+        ON it.issuer_id = mi.id
       WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${trusteeExistsSql}
       ${baseFilterSql}
@@ -6432,6 +6444,8 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
     const totalIssuesCountPrevYearRaw = await prisma.$queryRawUnsafe(`
       SELECT COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS aggregate
       FROM master_issuer mi
+      JOIN issuer_trustee it
+        ON it.issuer_id = mi.id
       WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${trusteeExistsSql}
       ${baseFilterSql}
