@@ -3953,22 +3953,32 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
     /* ---------------- TOTALS ---------------- */
 
     const totalIssueSize = await prisma.$queryRawUnsafe(`
-      SELECT SUM(mi.issue_size) AS aggregate
+      SELECT
+        SUM(mi.issue_size) AS aggregate
       FROM master_issuer mi
-      WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-      ${filterSql}
+      JOIN issuer_arranger ia
+        ON ia.issuer_id = mi.id
+      WHERE mi.allotment_date BETWEEN ? AND ?
+        AND mi.is_visible = 1
+        ${filterSql}
     `, cyStart, cyEnd, ...filterParams);
 
     const totalIssueSizePrevYear = await prisma.$queryRawUnsafe(`
-      SELECT SUM(mi.issue_size) AS aggregate
+      SELECT
+        SUM(mi.issue_size) AS aggregate
       FROM master_issuer mi
-      WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-      ${filterSql}
+      JOIN issuer_arranger ia
+        ON ia.issuer_id = mi.id
+      WHERE mi.allotment_date BETWEEN ? AND ?
+        AND mi.is_visible = 1
+        ${filterSql}
     `, pyStart, pyEnd, ...filterParams);
 
     const totalIssuesCountCurrYear = await prisma.$queryRawUnsafe(`
       SELECT COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS aggregate
       FROM master_issuer mi
+      JOIN issuer_arranger ia
+        ON ia.issuer_id = mi.id
       WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${filterSql}
     `, cyStart, cyEnd, ...filterParams);
@@ -3976,6 +3986,8 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
     const totalIssuesCountPrevYear = await prisma.$queryRawUnsafe(`
       SELECT COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS aggregate
       FROM master_issuer mi
+      JOIN issuer_arranger ia
+        ON ia.issuer_id = mi.id
       WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${filterSql}
     `, pyStart, pyEnd, ...filterParams);
@@ -9791,7 +9803,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
 
     // Execute queries concurrently
     const [result, countResult] = await Promise.all([
-      prisma.$queryRawUnsafe(dataQuery, ...params, Number(limit),Number(offset)),
+      prisma.$queryRawUnsafe(dataQuery, ...params, Number(limit), Number(offset)),
       prisma.$queryRawUnsafe(countQuery, ...params)
     ]);
 
