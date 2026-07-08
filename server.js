@@ -1429,6 +1429,22 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
     const pyStart = formatDate(previousStartDate);
     const pyEnd = formatDate(previousEndDate);
 
+    // ─── Helper: Build multi-value IN clause ───
+    const buildInClause = (field, values, useLike = false) => {
+      if (!values || (Array.isArray(values) && values.length === 0)) return null;
+      const vals = Array.isArray(values) ? values.filter(v => v !== '' && v !== null && v !== undefined) : [values].filter(v => v !== '' && v !== null && v !== undefined);
+      if (vals.length === 0) return null;
+
+      if (useLike) {
+        const clauses = vals.map(() => `${field} LIKE ?`).join(' OR ');
+        const params = vals.map(v => `%${v}%`);
+        return { clause: `(${clauses})`, params };
+      }
+
+      const placeholders = vals.map(() => '?').join(',');
+      return { clause: `${field} IN (${placeholders})`, params: vals };
+    };
+
     // ─── Build dynamic WHERE conditions ───
     const conditions = [];
     const filterParams = [];
@@ -1437,60 +1453,102 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
     const dateConditions = `master_issuer.allotment_date BETWEEN ? AND ? AND (is_visible = 1)`;
 
     if (issuerName) {
-      conditions.push(`issuer_details.issuer_name LIKE ?`);
-      filterParams.push(`%${issuerName}%`);
+      const inClause = buildInClause('issuer_details.issuer_name', issuerName, true);
+      if (inClause) {
+        conditions.push(inClause.clause);
+        filterParams.push(...inClause.params);
+      }
     }
     if (rating) {
-      conditions.push(`master_issuer_rating.rating = ?`);
-      filterParams.push(rating);
+      const inClause = buildInClause('master_issuer_rating.rating', rating);
+      if (inClause) {
+        conditions.push(inClause.clause);
+        filterParams.push(...inClause.params);
+      }
     }
     if (dealSize) {
-      conditions.push(`master_issuer.issue_size LIKE ?`);
-      filterParams.push(`%${dealSize}%`);
+      const inClause = buildInClause('master_issuer.issue_size', dealSize, true);
+      if (inClause) {
+        conditions.push(inClause.clause);
+        filterParams.push(...inClause.params);
+      }
     }
     if (listingStatus) {
-      conditions.push(`listing_data.listing_status = ?`);
-      filterParams.push(listingStatus);
+      const inClause = buildInClause('listing_data.listing_status', listingStatus);
+      if (inClause) {
+        conditions.push(inClause.clause);
+        filterParams.push(...inClause.params);
+      }
     }
     if (seniority) {
-      conditions.push(`master_seniority_tier_classification.description = ?`);
-      filterParams.push(seniority);
+      const inClause = buildInClause('master_seniority_tier_classification.description', seniority);
+      if (inClause) {
+        conditions.push(inClause.clause);
+        filterParams.push(...inClause.params);
+      }
     }
     if (taxFree) {
-      conditions.push(`master_tax_free.description = ?`);
-      filterParams.push(taxFree);
+      const inClause = buildInClause('master_tax_free.description', taxFree);
+      if (inClause) {
+        conditions.push(inClause.clause);
+        filterParams.push(...inClause.params);
+      }
     }
     if (securedFlag) {
-      conditions.push(`master_secured_flag.description = ?`);
-      filterParams.push(securedFlag);
+      const inClause = buildInClause('master_secured_flag.description', securedFlag);
+      if (inClause) {
+        conditions.push(inClause.clause);
+        filterParams.push(...inClause.params);
+      }
     }
     if (sector) {
-      conditions.push(`master_business_sector.description = ?`);
-      filterParams.push(sector);
+      const inClause = buildInClause('master_business_sector.description', sector);
+      if (inClause) {
+        conditions.push(inClause.clause);
+        filterParams.push(...inClause.params);
+      }
     }
     if (trustee) {
-      conditions.push(`master_trustee.short_name = ?`);
-      filterParams.push(trustee);
+      const inClause = buildInClause('master_trustee.short_name', trustee);
+      if (inClause) {
+        conditions.push(inClause.clause);
+        filterParams.push(...inClause.params);
+      }
     }
     if (nature) {
-      conditions.push(`master_issuer_type_nature.description = ?`);
-      filterParams.push(nature);
+      const inClause = buildInClause('master_issuer_type_nature.description', nature);
+      if (inClause) {
+        conditions.push(inClause.clause);
+        filterParams.push(...inClause.params);
+      }
     }
     if (ownershipType) {
-      conditions.push(`master_issuer_ownership_type.description = ?`);
-      filterParams.push(ownershipType);
+      const inClause = buildInClause('master_issuer_ownership_type.description', ownershipType);
+      if (inClause) {
+        conditions.push(inClause.clause);
+        filterParams.push(...inClause.params);
+      }
     }
     if (creditRatingAgency) {
-      conditions.push(`master_agency.short_name = ?`);
-      filterParams.push(creditRatingAgency);
+      const inClause = buildInClause('master_agency.short_name', creditRatingAgency);
+      if (inClause) {
+        conditions.push(inClause.clause);
+        filterParams.push(...inClause.params);
+      }
     }
     if (securityType) {
-      conditions.push(`master_security_type.description = ?`);
-      filterParams.push(securityType);
+      const inClause = buildInClause('master_security_type.description', securityType);
+      if (inClause) {
+        conditions.push(inClause.clause);
+        filterParams.push(...inClause.params);
+      }
     }
     if (modeOfIssue) {
-      conditions.push(`master_mode_issue.description = ?`);
-      filterParams.push(modeOfIssue);
+      const inClause = buildInClause('master_mode_issue.description', modeOfIssue);
+      if (inClause) {
+        conditions.push(inClause.clause);
+        filterParams.push(...inClause.params);
+      }
     }
 
     const filterClause = conditions.length > 0 ? `AND ${conditions.join(' AND ')}` : '';
@@ -1559,7 +1617,6 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
     const totalIssuesCountPY = Number(totalIssuesCountPrevYear[0]?.aggregate) || 0;
 
     // ─── FIX: Proper divisor calculation ───
-    // When total is 0, market share should be 0, not calculated against 1
     const cySizeDivisor = totalIssueSizeCY / 10000000;
     const pySizeDivisor = totalIssueSizePY / 10000000;
     const cyCountDivisor = totalIssuesCountCY;
@@ -1577,7 +1634,6 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
     const pyDivisor = rankByCount ? pyCountDivisor : pySizeDivisor;
 
     // ─── FIX: Use a single CTE-based query instead of running heavy subquery twice ───
-    // This is more efficient and eliminates the param mismatch risk entirely
     const tableQuery = `
       WITH 
       cy_data AS (
@@ -1727,65 +1783,81 @@ app.post('/issuers_page_top_sectors_data', async (req, res) => {
     const pyStart = formatDate(previousStartDate);
     const pyEnd = formatDate(previousEndDate);
 
+    // ─── Helper: Build multi-value IN clause ───
+    const buildInClause = (field, values, useLike = false) => {
+      if (!values || (Array.isArray(values) && values.length === 0)) return null;
+      const vals = Array.isArray(values) ? values.filter(v => v !== '' && v !== null && v !== undefined) : [values].filter(v => v !== '' && v !== null && v !== undefined);
+      if (vals.length === 0) return null;
+
+      if (useLike) {
+        const clauses = vals.map(() => `${field} LIKE ?`).join(' OR ');
+        const params = vals.map(v => `%${v}%`);
+        return { clause: `(${clauses})`, params };
+      }
+
+      const placeholders = vals.map(() => '?').join(',');
+      return { clause: `${field} IN (${placeholders})`, params: vals };
+    };
+
     // ─── Build dynamic filter conditions (excluding date range) ───
     const conditions = [];
     const filterParams = [];
 
     if (issuerName) {
-      conditions.push(`issuer_details.issuer_name LIKE ?`);
-      filterParams.push(`%${issuerName}%`);
+      const inClause = buildInClause('issuer_details.issuer_name', issuerName, true);
+      if (inClause) { conditions.push(inClause.clause); filterParams.push(...inClause.params); }
     }
     if (rating) {
-      conditions.push(`master_issuer_rating.rating = ?`);
-      filterParams.push(rating);
+      const inClause = buildInClause('master_issuer_rating.rating', rating);
+      if (inClause) { conditions.push(inClause.clause); filterParams.push(...inClause.params); }
     }
     if (dealSize) {
-      conditions.push(`master_issuer.issue_size LIKE ?`);
-      filterParams.push(`%${dealSize}%`);
+      const inClause = buildInClause('master_issuer.issue_size', dealSize, true);
+      if (inClause) { conditions.push(inClause.clause); filterParams.push(...inClause.params); }
     }
     if (listingStatus) {
-      conditions.push(`listing_data.listing_status = ?`);
-      filterParams.push(listingStatus);
+      const inClause = buildInClause('listing_data.listing_status', listingStatus);
+      if (inClause) { conditions.push(inClause.clause); filterParams.push(...inClause.params); }
     }
     if (seniority) {
-      conditions.push(`master_seniority_tier_classification.description = ?`);
-      filterParams.push(seniority);
+      const inClause = buildInClause('master_seniority_tier_classification.description', seniority);
+      if (inClause) { conditions.push(inClause.clause); filterParams.push(...inClause.params); }
     }
     if (taxFree) {
-      conditions.push(`master_tax_free.description = ?`);
-      filterParams.push(taxFree);
+      const inClause = buildInClause('master_tax_free.description', taxFree);
+      if (inClause) { conditions.push(inClause.clause); filterParams.push(...inClause.params); }
     }
     if (securedFlag) {
-      conditions.push(`master_secured_flag.description = ?`);
-      filterParams.push(securedFlag);
+      const inClause = buildInClause('master_secured_flag.description', securedFlag);
+      if (inClause) { conditions.push(inClause.clause); filterParams.push(...inClause.params); }
     }
     if (sector) {
-      conditions.push(`master_business_sector.description = ?`);
-      filterParams.push(sector);
+      const inClause = buildInClause('master_business_sector.description', sector);
+      if (inClause) { conditions.push(inClause.clause); filterParams.push(...inClause.params); }
     }
     if (trustee) {
-      conditions.push(`master_trustee.short_name = ?`);
-      filterParams.push(trustee);
+      const inClause = buildInClause('master_trustee.short_name', trustee);
+      if (inClause) { conditions.push(inClause.clause); filterParams.push(...inClause.params); }
     }
     if (nature) {
-      conditions.push(`master_issuer_type_nature.description = ?`);
-      filterParams.push(nature);
+      const inClause = buildInClause('master_issuer_type_nature.description', nature);
+      if (inClause) { conditions.push(inClause.clause); filterParams.push(...inClause.params); }
     }
     if (ownershipType) {
-      conditions.push(`master_issuer_ownership_type.description = ?`);
-      filterParams.push(ownershipType);
+      const inClause = buildInClause('master_issuer_ownership_type.description', ownershipType);
+      if (inClause) { conditions.push(inClause.clause); filterParams.push(...inClause.params); }
     }
     if (creditRatingAgency) {
-      conditions.push(`master_agency.short_name = ?`);
-      filterParams.push(creditRatingAgency);
+      const inClause = buildInClause('master_agency.short_name', creditRatingAgency);
+      if (inClause) { conditions.push(inClause.clause); filterParams.push(...inClause.params); }
     }
     if (securityType) {
-      conditions.push(`master_security_type.description = ?`);
-      filterParams.push(securityType);
+      const inClause = buildInClause('master_security_type.description', securityType);
+      if (inClause) { conditions.push(inClause.clause); filterParams.push(...inClause.params); }
     }
     if (modeOfIssue) {
-      conditions.push(`master_mode_issue.description = ?`);
-      filterParams.push(modeOfIssue);
+      const inClause = buildInClause('master_mode_issue.description', modeOfIssue);
+      if (inClause) { conditions.push(inClause.clause); filterParams.push(...inClause.params); }
     }
 
     const filterClause = conditions.length > 0 ? `AND ${conditions.join(' AND ')}` : '';
@@ -1936,65 +2008,81 @@ app.post('/issuers_page_outstanding_data', async (req, res) => {
     const cyStart = formatDate(currentStartDate);
     const cyEnd = formatDate(currentEndDate);
 
+    // ─── Helper: Build multi-value IN clause ───
+    const buildInClause = (field, values, useLike = false) => {
+      if (!values || (Array.isArray(values) && values.length === 0)) return null;
+      const vals = Array.isArray(values) ? values.filter(v => v !== '' && v !== null && v !== undefined) : [values].filter(v => v !== '' && v !== null && v !== undefined);
+      if (vals.length === 0) return null;
+
+      if (useLike) {
+        const clauses = vals.map(() => `${field} LIKE ?`).join(' OR ');
+        const params = vals.map(v => `%${v}%`);
+        return { clause: `(${clauses})`, params };
+      }
+
+      const placeholders = vals.map(() => '?').join(',');
+      return { clause: `${field} IN (${placeholders})`, params: vals };
+    };
+
     // ─── Build dynamic filter conditions (excluding date range) ───
     const filterConditions = [];
     const filterParams = [];
 
     if (issuerName) {
-      filterConditions.push(`issuer_details.issuer_name LIKE ?`);
-      filterParams.push(`%${issuerName}%`);
+      const inClause = buildInClause('issuer_details.issuer_name', issuerName, true);
+      if (inClause) { filterConditions.push(inClause.clause); filterParams.push(...inClause.params); }
     }
     if (rating) {
-      filterConditions.push(`master_issuer_rating.rating = ?`);
-      filterParams.push(rating);
+      const inClause = buildInClause('master_issuer_rating.rating', rating);
+      if (inClause) { filterConditions.push(inClause.clause); filterParams.push(...inClause.params); }
     }
     if (dealSize) {
-      filterConditions.push(`master_issuer.issue_size LIKE ?`);
-      filterParams.push(`%${dealSize}%`);
+      const inClause = buildInClause('master_issuer.issue_size', dealSize, true);
+      if (inClause) { filterConditions.push(inClause.clause); filterParams.push(...inClause.params); }
     }
     if (listingStatus) {
-      filterConditions.push(`listing_data.listing_status = ?`);
-      filterParams.push(listingStatus);
+      const inClause = buildInClause('listing_data.listing_status', listingStatus);
+      if (inClause) { filterConditions.push(inClause.clause); filterParams.push(...inClause.params); }
     }
     if (seniority) {
-      filterConditions.push(`master_seniority_tier_classification.description = ?`);
-      filterParams.push(seniority);
+      const inClause = buildInClause('master_seniority_tier_classification.description', seniority);
+      if (inClause) { filterConditions.push(inClause.clause); filterParams.push(...inClause.params); }
     }
     if (taxFree) {
-      filterConditions.push(`master_tax_free.description = ?`);
-      filterParams.push(taxFree);
+      const inClause = buildInClause('master_tax_free.description', taxFree);
+      if (inClause) { filterConditions.push(inClause.clause); filterParams.push(...inClause.params); }
     }
     if (securedFlag) {
-      filterConditions.push(`master_secured_flag.description = ?`);
-      filterParams.push(securedFlag);
+      const inClause = buildInClause('master_secured_flag.description', securedFlag);
+      if (inClause) { filterConditions.push(inClause.clause); filterParams.push(...inClause.params); }
     }
     if (sector) {
-      filterConditions.push(`master_business_sector.description = ?`);
-      filterParams.push(sector);
+      const inClause = buildInClause('master_business_sector.description', sector);
+      if (inClause) { filterConditions.push(inClause.clause); filterParams.push(...inClause.params); }
     }
     if (trustee) {
-      filterConditions.push(`master_trustee.short_name = ?`);
-      filterParams.push(trustee);
+      const inClause = buildInClause('master_trustee.short_name', trustee);
+      if (inClause) { filterConditions.push(inClause.clause); filterParams.push(...inClause.params); }
     }
     if (nature) {
-      filterConditions.push(`master_issuer_type_nature.description = ?`);
-      filterParams.push(nature);
+      const inClause = buildInClause('master_issuer_type_nature.description', nature);
+      if (inClause) { filterConditions.push(inClause.clause); filterParams.push(...inClause.params); }
     }
     if (ownershipType) {
-      filterConditions.push(`master_issuer_ownership_type.description = ?`);
-      filterParams.push(ownershipType);
+      const inClause = buildInClause('master_issuer_ownership_type.description', ownershipType);
+      if (inClause) { filterConditions.push(inClause.clause); filterParams.push(...inClause.params); }
     }
     if (creditRatingAgency) {
-      filterConditions.push(`master_agency.short_name = ?`);
-      filterParams.push(creditRatingAgency);
+      const inClause = buildInClause('master_agency.short_name', creditRatingAgency);
+      if (inClause) { filterConditions.push(inClause.clause); filterParams.push(...inClause.params); }
     }
     if (securityType) {
-      filterConditions.push(`master_security_type.description = ?`);
-      filterParams.push(securityType);
+      const inClause = buildInClause('master_security_type.description', securityType);
+      if (inClause) { filterConditions.push(inClause.clause); filterParams.push(...inClause.params); }
     }
     if (modeOfIssue) {
-      filterConditions.push(`master_mode_issue.description = ?`);
-      filterParams.push(modeOfIssue);
+      const inClause = buildInClause('master_mode_issue.description', modeOfIssue);
+      if (inClause) { filterConditions.push(inClause.clause); filterParams.push(...inClause.params); }
     }
 
     const filterClause = filterConditions.length > 0 ? ` AND ${filterConditions.join(' AND ')}` : '';
@@ -2090,7 +2178,6 @@ app.post('/issuers_page_outstanding_data', async (req, res) => {
     const allMonthRanges = getMonthlyRanges(currentStartDate, currentEndDate);
 
     // ─── FIX: Optimized outstanding queries — batch by quarter to reduce N+1 ───
-    // For simplicity and maximum compatibility, we keep per-month but fix the logic
     const outstandingPromises = allMonthRanges.map(async ({ label, start, end }) => {
       const [result] = await prisma.$queryRawUnsafe(`
         SELECT ROUND(SUM(mi.issue_size) / 10000000, 2) AS aggregate
@@ -2117,16 +2204,6 @@ app.post('/issuers_page_outstanding_data', async (req, res) => {
     const issueMap = new Map(issueData.map(item => [item.label, item]));
     const redemptionMap = new Map(redemptionData.map(item => [item.label, item]));
     const outstandingMap = new Map(outstandingData.map(item => [item.label, item]));
-
-    // ─── FIX: Define getShortMonthName (was missing!) ───
-    // function getShortMonthName(fullMonthName) {
-    //   const monthMap = {
-    //     'January': 'Jan', 'February': 'Feb', 'March': 'Mar', 'April': 'Apr',
-    //     'May': 'May', 'June': 'Jun', 'July': 'Jul', 'August': 'Aug',
-    //     'September': 'Sep', 'October': 'Oct', 'November': 'Nov', 'December': 'Dec'
-    //   };
-    //   return monthMap[fullMonthName] || fullMonthName;
-    // }
 
     const formattedData = allMonthRanges.map(({ label }) => {
       const issue = issueMap.get(label);
@@ -2155,10 +2232,7 @@ app.get('/issuers_page_current_year_debt_redemption_data', async (req, res) => {
     const nextYear = getUpcomingMarch31(now);
 
     const startStr = formatDateForSQL(now);
-    // const startStr = '2026-06-15 00:00:00'; // Hardcoded for testing
     const endStr = formatDateForSQL(nextYear);
-
-
 
     // ─── FIX: Use parameterized query to prevent SQL injection ───
     const redemptionData = await prisma.$queryRawUnsafe(`
@@ -2262,6 +2336,22 @@ app.post('/issuers_page_agency_rating_data', async (req, res) => {
     const agencyId = id ? Number(id) : null;
     const isDrillDown = agencyId !== null && !isNaN(agencyId) && agencyId > 0;
 
+    // ─── Helper: Build multi-value IN clause ───
+    const buildInClause = (field, values, useLike = false) => {
+      if (!values || (Array.isArray(values) && values.length === 0)) return null;
+      const vals = Array.isArray(values) ? values.filter(v => v !== '' && v !== null && v !== undefined) : [values].filter(v => v !== '' && v !== null && v !== undefined);
+      if (vals.length === 0) return null;
+
+      if (useLike) {
+        const clauses = vals.map(() => `${field} LIKE ?`).join(' OR ');
+        const params = vals.map(v => `%${v}%`);
+        return { clause: `(${clauses})`, params };
+      }
+
+      const placeholders = vals.map(() => '?').join(',');
+      return { clause: `${field} IN (${placeholders})`, params: vals };
+    };
+
     // ─── Build dynamic filter conditions ───
     const conditions = [];
     const params = [];
@@ -2270,60 +2360,60 @@ app.post('/issuers_page_agency_rating_data', async (req, res) => {
     params.push(cyStart, cyEnd);
 
     if (issuerName) {
-      conditions.push(`issuer_details.issuer_name LIKE ?`);
-      params.push(`%${issuerName}%`);
+      const inClause = buildInClause('issuer_details.issuer_name', issuerName, true);
+      if (inClause) { conditions.push(inClause.clause); params.push(...inClause.params); }
     }
     if (rating) {
-      conditions.push(`mir.rating = ?`);
-      params.push(rating);
+      const inClause = buildInClause('mir.rating', rating);
+      if (inClause) { conditions.push(inClause.clause); params.push(...inClause.params); }
     }
     if (dealSize) {
-      conditions.push(`i.issue_size LIKE ?`);
-      params.push(`%${dealSize}%`);
+      const inClause = buildInClause('i.issue_size', dealSize, true);
+      if (inClause) { conditions.push(inClause.clause); params.push(...inClause.params); }
     }
     if (listingStatus) {
-      conditions.push(`listing_data.listing_status = ?`);
-      params.push(listingStatus);
+      const inClause = buildInClause('listing_data.listing_status', listingStatus);
+      if (inClause) { conditions.push(inClause.clause); params.push(...inClause.params); }
     }
     if (seniority) {
-      conditions.push(`master_seniority_tier_classification.description = ?`);
-      params.push(seniority);
+      const inClause = buildInClause('master_seniority_tier_classification.description', seniority);
+      if (inClause) { conditions.push(inClause.clause); params.push(...inClause.params); }
     }
     if (taxFree) {
-      conditions.push(`master_tax_free.description = ?`);
-      params.push(taxFree);
+      const inClause = buildInClause('master_tax_free.description', taxFree);
+      if (inClause) { conditions.push(inClause.clause); params.push(...inClause.params); }
     }
     if (securedFlag) {
-      conditions.push(`master_secured_flag.description = ?`);
-      params.push(securedFlag);
+      const inClause = buildInClause('master_secured_flag.description', securedFlag);
+      if (inClause) { conditions.push(inClause.clause); params.push(...inClause.params); }
     }
     if (sector) {
-      conditions.push(`master_business_sector.description = ?`);
-      params.push(sector);
+      const inClause = buildInClause('master_business_sector.description', sector);
+      if (inClause) { conditions.push(inClause.clause); params.push(...inClause.params); }
     }
     if (trustee) {
-      conditions.push(`master_trustee.short_name = ?`);
-      params.push(trustee);
+      const inClause = buildInClause('master_trustee.short_name', trustee);
+      if (inClause) { conditions.push(inClause.clause); params.push(...inClause.params); }
     }
     if (nature) {
-      conditions.push(`master_issuer_type_nature.description = ?`);
-      params.push(nature);
+      const inClause = buildInClause('master_issuer_type_nature.description', nature);
+      if (inClause) { conditions.push(inClause.clause); params.push(...inClause.params); }
     }
     if (ownershipType) {
-      conditions.push(`master_issuer_ownership_type.description = ?`);
-      params.push(ownershipType);
+      const inClause = buildInClause('master_issuer_ownership_type.description', ownershipType);
+      if (inClause) { conditions.push(inClause.clause); params.push(...inClause.params); }
     }
     if (creditRatingAgency) {
-      conditions.push(`ma.short_name = ?`);
-      params.push(creditRatingAgency);
+      const inClause = buildInClause('ma.short_name', creditRatingAgency);
+      if (inClause) { conditions.push(inClause.clause); params.push(...inClause.params); }
     }
     if (securityType) {
-      conditions.push(`master_security_type.description = ?`);
-      params.push(securityType);
+      const inClause = buildInClause('master_security_type.description', securityType);
+      if (inClause) { conditions.push(inClause.clause); params.push(...inClause.params); }
     }
     if (modeOfIssue) {
-      conditions.push(`master_mode_issue.description = ?`);
-      params.push(modeOfIssue);
+      const inClause = buildInClause('master_mode_issue.description', modeOfIssue);
+      if (inClause) { conditions.push(inClause.clause); params.push(...inClause.params); }
     }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
