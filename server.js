@@ -3890,137 +3890,203 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
     const formatDate = (date) =>
       date.toISOString().slice(0, 19).replace('T', ' ');
 
+    /* ---------------- HELPER: Build multi-value IN clause ---------------- */
+    const buildInClause = (field, values, useLike = false) => {
+      if (!values || (Array.isArray(values) && values.length === 0)) return null;
+      const vals = Array.isArray(values)
+        ? values.filter(v => v !== '' && v !== null && v !== undefined)
+        : [values].filter(v => v !== '' && v !== null && v !== undefined);
+      if (vals.length === 0) return null;
+
+      if (useLike) {
+        const clauses = vals.map(() => `${field} LIKE ?`).join(' OR ');
+        const params = vals.map(v => `%${v}%`);
+        return { clause: `(${clauses})`, params };
+      }
+
+      const placeholders = vals.map(() => '?').join(',');
+      return { clause: `${field} IN (${placeholders})`, params: vals };
+    };
+
     /* ---------------- DYNAMIC FILTER BUILDER ---------------- */
     const buildFilterConditions = (tableAlias = 'mi') => {
       const conditions = [];
       const params = [];
 
       if (rating) {
-        conditions.push(`EXISTS (
-          SELECT 1 FROM master_issuer_rating mir2
-          JOIN master_agency ma2 ON ma2.id = mir2.agency_id
-          WHERE mir2.issuer_id = ${tableAlias}.id AND mir2.rating = ?
-        )`);
-        params.push(rating);
+        const inClause = buildInClause('mir2.rating', rating);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_issuer_rating mir2
+            JOIN master_agency ma2 ON ma2.id = mir2.agency_id
+            WHERE mir2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
       }
 
       if (creditRatingAgency) {
-        conditions.push(`EXISTS (
-          SELECT 1 FROM master_issuer_rating mir2
-          JOIN master_agency ma2 ON ma2.id = mir2.agency_id
-          WHERE mir2.issuer_id = ${tableAlias}.id AND ma2.short_name = ?
-        )`);
-        params.push(creditRatingAgency);
+        const inClause = buildInClause('ma2.short_name', creditRatingAgency);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_issuer_rating mir2
+            JOIN master_agency ma2 ON ma2.id = mir2.agency_id
+            WHERE mir2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
       }
 
       if (registrar) {
-        conditions.push(`EXISTS (
-          SELECT 1 FROM issuer_registrar ir2
-          JOIN master_registrar mr2 ON mr2.id = ir2.registrar_id
-          WHERE ir2.issuer_id = ${tableAlias}.id AND mr2.registrar_name LIKE ?
-        )`);
-        params.push(`%${registrar}%`);
+        const inClause = buildInClause('mr2.registrar_name', registrar, true);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM issuer_registrar ir2
+            JOIN master_registrar mr2 ON mr2.id = ir2.registrar_id
+            WHERE ir2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
       }
 
       if (arranger) {
-        conditions.push(`EXISTS (
-          SELECT 1 FROM issuer_arranger ia2
-          JOIN master_arranger ma2 ON ma2.id = ia2.arranger_id
-          WHERE ia2.issuer_id = ${tableAlias}.id AND ma2.short_name LIKE ?
-        )`);
-        params.push(`%${arranger}%`);
+        const inClause = buildInClause('ma2.short_name', arranger, true);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM issuer_arranger ia2
+            JOIN master_arranger ma2 ON ma2.id = ia2.arranger_id
+            WHERE ia2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
       }
 
       if (seniority) {
-        conditions.push(`EXISTS (
-          SELECT 1 FROM master_seniority_tier_classification mstc2
-          WHERE mstc2.code = ${tableAlias}.seniority AND mstc2.description = ?
-        )`);
-        params.push(seniority);
+        const inClause = buildInClause('mstc2.description', seniority);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_seniority_tier_classification mstc2
+            WHERE mstc2.code = ${tableAlias}.seniority AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
       }
 
       if (taxFree) {
-        conditions.push(`EXISTS (
-          SELECT 1 FROM master_tax_free mtf2
-          WHERE mtf2.code = ${tableAlias}.tax_free AND mtf2.description = ?
-        )`);
-        params.push(taxFree);
+        const inClause = buildInClause('mtf2.description', taxFree);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_tax_free mtf2
+            WHERE mtf2.code = ${tableAlias}.tax_free AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
       }
 
       if (securedFlag) {
-        conditions.push(`EXISTS (
-          SELECT 1 FROM master_secured_flag msf2
-          WHERE msf2.code = ${tableAlias}.secured_flag AND msf2.description = ?
-        )`);
-        params.push(securedFlag);
+        const inClause = buildInClause('msf2.description', securedFlag);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_secured_flag msf2
+            WHERE msf2.code = ${tableAlias}.secured_flag AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
       }
 
       if (sector) {
-        conditions.push(`EXISTS (
-          SELECT 1 FROM master_business_sector mbs2
-          WHERE mbs2.code = ${tableAlias}.business_sector AND mbs2.description = ?
-        )`);
-        params.push(sector);
+        const inClause = buildInClause('mbs2.description', sector);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_business_sector mbs2
+            WHERE mbs2.code = ${tableAlias}.business_sector AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
       }
 
       if (trustee) {
-        conditions.push(`EXISTS (
-          SELECT 1 FROM issuer_trustee it2
-          JOIN master_trustee mt2 ON mt2.id = it2.trustee_id
-          WHERE it2.issuer_id = ${tableAlias}.id AND mt2.short_name = ?
-        )`);
-        params.push(trustee);
+        const inClause = buildInClause('mt2.short_name', trustee);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM issuer_trustee it2
+            JOIN master_trustee mt2 ON mt2.id = it2.trustee_id
+            WHERE it2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
       }
 
       if (nature) {
-        conditions.push(`EXISTS (
-          SELECT 1 FROM master_issuer_type_nature mitn2
-          WHERE mitn2.code = ${tableAlias}.nature_type AND mitn2.description = ?
-        )`);
-        params.push(nature);
+        const inClause = buildInClause('mitn2.description', nature);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_issuer_type_nature mitn2
+            WHERE mitn2.code = ${tableAlias}.nature_type AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
       }
 
       if (ownershipType) {
-        conditions.push(`EXISTS (
-          SELECT 1 FROM master_issuer_ownership_type miot2
-          WHERE miot2.code = ${tableAlias}.issuer_ownership_type AND miot2.description = ?
-        )`);
-        params.push(ownershipType);
+        const inClause = buildInClause('miot2.description', ownershipType);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_issuer_ownership_type miot2
+            WHERE miot2.code = ${tableAlias}.issuer_ownership_type AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
       }
 
       if (dealSize) {
-        conditions.push(`${tableAlias}.issue_size LIKE ?`);
-        params.push(`%${dealSize}%`);
+        const inClause = buildInClause(`${tableAlias}.issue_size`, dealSize, true);
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
       }
 
       if (listingStatus) {
-        conditions.push(`EXISTS (
-          SELECT 1 FROM master_issuer_stock_exchange mise2
-          JOIN master_listing_status mls2 ON mls2.code = mise2.listing_status
-          WHERE mise2.issuer_id = ${tableAlias}.id AND mls2.description = ?
-        )`);
-        params.push(listingStatus);
+        const inClause = buildInClause('mls2.description', listingStatus);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_issuer_stock_exchange mise2
+            JOIN master_listing_status mls2 ON mls2.code = mise2.listing_status
+            WHERE mise2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
       }
 
       if (securityType) {
-        conditions.push(`EXISTS (
-          SELECT 1 FROM master_security_type mst2
-          WHERE mst2.code = ${tableAlias}.security_class AND mst2.description = ?
-        )`);
-        params.push(securityType);
+        const inClause = buildInClause('mst2.description', securityType);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_security_type mst2
+            WHERE mst2.code = ${tableAlias}.security_class AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
       }
 
       if (modeOfIssue) {
-        conditions.push(`EXISTS (
-          SELECT 1 FROM master_mode_issue mmi2
-          WHERE mmi2.code = ${tableAlias}.mode_issue AND mmi2.description = ?
-        )`);
-        params.push(modeOfIssue);
+        const inClause = buildInClause('mmi2.description', modeOfIssue);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_mode_issue mmi2
+            WHERE mmi2.code = ${tableAlias}.mode_issue AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
       }
 
       if (isin) {
-        conditions.push(`${tableAlias}.isin LIKE ?`);
-        params.push(`%${isin}%`);
+        const inClause = buildInClause(`${tableAlias}.isin`, isin, true);
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
       }
 
       return { conditions, params };
@@ -4409,136 +4475,202 @@ app.post('/arrangers_page_credit_rating_data', async (req, res) => {
     const cyStart = formatDate(currentStartDate);
     const cyEnd = formatDate(currentEndDate);
 
+    /* ---------------- HELPER: Build multi-value IN clause ---------------- */
+    const buildInClause = (field, values, useLike = false) => {
+      if (!values || (Array.isArray(values) && values.length === 0)) return null;
+      const vals = Array.isArray(values)
+        ? values.filter(v => v !== '' && v !== null && v !== undefined)
+        : [values].filter(v => v !== '' && v !== null && v !== undefined);
+      if (vals.length === 0) return null;
+
+      if (useLike) {
+        const clauses = vals.map(() => `${field} LIKE ?`).join(' OR ');
+        const params = vals.map(v => `%${v}%`);
+        return { clause: `(${clauses})`, params };
+      }
+
+      const placeholders = vals.map(() => '?').join(',');
+      return { clause: `${field} IN (${placeholders})`, params: vals };
+    };
+
     /* ---------------- DYNAMIC FILTER BUILDER ---------------- */
     const buildFilterConditions = (tableAlias = 'i') => {
       const conditions = [];
       const params = [];
 
       if (rating) {
-        conditions.push(`EXISTS (
-          SELECT 1 FROM master_issuer_rating mir2
-          WHERE mir2.issuer_id = ${tableAlias}.id AND mir2.rating = ?
-        )`);
-        params.push(rating);
+        const inClause = buildInClause('mir2.rating', rating);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_issuer_rating mir2
+            WHERE mir2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
       }
 
       if (creditRatingAgency) {
-        conditions.push(`EXISTS (
-          SELECT 1 FROM master_issuer_rating mir2
-          JOIN master_agency mag2 ON mag2.id = mir2.agency_id
-          WHERE mir2.issuer_id = ${tableAlias}.id AND mag2.short_name = ?
-        )`);
-        params.push(creditRatingAgency);
+        const inClause = buildInClause('mag2.short_name', creditRatingAgency);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_issuer_rating mir2
+            JOIN master_agency mag2 ON mag2.id = mir2.agency_id
+            WHERE mir2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
       }
 
       if (registrar) {
-        conditions.push(`EXISTS (
-          SELECT 1 FROM issuer_registrar ir2
-          JOIN master_registrar mr2 ON mr2.id = ir2.registrar_id
-          WHERE ir2.issuer_id = ${tableAlias}.id AND mr2.registrar_name LIKE ?
-        )`);
-        params.push(`%${registrar}%`);
+        const inClause = buildInClause('mr2.registrar_name', registrar, true);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM issuer_registrar ir2
+            JOIN master_registrar mr2 ON mr2.id = ir2.registrar_id
+            WHERE ir2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
       }
 
       if (arranger) {
-        conditions.push(`EXISTS (
-          SELECT 1 FROM issuer_arranger ia2
-          JOIN master_arranger ma2 ON ma2.id = ia2.arranger_id
-          WHERE ia2.issuer_id = ${tableAlias}.id AND ma2.short_name LIKE ?
-        )`);
-        params.push(`%${arranger}%`);
+        const inClause = buildInClause('ma2.short_name', arranger, true);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM issuer_arranger ia2
+            JOIN master_arranger ma2 ON ma2.id = ia2.arranger_id
+            WHERE ia2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
       }
 
       if (seniority) {
-        conditions.push(`EXISTS (
-          SELECT 1 FROM master_seniority_tier_classification mstc2
-          WHERE mstc2.code = ${tableAlias}.seniority AND mstc2.description = ?
-        )`);
-        params.push(seniority);
+        const inClause = buildInClause('mstc2.description', seniority);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_seniority_tier_classification mstc2
+            WHERE mstc2.code = ${tableAlias}.seniority AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
       }
 
       if (taxFree) {
-        conditions.push(`EXISTS (
-          SELECT 1 FROM master_tax_free mtf2
-          WHERE mtf2.code = ${tableAlias}.tax_free AND mtf2.description = ?
-        )`);
-        params.push(taxFree);
+        const inClause = buildInClause('mtf2.description', taxFree);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_tax_free mtf2
+            WHERE mtf2.code = ${tableAlias}.tax_free AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
       }
 
       if (securedFlag) {
-        conditions.push(`EXISTS (
-          SELECT 1 FROM master_secured_flag msf2
-          WHERE msf2.code = ${tableAlias}.secured_flag AND msf2.description = ?
-        )`);
-        params.push(securedFlag);
+        const inClause = buildInClause('msf2.description', securedFlag);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_secured_flag msf2
+            WHERE msf2.code = ${tableAlias}.secured_flag AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
       }
 
       if (sector) {
-        conditions.push(`EXISTS (
-          SELECT 1 FROM master_business_sector mbs2
-          WHERE mbs2.code = ${tableAlias}.business_sector AND mbs2.description = ?
-        )`);
-        params.push(sector);
+        const inClause = buildInClause('mbs2.description', sector);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_business_sector mbs2
+            WHERE mbs2.code = ${tableAlias}.business_sector AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
       }
 
       if (trustee) {
-        conditions.push(`EXISTS (
-          SELECT 1 FROM issuer_trustee it2
-          JOIN master_trustee mt2 ON mt2.id = it2.trustee_id
-          WHERE it2.issuer_id = ${tableAlias}.id AND mt2.short_name = ?
-        )`);
-        params.push(trustee);
+        const inClause = buildInClause('mt2.short_name', trustee);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM issuer_trustee it2
+            JOIN master_trustee mt2 ON mt2.id = it2.trustee_id
+            WHERE it2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
       }
 
       if (nature) {
-        conditions.push(`EXISTS (
-          SELECT 1 FROM master_issuer_type_nature mitn2
-          WHERE mitn2.code = ${tableAlias}.nature_type AND mitn2.description = ?
-        )`);
-        params.push(nature);
+        const inClause = buildInClause('mitn2.description', nature);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_issuer_type_nature mitn2
+            WHERE mitn2.code = ${tableAlias}.nature_type AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
       }
 
       if (ownershipType) {
-        conditions.push(`EXISTS (
-          SELECT 1 FROM master_issuer_ownership_type miot2
-          WHERE miot2.code = ${tableAlias}.issuer_ownership_type AND miot2.description = ?
-        )`);
-        params.push(ownershipType);
+        const inClause = buildInClause('miot2.description', ownershipType);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_issuer_ownership_type miot2
+            WHERE miot2.code = ${tableAlias}.issuer_ownership_type AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
       }
 
       if (dealSize) {
-        conditions.push(`${tableAlias}.issue_size LIKE ?`);
-        params.push(`%${dealSize}%`);
+        const inClause = buildInClause(`${tableAlias}.issue_size`, dealSize, true);
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
       }
 
       if (listingStatus) {
-        conditions.push(`EXISTS (
-          SELECT 1 FROM master_issuer_stock_exchange mise2
-          JOIN master_listing_status mls2 ON mls2.code = mise2.listing_status
-          WHERE mise2.issuer_id = ${tableAlias}.id AND mls2.description = ?
-        )`);
-        params.push(listingStatus);
+        const inClause = buildInClause('mls2.description', listingStatus);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_issuer_stock_exchange mise2
+            JOIN master_listing_status mls2 ON mls2.code = mise2.listing_status
+            WHERE mise2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
       }
 
       if (securityType) {
-        conditions.push(`EXISTS (
-          SELECT 1 FROM master_security_type mst2
-          WHERE mst2.code = ${tableAlias}.security_class AND mst2.description = ?
-        )`);
-        params.push(securityType);
+        const inClause = buildInClause('mst2.description', securityType);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_security_type mst2
+            WHERE mst2.code = ${tableAlias}.security_class AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
       }
 
       if (modeOfIssue) {
-        conditions.push(`EXISTS (
-          SELECT 1 FROM master_mode_issue mmi2
-          WHERE mmi2.code = ${tableAlias}.mode_issue AND mmi2.description = ?
-        )`);
-        params.push(modeOfIssue);
+        const inClause = buildInClause('mmi2.description', modeOfIssue);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_mode_issue mmi2
+            WHERE mmi2.code = ${tableAlias}.mode_issue AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
       }
 
       if (isin) {
-        conditions.push(`${tableAlias}.isin LIKE ?`);
-        params.push(`%${isin}%`);
+        const inClause = buildInClause(`${tableAlias}.isin`, isin, true);
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
       }
 
       return { conditions, params };
