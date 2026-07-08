@@ -6549,81 +6549,221 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
 
     const formatDate = (date) => date.toISOString().slice(0, 19).replace('T', ' ');
 
-    /* ---------------- FILTER BUILDERS ---------------- */
+    /* ---------------- HELPER: Build multi-value IN clause ---------------- */
+    const buildInClause = (field, values, useLike = false) => {
+      if (!values || (Array.isArray(values) && values.length === 0)) return null;
+      const vals = Array.isArray(values)
+        ? values.filter(v => v !== '' && v !== null && v !== undefined)
+        : [values].filter(v => v !== '' && v !== null && v !== undefined);
+      if (vals.length === 0) return null;
 
-    const baseFilterConditions = [];
-    const baseFilterParams = [];
+      if (useLike) {
+        const clauses = vals.map(() => `${field} LIKE ?`).join(' OR ');
+        const params = vals.map(v => `%${v}%`);
+        return { clause: `(${clauses})`, params };
+      }
 
-    const addBaseFilter = (sql, ...values) => {
-      baseFilterConditions.push(sql);
-      baseFilterParams.push(...values);
+      const placeholders = vals.map(() => '?').join(',');
+      return { clause: `${field} IN (${placeholders})`, params: vals };
     };
 
-    if (rating) {
-      addBaseFilter(`EXISTS (SELECT 1 FROM master_issuer_rating mir WHERE mir.issuer_id = mi.id AND mir.rating = ?)`, rating);
-    }
+    /* ---------------- DYNAMIC FILTER BUILDER (excludes trustee) ---------------- */
+    const buildFilterConditions = (tableAlias = 'mi') => {
+      const conditions = [];
+      const params = [];
 
-    if (registrar) {
-      addBaseFilter(`EXISTS (SELECT 1 FROM issuer_registrar ir JOIN master_registrar mr ON mr.id = ir.registrar_id WHERE ir.issuer_id = mi.id AND mr.registrar_name LIKE ?)`, `%${registrar}%`);
-    }
+      if (rating) {
+        const inClause = buildInClause('mir2.rating', rating);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_issuer_rating mir2
+            WHERE mir2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
+      }
 
-    if (seniority) {
-      addBaseFilter(`EXISTS (SELECT 1 FROM master_seniority_tier_classification mstc WHERE mstc.code = mi.seniority AND mstc.description = ?)`, seniority);
-    }
+      if (creditRatingAgency) {
+        const inClause = buildInClause('ma2.short_name', creditRatingAgency);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_issuer_rating mir2
+            JOIN master_agency ma2 ON ma2.id = mir2.agency_id
+            WHERE mir2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
+      }
 
-    if (taxFree) {
-      addBaseFilter(`EXISTS (SELECT 1 FROM master_tax_free mtf WHERE mtf.code = mi.tax_free AND mtf.description = ?)`, taxFree);
-    }
+      if (registrar) {
+        const inClause = buildInClause('mr2.registrar_name', registrar, true);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM issuer_registrar ir2
+            JOIN master_registrar mr2 ON mr2.id = ir2.registrar_id
+            WHERE ir2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
+      }
 
-    if (securedFlag) {
-      addBaseFilter(`EXISTS (SELECT 1 FROM master_secured_flag msf WHERE msf.code = mi.secured_flag AND msf.description = ?)`, securedFlag);
-    }
+      if (seniority) {
+        const inClause = buildInClause('mstc2.description', seniority);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_seniority_tier_classification mstc2
+            WHERE mstc2.code = ${tableAlias}.seniority AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
+      }
 
-    if (sector) {
-      addBaseFilter(`EXISTS (SELECT 1 FROM master_business_sector mbs WHERE mbs.code = mi.business_sector AND mbs.description = ?)`, sector);
-    }
+      if (taxFree) {
+        const inClause = buildInClause('mtf2.description', taxFree);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_tax_free mtf2
+            WHERE mtf2.code = ${tableAlias}.tax_free AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
+      }
 
-    if (nature) {
-      addBaseFilter(`EXISTS (SELECT 1 FROM master_issuer_type_nature mitn WHERE mitn.code = mi.nature_type AND mitn.description = ?)`, nature);
-    }
+      if (securedFlag) {
+        const inClause = buildInClause('msf2.description', securedFlag);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_secured_flag msf2
+            WHERE msf2.code = ${tableAlias}.secured_flag AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
+      }
 
-    if (ownershipType) {
-      addBaseFilter(`EXISTS (SELECT 1 FROM master_issuer_ownership_type miot WHERE miot.code = mi.issuer_ownership_type AND miot.description = ?)`, ownershipType);
-    }
+      if (sector) {
+        const inClause = buildInClause('mbs2.description', sector);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_business_sector mbs2
+            WHERE mbs2.code = ${tableAlias}.business_sector AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
+      }
 
-    if (creditRatingAgency) {
-      addBaseFilter(`EXISTS (SELECT 1 FROM master_issuer_rating mir2 JOIN master_agency ma2 ON ma2.id = mir2.agency_id WHERE mir2.issuer_id = mi.id AND ma2.short_name = ?)`, creditRatingAgency);
-    }
+      if (nature) {
+        const inClause = buildInClause('mitn2.description', nature);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_issuer_type_nature mitn2
+            WHERE mitn2.code = ${tableAlias}.nature_type AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
+      }
 
-    if (dealSize) {
-      addBaseFilter(`mi.issue_size LIKE ?`, `%${dealSize}%`);
-    }
+      if (ownershipType) {
+        const inClause = buildInClause('miot2.description', ownershipType);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_issuer_ownership_type miot2
+            WHERE miot2.code = ${tableAlias}.issuer_ownership_type AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
+      }
 
-    if (listingStatus) {
-      addBaseFilter(`EXISTS (SELECT 1 FROM master_issuer_stock_exchange mise JOIN master_listing_status mls ON mls.code = mise.listing_status WHERE mise.issuer_id = mi.id AND mls.description = ?)`, listingStatus);
-    }
+      if (dealSize) {
+        const inClause = buildInClause(`${tableAlias}.issue_size`, dealSize, true);
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
+      }
 
-    if (securityType) {
-      addBaseFilter(`EXISTS (SELECT 1 FROM master_security_type mst WHERE mst.code = mi.security_class AND mst.description = ?)`, securityType);
-    }
+      if (listingStatus) {
+        const inClause = buildInClause('mls2.description', listingStatus);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_issuer_stock_exchange mise2
+            JOIN master_listing_status mls2 ON mls2.code = mise2.listing_status
+            WHERE mise2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
+      }
 
-    if (modeOfIssue) {
-      addBaseFilter(`EXISTS (SELECT 1 FROM master_mode_issue mmoi WHERE mmoi.code = mi.mode_issue AND mmoi.description = ?)`, modeOfIssue);
-    }
+      if (securityType) {
+        const inClause = buildInClause('mst2.description', securityType);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_security_type mst2
+            WHERE mst2.code = ${tableAlias}.security_class AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
+      }
 
-    if (isin) {
-      addBaseFilter(`mi.isin LIKE ?`, `%${isin}%`);
-    }
+      if (modeOfIssue) {
+        const inClause = buildInClause('mmi2.description', modeOfIssue);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_mode_issue mmi2
+            WHERE mmi2.code = ${tableAlias}.mode_issue AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
+      }
 
-    const baseFilterSql = baseFilterConditions.length > 0 ? ' AND ' + baseFilterConditions.join(' AND ') : '';
+      if (isin) {
+        const inClause = buildInClause(`${tableAlias}.isin`, isin, true);
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
+      }
 
-    // Trustee filter applied directly where mt is already joined
-    const trusteeDirectSql = trustee ? ` AND mt.short_name LIKE ?` : '';
-    const trusteeDirectParams = trustee ? [`%${trustee}%`] : [];
+      return { conditions, params };
+    };
 
-    // Trustee filter applied via EXISTS where mt is NOT joined (totals)
-    const trusteeExistsSql = trustee ? ` AND EXISTS (SELECT 1 FROM issuer_trustee it2 JOIN master_trustee mt2 ON mt2.id = it2.trustee_id WHERE it2.issuer_id = mi.id AND mt2.short_name LIKE ?)` : '';
-    const trusteeExistsParams = trustee ? [`%${trustee}%`] : [];
+    const {
+      conditions: filterConditions,
+      params: filterParams
+    } = buildFilterConditions('mi');
+
+    const filterSql = filterConditions.length > 0
+      ? ' AND ' + filterConditions.join(' AND ')
+      : '';
+
+    /* ---------------- TRUSTEE FILTER (context-dependent) ---------------- */
+    const buildTrusteeDirectFilter = () => {
+      if (!trustee) return { sql: '', params: [] };
+      const inClause = buildInClause('mt.short_name', trustee, true);
+      if (!inClause) return { sql: '', params: [] };
+      return { sql: ` AND ${inClause.clause}`, params: inClause.params };
+    };
+
+    const buildTrusteeExistsFilter = () => {
+      if (!trustee) return { sql: '', params: [] };
+      const inClause = buildInClause('mt2.short_name', trustee, true);
+      if (!inClause) return { sql: '', params: [] };
+      return {
+        sql: ` AND EXISTS (
+          SELECT 1 FROM issuer_trustee it2
+          JOIN master_trustee mt2 ON mt2.id = it2.trustee_id
+          WHERE it2.issuer_id = mi.id AND ${inClause.clause}
+        )`,
+        params: inClause.params
+      };
+    };
+
+    const { sql: trusteeDirectSql, params: trusteeDirectParams } = buildTrusteeDirectFilter();
+    const { sql: trusteeExistsSql, params: trusteeExistsParams } = buildTrusteeExistsFilter();
+
+    const cyStart = formatDate(currentStartDate);
+    const cyEnd = formatDate(currentEndDate);
+    const pyStart = formatDate(previousStartDate);
+    const pyEnd = formatDate(previousEndDate);
 
     /* ---------------- TOTALS ---------------- */
 
@@ -6635,12 +6775,12 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
       WHERE mi.allotment_date BETWEEN ? AND ?
         AND mi.is_visible = 1
         ${trusteeExistsSql}
-        ${baseFilterSql}
+        ${filterSql}
     `,
-      formatDate(currentStartDate),
-      formatDate(currentEndDate),
+      cyStart,
+      cyEnd,
       ...trusteeExistsParams,
-      ...baseFilterParams
+      ...filterParams
     );
 
     const totalIssueSizePrevYearRaw = await prisma.$queryRawUnsafe(`
@@ -6650,8 +6790,8 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
         ON it.issuer_id = mi.id
       WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${trusteeExistsSql}
-      ${baseFilterSql}
-    `, formatDate(previousStartDate), formatDate(previousEndDate), ...trusteeExistsParams, ...baseFilterParams);
+      ${filterSql}
+    `, pyStart, pyEnd, ...trusteeExistsParams, ...filterParams);
 
     const totalIssuesCountCurrYearRaw = await prisma.$queryRawUnsafe(`
       SELECT COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS aggregate
@@ -6660,8 +6800,8 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
         ON it.issuer_id = mi.id
       WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${trusteeExistsSql}
-      ${baseFilterSql}
-    `, formatDate(currentStartDate), formatDate(currentEndDate), ...trusteeExistsParams, ...baseFilterParams);
+      ${filterSql}
+    `, cyStart, cyEnd, ...trusteeExistsParams, ...filterParams);
 
     const totalIssuesCountPrevYearRaw = await prisma.$queryRawUnsafe(`
       SELECT COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS aggregate
@@ -6670,8 +6810,8 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
         ON it.issuer_id = mi.id
       WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${trusteeExistsSql}
-      ${baseFilterSql}
-    `, formatDate(previousStartDate), formatDate(previousEndDate), ...trusteeExistsParams, ...baseFilterParams);
+      ${filterSql}
+    `, pyStart, pyEnd, ...trusteeExistsParams, ...filterParams);
 
     // Safely extract totals with defaults
     const totalIssueSize = parseFloat(totalIssueSizeRaw[0]?.aggregate) || 0;
@@ -6726,7 +6866,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
         JOIN master_trustee mt ON mt.id = it.trustee_id
         WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
         ${trusteeDirectSql}
-        ${baseFilterSql}
+        ${filterSql}
         GROUP BY it.trustee_id, mt.id, mt.short_name
         ORDER BY arr_rank
         ${limitOffsetSql}
@@ -6744,7 +6884,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
         JOIN master_trustee mt ON mt.id = it.trustee_id
         WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
         ${trusteeDirectSql}
-        ${baseFilterSql}
+        ${filterSql}
         GROUP BY it.trustee_id, mt.id, mt.short_name
       ) t2 ON t1.id = t2.id
       ORDER BY t1.arr_rank;
@@ -6784,7 +6924,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
         JOIN master_trustee mt ON mt.id = it.trustee_id
         WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
         ${trusteeDirectSql}
-        ${baseFilterSql}
+        ${filterSql}
         GROUP BY it.trustee_id, mt.id, mt.short_name
         ORDER BY arr_rank
         ${limitOffsetSql}
@@ -6802,7 +6942,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
         JOIN master_trustee mt ON mt.id = it.trustee_id
         WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
         ${trusteeDirectSql}
-        ${baseFilterSql}
+        ${filterSql}
         GROUP BY it.trustee_id, mt.id, mt.short_name
       ) t2 ON t1.id = t2.id
       ORDER BY t1.arr_rank;
@@ -6810,8 +6950,8 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
     }
 
     const tableResult = await prisma.$queryRawUnsafe(tableQuery,
-      formatDate(currentStartDate), formatDate(currentEndDate), ...trusteeDirectParams, ...baseFilterParams,
-      formatDate(previousStartDate), formatDate(previousEndDate), ...trusteeDirectParams, ...baseFilterParams
+      cyStart, cyEnd, ...trusteeDirectParams, ...filterParams,
+      pyStart, pyEnd, ...trusteeDirectParams, ...filterParams
     );
 
     /*----total count for table pagination ---*/
@@ -6822,9 +6962,9 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
       JOIN master_trustee mt ON mt.id = it.trustee_id
       WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${trusteeDirectSql}
-      ${baseFilterSql}
+      ${filterSql}
     `,
-      formatDate(currentStartDate), formatDate(currentEndDate), ...trusteeDirectParams, ...baseFilterParams
+      cyStart, cyEnd, ...trusteeDirectParams, ...filterParams
     );
 
     const totalRecords = parseInt(totalCountResult[0]?.total, 10) || 0;
@@ -6850,7 +6990,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
       JOIN master_trustee mt ON mt.id = it.trustee_id
       WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${trusteeDirectSql}
-      ${baseFilterSql}
+      ${filterSql}
       GROUP BY it.trustee_id, mt.id, mt.short_name
       LIMIT 10
     `
@@ -6866,7 +7006,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
       JOIN master_trustee mt ON mt.id = it.trustee_id
       WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${trusteeDirectSql}
-      ${baseFilterSql}
+      ${filterSql}
       GROUP BY it.trustee_id, mt.id, mt.short_name
       LIMIT 10
     `;
@@ -6884,7 +7024,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
       JOIN master_issuer mi ON mi.id = it.issuer_id
       JOIN master_business_sector mbs ON mi.business_sector = mbs.code
       WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-      ${baseFilterSql}
+      ${filterSql}
       GROUP BY
         r.trustee_id,
         r.trustee_name,
@@ -6899,8 +7039,8 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
 
     // Parameters: subquery dates + trusteeDirectParams + baseFilterParams, then outer dates + baseFilterParams
     const sectorData = await prisma.$queryRawUnsafe(sectorQuery,
-      formatDate(currentStartDate), formatDate(currentEndDate), ...trusteeDirectParams, ...baseFilterParams,
-      formatDate(currentStartDate), formatDate(currentEndDate), ...baseFilterParams
+      cyStart, cyEnd, ...trusteeDirectParams, ...filterParams,
+      cyStart, cyEnd, ...filterParams
     );
 
     /* ---------------- RESPONSE FORMAT ---------------- */
@@ -6983,75 +7123,202 @@ app.post('/trustees_page_credit_rating_data', async (req, res) => {
     const formatDate = (date) =>
       date.toISOString().slice(0, 19).replace('T', ' ');
 
-    /* ---------------- FILTER BUILDERS ---------------- */
+    const cyStart = formatDate(currentStartDate);
+    const cyEnd = formatDate(currentEndDate);
 
-    const filterConditions = [];
-    const filterParams = [];
+    /* ---------------- HELPER: Build multi-value IN clause ---------------- */
+    const buildInClause = (field, values, useLike = false) => {
+      if (!values || (Array.isArray(values) && values.length === 0)) return null;
+      const vals = Array.isArray(values)
+        ? values.filter(v => v !== '' && v !== null && v !== undefined)
+        : [values].filter(v => v !== '' && v !== null && v !== undefined);
+      if (vals.length === 0) return null;
 
-    const addFilter = (sql, ...values) => {
-      filterConditions.push(sql);
-      filterParams.push(...values);
+      if (useLike) {
+        const clauses = vals.map(() => `${field} LIKE ?`).join(' OR ');
+        const params = vals.map(v => `%${v}%`);
+        return { clause: `(${clauses})`, params };
+      }
+
+      const placeholders = vals.map(() => '?').join(',');
+      return { clause: `${field} IN (${placeholders})`, params: vals };
     };
 
-    if (rating) {
-      addFilter(`master_issuer_rating.rating = ?`, rating);
-    }
+    /* ---------------- DYNAMIC FILTER BUILDER ---------------- */
+    const buildFilterConditions = (tableAlias = 'i') => {
+      const conditions = [];
+      const params = [];
 
-    if (registrar) {
-      addFilter(`EXISTS (SELECT 1 FROM issuer_registrar ir JOIN master_registrar mr ON mr.id = ir.registrar_id WHERE ir.issuer_id = i.id AND mr.registrar_name LIKE ?)`, `%${registrar}%`);
-    }
+      if (rating) {
+        const inClause = buildInClause('mir2.rating', rating);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_issuer_rating mir2
+            WHERE mir2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
+      }
 
-    if (seniority) {
-      addFilter(`EXISTS (SELECT 1 FROM master_seniority_tier_classification mstc WHERE mstc.code = i.seniority AND mstc.description = ?)`, seniority);
-    }
+      if (creditRatingAgency) {
+        const inClause = buildInClause('mag2.short_name', creditRatingAgency);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_issuer_rating mir2
+            JOIN master_agency mag2 ON mag2.id = mir2.agency_id
+            WHERE mir2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
+      }
 
-    if (taxFree) {
-      addFilter(`EXISTS (SELECT 1 FROM master_tax_free mtf WHERE mtf.code = i.tax_free AND mtf.description = ?)`, taxFree);
-    }
+      if (registrar) {
+        const inClause = buildInClause('mr2.registrar_name', registrar, true);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM issuer_registrar ir2
+            JOIN master_registrar mr2 ON mr2.id = ir2.registrar_id
+            WHERE ir2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
+      }
 
-    if (securedFlag) {
-      addFilter(`EXISTS (SELECT 1 FROM master_secured_flag msf WHERE msf.code = i.secured_flag AND msf.description = ?)`, securedFlag);
-    }
+      if (seniority) {
+        const inClause = buildInClause('mstc2.description', seniority);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_seniority_tier_classification mstc2
+            WHERE mstc2.code = ${tableAlias}.seniority AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
+      }
 
-    if (sector) {
-      addFilter(`EXISTS (SELECT 1 FROM master_business_sector mbs WHERE mbs.code = i.business_sector AND mbs.description = ?)`, sector);
-    }
+      if (taxFree) {
+        const inClause = buildInClause('mtf2.description', taxFree);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_tax_free mtf2
+            WHERE mtf2.code = ${tableAlias}.tax_free AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
+      }
 
-    if (trustee) {
-      addFilter(`EXISTS (SELECT 1 FROM issuer_trustee it2 JOIN master_trustee mt2 ON mt2.id = it2.trustee_id WHERE it2.issuer_id = i.id AND mt2.short_name LIKE ?)`, `%${trustee}%`);
-    }
+      if (securedFlag) {
+        const inClause = buildInClause('msf2.description', securedFlag);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_secured_flag msf2
+            WHERE msf2.code = ${tableAlias}.secured_flag AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
+      }
 
-    if (nature) {
-      addFilter(`EXISTS (SELECT 1 FROM master_issuer_type_nature mitn WHERE mitn.code = i.nature_type AND mitn.description = ?)`, nature);
-    }
+      if (sector) {
+        const inClause = buildInClause('mbs2.description', sector);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_business_sector mbs2
+            WHERE mbs2.code = ${tableAlias}.business_sector AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
+      }
 
-    if (ownershipType) {
-      addFilter(`EXISTS (SELECT 1 FROM master_issuer_ownership_type miot WHERE miot.code = i.issuer_ownership_type AND miot.description = ?)`, ownershipType);
-    }
+      if (trustee) {
+        const inClause = buildInClause('mt2.short_name', trustee, true);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM issuer_trustee it2
+            JOIN master_trustee mt2 ON mt2.id = it2.trustee_id
+            WHERE it2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
+      }
 
-    if (creditRatingAgency) {
-      addFilter(`master_agency.short_name = ?`, creditRatingAgency);
-    }
+      if (nature) {
+        const inClause = buildInClause('mitn2.description', nature);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_issuer_type_nature mitn2
+            WHERE mitn2.code = ${tableAlias}.nature_type AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
+      }
 
-    if (dealSize) {
-      addFilter(`i.issue_size LIKE ?`, `%${dealSize}%`);
-    }
+      if (ownershipType) {
+        const inClause = buildInClause('miot2.description', ownershipType);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_issuer_ownership_type miot2
+            WHERE miot2.code = ${tableAlias}.issuer_ownership_type AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
+      }
 
-    if (listingStatus) {
-      addFilter(`EXISTS (SELECT 1 FROM master_issuer_stock_exchange mise JOIN master_listing_status mls ON mls.code = mise.listing_status WHERE mise.issuer_id = i.id AND mls.description = ?)`, listingStatus);
-    }
+      if (dealSize) {
+        const inClause = buildInClause(`${tableAlias}.issue_size`, dealSize, true);
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
+      }
 
-    if (securityType) {
-      addFilter(`EXISTS (SELECT 1 FROM master_security_type mst WHERE mst.code = i.security_class AND mst.description = ?)`, securityType);
-    }
+      if (listingStatus) {
+        const inClause = buildInClause('mls2.description', listingStatus);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_issuer_stock_exchange mise2
+            JOIN master_listing_status mls2 ON mls2.code = mise2.listing_status
+            WHERE mise2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
+      }
 
-    if (modeOfIssue) {
-      addFilter(`EXISTS (SELECT 1 FROM master_mode_issue mmoi WHERE mmoi.code = i.mode_issue AND mmoi.description = ?)`, modeOfIssue);
-    }
+      if (securityType) {
+        const inClause = buildInClause('mst2.description', securityType);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_security_type mst2
+            WHERE mst2.code = ${tableAlias}.security_class AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
+      }
 
-    if (isin) {
-      addFilter(`i.isin LIKE ?`, `%${isin}%`);
-    }
+      if (modeOfIssue) {
+        const inClause = buildInClause('mmi2.description', modeOfIssue);
+        if (inClause) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_mode_issue mmi2
+            WHERE mmi2.code = ${tableAlias}.mode_issue AND ${inClause.clause}
+          )`);
+          params.push(...inClause.params);
+        }
+      }
+
+      if (isin) {
+        const inClause = buildInClause(`${tableAlias}.isin`, isin, true);
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
+      }
+
+      return { conditions, params };
+    };
+
+    const {
+      conditions: filterConditions,
+      params: filterParams
+    } = buildFilterConditions('i');
 
     const filterSql = filterConditions.length > 0
       ? ' AND ' + filterConditions.join(' AND ')
@@ -7067,7 +7334,7 @@ app.post('/trustees_page_credit_rating_data', async (req, res) => {
       JOIN issuer_trustee ON issuer_trustee.issuer_id = i.id
       WHERE i.allotment_date BETWEEN ? AND ? AND (is_visible = 1)
       ${filterSql}
-    `, formatDate(currentStartDate), formatDate(currentEndDate), ...filterParams);
+    `, cyStart, cyEnd, ...filterParams);
 
     const totalRatingNo = Number(totalRatingNoResult[0]?.aggregate) || 0;
     const safeTotalRatingNo = totalRatingNo > 0 ? totalRatingNo : 1;
@@ -7104,8 +7371,8 @@ app.post('/trustees_page_credit_rating_data', async (req, res) => {
     `;
 
     const queryParams = [
-      formatDate(currentStartDate),
-      formatDate(currentEndDate),
+      cyStart,
+      cyEnd,
       ...filterParams
     ];
 
@@ -7114,7 +7381,7 @@ app.post('/trustees_page_credit_rating_data', async (req, res) => {
     const finalResult = creditRatingResult?.map((item) => {
       return {
         name: item?.label || '-',
-        percentage: Number(item?.percentage) || 0,
+        percentage: totalRatingNo === 0 ? 0 : (Number(item?.percentage) || 0),
         rating_no: Number(item?.rating_no) || 0,
         color: item?.color || '-',
         label: item?.rating || '-'
