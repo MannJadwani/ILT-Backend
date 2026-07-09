@@ -7483,62 +7483,80 @@ app.post('/trustees_page_credit_rating_data', async (req, res) => {
 });
 
 app.post('/trusteePage_detailed_data', async (req, res) => {
-  const {
-    startDate = '2025-04-01',
-    endDate = '2026-03-31',
-    limit = 25,
-    offset = 0,
-    search = "",
-    rating = "",
-    registrar = "",
-    seniority = "",
-    securedFlag = "",
-    sector = "",
-    trustee = "",
-    nature = "",
-    ownershipType = "",
-    creditRatingAgency = "",
-    listingStatus = "",
-    securityType = "",
-    modeOfIssue = ""
-  } = req.body;
-
   try {
-    // ---------------------
-    // Input validation
-    // ---------------------
-    const parsedLimit = parseInt(limit, 10);
-    const parsedOffset = parseInt(offset, 10);
+    const {
+      startDate = '2025-04-01',
+      endDate = '2026-03-31',
+      limit = 25,
+      offset = 0,
+      search = ""
+    } = req.body;
 
-    if (isNaN(parsedLimit) || parsedLimit < 0) {
-      return res.status(400).json({ error: 'limit must be a non-negative integer' });
-    }
-    if (isNaN(parsedOffset) || parsedOffset < 0) {
-      return res.status(400).json({ error: 'offset must be a non-negative integer' });
-    }
-
-    // Format dates for SQL (include time to capture full last day)
-    const formatDateForSql = (dateStr) => {
-      const date = new Date(dateStr);
-      if (isNaN(date.getTime())) return null;
-      return date.toISOString().slice(0, 19).replace('T', ' ');
+    // ── Helper: normalize string/array inputs ──
+    const toArray = (val) => {
+      if (Array.isArray(val)) return val;
+      if (val && typeof val === 'string') return [val];
+      return [];
     };
 
-    const sqlStartDate = formatDateForSql(startDate);
-    const sqlEndDate = formatDateForSql(endDate);
+    // ── Multi-select filters (arrays) ──
+    const rating             = toArray(req.body.rating);
+    const seniority          = toArray(req.body.seniority);
+    const securedFlag        = toArray(req.body.securedFlag);
+    const sector             = toArray(req.body.sector);
+    const trustee            = toArray(req.body.trustee);
+    const nature             = toArray(req.body.nature);
+    const ownershipType      = toArray(req.body.ownershipType);
+    const creditRatingAgency = toArray(req.body.creditRatingAgency);
+    const listingStatus      = toArray(req.body.listingStatus);
+    const securityType       = toArray(req.body.securityType);
+    const modeOfIssue        = toArray(req.body.modeOfIssue);
 
-    if (!sqlStartDate || !sqlEndDate) {
+    // ── Single-select filters (strings) ──
+    const registrar = req.body.registrar || "";
+
+    // ─── Validate dates ───
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: 'startDate and endDate are required' });
+    }
+
+    const currentStartDate = new Date(startDate);
+    const currentEndDate = new Date(endDate);
+
+    if (isNaN(currentStartDate.getTime()) || isNaN(currentEndDate.getTime())) {
       return res.status(400).json({ error: 'Invalid date format' });
     }
 
-    // ---------------------
+    if (currentStartDate > currentEndDate) {
+      return res.status(400).json({ error: 'startDate must be before endDate' });
+    }
+
+    // ─── FIX: Full day coverage — start at 00:00:00, end at 23:59:59 ───
+    const cyStart = formatDateForSQL(new Date(Date.UTC(
+      currentStartDate.getUTCFullYear(),
+      currentStartDate.getUTCMonth(),
+      currentStartDate.getUTCDate(),
+      0, 0, 0
+    )));
+    const cyEnd = formatDateForSQL(new Date(Date.UTC(
+      currentEndDate.getUTCFullYear(),
+      currentEndDate.getUTCMonth(),
+      currentEndDate.getUTCDate(),
+      23, 59, 59
+    )));
+
+    // Fix: Validate and sanitize limit/offset
+    const safeLimit = Math.max(1, Math.min(1000, parseInt(limit, 10) || 25));
+    const safeOffset = Math.max(0, parseInt(offset, 10) || 0);
+
+    // ─────────────────────
     // Dynamic WHERE conditions
-    // ---------------------
+    // ─────────────────────
     const conditions = [];
     const params = [];
 
     conditions.push(`master_issuer.allotment_date BETWEEN ? AND ? AND (master_issuer.is_visible = 1)`);
-    params.push(sqlStartDate, sqlEndDate);
+    params.push(cyStart, cyEnd);
 
     conditions.push(`
       EXISTS (
@@ -7548,7 +7566,7 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
       )
     `);
 
-    // Combined search for issuerName and isin
+    // Combined search for issuerName and isin (single-select LIKE)
     if (search && search.trim() !== '') {
       conditions.push(`(
         issuer_details.issuer_name LIKE ? 
@@ -7558,61 +7576,84 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
       params.push(searchParam, searchParam);
     }
 
-    if (rating) {
-      conditions.push(`EXISTS (SELECT 1 FROM master_issuer_rating mir WHERE mir.issuer_id = master_issuer.id AND mir.rating = ?)`, rating);
-      params.push(rating);
+    // Rating (multi-select)
+    if (rating.length > 0) {
+      const placeholders = rating.map(() => '?').join(', ');
+      conditions.push(`EXISTS (SELECT 1 FROM master_issuer_rating mir WHERE mir.issuer_id = master_issuer.id AND mir.rating IN (${placeholders}))`);
+      params.push(...rating);
     }
 
-    if (listingStatus) {
-      conditions.push(`EXISTS (SELECT 1 FROM master_issuer_stock_exchange mise2 LEFT JOIN master_listing_status mls2 ON mls2.code = mise2.listing_status WHERE mise2.issuer_id = master_issuer.id AND mls2.description = ?)`, listingStatus);
-      params.push(listingStatus);
+    // Listing Status (multi-select)
+    if (listingStatus.length > 0) {
+      const placeholders = listingStatus.map(() => '?').join(', ');
+      conditions.push(`EXISTS (SELECT 1 FROM master_issuer_stock_exchange mise2 LEFT JOIN master_listing_status mls2 ON mls2.code = mise2.listing_status WHERE mise2.issuer_id = master_issuer.id AND mls2.description IN (${placeholders}))`);
+      params.push(...listingStatus);
     }
 
-    if (seniority) {
-      conditions.push(`master_seniority_tier_classification.description = ?`);
-      params.push(seniority);
+    // Seniority (multi-select)
+    if (seniority.length > 0) {
+      const placeholders = seniority.map(() => '?').join(', ');
+      conditions.push(`master_seniority_tier_classification.description IN (${placeholders})`);
+      params.push(...seniority);
     }
 
-    if (securedFlag) {
-      conditions.push(`master_secured_flag.description = ?`);
-      params.push(securedFlag);
+    // Secured Flag (multi-select)
+    if (securedFlag.length > 0) {
+      const placeholders = securedFlag.map(() => '?').join(', ');
+      conditions.push(`master_secured_flag.description IN (${placeholders})`);
+      params.push(...securedFlag);
     }
 
-    if (sector) {
-      conditions.push(`master_business_sector.description = ?`);
-      params.push(sector);
+    // Sector (multi-select)
+    if (sector.length > 0) {
+      const placeholders = sector.map(() => '?').join(', ');
+      conditions.push(`master_business_sector.description IN (${placeholders})`);
+      params.push(...sector);
     }
 
-    if (trustee) {
-      conditions.push(`EXISTS (SELECT 1 FROM issuer_trustee it2 JOIN master_trustee mt2 ON mt2.id = it2.trustee_id WHERE it2.issuer_id = master_issuer.id AND mt2.short_name LIKE ?)`);
-      params.push(`%${trustee}%`);
+    // Trustee (multi-select)
+    if (trustee.length > 0) {
+      const placeholders = trustee.map(() => '?').join(', ');
+      conditions.push(`EXISTS (SELECT 1 FROM issuer_trustee it2 JOIN master_trustee mt2 ON mt2.id = it2.trustee_id WHERE it2.issuer_id = master_issuer.id AND mt2.short_name IN (${placeholders}))`);
+      params.push(...trustee);
     }
 
-    if (nature) {
-      conditions.push(`master_issuer_type_nature.description = ?`);
-      params.push(nature);
+    // Nature (multi-select)
+    if (nature.length > 0) {
+      const placeholders = nature.map(() => '?').join(', ');
+      conditions.push(`master_issuer_type_nature.description IN (${placeholders})`);
+      params.push(...nature);
     }
 
-    if (ownershipType) {
-      conditions.push(`master_issuer_ownership_type.description = ?`);
-      params.push(ownershipType);
+    // Ownership Type (multi-select)
+    if (ownershipType.length > 0) {
+      const placeholders = ownershipType.map(() => '?').join(', ');
+      conditions.push(`master_issuer_ownership_type.description IN (${placeholders})`);
+      params.push(...ownershipType);
     }
 
-    if (creditRatingAgency) {
-      conditions.push(`EXISTS (SELECT 1 FROM master_issuer_rating mir2 JOIN master_agency ma2 ON ma2.id = mir2.agency_id WHERE mir2.issuer_id = master_issuer.id AND ma2.short_name = ?)`);
-      params.push(creditRatingAgency);
+    // Credit Rating Agency (multi-select)
+    if (creditRatingAgency.length > 0) {
+      const placeholders = creditRatingAgency.map(() => '?').join(', ');
+      conditions.push(`EXISTS (SELECT 1 FROM master_issuer_rating mir2 JOIN master_agency ma2 ON ma2.id = mir2.agency_id WHERE mir2.issuer_id = master_issuer.id AND ma2.short_name IN (${placeholders}))`);
+      params.push(...creditRatingAgency);
     }
 
-    if (securityType) {
-      conditions.push(`master_security_type.description = ?`);
-      params.push(securityType);
+    // Security Type (multi-select)
+    if (securityType.length > 0) {
+      const placeholders = securityType.map(() => '?').join(', ');
+      conditions.push(`master_security_type.description IN (${placeholders})`);
+      params.push(...securityType);
     }
 
-    if (modeOfIssue) {
-      conditions.push(`master_mode_issue.description = ?`);
-      params.push(modeOfIssue);
+    // Mode Of Issue (multi-select)
+    if (modeOfIssue.length > 0) {
+      const placeholders = modeOfIssue.map(() => '?').join(', ');
+      conditions.push(`master_mode_issue.description IN (${placeholders})`);
+      params.push(...modeOfIssue);
     }
 
+    // Registrar (single-select, LIKE filter)
     if (registrar) {
       conditions.push(`EXISTS (SELECT 1 FROM issuer_registrar ir2 JOIN master_registrar mr2 ON mr2.id = ir2.registrar_id WHERE ir2.issuer_id = master_issuer.id AND mr2.registrar_name LIKE ?)`);
       params.push(`%${registrar}%`);
@@ -7623,9 +7664,9 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
         ? `WHERE ${conditions.join(' AND ')}`
         : '';
 
-    // ---------------------
+    // ─────────────────────
     // Main data query (no Cartesian product)
-    // ---------------------
+    // ─────────────────────
     const dataQuery = `
       SELECT
         master_issuer.id,
@@ -7758,9 +7799,9 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
       LIMIT ? OFFSET ?
     `;
 
-    // ---------------------
+    // ─────────────────────
     // Count query
-    // ---------------------
+    // ─────────────────────
     const countQuery = `
       SELECT COUNT(DISTINCT master_issuer.id) AS total
       FROM master_issuer
@@ -7792,19 +7833,19 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
       ${whereClause}
     `;
 
-    // ---------------------
+    // ─────────────────────
     // Execute queries
-    // ---------------------
+    // ─────────────────────
     const [result, countResult] = await Promise.all([
-      prisma.$queryRawUnsafe(dataQuery, ...params, parsedLimit, parsedOffset),
+      prisma.$queryRawUnsafe(dataQuery, ...params, safeLimit, safeOffset),
       prisma.$queryRawUnsafe(countQuery, ...params)
     ]);
 
     const total = Number(countResult?.[0]?.total) || 0;
 
-    // ---------------------
+    // ─────────────────────
     // Final formatting
-    // ---------------------
+    // ─────────────────────
     const finalResult = result?.map((item) => {
       const allotment = item?.allotment_date
         ? new Date(item?.allotment_date).toISOString().split('T')[0]
@@ -7821,11 +7862,11 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
         securityName: item?.security_name || '-',
         securityType: item?.security_type || '-',
         modeOfIssue: item?.mode_of_issue || '-',
-        issueSize: item?.issue_size || null,
-        faceValue: item?.face_value || null,
+        issueSize: item?.issue_size ?? null,
+        faceValue: item?.face_value ?? null,
         allotmentDate: item?.allotment_date ? allotment : '-',
         maturityDate: item?.maturity_date ? maturity : '-',
-        couponRate: item?.coupon_rate || '-',
+        couponRate: item?.coupon_rate ?? '-',
         creditRatingAgency: item?.credit_rating_agency || '-',
         creditRating: item?.credit_rating || '-',
         debentureTrustee: item?.debenture_trustee || '-',
@@ -7840,21 +7881,22 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
       };
     });
 
-    // ---------------------
+    // ─────────────────────
     // Response
-    // ---------------------
+    // ─────────────────────
     res.status(200).json({
+      success: true,
       data: finalResult,
       pagination: {
         total: total,
-        limit: parsedLimit,
-        offset: parsedOffset,
-        hasMore: (parsedOffset + parsedLimit) < total
+        limit: safeLimit,
+        offset: safeOffset,
+        hasMore: (safeOffset + safeLimit) < total
       }
     });
 
   } catch (error) {
-    console.error('TrusteePage detailed data API error:', error);
+    console.error('Error in trusteePage_detailed_data:', error);
     res.status(500).json({
       error: 'Failed to fetch detailed trusteepage data',
       message: error.message
