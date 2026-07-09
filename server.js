@@ -10754,24 +10754,34 @@ app.post('/rating_agency_top_participants_details', async (req, res) => {
 //updated registrars APIs DONE
 app.post('/registrars_page_top_registrars_data', async (req, res) => {
   try {
+    // ── Helper: normalize string/array inputs ──
+    const toArray = (val) => {
+      if (Array.isArray(val)) return val;
+      if (val && typeof val === 'string') return [val];
+      return [];
+    };
+
     const {
       startDate,
       endDate,
       issueType,
       limit,
       offset = 0,
-      registrar = [],
-      issuerOwnershipType = [],
-      issuerNatureType = [],
-      businessSector = [],
-      securityType = [],
-      modeOfIssue = [],
-      creditRatingAgency = [],
-      creditRating = [],
-      seniority = [],
-      securedFlag = [],
-      listingStatus = []
+      isin = ""
     } = req.body;
+
+    // ── Multi-select filters (arrays) ──
+    const creditRating       = toArray(req.body.creditRating);
+    const registrar          = toArray(req.body.registrar);
+    const seniority          = toArray(req.body.seniority);
+    const securedFlag        = toArray(req.body.securedFlag);
+    const businessSector     = toArray(req.body.businessSector);
+    const issuerNatureType   = toArray(req.body.issuerNatureType);
+    const issuerOwnershipType= toArray(req.body.issuerOwnershipType);
+    const securityType       = toArray(req.body.securityType);
+    const modeOfIssue        = toArray(req.body.modeOfIssue);
+    const listingStatus      = toArray(req.body.listingStatus);
+    const creditRatingAgency = toArray(req.body.creditRatingAgency);
 
     // ── VALIDATION ──
     if (!startDate || !endDate) {
@@ -10818,13 +10828,10 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
       return res.status(400).json({ error: 'Invalid offset value' });
     }
 
-    // Validate issueType
-    const validIssueTypes = ['count', 'issue_size'];
-    const mappedIssueType = issueType === 'size' ? 'issue_size' : issueType;
-    const effectiveIssueType = validIssueTypes.includes(mappedIssueType) ? mappedIssueType : 'issue_size';
-
-    // Helper for IN clause placeholders
-    const inClause = (arr) => `(${arr.map(() => '?').join(',')})`;
+    // Validate & normalize issueType
+    const validIssueTypes = ['count', 'issue_size', 'size'];
+    const effectiveIssueType = validIssueTypes.includes(issueType) ? issueType : 'issue_size';
+    const normalizedIssueType = effectiveIssueType === 'size' ? 'issue_size' : effectiveIssueType;
 
     /* ─────────────── COMMON FILTER BUILDER (excludes registrar) ─────────────── */
     const buildCommonFilters = (alias) => {
@@ -10832,72 +10839,86 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
       const conditions = [];
       const params = [];
 
-      if (Array.isArray(listingStatus) && listingStatus.length > 0) {
+      if (listingStatus.length > 0) {
+        const placeholders = listingStatus.map(() => '?').join(', ');
         conditions.push(`EXISTS (
           SELECT 1 FROM master_issuer_stock_exchange mise
           JOIN master_listing_status mls ON mls.code = mise.listing_status
-          WHERE mise.issuer_id = ${alias}.id AND mls.description IN ${inClause(listingStatus)}
+          WHERE mise.issuer_id = ${alias}.id AND mls.description IN (${placeholders})
         )`);
         params.push(...listingStatus);
       }
 
-      if ((Array.isArray(creditRating) && creditRating.length > 0) ||
-          (Array.isArray(creditRatingAgency) && creditRatingAgency.length > 0)) {
-        const ratingCond = Array.isArray(creditRating) && creditRating.length > 0
-          ? `mir.rating IN ${inClause(creditRating)}`
-          : '';
-        const agencyCond = Array.isArray(creditRatingAgency) && creditRatingAgency.length > 0
-          ? `mir.rating_agency IN ${inClause(creditRatingAgency)}`
-          : '';
-        const combinedCond = [ratingCond, agencyCond].filter(Boolean).join(' AND ');
+      if (creditRating.length > 0) {
+        const placeholders = creditRating.map(() => '?').join(', ');
         conditions.push(`EXISTS (
           SELECT 1 FROM master_issuer_rating mir
-          WHERE mir.issuer_id = ${alias}.id AND ${combinedCond}
+          WHERE mir.issuer_id = ${alias}.id AND mir.rating IN (${placeholders})
         )`);
-        if (Array.isArray(creditRating) && creditRating.length > 0) params.push(...creditRating);
-        if (Array.isArray(creditRatingAgency) && creditRatingAgency.length > 0) params.push(...creditRatingAgency);
+        params.push(...creditRating);
       }
 
-      if (Array.isArray(seniority) && seniority.length > 0) {
+      if (creditRatingAgency.length > 0) {
+        const placeholders = creditRatingAgency.map(() => '?').join(', ');
+        conditions.push(`EXISTS (
+          SELECT 1 FROM master_issuer_rating mir
+          WHERE mir.issuer_id = ${alias}.id AND mir.rating_agency IN (${placeholders})
+        )`);
+        params.push(...creditRatingAgency);
+      }
+
+      if (seniority.length > 0) {
         joins.push(`LEFT JOIN master_seniority_tier_classification mstc ON mstc.code = ${alias}.seniority`);
-        conditions.push(`mstc.description IN ${inClause(seniority)}`);
+        const placeholders = seniority.map(() => '?').join(', ');
+        conditions.push(`mstc.description IN (${placeholders})`);
         params.push(...seniority);
       }
 
-      if (Array.isArray(securedFlag) && securedFlag.length > 0) {
+      if (securedFlag.length > 0) {
         joins.push(`LEFT JOIN master_secured_flag msf ON msf.code = ${alias}.secured_flag`);
-        conditions.push(`msf.description IN ${inClause(securedFlag)}`);
+        const placeholders = securedFlag.map(() => '?').join(', ');
+        conditions.push(`msf.description IN (${placeholders})`);
         params.push(...securedFlag);
       }
 
-      if (Array.isArray(businessSector) && businessSector.length > 0) {
+      if (businessSector.length > 0) {
         joins.push(`LEFT JOIN master_business_sector mbs ON mbs.code = ${alias}.business_sector`);
-        conditions.push(`mbs.description IN ${inClause(businessSector)}`);
+        const placeholders = businessSector.map(() => '?').join(', ');
+        conditions.push(`mbs.description IN (${placeholders})`);
         params.push(...businessSector);
       }
 
-      if (Array.isArray(issuerNatureType) && issuerNatureType.length > 0) {
+      if (issuerNatureType.length > 0) {
         joins.push(`LEFT JOIN master_issuer_type_nature mitn ON mitn.code = ${alias}.nature_type`);
-        conditions.push(`mitn.description IN ${inClause(issuerNatureType)}`);
+        const placeholders = issuerNatureType.map(() => '?').join(', ');
+        conditions.push(`mitn.description IN (${placeholders})`);
         params.push(...issuerNatureType);
       }
 
-      if (Array.isArray(issuerOwnershipType) && issuerOwnershipType.length > 0) {
+      if (issuerOwnershipType.length > 0) {
         joins.push(`LEFT JOIN master_issuer_ownership_type miot ON miot.code = ${alias}.issuer_ownership_type`);
-        conditions.push(`miot.description IN ${inClause(issuerOwnershipType)}`);
+        const placeholders = issuerOwnershipType.map(() => '?').join(', ');
+        conditions.push(`miot.description IN (${placeholders})`);
         params.push(...issuerOwnershipType);
       }
 
-      if (Array.isArray(securityType) && securityType.length > 0) {
+      if (securityType.length > 0) {
         joins.push(`LEFT JOIN master_security_type mst ON mst.code = ${alias}.security_class`);
-        conditions.push(`mst.description IN ${inClause(securityType)}`);
+        const placeholders = securityType.map(() => '?').join(', ');
+        conditions.push(`mst.description IN (${placeholders})`);
         params.push(...securityType);
       }
 
-      if (Array.isArray(modeOfIssue) && modeOfIssue.length > 0) {
+      if (modeOfIssue.length > 0) {
         joins.push(`LEFT JOIN master_mode_issue mmi ON mmi.code = ${alias}.mode_issue`);
-        conditions.push(`mmi.description IN ${inClause(modeOfIssue)}`);
+        const placeholders = modeOfIssue.map(() => '?').join(', ');
+        conditions.push(`mmi.description IN (${placeholders})`);
         params.push(...modeOfIssue);
+      }
+
+      if (isin) {
+        conditions.push(`${alias}.isin LIKE ?`);
+        params.push(`%${isin}%`);
       }
 
       return { joins, conditions, params };
@@ -10917,12 +10938,15 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
     };
 
     // ── Registrar filter helpers ──
-    const registrarActive = Array.isArray(registrar) && registrar.length > 0;
-    const registrarWhere = registrarActive
-      ? `AND EXISTS (SELECT 1 FROM master_registrar mr WHERE mr.id = ir.registrar_id AND mr.registrar_name IN ${inClause(registrar)})`
+    const registrarPlaceholders = registrar.length > 0
+      ? registrar.map(() => '?').join(', ')
       : '';
-    const registrarParams = registrarActive ? registrar : [];
-    const registrarJoin = registrarActive ? 'LEFT JOIN master_registrar mr ON mr.id = ir.registrar_id' : '';
+    const registrarWhere = registrar.length > 0
+      ? `AND mr.registrar_name IN (${registrarPlaceholders})`
+      : '';
+    const registrarExistsWhere = registrar.length > 0
+      ? `AND EXISTS (SELECT 1 FROM master_registrar mr WHERE mr.id = ir.registrar_id AND mr.registrar_name IN (${registrarPlaceholders}))`
+      : '';
 
     /* ── TOTALS (common filters only) ── */
     const totalIssueSizePromise = prisma.$queryRawUnsafe(`
@@ -10934,12 +10958,12 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
         WHERE mi.allotment_date BETWEEN ? AND ?
           AND mi.is_visible = 1
           ${commonWhereSql}
-          ${registrarWhere}
+          ${registrarExistsWhere}
       `,
       currStartStr,
       currEndStr,
       ...commonParams,
-      ...registrarParams
+      ...(registrar.length > 0 ? registrar : [])
     );
 
     const totalIssueSizePrevYearPromise = prisma.$queryRawUnsafe(`
@@ -10951,12 +10975,12 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
       WHERE mi.allotment_date BETWEEN ? AND ?
         AND mi.is_visible = 1
         ${commonWhereSql}
-        ${registrarWhere}
+        ${registrarExistsWhere}
     `,
       prevStartStr,
       prevEndStr,
       ...commonParams,
-      ...registrarParams
+      ...(registrar.length > 0 ? registrar : [])
     );
 
     const totalIssuesCountCurrYearPromise = prisma.$queryRawUnsafe(`
@@ -10968,12 +10992,12 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
       WHERE mi.allotment_date BETWEEN ? AND ?
         AND mi.is_visible = 1
         ${commonWhereSql}
-        ${registrarWhere}
+        ${registrarExistsWhere}
     `,
       currStartStr,
       currEndStr,
       ...commonParams,
-      ...registrarParams
+      ...(registrar.length > 0 ? registrar : [])
     );
 
     const totalIssuesCountPrevYearPromise = prisma.$queryRawUnsafe(`
@@ -10985,12 +11009,12 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
       WHERE mi.allotment_date BETWEEN ? AND ?
         AND mi.is_visible = 1
         ${commonWhereSql}
-        ${registrarWhere}
+        ${registrarExistsWhere}
     `,
       prevStartStr,
       prevEndStr,
       ...commonParams,
-      ...registrarParams
+      ...(registrar.length > 0 ? registrar : [])
     );
 
     // Run all totals in parallel
@@ -11018,13 +11042,12 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
     const safeTotalIssuesCountPrev = totalIssuesCountPrevYear || 1;
 
     /* ── MAIN TABLE QUERY ── */
-    const tableRegistrarWhere = registrarActive
-      ? `AND mr.registrar_name IN ${inClause(registrar)}`
-      : '';
-    const tableBaseParams = [...commonParams, ...registrarParams];
+    const tableBaseParams = registrar.length > 0
+      ? [...commonParams, ...registrar]
+      : [...commonParams];
 
     const t1t2Joins = commonJoinsSql;
-    const t1t2Where = `${commonWhereSql} ${tableRegistrarWhere}`;
+    const t1t2Where = `${commonWhereSql} ${registrarWhere}`;
 
     const paginationClause = parsedLimit !== null && parsedLimit > 0
       ? `LIMIT ${parsedLimit} OFFSET ${parsedOffset}`
@@ -11032,11 +11055,11 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
 
     let tableQuery = '';
 
-    if (effectiveIssueType === 'count') {
+    if (normalizedIssueType === 'count') {
       tableQuery = `
       SELECT
         t1.id,
-        t1.issuer_name,
+        t1.registrar_name,
         t1.no_issues AS cy_issues,
         t1.issue_size AS cy_issue_size,
         t1.arr_rank AS cy_arr_rank,
@@ -11055,7 +11078,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
       FROM (
         SELECT
           mr.id,
-          mr.short_name AS issuer_name,
+          mr.short_name AS registrar_name,
           COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS no_issues,
           ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
           RANK() OVER (
@@ -11093,7 +11116,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
       tableQuery = `
       SELECT
         t1.id,
-        t1.issuer_name,
+        t1.registrar_name,
         t1.no_issues AS cy_issues,
         t1.issue_size AS cy_issue_size,
         t1.arr_rank AS cy_arr_rank,
@@ -11112,7 +11135,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
       FROM (
         SELECT
           mr.id,
-          mr.short_name AS issuer_name,
+          mr.short_name AS registrar_name,
           COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS no_issues,
           ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
           RANK() OVER (
@@ -11148,17 +11171,17 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
       `;
     }
 
-    // Parameters for table query: [marketShareDenomCurr, marketShareDenomPrev, t1Params..., t2Params...]
-    const tableParams = effectiveIssueType === 'count'
-      ? [safeTotalIssuesCount, safeTotalIssuesCountPrev, ...tableBaseParams, currStartStr, currEndStr, ...tableBaseParams, prevStartStr, prevEndStr]
-      : [safeTotalIssueSize, safeTotalIssueSizePrev, ...tableBaseParams, currStartStr, currEndStr, ...tableBaseParams, prevStartStr, prevEndStr];
+    // Parameters: [marketShareDenomCurr, marketShareDenomPrev, t1 dates & filters, t2 dates & filters]
+    const tableParams = normalizedIssueType === 'count'
+      ? [safeTotalIssuesCount, safeTotalIssuesCountPrev, currStartStr, currEndStr, ...tableBaseParams, prevStartStr, prevEndStr, ...tableBaseParams]
+      : [safeTotalIssueSize, safeTotalIssueSizePrev, currStartStr, currEndStr, ...tableBaseParams, prevStartStr, prevEndStr, ...tableBaseParams];
 
     const tableResult = await prisma.$queryRawUnsafe(tableQuery, ...tableParams);
 
     /* ── TOTAL COUNT ── */
-    const countJoins = `${commonJoinsSql}\n${registrarJoin}`;
-    const countWhere = `${commonWhereSql} ${tableRegistrarWhere}`;
-    const countParams = [...commonParams, ...registrarParams];
+    const countJoins = `${commonJoinsSql}\n${registrar.length > 0 ? 'LEFT JOIN master_registrar mr ON mr.id = ir.registrar_id' : ''}`;
+    const countWhere = `${commonWhereSql} ${registrarWhere}`;
+    const countParams = registrar.length > 0 ? [...commonParams, ...registrar] : [...commonParams];
 
     const totalCountResult = await prisma.$queryRawUnsafe(`
       SELECT COUNT(DISTINCT ir.registrar_id) AS total
@@ -11173,16 +11196,16 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
 
     /* ── SECTOR BREAKUP QUERY ── */
     const sectorValueSelect =
-      effectiveIssueType === 'count'
+      normalizedIssueType === 'count'
         ? 'COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date)'
         : 'ROUND(SUM(mi.issue_size) / 10000000, 2)';
 
     const rankJoins = commonJoinsSql;
-    const rankWhere = `${commonWhereSql} ${tableRegistrarWhere}`;
-    const rankParams = [...commonParams, ...registrarParams];
+    const rankWhere = `${commonWhereSql} ${registrarWhere}`;
+    const rankParams = registrar.length > 0 ? [...commonParams, ...registrar] : [...commonParams];
 
     const rankedRegistrarsSubQuery =
-      effectiveIssueType === 'count'
+      normalizedIssueType === 'count'
         ? `
       SELECT
         mr.id AS registrar_id,
@@ -11219,14 +11242,14 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
     `;
 
     const sectorCommonJoins = commonFilters.joins.filter(j => !j.includes('master_business_sector')).join('\n');
-    const sectorJoins = `${sectorCommonJoins}\n${registrarJoin}`;
-    const sectorWhere = `${commonWhereSql} ${tableRegistrarWhere}`;
-    const sectorParams = [...commonParams, ...registrarParams];
+    const sectorJoins = `${sectorCommonJoins}\n${registrar.length > 0 ? 'LEFT JOIN master_registrar mr ON mr.id = ir.registrar_id' : ''}`;
+    const sectorWhere = `${commonWhereSql} ${registrarWhere}`;
+    const sectorParams = registrar.length > 0 ? [...commonParams, ...registrar] : [...commonParams];
 
     const sectorQuery = `
       SELECT
         r.registrar_id AS id,
-        r.registrar_name AS issuer_name,
+        r.registrar_name AS registrar_name,
         r.arr_rank,
         mbs.code,
         mbs.description,
@@ -11251,15 +11274,15 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
 
     const sectorData = await prisma.$queryRawUnsafe(
       sectorQuery,
-      ...rankParams, currStartStr, currEndStr,
-      ...sectorParams, currStartStr, currEndStr
+      currStartStr, currEndStr, ...rankParams,
+      currStartStr, currEndStr, ...sectorParams
     );
 
     /* ── RESPONSE FORMAT ── */
     const finalResult = tableResult.map((item) => ({
       id: item.id ?? '-',
       rank: item.cy_arr_rank ?? '-',
-      name: item.issuer_name ?? '-',
+      name: item.registrar_name ?? '-',
       currentSize: item.cy_issue_size ?? '-',
       currentDeals: item.cy_issues ?? '-',
       currentMarketShare: item.cy_mkt_share ?? '-',
