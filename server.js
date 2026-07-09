@@ -5128,39 +5128,68 @@ app.post('/arrangers_page_deals_data', async (req, res) => {
 });
 
 app.post('/arrangerPage_detailed_data', async (req, res) => {
-  const {
-    startDate = '2025-04-01',
-    endDate = '2026-03-31',
-    limit = 25,
-    offset = 0,
-    search = "",
-    rating = "",
-    registrar = "",
-    arranger = "",
-    seniority = "",
-    securedFlag = "",
-    sector = "",
-    trustee = "",
-    nature = "",
-    ownershipType = "",
-    creditRatingAgency = "",
-    listingStatus = "",
-    securityType = "",
-    modeOfIssue = ""
-  } = req.body;
-
   try {
-    // Fix: Validate dates
+    const {
+      startDate = '2025-04-01',
+      endDate = '2026-03-31',
+      limit = 25,
+      offset = 0,
+      search = ""
+    } = req.body;
+
+    // ── Helper: normalize string/array inputs ──
+    const toArray = (val) => {
+      if (Array.isArray(val)) return val;
+      if (val && typeof val === 'string') return [val];
+      return [];
+    };
+
+    // ── Multi-select filters (arrays) ──
+    const rating             = toArray(req.body.rating);
+    const seniority          = toArray(req.body.seniority);
+    const securedFlag        = toArray(req.body.securedFlag);
+    const sector             = toArray(req.body.sector);
+    const trustee            = toArray(req.body.trustee);
+    const nature             = toArray(req.body.nature);
+    const ownershipType      = toArray(req.body.ownershipType);
+    const creditRatingAgency = toArray(req.body.creditRatingAgency);
+    const listingStatus      = toArray(req.body.listingStatus);
+    const securityType       = toArray(req.body.securityType);
+    const modeOfIssue        = toArray(req.body.modeOfIssue);
+
+    // ── Single-select filters (strings) ──
+    const arranger  = req.body.arranger || "";
+    const registrar = req.body.registrar || "";
+
+    // ─── Validate dates ───
     if (!startDate || !endDate) {
       return res.status(400).json({ error: 'startDate and endDate are required' });
     }
 
-    const startDateObj = new Date(startDate);
-    const endDateObj = new Date(endDate);
+    const currentStartDate = new Date(startDate);
+    const currentEndDate = new Date(endDate);
 
-    if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) {
+    if (isNaN(currentStartDate.getTime()) || isNaN(currentEndDate.getTime())) {
       return res.status(400).json({ error: 'Invalid date format' });
     }
+
+    if (currentStartDate > currentEndDate) {
+      return res.status(400).json({ error: 'startDate must be before endDate' });
+    }
+
+    // ─── FIX: Full day coverage — start at 00:00:00, end at 23:59:59 ───
+    const cyStart = formatDateForSQL(new Date(Date.UTC(
+      currentStartDate.getUTCFullYear(),
+      currentStartDate.getUTCMonth(),
+      currentStartDate.getUTCDate(),
+      0, 0, 0
+    )));
+    const cyEnd = formatDateForSQL(new Date(Date.UTC(
+      currentEndDate.getUTCFullYear(),
+      currentEndDate.getUTCMonth(),
+      currentEndDate.getUTCDate(),
+      23, 59, 59
+    )));
 
     // Fix: Validate and sanitize limit/offset
     const safeLimit = Math.max(1, Math.min(1000, parseInt(limit, 10) || 25));
@@ -5173,7 +5202,7 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
     const params = [];
 
     conditions.push(`mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)`);
-    params.push(startDate, endDate);
+    params.push(cyStart, cyEnd);
 
     // Fix: Use EXISTS for arranger check to avoid JOIN duplication issues
     conditions.push(`
@@ -5185,10 +5214,10 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
     `);
 
     // ---------------------
-    // Filters (using EXISTS to prevent JOIN duplication)
+    // Filters (using EXISTS with IN for multi-select)
     // ---------------------
 
-    // NEW: Search by issuerName or ISIN (replaces separate issuerName and isin filters)
+    // Search by issuerName or ISIN (single-select LIKE)
     if (search) {
       conditions.push(`(
         EXISTS (
@@ -5200,103 +5229,120 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
       params.push(`%${search}%`, `%${search}%`);
     }
 
-    if (rating) {
+    // Rating (multi-select)
+    if (rating.length > 0) {
+      const placeholders = rating.map(() => '?').join(', ');
       conditions.push(`EXISTS (
         SELECT 1 FROM master_issuer_rating mir2 
-        WHERE mir2.issuer_id = mi.id AND mir2.rating = ?
+        WHERE mir2.issuer_id = mi.id AND mir2.rating IN (${placeholders})
       )`);
-      params.push(rating);
+      params.push(...rating);
     }
 
-    if (creditRatingAgency) {
+    // Credit Rating Agency (multi-select)
+    if (creditRatingAgency.length > 0) {
+      const placeholders = creditRatingAgency.map(() => '?').join(', ');
       conditions.push(`EXISTS (
         SELECT 1 FROM master_issuer_rating mir2 
         JOIN master_agency mag2 ON mag2.id = mir2.agency_id
-        WHERE mir2.issuer_id = mi.id AND mag2.short_name = ?
+        WHERE mir2.issuer_id = mi.id AND mag2.short_name IN (${placeholders})
       )`);
-      params.push(creditRatingAgency);
+      params.push(...creditRatingAgency);
     }
 
-    // REMOVED: dealSize filter no longer sent from frontend
-
-    if (listingStatus) {
+    // Listing Status (multi-select)
+    if (listingStatus.length > 0) {
+      const placeholders = listingStatus.map(() => '?').join(', ');
       conditions.push(`EXISTS (
         SELECT 1 FROM master_issuer_stock_exchange mise2
         JOIN master_listing_status mls2 ON mls2.code = mise2.listing_status
-        WHERE mise2.issuer_id = mi.id AND mls2.description = ?
+        WHERE mise2.issuer_id = mi.id AND mls2.description IN (${placeholders})
       )`);
-      params.push(listingStatus);
+      params.push(...listingStatus);
     }
 
-    if (seniority) {
+    // Seniority (multi-select)
+    if (seniority.length > 0) {
+      const placeholders = seniority.map(() => '?').join(', ');
       conditions.push(`EXISTS (
         SELECT 1 FROM master_seniority_tier_classification mstc2
-        WHERE mstc2.code = mi.seniority AND mstc2.description = ?
+        WHERE mstc2.code = mi.seniority AND mstc2.description IN (${placeholders})
       )`);
-      params.push(seniority);
+      params.push(...seniority);
     }
 
-    // REMOVED: taxFree filter no longer sent from frontend
-
-    if (securedFlag) {
+    // Secured Flag (multi-select)
+    if (securedFlag.length > 0) {
+      const placeholders = securedFlag.map(() => '?').join(', ');
       conditions.push(`EXISTS (
         SELECT 1 FROM master_secured_flag msf2
-        WHERE msf2.code = mi.secured_flag AND msf2.description = ?
+        WHERE msf2.code = mi.secured_flag AND msf2.description IN (${placeholders})
       )`);
-      params.push(securedFlag);
+      params.push(...securedFlag);
     }
 
-    if (sector) {
+    // Sector (multi-select)
+    if (sector.length > 0) {
+      const placeholders = sector.map(() => '?').join(', ');
       conditions.push(`EXISTS (
         SELECT 1 FROM master_business_sector mbs2
-        WHERE mbs2.code = mi.business_sector AND mbs2.description = ?
+        WHERE mbs2.code = mi.business_sector AND mbs2.description IN (${placeholders})
       )`);
-      params.push(sector);
+      params.push(...sector);
     }
 
-    if (trustee) {
+    // Trustee (multi-select)
+    if (trustee.length > 0) {
+      const placeholders = trustee.map(() => '?').join(', ');
       conditions.push(`EXISTS (
         SELECT 1 FROM issuer_trustee it2
         JOIN master_trustee mt2 ON mt2.id = it2.trustee_id
-        WHERE it2.issuer_id = mi.id AND mt2.short_name = ?
+        WHERE it2.issuer_id = mi.id AND mt2.short_name IN (${placeholders})
       )`);
-      params.push(trustee);
+      params.push(...trustee);
     }
 
-    if (nature) {
+    // Nature (multi-select)
+    if (nature.length > 0) {
+      const placeholders = nature.map(() => '?').join(', ');
       conditions.push(`EXISTS (
         SELECT 1 FROM master_issuer_type_nature mitn2
-        WHERE mitn2.code = mi.nature_type AND mitn2.description = ?
+        WHERE mitn2.code = mi.nature_type AND mitn2.description IN (${placeholders})
       )`);
-      params.push(nature);
+      params.push(...nature);
     }
 
-    if (ownershipType) {
+    // Ownership Type (multi-select)
+    if (ownershipType.length > 0) {
+      const placeholders = ownershipType.map(() => '?').join(', ');
       conditions.push(`EXISTS (
         SELECT 1 FROM master_issuer_ownership_type miot2
-        WHERE miot2.code = mi.issuer_ownership_type AND miot2.description = ?
+        WHERE miot2.code = mi.issuer_ownership_type AND miot2.description IN (${placeholders})
       )`);
-      params.push(ownershipType);
+      params.push(...ownershipType);
     }
 
-    if (securityType) {
+    // Security Type (multi-select)
+    if (securityType.length > 0) {
+      const placeholders = securityType.map(() => '?').join(', ');
       conditions.push(`EXISTS (
         SELECT 1 FROM master_security_type mst2
-        WHERE mst2.code = mi.security_class AND mst2.description = ?
+        WHERE mst2.code = mi.security_class AND mst2.description IN (${placeholders})
       )`);
-      params.push(securityType);
+      params.push(...securityType);
     }
 
-    if (modeOfIssue) {
+    // Mode Of Issue (multi-select)
+    if (modeOfIssue.length > 0) {
+      const placeholders = modeOfIssue.map(() => '?').join(', ');
       conditions.push(`EXISTS (
         SELECT 1 FROM master_mode_issue mmi2
-        WHERE mmi2.code = mi.mode_issue AND mmi2.description = ?
+        WHERE mmi2.code = mi.mode_issue AND mmi2.description IN (${placeholders})
       )`);
-      params.push(modeOfIssue);
+      params.push(...modeOfIssue);
     }
 
-    // REMOVED: isin filter — now handled by unified search above
-
+    // Arranger (single-select, LIKE filter)
     if (arranger) {
       conditions.push(`EXISTS (
         SELECT 1 FROM issuer_arranger ia2
@@ -5306,6 +5352,7 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
       params.push(`%${arranger}%`);
     }
 
+    // Registrar (single-select, LIKE filter)
     if (registrar) {
       conditions.push(`EXISTS (
         SELECT 1 FROM issuer_registrar ir2
@@ -5323,9 +5370,6 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
     // ---------------------
     // Main data query
     // ---------------------
-    // Fix: Removed all LEFT JOINs that cause M×N duplication
-    // Fix: Use subqueries/aggregations for one-to-many relationships
-    // Fix: Corrected issuer_coupon_details join to use mi.id instead of issuer_details.id
     const dataQuery = `
       SELECT
         mi.id,
@@ -5350,20 +5394,15 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
         mstc.description AS seniority,
         msf.description AS secured_flag,
 
-        -- Fix: Aggregate arrangers to prevent duplication
         GROUP_CONCAT(DISTINCT ma.short_name ORDER BY ma.short_name ASC SEPARATOR ', ') AS Arranger,
 
-        -- Fix: Aggregate ratings and agencies
         GROUP_CONCAT(DISTINCT mir.rating ORDER BY mir.rating ASC SEPARATOR ', ') AS credit_rating,
         GROUP_CONCAT(DISTINCT mag.short_name ORDER BY mag.short_name ASC SEPARATOR ', ') AS credit_rating_agency,
 
-        -- Fix: Aggregate trustees
         GROUP_CONCAT(DISTINCT mt.short_name ORDER BY mt.short_name ASC SEPARATOR ', ') AS debenture_trustee,
 
-        -- Fix: Aggregate registrars
         GROUP_CONCAT(DISTINCT mr.registrar_name ORDER BY mr.registrar_name ASC SEPARATOR ', ') AS Registrar,
 
-        -- Fix: Deterministic listing status (first by status code, then by id)
         (
           SELECT mls.description
           FROM master_issuer_stock_exchange mise
@@ -5385,7 +5424,6 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
       LEFT JOIN master_seniority_tier_classification mstc ON mstc.code = mi.seniority
       LEFT JOIN master_secured_flag msf ON msf.code = mi.secured_flag
 
-      -- One-to-many relationships: use LEFT JOIN but GROUP BY mi.id
       LEFT JOIN issuer_arranger ia ON ia.issuer_id = mi.id
       LEFT JOIN master_arranger ma ON ma.id = ia.arranger_id
 
@@ -5485,6 +5523,7 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
     // Response
     // ---------------------
     res.status(200).json({
+      success: true,
       data: finalResult,
       pagination: {
         total: total,
@@ -5495,7 +5534,7 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
     });
 
   } catch (error) {
-    console.error(error);
+    console.error('Error in arrangerPage_detailed_data:', error);
     res.status(500).json({
       error: 'Failed to fetch arranger detailed data',
       message: error.message
