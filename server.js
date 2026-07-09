@@ -8848,27 +8848,34 @@ app.post('/trustee_top_participants_details', async (req, res) => {
 
 app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
   try {
+    // ── Helper: normalize string/array inputs ──
+    const toArray = (val) => {
+      if (Array.isArray(val)) return val;
+      if (val && typeof val === 'string') return [val];
+      return [];
+    };
+
     const {
       startDate,
       endDate,
       issueType,
       limit,
       offset = 0,
-      rating = "",
-      registrar = "",
-      seniority = "",
-      taxFree = "",
-      securedFlag = "",
-      sector = "",
-      nature = "",
-      ownershipType = "",
-      creditRatingAgency = "",
-      dealSize = "",
-      listingStatus = "",
-      securityType = "",
-      modeOfIssue = "",
       isin = ""
     } = req.body;
+
+    // ── Multi-select filters (arrays) ──
+    const rating             = toArray(req.body.rating);
+    const registrar          = toArray(req.body.registrar);
+    const seniority          = toArray(req.body.seniority);
+    const securedFlag        = toArray(req.body.securedFlag);
+    const sector             = toArray(req.body.sector);
+    const nature             = toArray(req.body.nature);
+    const ownershipType      = toArray(req.body.ownershipType);
+    const creditRatingAgency = toArray(req.body.creditRatingAgency);
+    const securityType       = toArray(req.body.securityType);
+    const modeOfIssue        = toArray(req.body.modeOfIssue);
+    const listingStatus      = toArray(req.body.listingStatus);
 
     if (!startDate || !endDate) {
       return res.status(400).json({ error: 'startDate, endDate are required' });
@@ -8912,68 +8919,68 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
       const conditions = [];
       const params = [];
 
-      if (rating) {
-        conditions.push(`mir.rating = ?`);
-        params.push(rating);
+      if (rating.length > 0) {
+        const placeholders = rating.map(() => '?').join(', ');
+        conditions.push(`mir.rating IN (${placeholders})`);
+        params.push(...rating);
       }
 
-      if (dealSize) {
-        conditions.push(`mi.issue_size LIKE ?`);
-        params.push(`%${dealSize}%`);
-      }
-
-      if (listingStatus) {
+      if (listingStatus.length > 0) {
+        const placeholders = listingStatus.map(() => '?').join(', ');
         conditions.push(`EXISTS (
           SELECT 1 FROM master_issuer_stock_exchange mise
           LEFT JOIN master_listing_status mls ON mls.code = mise.listing_status
-          WHERE mise.issuer_id = mi.id AND mls.description = ?
+          WHERE mise.issuer_id = mi.id AND mls.description IN (${placeholders})
         )`);
-        params.push(listingStatus);
+        params.push(...listingStatus);
       }
 
-      if (seniority) {
-        conditions.push(`EXISTS (SELECT 1 FROM master_seniority_tier_classification mstc WHERE mstc.code = mi.seniority AND mstc.description = ?)`);
-        params.push(seniority);
+      if (seniority.length > 0) {
+        const placeholders = seniority.map(() => '?').join(', ');
+        conditions.push(`EXISTS (SELECT 1 FROM master_seniority_tier_classification mstc WHERE mstc.code = mi.seniority AND mstc.description IN (${placeholders}))`);
+        params.push(...seniority);
       }
 
-      if (taxFree) {
-        conditions.push(`EXISTS (SELECT 1 FROM master_tax_free mtf WHERE mtf.code = mi.tax_free AND mtf.description = ?)`);
-        params.push(taxFree);
+      if (securedFlag.length > 0) {
+        const placeholders = securedFlag.map(() => '?').join(', ');
+        conditions.push(`EXISTS (SELECT 1 FROM master_secured_flag msf WHERE msf.code = mi.secured_flag AND msf.description IN (${placeholders}))`);
+        params.push(...securedFlag);
       }
 
-      if (securedFlag) {
-        conditions.push(`EXISTS (SELECT 1 FROM master_secured_flag msf WHERE msf.code = mi.secured_flag AND msf.description = ?)`);
-        params.push(securedFlag);
+      if (sector.length > 0) {
+        const placeholders = sector.map(() => '?').join(', ');
+        conditions.push(`EXISTS (SELECT 1 FROM master_business_sector mbs WHERE mbs.code = mi.business_sector AND mbs.description IN (${placeholders}))`);
+        params.push(...sector);
       }
 
-      if (sector) {
-        conditions.push(`EXISTS (SELECT 1 FROM master_business_sector mbs WHERE mbs.code = mi.business_sector AND mbs.description = ?)`);
-        params.push(sector);
+      if (nature.length > 0) {
+        const placeholders = nature.map(() => '?').join(', ');
+        conditions.push(`EXISTS (SELECT 1 FROM master_issuer_type_nature mitn WHERE mitn.code = mi.nature_type AND mitn.description IN (${placeholders}))`);
+        params.push(...nature);
       }
 
-      if (nature) {
-        conditions.push(`EXISTS (SELECT 1 FROM master_issuer_type_nature mitn WHERE mitn.code = mi.nature_type AND mitn.description = ?)`);
-        params.push(nature);
+      if (ownershipType.length > 0) {
+        const placeholders = ownershipType.map(() => '?').join(', ');
+        conditions.push(`EXISTS (SELECT 1 FROM master_issuer_ownership_type miot WHERE miot.code = mi.issuer_ownership_type AND miot.description IN (${placeholders}))`);
+        params.push(...ownershipType);
       }
 
-      if (ownershipType) {
-        conditions.push(`EXISTS (SELECT 1 FROM master_issuer_ownership_type miot WHERE miot.code = mi.issuer_ownership_type AND miot.description = ?)`);
-        params.push(ownershipType);
+      if (creditRatingAgency.length > 0) {
+        const placeholders = creditRatingAgency.map(() => '?').join(', ');
+        conditions.push(`ma.short_name IN (${placeholders})`);
+        params.push(...creditRatingAgency);
       }
 
-      if (creditRatingAgency) {
-        conditions.push(`ma.short_name = ?`);
-        params.push(creditRatingAgency);
+      if (securityType.length > 0) {
+        const placeholders = securityType.map(() => '?').join(', ');
+        conditions.push(`EXISTS (SELECT 1 FROM master_security_type mst WHERE mst.code = mi.security_class AND mst.description IN (${placeholders}))`);
+        params.push(...securityType);
       }
 
-      if (securityType) {
-        conditions.push(`EXISTS (SELECT 1 FROM master_security_type mst WHERE mst.code = mi.security_class AND mst.description = ?)`);
-        params.push(securityType);
-      }
-
-      if (modeOfIssue) {
-        conditions.push(`EXISTS (SELECT 1 FROM master_mode_issue mmi WHERE mmi.code = mi.mode_issue AND mmi.description = ?)`);
-        params.push(modeOfIssue);
+      if (modeOfIssue.length > 0) {
+        const placeholders = modeOfIssue.map(() => '?').join(', ');
+        conditions.push(`EXISTS (SELECT 1 FROM master_mode_issue mmi WHERE mmi.code = mi.mode_issue AND mmi.description IN (${placeholders}))`);
+        params.push(...modeOfIssue);
       }
 
       if (isin) {
@@ -8981,13 +8988,14 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
         params.push(`%${isin}%`);
       }
 
-      if (registrar) {
+      if (registrar.length > 0) {
+        const placeholders = registrar.map(() => '?').join(', ');
         conditions.push(`EXISTS (
           SELECT 1 FROM issuer_registrar ir
           JOIN master_registrar mr ON mr.id = ir.registrar_id
-          WHERE ir.issuer_id = mi.id AND mr.registrar_name LIKE ?
+          WHERE ir.issuer_id = mi.id AND mr.registrar_name IN (${placeholders})
         )`);
-        params.push(`%${registrar}%`);
+        params.push(...registrar);
       }
 
       return { conditions, params };
@@ -9067,7 +9075,7 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
       tableQuery = `
       SELECT
         t1.id,
-        t1.issuer_name,
+        t1.agency_name,
         t1.no_issues AS cy_issues,
         t1.issue_size AS cy_issue_size,
         t1.arr_rank AS cy_arr_rank,
@@ -9087,7 +9095,7 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
       FROM (
         SELECT
           ma.id,
-          ma.short_name AS issuer_name,
+          ma.short_name AS agency_name,
           COUNT(DISTINCT mi.isin) AS no_issues,
           ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
           RANK() OVER (
@@ -9129,7 +9137,7 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
       tableQuery = `
       SELECT
         t1.id,
-        t1.issuer_name,
+        t1.agency_name,
         t1.no_issues AS cy_issues,
         t1.issue_size AS cy_issue_size,
         t1.arr_rank AS cy_arr_rank,
@@ -9149,7 +9157,7 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
       FROM (
         SELECT
           ma.id,
-          ma.short_name AS issuer_name,
+          ma.short_name AS agency_name,
           COUNT(DISTINCT mi.isin) AS no_issues,
           ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
           RANK() OVER (
@@ -9217,7 +9225,7 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
         ? `
       SELECT
         ma.id AS agency_id,
-        ma.short_name AS agency_name,
+        ma.short_name AS name,
         RANK() OVER (
           ORDER BY COUNT(DISTINCT mi.isin) DESC, SUM(mi.issue_size) DESC
         ) AS arr_rank
@@ -9233,7 +9241,7 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
         : `
       SELECT
         ma.id AS agency_id,
-        ma.short_name AS agency_name,
+        ma.short_name AS name,
         RANK() OVER (
           ORDER BY SUM(mi.issue_size) DESC, COUNT(DISTINCT mi.isin) DESC
         ) AS arr_rank
@@ -9250,7 +9258,7 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
     const sectorQuery = `
       SELECT
         r.agency_id AS id,
-        r.agency_name AS issuer_name,
+        r.agency_name AS name,
         r.arr_rank,
         mbs.code,
         mbs.description,
@@ -9282,7 +9290,7 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
     const finalResult = tableResult.map((item) => ({
       id: item.id ?? '-',
       rank: item.cy_arr_rank ?? '-',
-      name: item.issuer_name ?? '-',
+      name: item.agency_name ?? '-',
       currentSize: item.cy_issue_size ?? '-',
       currentDeals: item.cy_issues ?? '-',
       currentMarketShare: item.cy_mkt_share ?? '-',
@@ -9322,25 +9330,32 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
 
 app.post('/rating_agencies_page_credit_rating_data', async (req, res) => {
   try {
+    // ── Helper: normalize string/array inputs ──
+    const toArray = (val) => {
+      if (Array.isArray(val)) return val;
+      if (val && typeof val === 'string') return [val];
+      return [];
+    };
+
     const {
       startDate,
       endDate,
       id,
-      rating = "",
-      registrar = "",
-      seniority = "",
-      taxFree = "",
-      securedFlag = "",
-      sector = "",
-      nature = "",
-      ownershipType = "",
-      creditRatingAgency = "",
-      dealSize = "",
-      listingStatus = "",
-      securityType = "",
-      modeOfIssue = "",
       isin = ""
     } = req.body;
+
+    // ── Multi-select filters (arrays) ──
+    const rating             = toArray(req.body.rating);
+    const registrar          = toArray(req.body.registrar);
+    const seniority          = toArray(req.body.seniority);
+    const securedFlag        = toArray(req.body.securedFlag);
+    const sector             = toArray(req.body.sector);
+    const nature             = toArray(req.body.nature);
+    const ownershipType      = toArray(req.body.ownershipType);
+    const creditRatingAgency = toArray(req.body.creditRatingAgency);
+    const securityType       = toArray(req.body.securityType);
+    const modeOfIssue        = toArray(req.body.modeOfIssue);
+    const listingStatus      = toArray(req.body.listingStatus);
 
     if (!startDate || !endDate) {
       return res.status(400).json({
@@ -9371,68 +9386,68 @@ app.post('/rating_agencies_page_credit_rating_data', async (req, res) => {
       const conditions = [];
       const params = [];
 
-      if (rating) {
-        conditions.push(`EXISTS (SELECT 1 FROM master_issuer_rating mir_sub WHERE mir_sub.issuer_id = ${issuerAlias}.id AND mir_sub.rating = ?)`);
-        params.push(rating);
+      if (rating.length > 0) {
+        const placeholders = rating.map(() => '?').join(', ');
+        conditions.push(`EXISTS (SELECT 1 FROM master_issuer_rating mir_sub WHERE mir_sub.issuer_id = ${issuerAlias}.id AND mir_sub.rating IN (${placeholders}))`);
+        params.push(...rating);
       }
 
-      if (dealSize) {
-        conditions.push(`${issuerAlias}.issue_size LIKE ?`);
-        params.push(`%${dealSize}%`);
-      }
-
-      if (listingStatus) {
+      if (listingStatus.length > 0) {
+        const placeholders = listingStatus.map(() => '?').join(', ');
         conditions.push(`EXISTS (
           SELECT 1 FROM master_issuer_stock_exchange mise
           LEFT JOIN master_listing_status mls ON mls.code = mise.listing_status
-          WHERE mise.issuer_id = ${issuerAlias}.id AND mls.description = ?
+          WHERE mise.issuer_id = ${issuerAlias}.id AND mls.description IN (${placeholders})
         )`);
-        params.push(listingStatus);
+        params.push(...listingStatus);
       }
 
-      if (seniority) {
-        conditions.push(`EXISTS (SELECT 1 FROM master_seniority_tier_classification mstc WHERE mstc.code = ${issuerAlias}.seniority AND mstc.description = ?)`);
-        params.push(seniority);
+      if (seniority.length > 0) {
+        const placeholders = seniority.map(() => '?').join(', ');
+        conditions.push(`EXISTS (SELECT 1 FROM master_seniority_tier_classification mstc WHERE mstc.code = ${issuerAlias}.seniority AND mstc.description IN (${placeholders}))`);
+        params.push(...seniority);
       }
 
-      if (taxFree) {
-        conditions.push(`EXISTS (SELECT 1 FROM master_tax_free mtf WHERE mtf.code = ${issuerAlias}.tax_free AND mtf.description = ?)`);
-        params.push(taxFree);
+      if (securedFlag.length > 0) {
+        const placeholders = securedFlag.map(() => '?').join(', ');
+        conditions.push(`EXISTS (SELECT 1 FROM master_secured_flag msf WHERE msf.code = ${issuerAlias}.secured_flag AND msf.description IN (${placeholders}))`);
+        params.push(...securedFlag);
       }
 
-      if (securedFlag) {
-        conditions.push(`EXISTS (SELECT 1 FROM master_secured_flag msf WHERE msf.code = ${issuerAlias}.secured_flag AND msf.description = ?)`);
-        params.push(securedFlag);
+      if (sector.length > 0) {
+        const placeholders = sector.map(() => '?').join(', ');
+        conditions.push(`EXISTS (SELECT 1 FROM master_business_sector mbs WHERE mbs.code = ${issuerAlias}.business_sector AND mbs.description IN (${placeholders}))`);
+        params.push(...sector);
       }
 
-      if (sector) {
-        conditions.push(`EXISTS (SELECT 1 FROM master_business_sector mbs WHERE mbs.code = ${issuerAlias}.business_sector AND mbs.description = ?)`);
-        params.push(sector);
+      if (nature.length > 0) {
+        const placeholders = nature.map(() => '?').join(', ');
+        conditions.push(`EXISTS (SELECT 1 FROM master_issuer_type_nature mitn WHERE mitn.code = ${issuerAlias}.nature_type AND mitn.description IN (${placeholders}))`);
+        params.push(...nature);
       }
 
-      if (nature) {
-        conditions.push(`EXISTS (SELECT 1 FROM master_issuer_type_nature mitn WHERE mitn.code = ${issuerAlias}.nature_type AND mitn.description = ?)`);
-        params.push(nature);
+      if (ownershipType.length > 0) {
+        const placeholders = ownershipType.map(() => '?').join(', ');
+        conditions.push(`EXISTS (SELECT 1 FROM master_issuer_ownership_type miot WHERE miot.code = ${issuerAlias}.issuer_ownership_type AND miot.description IN (${placeholders}))`);
+        params.push(...ownershipType);
       }
 
-      if (ownershipType) {
-        conditions.push(`EXISTS (SELECT 1 FROM master_issuer_ownership_type miot WHERE miot.code = ${issuerAlias}.issuer_ownership_type AND miot.description = ?)`);
-        params.push(ownershipType);
+      if (creditRatingAgency.length > 0) {
+        const placeholders = creditRatingAgency.map(() => '?').join(', ');
+        conditions.push(`EXISTS (SELECT 1 FROM master_issuer_rating mir_sub2 JOIN master_agency ma_sub ON ma_sub.id = mir_sub2.agency_id WHERE mir_sub2.issuer_id = ${issuerAlias}.id AND ma_sub.short_name IN (${placeholders}))`);
+        params.push(...creditRatingAgency);
       }
 
-      if (creditRatingAgency) {
-        conditions.push(`EXISTS (SELECT 1 FROM master_issuer_rating mir_sub2 JOIN master_agency ma_sub ON ma_sub.id = mir_sub2.agency_id WHERE mir_sub2.issuer_id = ${issuerAlias}.id AND ma_sub.short_name = ?)`);
-        params.push(creditRatingAgency);
+      if (securityType.length > 0) {
+        const placeholders = securityType.map(() => '?').join(', ');
+        conditions.push(`EXISTS (SELECT 1 FROM master_security_type mst WHERE mst.code = ${issuerAlias}.security_class AND mst.description IN (${placeholders}))`);
+        params.push(...securityType);
       }
 
-      if (securityType) {
-        conditions.push(`EXISTS (SELECT 1 FROM master_security_type mst WHERE mst.code = ${issuerAlias}.security_class AND mst.description = ?)`);
-        params.push(securityType);
-      }
-
-      if (modeOfIssue) {
-        conditions.push(`EXISTS (SELECT 1 FROM master_mode_issue mmi WHERE mmi.code = ${issuerAlias}.mode_issue AND mmi.description = ?)`);
-        params.push(modeOfIssue);
+      if (modeOfIssue.length > 0) {
+        const placeholders = modeOfIssue.map(() => '?').join(', ');
+        conditions.push(`EXISTS (SELECT 1 FROM master_mode_issue mmi WHERE mmi.code = ${issuerAlias}.mode_issue AND mmi.description IN (${placeholders}))`);
+        params.push(...modeOfIssue);
       }
 
       if (isin) {
@@ -9440,13 +9455,14 @@ app.post('/rating_agencies_page_credit_rating_data', async (req, res) => {
         params.push(`%${isin}%`);
       }
 
-      if (registrar) {
+      if (registrar.length > 0) {
+        const placeholders = registrar.map(() => '?').join(', ');
         conditions.push(`EXISTS (
           SELECT 1 FROM issuer_registrar ir
           JOIN master_registrar mr ON mr.id = ir.registrar_id
-          WHERE ir.issuer_id = ${issuerAlias}.id AND mr.registrar_name LIKE ?
+          WHERE ir.issuer_id = ${issuerAlias}.id AND mr.registrar_name IN (${placeholders})
         )`);
-        params.push(`%${registrar}%`);
+        params.push(...registrar);
       }
 
       return { conditions, params };
@@ -9498,7 +9514,6 @@ app.post('/rating_agencies_page_credit_rating_data', async (req, res) => {
       queryParams = [sqlStartDate, sqlEndDate, ...filterParams, parsedId];
     } else {
       // Overview: one row per agency with modal rating
-      // Fix: Use a simpler, correct approach - count ratings per agency and pick modal
       creditRatingQuery = `
         SELECT
           MAX(master_agency.short_name) AS label,
