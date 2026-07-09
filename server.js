@@ -3054,20 +3054,27 @@ app.post('/issuer_page_monthly_summary_data', async (req, res) => {
   try {
     const {
       startDate = '2025-04-01',
-      endDate = '2026-03-31',
-      ownershipType = "",
-      sector = "",
-      nature = "",
-      securityType = "",
-      creditRatingAgency = "",
-      modeOfIssue = "",
-      seniority = "",
-      taxFree = "",
-      listingStatus = "",
-      securedFlag = "",
-      rating = "",
-      dealSize = ""
+      endDate = '2026-03-31'
     } = req.body;
+
+    // ── Helper: normalize string/array inputs ──
+    const toArray = (val) => {
+      if (Array.isArray(val)) return val;
+      if (val && typeof val === 'string') return [val];
+      return [];
+    };
+
+    // ── Multi-select filters (arrays) ──
+    const ownershipType      = toArray(req.body.ownershipType);
+    const sector             = toArray(req.body.sector);
+    const nature             = toArray(req.body.nature);
+    const securityType       = toArray(req.body.securityType);
+    const creditRatingAgency = toArray(req.body.creditRatingAgency);
+    const modeOfIssue        = toArray(req.body.modeOfIssue);
+    const seniority          = toArray(req.body.seniority);
+    const listingStatus      = toArray(req.body.listingStatus);
+    const securedFlag        = toArray(req.body.securedFlag);
+    const rating             = toArray(req.body.rating);
 
     // ─── Validate dates ───
     if (!startDate || !endDate) {
@@ -3111,64 +3118,64 @@ app.post('/issuer_page_monthly_summary_data', async (req, res) => {
     conditions.push(`mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)`);
     params.push(cyStart, cyEnd);
 
-    if (rating) {
-      conditions.push(`mir.rating = ?`);
-      params.push(rating);
+    if (rating.length > 0) {
+      const placeholders = rating.map(() => '?').join(', ');
+      conditions.push(`mir.rating IN (${placeholders})`);
+      params.push(...rating);
     }
 
-    if (dealSize) {
-      conditions.push(`mi.issue_size LIKE ?`);
-      params.push(`%${dealSize}%`);
+    if (ownershipType.length > 0) {
+      const placeholders = ownershipType.map(() => '?').join(', ');
+      conditions.push(`miot.description IN (${placeholders})`);
+      params.push(...ownershipType);
     }
 
-    if (ownershipType) {
-      conditions.push(`miot.description = ?`);
-      params.push(ownershipType);
+    if (sector.length > 0) {
+      const placeholders = sector.map(() => '?').join(', ');
+      conditions.push(`mbs.description IN (${placeholders})`);
+      params.push(...sector);
     }
 
-    if (sector) {
-      conditions.push(`mbs.description = ?`);
-      params.push(sector);
+    if (nature.length > 0) {
+      const placeholders = nature.map(() => '?').join(', ');
+      conditions.push(`mint.description IN (${placeholders})`);
+      params.push(...nature);
     }
 
-    if (nature) {
-      conditions.push(`mint.description = ?`);
-      params.push(nature);
+    if (securityType.length > 0) {
+      const placeholders = securityType.map(() => '?').join(', ');
+      conditions.push(`mst.description IN (${placeholders})`);
+      params.push(...securityType);
     }
 
-    if (securityType) {
-      conditions.push(`mst.description = ?`);
-      params.push(securityType);
+    if (creditRatingAgency.length > 0) {
+      const placeholders = creditRatingAgency.map(() => '?').join(', ');
+      conditions.push(`ma.short_name IN (${placeholders})`);
+      params.push(...creditRatingAgency);
     }
 
-    if (creditRatingAgency) {
-      conditions.push(`ma.short_name = ?`);
-      params.push(creditRatingAgency);
+    if (modeOfIssue.length > 0) {
+      const placeholders = modeOfIssue.map(() => '?').join(', ');
+      conditions.push(`mmi.description IN (${placeholders})`);
+      params.push(...modeOfIssue);
     }
 
-    if (modeOfIssue) {
-      conditions.push(`mmi.description = ?`);
-      params.push(modeOfIssue);
+    if (seniority.length > 0) {
+      const placeholders = seniority.map(() => '?').join(', ');
+      conditions.push(`mstc.description IN (${placeholders})`);
+      params.push(...seniority);
     }
 
-    if (seniority) {
-      conditions.push(`mstc.description = ?`);
-      params.push(seniority);
+    if (listingStatus.length > 0) {
+      const placeholders = listingStatus.map(() => '?').join(', ');
+      conditions.push(`mls.description IN (${placeholders})`);
+      params.push(...listingStatus);
     }
 
-    if (taxFree) {
-      conditions.push(`mtf.description = ?`);
-      params.push(taxFree);
-    }
-
-    if (listingStatus) {
-      conditions.push(`mls.description = ?`);
-      params.push(listingStatus);
-    }
-
-    if (securedFlag) {
-      conditions.push(`msf.description = ?`);
-      params.push(securedFlag);
+    if (securedFlag.length > 0) {
+      const placeholders = securedFlag.map(() => '?').join(', ');
+      conditions.push(`msf.description IN (${placeholders})`);
+      params.push(...securedFlag);
     }
 
     const whereClause = conditions.length
@@ -3216,8 +3223,6 @@ app.post('/issuer_page_monthly_summary_data', async (req, res) => {
           ON mmi.code = mi.mode_issue
         LEFT JOIN master_seniority_tier_classification mstc
           ON mstc.code = mi.seniority
-        LEFT JOIN master_tax_free mtf
-          ON mtf.code = mi.tax_free
         LEFT JOIN master_issuer_stock_exchange mise
           ON mise.issuer_id = mi.id
         LEFT JOIN master_listing_status mls
