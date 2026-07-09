@@ -10829,8 +10829,8 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
     const buildInClause = (field, values, useLike = false) => {
       if (!values || (Array.isArray(values) && values.length === 0)) return null;
       const vals = Array.isArray(values)
-        ? values.filter(v => v !== '' && v !== null && v !== undefined)
-        : [values].filter(v => v !== '' && v !== null && v !== undefined);
+        ? values.filter(v => v !== '' && v !== null && v !== undefined).map(v => String(v).trim())
+        : [String(values)].filter(v => v !== '' && v !== null && v !== undefined).map(v => v.trim());
       if (vals.length === 0) return null;
 
       if (useLike) {
@@ -10989,12 +10989,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
     };
 
     // ── Registrar filter variants ──
-    const registrarTableFilter = (() => {
-      const inClause = buildInClause('mr.registrar_name', registrar, true);
-      if (inClause) return { sql: `AND ${inClause.clause}`, params: inClause.params };
-      return { sql: '', params: [] };
-    })();
-
+    // For totals/counts: use EXISTS (more efficient, works with commonJoinsSql)
     const registrarExistsFilter = (() => {
       const inClause = buildInClause('mr.registrar_name', registrar, true);
       if (inClause) {
@@ -11003,6 +10998,13 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
           params: inClause.params
         };
       }
+      return { sql: '', params: [] };
+    })();
+
+    // For table query t1/t2: filter directly in WHERE (needs the mr JOIN)
+    const registrarTableFilter = (() => {
+      const inClause = buildInClause('mr.short_name', registrar, true);
+      if (inClause) return { sql: `AND ${inClause.clause}`, params: inClause.params };
       return { sql: '', params: [] };
     })();
 
@@ -11146,7 +11148,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
         ${t1t2Joins}
         WHERE mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1
         ${t1t2Where}
-        GROUP BY ir.registrar_id
+        GROUP BY ir.registrar_id, mr.id, mr.short_name
         ORDER BY arr_rank
         ${paginationClause}
       ) t1
@@ -11164,7 +11166,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
         ${t1t2Joins}
         WHERE mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1
         ${t1t2Where}
-        GROUP BY ir.registrar_id
+        GROUP BY ir.registrar_id, mr.id, mr.short_name
       ) t2 ON t1.id = t2.id
       ORDER BY t1.arr_rank;
       `;
@@ -11203,7 +11205,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
         ${t1t2Joins}
         WHERE mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1
         ${t1t2Where}
-        GROUP BY ir.registrar_id
+        GROUP BY ir.registrar_id, mr.id, mr.short_name
         ORDER BY arr_rank
         ${paginationClause}
       ) t1
@@ -11221,7 +11223,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
         ${t1t2Joins}
         WHERE mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1
         ${t1t2Where}
-        GROUP BY ir.registrar_id
+        GROUP BY ir.registrar_id, mr.id, mr.short_name
       ) t2 ON t1.id = t2.id
       ORDER BY t1.arr_rank;
       `;
@@ -11272,7 +11274,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
       ${rankJoins}
       WHERE mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1
       ${rankWhere}
-      GROUP BY ir.registrar_id
+      GROUP BY ir.registrar_id, mr.id, mr.short_name
       ORDER BY arr_rank
       LIMIT 10
     `
@@ -11289,13 +11291,13 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
       ${rankJoins}
       WHERE mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1
       ${rankWhere}
-      GROUP BY ir.registrar_id
+      GROUP BY ir.registrar_id, mr.id, mr.short_name
       ORDER BY arr_rank
       LIMIT 10
     `;
 
     const sectorCommonJoins = commonFilters.joins.filter(j => !j.includes('master_business_sector')).join('\n');
-    const sectorJoins = sectorCommonJoins;
+    const sectorJoins = `${sectorCommonJoins}`;
     const sectorWhere = `${commonWhereSql} ${registrarExistsFilter.sql}`;
     const sectorOuterParams = [...commonParams, ...registrarExistsFilter.params];
 
