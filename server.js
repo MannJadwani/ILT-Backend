@@ -4177,7 +4177,7 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
       tableQuery = `
         SELECT
           t1.id,
-          t1.issuer_name,
+          t1.arranger_name,
           t1.no_issues AS cy_issues,
           t1.issue_size AS cy_issue_size,
           t1.arr_rank AS cy_arr_rank,
@@ -4196,7 +4196,7 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
         FROM (
           SELECT
             ma.id,
-            ma.short_name AS issuer_name,
+            ma.short_name AS arranger_name,
             COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS no_issues,
             ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
             RANK() OVER (
@@ -4241,7 +4241,7 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
       tableQuery = `
         SELECT
           t1.id,
-          t1.issuer_name,
+          t1.arranger_name,
           t1.no_issues AS cy_issues,
           t1.issue_size AS cy_issue_size,
           t1.arr_rank AS cy_arr_rank,
@@ -4260,7 +4260,7 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
         FROM (
           SELECT
             ma.id,
-            ma.short_name AS issuer_name,
+            ma.short_name AS arranger_name,
             COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS no_issues,
             ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
             RANK() OVER (
@@ -4329,7 +4329,7 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
         ? `
           SELECT
             ma.id AS arranger_id,
-            ma.short_name AS arranger_name,
+            ma.short_name AS name,
             RANK() OVER (
               ORDER BY COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC, SUM(mi.issue_size) DESC
             ) AS arr_rank
@@ -4345,7 +4345,7 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
         : `
           SELECT
             ma.id AS arranger_id,
-            ma.short_name AS arranger_name,
+            ma.short_name AS name,
             RANK() OVER (
               ORDER BY SUM(mi.issue_size) DESC, COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC
             ) AS arr_rank
@@ -4362,7 +4362,7 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
     const sectorQuery = `
       SELECT
         r.arranger_id AS id,
-        r.arranger_name AS issuer_name,
+        r.arranger_name AS name,
         r.arr_rank,
         mbs.code,
         mbs.description,
@@ -4397,7 +4397,7 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
     const finalResult = tableResult.map((item) => ({
       id: item.id ?? '-',
       rank: item.cy_arr_rank ?? '-',
-      name: item.issuer_name ?? '-',
+      name: item.arranger_name ?? '-',
       currentSize: item.cy_issue_size ?? '-',
       currentDeals: item.cy_issues ?? '-',
       currentMarketShare: item.cy_mkt_share ?? '-',
@@ -6835,7 +6835,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
       tableQuery = `
       SELECT
         t1.id,
-        t1.issuer_name,
+        t1.trustee_name,
         t1.no_issues AS cy_issues,
         t1.issue_size AS cy_issue_size,
         t1.arr_rank AS cy_arr_rank,
@@ -6855,7 +6855,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
       FROM (
         SELECT
           mt.id,
-          mt.short_name AS issuer_name,
+          mt.short_name AS trustee_name,
           COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS no_issues,
           ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
           RANK() OVER (
@@ -6893,7 +6893,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
       tableQuery = `
       SELECT
         t1.id,
-        t1.issuer_name,
+        t1.trustee_name,
         t1.no_issues AS cy_issues,
         t1.issue_size AS cy_issue_size,
         t1.arr_rank AS cy_arr_rank,
@@ -6913,7 +6913,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
       FROM (
         SELECT
           mt.id,
-          mt.short_name AS issuer_name,
+          mt.short_name AS trustee_name,
           COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS no_issues,
           ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
           RANK() OVER (
@@ -6981,7 +6981,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
         ? `
       SELECT
         mt.id AS trustee_id,
-        mt.short_name AS trustee_name,
+        mt.short_name AS name,
         RANK() OVER (
           ORDER BY COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC, SUM(mi.issue_size) DESC
         ) AS arr_rank
@@ -6997,7 +6997,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
         : `
       SELECT
         mt.id AS trustee_id,
-        mt.short_name AS trustee_name,
+        mt.short_name AS name,
         RANK() OVER (
           ORDER BY SUM(mi.issue_size) DESC, COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC
         ) AS arr_rank
@@ -7014,7 +7014,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
     const sectorQuery = `
       SELECT
         r.trustee_id AS id,
-        r.trustee_name AS issuer_name,
+        r.trustee_name AS name,
         r.arr_rank,
         mbs.code,
         mbs.description,
@@ -7048,7 +7048,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
     const finalResult = tableResult.map((item) => ({
       id: item.id ?? '-',
       rank: item.cy_arr_rank ?? '-',
-      name: item.issuer_name ?? '-',
+      name: item.trustee_name ?? '-',
       currentSize: item.cy_issue_size ?? '-',
       currentDeals: item.cy_issues ?? '-',
       currentMarketShare: item.cy_mkt_share ?? '-',
