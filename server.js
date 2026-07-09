@@ -12055,236 +12055,236 @@ app.post('/registrar_page_monthly_summary_data', async (req, res) => {
   try {
     const {
       startDate = '2025-04-01',
-      endDate = '2026-03-31',
-
-      ownershipType = "",
-      sector = "",
-      nature = "",
-      securityType = "",
-      creditRatingAgency = "",
-      modeOfIssue = "",
-      seniority = "",
-      taxFree = "",
-      listingStatus = "",
-      securedFlag = "",
-      rating = "",
-      dealSize = "",
-
-      // optional registrar filter
-      registrar = ""
+      endDate = '2026-03-31'
     } = req.body;
 
-    /* ── VALIDATION ── */
+    // ── Helper: normalize string/array inputs ──
+    const toArray = (val) => {
+      if (Array.isArray(val)) return val;
+      if (val && typeof val === 'string') return [val];
+      return [];
+    };
+
+    // ── Multi-select filters (arrays) ──
+    const ownershipType      = toArray(req.body.ownershipType);
+    const sector             = toArray(req.body.sector);
+    const nature             = toArray(req.body.nature);
+    const securityType       = toArray(req.body.securityType);
+    const creditRatingAgency = toArray(req.body.creditRatingAgency);
+    const modeOfIssue        = toArray(req.body.modeOfIssue);
+    const seniority          = toArray(req.body.seniority);
+    const taxFree            = toArray(req.body.taxFree);
+    const listingStatus      = toArray(req.body.listingStatus);
+    const securedFlag        = toArray(req.body.securedFlag);
+    const rating             = toArray(req.body.rating);
+
+    // ── Single-select filters (strings) ──
+    const dealSize = req.body.dealSize || "";
+    const registrar = req.body.registrar || "";
+
+    // ─── Validate dates ───
     if (!startDate || !endDate) {
       return res.status(400).json({ error: 'startDate and endDate are required' });
     }
 
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    const currentStartDate = new Date(startDate);
+    const currentEndDate = new Date(endDate);
 
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    if (isNaN(currentStartDate.getTime()) || isNaN(currentEndDate.getTime())) {
       return res.status(400).json({ error: 'Invalid date format' });
     }
 
-    if (start > end) {
-      return res.status(400).json({ error: 'startDate must be before or equal to endDate' });
+    if (currentStartDate > currentEndDate) {
+      return res.status(400).json({ error: 'startDate must be before endDate' });
     }
 
-    /* ── BUILD DYNAMIC CONDITIONS ── */
+    // ─── FIX: Full day coverage — start at 00:00:00, end at 23:59:59 ───
+    const cyStart = formatDateForSQL(new Date(Date.UTC(
+      currentStartDate.getUTCFullYear(),
+      currentStartDate.getUTCMonth(),
+      currentStartDate.getUTCDate(),
+      0, 0, 0
+    )));
+    const cyEnd = formatDateForSQL(new Date(Date.UTC(
+      currentEndDate.getUTCFullYear(),
+      currentEndDate.getUTCMonth(),
+      currentEndDate.getUTCDate(),
+      23, 59, 59
+    )));
+
+    // ─── Generate expected month list (chronological, includes empty months) ───
+    const expectedMonths = getMonthsInRange(currentStartDate, currentEndDate);
+
+    /* ---------------------------------
+       BUILD DYNAMIC CONDITIONS
+    --------------------------------- */
     const conditions = [];
     const params = [];
 
     // Base date filter
     conditions.push(`mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1`);
-    params.push(startDate, endDate);
+    params.push(cyStart, cyEnd);
 
-    // Rating
-    if (rating) {
-      conditions.push(`mir.rating = ?`);
-      params.push(rating);
+    // Rating (multi-select)
+    if (rating.length > 0) {
+      const placeholders = rating.map(() => '?').join(', ');
+      conditions.push(`mir.rating IN (${placeholders})`);
+      params.push(...rating);
     }
 
-    // Deal Size
+    // Deal Size (single-select, LIKE filter)
     if (dealSize) {
       conditions.push(`mi.issue_size LIKE ?`);
       params.push(`%${dealSize}%`);
     }
 
-    // Ownership Type
-    if (ownershipType) {
-      conditions.push(`miot.description = ?`);
-      params.push(ownershipType);
+    // Ownership Type (multi-select)
+    if (ownershipType.length > 0) {
+      const placeholders = ownershipType.map(() => '?').join(', ');
+      conditions.push(`miot.description IN (${placeholders})`);
+      params.push(...ownershipType);
     }
 
-    // Sector
-    if (sector) {
-      conditions.push(`mbs.description = ?`);
-      params.push(sector);
+    // Sector (multi-select)
+    if (sector.length > 0) {
+      const placeholders = sector.map(() => '?').join(', ');
+      conditions.push(`mbs.description IN (${placeholders})`);
+      params.push(...sector);
     }
 
-    // Nature
-    if (nature) {
-      conditions.push(`mint.description = ?`);
-      params.push(nature);
+    // Nature (multi-select)
+    if (nature.length > 0) {
+      const placeholders = nature.map(() => '?').join(', ');
+      conditions.push(`mint.description IN (${placeholders})`);
+      params.push(...nature);
     }
 
-    // Security Type
-    if (securityType) {
-      conditions.push(`mst.description = ?`);
-      params.push(securityType);
+    // Security Type (multi-select)
+    if (securityType.length > 0) {
+      const placeholders = securityType.map(() => '?').join(', ');
+      conditions.push(`mst.description IN (${placeholders})`);
+      params.push(...securityType);
     }
 
-    // Credit Rating Agency
-    if (creditRatingAgency) {
-      conditions.push(`rating_agency.short_name = ?`);
-      params.push(creditRatingAgency);
+    // Credit Rating Agency (multi-select)
+    if (creditRatingAgency.length > 0) {
+      const placeholders = creditRatingAgency.map(() => '?').join(', ');
+      conditions.push(`rating_agency.short_name IN (${placeholders})`);
+      params.push(...creditRatingAgency);
     }
 
-    // Mode Of Issue
-    if (modeOfIssue) {
-      conditions.push(`mmi.description = ?`);
-      params.push(modeOfIssue);
+    // Mode Of Issue (multi-select)
+    if (modeOfIssue.length > 0) {
+      const placeholders = modeOfIssue.map(() => '?').join(', ');
+      conditions.push(`mmi.description IN (${placeholders})`);
+      params.push(...modeOfIssue);
     }
 
-    // Seniority
-    if (seniority) {
-      conditions.push(`mstc.description = ?`);
-      params.push(seniority);
+    // Seniority (multi-select)
+    if (seniority.length > 0) {
+      const placeholders = seniority.map(() => '?').join(', ');
+      conditions.push(`mstc.description IN (${placeholders})`);
+      params.push(...seniority);
     }
 
-    // Tax Free
-    if (taxFree) {
-      conditions.push(`mtf.description = ?`);
-      params.push(taxFree);
+    // Tax Free (multi-select)
+    if (taxFree.length > 0) {
+      const placeholders = taxFree.map(() => '?').join(', ');
+      conditions.push(`mtf.description IN (${placeholders})`);
+      params.push(...taxFree);
     }
 
-    // Listing Status
-    if (listingStatus) {
-      conditions.push(`mls.description = ?`);
-      params.push(listingStatus);
+    // Listing Status (multi-select)
+    if (listingStatus.length > 0) {
+      const placeholders = listingStatus.map(() => '?').join(', ');
+      conditions.push(`mls.description IN (${placeholders})`);
+      params.push(...listingStatus);
     }
 
-    // Secured Flag
-    if (securedFlag) {
-      conditions.push(`msf.description = ?`);
-      params.push(securedFlag);
+    // Secured Flag (multi-select)
+    if (securedFlag.length > 0) {
+      const placeholders = securedFlag.map(() => '?').join(', ');
+      conditions.push(`msf.description IN (${placeholders})`);
+      params.push(...securedFlag);
     }
 
-    // Registrar
+    // Registrar (single-select, LIKE filter)
     if (registrar) {
-      conditions.push(`registrar_master.short_name = ?`);
-      params.push(registrar);
+      conditions.push(`registrar_master.short_name LIKE ?`);
+      params.push(`%${registrar}%`);
     }
 
-    const whereClause = `WHERE ${conditions.join(' AND ')}`;
+    const whereClause = conditions.length
+      ? `WHERE ${conditions.join(' AND ')}`
+      : '';
 
-    /* ── MAIN QUERY ── */
+    /* ---------------------------------
+       MAIN QUERY
+    --------------------------------- */
     const query = `
       SELECT
-          am.month_no AS issue_month_no,
-
-          MONTHNAME(
-              STR_TO_DATE(am.month_no, '%m')
-          ) AS issue_month,
-
-          COUNT(filtered_data.isin) AS no_of_issue,
-
-          COALESCE(ROUND(SUM(filtered_data.issue_size) / 10000000, 2), 0) AS issue_size,
-
-          COALESCE(SUM(filtered_data.issue_size), 0) AS actual_issue_size
-
-      FROM all_months am
-
-      LEFT JOIN (
-
-          /* ── UNIQUE FILTERED DATA ── */
-
-          SELECT DISTINCT
-              mi.id,
-              mi.isin,
-              ir.registrar_id,
-              mi.issue_size,
-              mi.allotment_date
-
-          FROM master_issuer mi
-
-          /* ── REGISTRAR RELATIONS ── */
-
-          INNER JOIN issuer_registrar ir
-              ON ir.issuer_id = mi.id
-
-          INNER JOIN master_registrar registrar_master
-              ON registrar_master.id = ir.registrar_id
-
-          /* ── OWNERSHIP TYPE ── */
-
-          LEFT JOIN master_issuer_ownership_type miot
-              ON miot.code = mi.issuer_ownership_type
-
-          /* ── BUSINESS SECTOR ── */
-
-          LEFT JOIN master_business_sector mbs
-              ON mbs.code = mi.business_sector
-
-          /* ── NATURE ── */
-
-          LEFT JOIN master_issuer_type_nature mint
-              ON mint.code = mi.nature_type
-
-          /* ── SECURITY TYPE ── */
-
-          LEFT JOIN master_security_type mst
-              ON mst.code = mi.security_class
-
-          /* ── CREDIT RATING ── */
-
-          LEFT JOIN master_issuer_rating mir
-              ON mir.issuer_id = mi.id
-
-          LEFT JOIN master_agency rating_agency
-              ON rating_agency.id = mir.agency_id
-              AND rating_agency.parent_id = 0
-
-          /* ── MODE OF ISSUE ── */
-
-          LEFT JOIN master_mode_issue mmi
-              ON mmi.code = mi.mode_issue
-
-          /* ── SENIORITY ── */
-
-          LEFT JOIN master_seniority_tier_classification mstc
-              ON mstc.code = mi.seniority
-
-          /* ── TAX FREE ── */
-
-          LEFT JOIN master_tax_free mtf
-              ON mtf.code = mi.tax_free
-
-          /* ── LISTING STATUS ── */
-
-          LEFT JOIN master_issuer_stock_exchange mise
-              ON mise.issuer_id = mi.id
-
-          LEFT JOIN master_listing_status mls
-              ON mls.code = mise.listing_status
-
-          /* ── SECURED FLAG ── */
-
-          LEFT JOIN master_secured_flag msf
-              ON msf.code = mi.secured_flag
-
-          ${whereClause}
-
-      ) AS filtered_data
-
-      ON am.month_no = MONTH(filtered_data.allotment_date)
-
-      GROUP BY am.id, am.month_no
-
-      ORDER BY am.id ASC
+        MONTH(fi.allotment_date) AS issue_month_no,
+        MONTHNAME(fi.allotment_date) AS issue_month,
+        COUNT(DISTINCT CONCAT(fi.id, '-', fi.registrar_id)) AS no_of_issue,
+        IF(
+          SUM(fi.issue_size) > 0,
+          ROUND(SUM(fi.issue_size) / 10000000, 2),
+          0
+        ) AS issue_size,
+        SUM(fi.issue_size) AS actual_issue_size
+      FROM (
+        SELECT DISTINCT
+          mi.id,
+          ir.registrar_id,
+          mi.isin,
+          mi.issue_size,
+          mi.allotment_date
+        FROM master_issuer mi
+        INNER JOIN issuer_registrar ir
+          ON ir.issuer_id = mi.id
+        INNER JOIN master_registrar registrar_master
+          ON registrar_master.id = ir.registrar_id
+        LEFT JOIN master_issuer_ownership_type miot
+          ON miot.code = mi.issuer_ownership_type
+        LEFT JOIN master_business_sector mbs
+          ON mbs.code = mi.business_sector
+        LEFT JOIN master_issuer_type_nature mint
+          ON mint.code = mi.nature_type
+        LEFT JOIN master_security_type mst
+          ON mst.code = mi.security_class
+        LEFT JOIN master_issuer_rating mir
+          ON mir.issuer_id = mi.id
+        LEFT JOIN master_agency rating_agency
+          ON rating_agency.id = mir.agency_id
+          AND rating_agency.parent_id = 0
+        LEFT JOIN master_mode_issue mmi
+          ON mmi.code = mi.mode_issue
+        LEFT JOIN master_seniority_tier_classification mstc
+          ON mstc.code = mi.seniority
+        LEFT JOIN master_tax_free mtf
+          ON mtf.code = mi.tax_free
+        LEFT JOIN master_issuer_stock_exchange mise
+          ON mise.issuer_id = mi.id
+        LEFT JOIN master_listing_status mls
+          ON mls.code = mise.listing_status
+        LEFT JOIN master_secured_flag msf
+          ON msf.code = mi.secured_flag
+        ${whereClause}
+      ) AS fi
+      GROUP BY
+        MONTH(fi.allotment_date),
+        MONTHNAME(fi.allotment_date)
+      ORDER BY
+        MONTH(fi.allotment_date) ASC
     `;
 
     const result = await prisma.$queryRawUnsafe(query, ...params);
+
+    // ─── FIX: Merge SQL results with expected month list (includes empty months) ───
+    const resultMap = new Map();
+    for (const row of result) {
+      resultMap.set(Number(row.issue_month_no), row);
+    }
 
     // Safe number extraction from BigInt
     const safeNumber = (val) => {
@@ -12292,22 +12292,25 @@ app.post('/registrar_page_monthly_summary_data', async (req, res) => {
       return typeof val === 'bigint' ? Number(val) : Number(val) || 0;
     };
 
-    const finalResult = result.map((item) => ({
-      issueMonthNo: item?.issue_month_no || '-',
-      issueMonth: item?.issue_month || '-',
-      noOfIssue: safeNumber(item?.no_of_issue),
-      issueSize: safeNumber(item?.issue_size),
-      actualIssueSize: safeNumber(item?.actual_issue_size)
-    }));
+    const finalResult = expectedMonths.map((month) => {
+      const data = resultMap.get(month.monthNo);
+      return {
+        issueMonthNo: month.monthNo,
+        issueMonth: month.monthName,
+        noOfIssue: data ? safeNumber(data.no_of_issue) : 0,
+        issueSize: data ? safeNumber(data.issue_size) : 0,
+        actualIssueSize: data ? safeNumber(data.actual_issue_size) : 0
+      };
+    });
 
     res.status(200).json({
+      success: true,
       totalRows: finalResult.length,
       data: finalResult
     });
 
   } catch (error) {
     console.error('Error in registrar_page_monthly_summary_data:', error);
-
     res.status(500).json({
       error: 'Failed to fetch registrar monthly summary data',
       message: error.message
