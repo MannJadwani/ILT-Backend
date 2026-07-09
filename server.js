@@ -11209,7 +11209,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
         ? `
       SELECT
         mr.id AS registrar_id,
-        mr.short_name AS registrar_name,
+        mr.short_name AS name,
         RANK() OVER (
           ORDER BY SUM(mi.issue_size)DESC, COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC
         ) AS arr_rank
@@ -11226,7 +11226,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
         : `
       SELECT
         mr.id AS registrar_id,
-        mr.short_name AS registrar_name,
+        mr.short_name AS name,
         RANK() OVER (
           ORDER BY SUM(mi.issue_size)DESC, COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC
         ) AS arr_rank
@@ -11249,7 +11249,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
     const sectorQuery = `
       SELECT
         r.registrar_id AS id,
-        r.registrar_name AS registrar_name,
+        r.registrar_name AS name,
         r.arr_rank,
         mbs.code,
         mbs.description,
