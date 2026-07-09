@@ -4329,7 +4329,7 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
         ? `
           SELECT
             ma.id AS arranger_id,
-            ma.short_name AS name,
+            ma.short_name AS arranger_name,
             RANK() OVER (
               ORDER BY COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC, SUM(mi.issue_size) DESC
             ) AS arr_rank
@@ -4345,7 +4345,7 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
         : `
           SELECT
             ma.id AS arranger_id,
-            ma.short_name AS name,
+            ma.short_name AS arranger_name,
             RANK() OVER (
               ORDER BY SUM(mi.issue_size) DESC, COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC
             ) AS arr_rank
@@ -6981,7 +6981,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
         ? `
       SELECT
         mt.id AS trustee_id,
-        mt.short_name AS name,
+        mt.short_name AS trustee_name,
         RANK() OVER (
           ORDER BY COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC, SUM(mi.issue_size) DESC
         ) AS arr_rank
@@ -6997,7 +6997,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
         : `
       SELECT
         mt.id AS trustee_id,
-        mt.short_name AS name,
+        mt.short_name AS trustee_name,
         RANK() OVER (
           ORDER BY SUM(mi.issue_size) DESC, COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC
         ) AS arr_rank
@@ -11209,7 +11209,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
         ? `
       SELECT
         mr.id AS registrar_id,
-        mr.short_name AS name,
+        mr.short_name AS registrar_name,
         RANK() OVER (
           ORDER BY SUM(mi.issue_size)DESC, COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC
         ) AS arr_rank
@@ -11226,7 +11226,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
         : `
       SELECT
         mr.id AS registrar_id,
-        mr.short_name AS name,
+        mr.short_name AS registrar_name,
         RANK() OVER (
           ORDER BY SUM(mi.issue_size)DESC, COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC
         ) AS arr_rank
