@@ -11872,26 +11872,37 @@ app.post('/registrars_page_credit_rating_data', async (req, res) => {
 });
 
 app.post('/registrarPage_detailed_data', async (req, res) => {
-  const {
-    startDate = '2025-01-01',
-    endDate = '2026-01-01',
-    limit = 25,
-    offset = 0,
-    search = "",
-    rating = "",
-    registrar = "",
-    seniority = "",
-    securedFlag = "",
-    sector = "",
-    nature = "",
-    ownershipType = "",
-    creditRatingAgency = "",
-    listingStatus = "",
-    securityType = "",
-    modeOfIssue = ""
-  } = req.body;
-
   try {
+    const {
+      startDate = '2025-01-01',
+      endDate = '2026-01-01',
+      limit = 25,
+      offset = 0,
+      search = ""
+    } = req.body;
+
+    // ── Helper: normalize string/array inputs ──
+    const toArray = (val) => {
+      if (Array.isArray(val)) return val;
+      if (val && typeof val === 'string') return [val];
+      return [];
+    };
+
+    // ── Multi-select filters (arrays) ──
+    const rating             = toArray(req.body.rating);
+    const seniority          = toArray(req.body.seniority);
+    const securedFlag        = toArray(req.body.securedFlag);
+    const sector             = toArray(req.body.sector);
+    const nature             = toArray(req.body.nature);
+    const ownershipType      = toArray(req.body.ownershipType);
+    const creditRatingAgency = toArray(req.body.creditRatingAgency);
+    const listingStatus      = toArray(req.body.listingStatus);
+    const securityType       = toArray(req.body.securityType);
+    const modeOfIssue        = toArray(req.body.modeOfIssue);
+
+    // ── Single-select filters (strings) ──
+    const registrar = req.body.registrar || "";
+
     // ── VALIDATION ──
     const parsedLimit = parseInt(limit, 10);
     const parsedOffset = parseInt(offset, 10);
@@ -11904,18 +11915,37 @@ app.post('/registrarPage_detailed_data', async (req, res) => {
     }
 
     // Validate dates
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    const currentStartDate = new Date(startDate);
+    const currentEndDate = new Date(endDate);
+
+    if (isNaN(currentStartDate.getTime()) || isNaN(currentEndDate.getTime())) {
       return res.status(400).json({ error: 'Invalid date format' });
     }
+
+    if (currentStartDate > currentEndDate) {
+      return res.status(400).json({ error: 'startDate must be before endDate' });
+    }
+
+    // ─── FIX: Full day coverage — start at 00:00:00, end at 23:59:59 ───
+    const cyStart = formatDateForSQL(new Date(Date.UTC(
+      currentStartDate.getUTCFullYear(),
+      currentStartDate.getUTCMonth(),
+      currentStartDate.getUTCDate(),
+      0, 0, 0
+    )));
+    const cyEnd = formatDateForSQL(new Date(Date.UTC(
+      currentEndDate.getUTCFullYear(),
+      currentEndDate.getUTCMonth(),
+      currentEndDate.getUTCDate(),
+      23, 59, 59
+    )));
 
     // ── DYNAMIC WHERE CONDITIONS ──
     const conditions = [];
     const params = [];
 
     conditions.push(`master_issuer.allotment_date BETWEEN ? AND ? AND master_issuer.is_visible = 1`);
-    params.push(startDate, endDate);
+    params.push(cyStart, cyEnd);
 
     conditions.push(`
       EXISTS (
@@ -11925,7 +11955,7 @@ app.post('/registrarPage_detailed_data', async (req, res) => {
       )
     `);
 
-    // Search by issuer name or ISIN
+    // Search by issuer name or ISIN (single-select LIKE)
     if (search) {
       conditions.push(`(
         issuer_details.issuer_name LIKE ? 
@@ -11934,56 +11964,77 @@ app.post('/registrarPage_detailed_data', async (req, res) => {
       params.push(`%${search}%`, `%${search}%`);
     }
 
-    if (rating) {
-      conditions.push(`master_issuer_rating.rating = ?`);
-      params.push(rating);
+    // Rating (multi-select)
+    if (rating.length > 0) {
+      const placeholders = rating.map(() => '?').join(', ');
+      conditions.push(`master_issuer_rating.rating IN (${placeholders})`);
+      params.push(...rating);
     }
 
-    if (listingStatus) {
-      conditions.push(`listing_data.listing_status = ?`);
-      params.push(listingStatus);
+    // Listing Status (multi-select)
+    if (listingStatus.length > 0) {
+      const placeholders = listingStatus.map(() => '?').join(', ');
+      conditions.push(`listing_data.listing_status IN (${placeholders})`);
+      params.push(...listingStatus);
     }
 
-    if (seniority) {
-      conditions.push(`master_seniority_tier_classification.description = ?`);
-      params.push(seniority);
+    // Seniority (multi-select)
+    if (seniority.length > 0) {
+      const placeholders = seniority.map(() => '?').join(', ');
+      conditions.push(`master_seniority_tier_classification.description IN (${placeholders})`);
+      params.push(...seniority);
     }
 
-    if (securedFlag) {
-      conditions.push(`master_secured_flag.description = ?`);
-      params.push(securedFlag);
+    // Secured Flag (multi-select)
+    if (securedFlag.length > 0) {
+      const placeholders = securedFlag.map(() => '?').join(', ');
+      conditions.push(`master_secured_flag.description IN (${placeholders})`);
+      params.push(...securedFlag);
     }
 
-    if (sector) {
-      conditions.push(`master_business_sector.description = ?`);
-      params.push(sector);
+    // Sector (multi-select)
+    if (sector.length > 0) {
+      const placeholders = sector.map(() => '?').join(', ');
+      conditions.push(`master_business_sector.description IN (${placeholders})`);
+      params.push(...sector);
     }
 
-    if (nature) {
-      conditions.push(`master_issuer_type_nature.description = ?`);
-      params.push(nature);
+    // Nature (multi-select)
+    if (nature.length > 0) {
+      const placeholders = nature.map(() => '?').join(', ');
+      conditions.push(`master_issuer_type_nature.description IN (${placeholders})`);
+      params.push(...nature);
     }
 
-    if (ownershipType) {
-      conditions.push(`master_issuer_ownership_type.description = ?`);
-      params.push(ownershipType);
+    // Ownership Type (multi-select)
+    if (ownershipType.length > 0) {
+      const placeholders = ownershipType.map(() => '?').join(', ');
+      conditions.push(`master_issuer_ownership_type.description IN (${placeholders})`);
+      params.push(...ownershipType);
     }
 
-    if (creditRatingAgency) {
-      conditions.push(`master_agency.short_name = ?`);
-      params.push(creditRatingAgency);
+    // Credit Rating Agency (multi-select)
+    if (creditRatingAgency.length > 0) {
+      const placeholders = creditRatingAgency.map(() => '?').join(', ');
+      conditions.push(`master_agency.short_name IN (${placeholders})`);
+      params.push(...creditRatingAgency);
     }
 
-    if (securityType) {
-      conditions.push(`master_security_type.description = ?`);
-      params.push(securityType);
+    // Security Type (multi-select)
+    if (securityType.length > 0) {
+      const placeholders = securityType.map(() => '?').join(', ');
+      conditions.push(`master_security_type.description IN (${placeholders})`);
+      params.push(...securityType);
     }
 
-    if (modeOfIssue) {
-      conditions.push(`master_mode_issue.description = ?`);
-      params.push(modeOfIssue);
+    // Mode Of Issue (multi-select)
+    if (modeOfIssue.length > 0) {
+      const placeholders = modeOfIssue.map(() => '?').join(', ');
+      conditions.push(`master_mode_issue.description IN (${placeholders})`);
+      params.push(...modeOfIssue);
     }
 
+    // Registrar (single-select, LIKE filter)
     if (registrar) {
       conditions.push(`master_registrar.registrar_name LIKE ?`);
       params.push(`%${registrar}%`);
@@ -12201,11 +12252,11 @@ app.post('/registrarPage_detailed_data', async (req, res) => {
         securityName: item?.security_name || '-',
         securityType: item?.security_type || '-',
         modeOfIssue: item?.mode_of_issue || '-',
-        issueSize: item?.issue_size || null,
-        faceValue: item?.face_value || null,
+        issueSize: item?.issue_size ?? null,
+        faceValue: item?.face_value ?? null,
         allotmentDate: formatDateSafe(item?.allotment_date) || '-',
         maturityDate: formatDateSafe(item?.maturity_date) || '-',
-        couponRate: item?.coupon_rate || '-',
+        couponRate: item?.coupon_rate ?? '-',
         creditRatingAgency: item?.credit_rating_agency || '-',
         creditRating: item?.credit_rating || '-',
         debentureTrustee: item?.debenture_trustee || '-',
@@ -12223,6 +12274,7 @@ app.post('/registrarPage_detailed_data', async (req, res) => {
 
     // ── RESPONSE ──
     res.status(200).json({
+      success: true,
       data: finalResult,
       pagination: {
         total,
