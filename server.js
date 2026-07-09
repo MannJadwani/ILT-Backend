@@ -10942,10 +10942,10 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
       ? registrar.map(() => '?').join(', ')
       : '';
     const registrarWhere = registrar.length > 0
-      ? `AND mr.registrar_name IN (${registrarPlaceholders})`
+      ? `AND mr.short_name IN (${registrarPlaceholders})`
       : '';
     const registrarExistsWhere = registrar.length > 0
-      ? `AND EXISTS (SELECT 1 FROM master_registrar mr WHERE mr.id = ir.registrar_id AND mr.registrar_name IN (${registrarPlaceholders}))`
+      ? `AND EXISTS (SELECT 1 FROM master_registrar mr WHERE mr.id = ir.registrar_id AND mr.short_name IN (${registrarPlaceholders}))`
       : '';
 
     /* ── TOTALS (common filters only) ── */
@@ -11319,7 +11319,6 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
     });
   }
 });
-
 app.post('/registrars_page_credit_rating_data', async (req, res) => {
   try {
     const {
