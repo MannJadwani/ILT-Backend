@@ -9759,33 +9759,42 @@ app.post('/rating_agencies_page_credit_rating_data', async (req, res) => {
 });
 
 app.post('/agencyPage_detailed_data', async (req, res) => {
-  const {
-    startDate = '2025-01-01',
-    endDate = '2026-01-01',
-    limit = 25,
-    offset = 0,
-    search = "",
-    issuerName = "",
-    rating = "",
-    registrar = "",
-    arranger = "",
-    seniority = "",
-    securedFlag = "",
-    sector = "",
-    trustee = "",
-    nature = "",
-    ownershipType = "",
-    creditRatingAgency = "",
-    listingStatus = "",
-    securityType = "",
-    modeOfIssue = "",
-    isin = ""
-  } = req.body;
-
   try {
-    // ---------------------
-    // INPUT VALIDATION
-    // ---------------------
+    const {
+      startDate = '2025-01-01',
+      endDate = '2026-01-01',
+      limit = 25,
+      offset = 0,
+      search = ""
+    } = req.body;
+
+    // ── Helper: normalize string/array inputs ──
+    const toArray = (val) => {
+      if (Array.isArray(val)) return val;
+      if (val && typeof val === 'string') return [val];
+      return [];
+    };
+
+    // ── Multi-select filters (arrays) ──
+    const rating             = toArray(req.body.rating);
+    const seniority          = toArray(req.body.seniority);
+    const securedFlag        = toArray(req.body.securedFlag);
+    const sector             = toArray(req.body.sector);
+    const trustee            = toArray(req.body.trustee);
+    const nature             = toArray(req.body.nature);
+    const ownershipType      = toArray(req.body.ownershipType);
+    const creditRatingAgency = toArray(req.body.creditRatingAgency);
+    const listingStatus      = toArray(req.body.listingStatus);
+    const securityType       = toArray(req.body.securityType);
+    const modeOfIssue        = toArray(req.body.modeOfIssue);
+
+    // ── Single-select filters (strings) ──
+    const issuerName = req.body.issuerName || "";
+    const isin       = req.body.isin || "";
+    const arranger   = req.body.arranger || "";
+    const registrar  = req.body.registrar || "";
+
+    // ── INPUT VALIDATION ──
     const parsedLimit = parseInt(limit, 10);
     const parsedOffset = parseInt(offset, 10);
 
@@ -9796,34 +9805,39 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
       return res.status(400).json({ error: 'offset must be a non-negative integer' });
     }
 
-    // Validate and format dates
-    const formatDateTime = (dateStr, isEnd = false) => {
-      const date = new Date(dateStr);
-      if (isNaN(date.getTime())) return null;
-      if (isEnd) {
-        date.setHours(23, 59, 59, 0);
-      } else {
-        date.setHours(0, 0, 0, 0);
-      }
-      return date.toISOString().slice(0, 19).replace('T', ' ');
-    };
+    // Validate dates
+    const currentStartDate = new Date(startDate);
+    const currentEndDate = new Date(endDate);
 
-    const sqlStartDate = formatDateTime(startDate, false);
-    const sqlEndDate = formatDateTime(endDate, true);
-
-    if (!sqlStartDate || !sqlEndDate) {
+    if (isNaN(currentStartDate.getTime()) || isNaN(currentEndDate.getTime())) {
       return res.status(400).json({ error: 'Invalid date format' });
     }
 
-    // ---------------------
-    // Dynamic WHERE conditions
-    // ---------------------
+    if (currentStartDate > currentEndDate) {
+      return res.status(400).json({ error: 'startDate must be before endDate' });
+    }
+
+    // ─── FIX: Full day coverage — start at 00:00:00, end at 23:59:59 ───
+    const cyStart = formatDateForSQL(new Date(Date.UTC(
+      currentStartDate.getUTCFullYear(),
+      currentStartDate.getUTCMonth(),
+      currentStartDate.getUTCDate(),
+      0, 0, 0
+    )));
+    const cyEnd = formatDateForSQL(new Date(Date.UTC(
+      currentEndDate.getUTCFullYear(),
+      currentEndDate.getUTCMonth(),
+      currentEndDate.getUTCDate(),
+      23, 59, 59
+    )));
+
+    // ── Dynamic WHERE conditions ──
     const conditions = [];
     const params = [];
 
     // Base conditions
     conditions.push(`master_issuer.allotment_date BETWEEN ? AND ? AND (master_issuer.is_visible = 1)`);
-    params.push(sqlStartDate, sqlEndDate);
+    params.push(cyStart, cyEnd);
 
     conditions.push(`
       EXISTS (
@@ -9833,105 +9847,127 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
       )
     `);
 
-    // ---------------------
-    // Filters (using EXISTS for one-to-many to avoid Cartesian product)
-    // ---------------------
+    // ── Filters (using EXISTS with IN for multi-select) ──
+
+    // Issuer Name (single-select, LIKE filter)
     if (issuerName) {
       conditions.push(`issuer_details.issuer_name LIKE ?`);
       params.push(`%${issuerName}%`);
     }
 
-    if (rating) {
-      conditions.push(`EXISTS (SELECT 1 FROM master_issuer_rating mir WHERE mir.issuer_id = master_issuer.id AND mir.rating = ?)`);
-      params.push(rating);
+    // Rating (multi-select)
+    if (rating.length > 0) {
+      const placeholders = rating.map(() => '?').join(', ');
+      conditions.push(`EXISTS (SELECT 1 FROM master_issuer_rating mir WHERE mir.issuer_id = master_issuer.id AND mir.rating IN (${placeholders}))`);
+      params.push(...rating);
     }
 
-    if (listingStatus) {
+    // Listing Status (multi-select)
+    if (listingStatus.length > 0) {
+      const placeholders = listingStatus.map(() => '?').join(', ');
       conditions.push(`EXISTS (
         SELECT 1
         FROM master_issuer_stock_exchange mise
         LEFT JOIN master_listing_status mls ON mls.code = mise.listing_status
-        WHERE mise.issuer_id = master_issuer.id AND mls.description = ?
+        WHERE mise.issuer_id = master_issuer.id AND mls.description IN (${placeholders})
       )`);
-      params.push(listingStatus);
+      params.push(...listingStatus);
     }
 
-    if (seniority) {
-      conditions.push(`EXISTS (SELECT 1 FROM master_seniority_tier_classification mstc WHERE mstc.code = master_issuer.seniority AND mstc.description = ?)`);
-      params.push(seniority);
+    // Seniority (multi-select)
+    if (seniority.length > 0) {
+      const placeholders = seniority.map(() => '?').join(', ');
+      conditions.push(`EXISTS (SELECT 1 FROM master_seniority_tier_classification mstc WHERE mstc.code = master_issuer.seniority AND mstc.description IN (${placeholders}))`);
+      params.push(...seniority);
     }
 
-    if (securedFlag) {
-      conditions.push(`EXISTS (SELECT 1 FROM master_secured_flag msf WHERE msf.code = master_issuer.secured_flag AND msf.description = ?)`);
-      params.push(securedFlag);
+    // Secured Flag (multi-select)
+    if (securedFlag.length > 0) {
+      const placeholders = securedFlag.map(() => '?').join(', ');
+      conditions.push(`EXISTS (SELECT 1 FROM master_secured_flag msf WHERE msf.code = master_issuer.secured_flag AND msf.description IN (${placeholders}))`);
+      params.push(...securedFlag);
     }
 
-    if (sector) {
-      conditions.push(`EXISTS (SELECT 1 FROM master_business_sector mbs WHERE mbs.code = master_issuer.business_sector AND mbs.description = ?)`);
-      params.push(sector);
+    // Sector (multi-select)
+    if (sector.length > 0) {
+      const placeholders = sector.map(() => '?').join(', ');
+      conditions.push(`EXISTS (SELECT 1 FROM master_business_sector mbs WHERE mbs.code = master_issuer.business_sector AND mbs.description IN (${placeholders}))`);
+      params.push(...sector);
     }
 
-    if (trustee) {
-      conditions.push(`EXISTS (SELECT 1 FROM issuer_trustee it JOIN master_trustee mt ON mt.id = it.trustee_id WHERE it.issuer_id = master_issuer.id AND mt.short_name LIKE ?)`);
-      params.push(`%${trustee}%`);
+    // Trustee (multi-select)
+    if (trustee.length > 0) {
+      const placeholders = trustee.map(() => '?').join(', ');
+      conditions.push(`EXISTS (SELECT 1 FROM issuer_trustee it JOIN master_trustee mt ON mt.id = it.trustee_id WHERE it.issuer_id = master_issuer.id AND mt.short_name IN (${placeholders}))`);
+      params.push(...trustee);
     }
 
-    if (nature) {
-      conditions.push(`EXISTS (SELECT 1 FROM master_issuer_type_nature mitn WHERE mitn.code = master_issuer.nature_type AND mitn.description = ?)`);
-      params.push(nature);
+    // Nature (multi-select)
+    if (nature.length > 0) {
+      const placeholders = nature.map(() => '?').join(', ');
+      conditions.push(`EXISTS (SELECT 1 FROM master_issuer_type_nature mitn WHERE mitn.code = master_issuer.nature_type AND mitn.description IN (${placeholders}))`);
+      params.push(...nature);
     }
 
-    if (ownershipType) {
-      conditions.push(`EXISTS (SELECT 1 FROM master_issuer_ownership_type miot WHERE miot.code = master_issuer.issuer_ownership_type AND miot.description = ?)`);
-      params.push(ownershipType);
+    // Ownership Type (multi-select)
+    if (ownershipType.length > 0) {
+      const placeholders = ownershipType.map(() => '?').join(', ');
+      conditions.push(`EXISTS (SELECT 1 FROM master_issuer_ownership_type miot WHERE miot.code = master_issuer.issuer_ownership_type AND miot.description IN (${placeholders}))`);
+      params.push(...ownershipType);
     }
 
-    if (creditRatingAgency) {
-      conditions.push(`EXISTS (SELECT 1 FROM master_issuer_rating mir2 JOIN master_agency ma2 ON ma2.id = mir2.agency_id WHERE mir2.issuer_id = master_issuer.id AND ma2.short_name = ?)`);
-      params.push(creditRatingAgency);
+    // Credit Rating Agency (multi-select)
+    if (creditRatingAgency.length > 0) {
+      const placeholders = creditRatingAgency.map(() => '?').join(', ');
+      conditions.push(`EXISTS (SELECT 1 FROM master_issuer_rating mir2 JOIN master_agency ma2 ON ma2.id = mir2.agency_id WHERE mir2.issuer_id = master_issuer.id AND ma2.short_name IN (${placeholders}))`);
+      params.push(...creditRatingAgency);
     }
 
-    if (securityType) {
-      conditions.push(`EXISTS (SELECT 1 FROM master_security_type mst WHERE mst.code = master_issuer.security_class AND mst.description = ?)`);
-      params.push(securityType);
+    // Security Type (multi-select)
+    if (securityType.length > 0) {
+      const placeholders = securityType.map(() => '?').join(', ');
+      conditions.push(`EXISTS (SELECT 1 FROM master_security_type mst WHERE mst.code = master_issuer.security_class AND mst.description IN (${placeholders}))`);
+      params.push(...securityType);
     }
 
-    if (modeOfIssue) {
-      conditions.push(`EXISTS (SELECT 1 FROM master_mode_issue mmi WHERE mmi.code = master_issuer.mode_issue AND mmi.description = ?)`);
-      params.push(modeOfIssue);
+    // Mode Of Issue (multi-select)
+    if (modeOfIssue.length > 0) {
+      const placeholders = modeOfIssue.map(() => '?').join(', ');
+      conditions.push(`EXISTS (SELECT 1 FROM master_mode_issue mmi WHERE mmi.code = master_issuer.mode_issue AND mmi.description IN (${placeholders}))`);
+      params.push(...modeOfIssue);
     }
 
+    // ISIN (single-select, LIKE filter)
     if (isin) {
       conditions.push(`master_issuer.isin LIKE ?`);
       params.push(`%${isin}%`);
     }
 
+    // Search (single-select, LIKE filter on issuer_name or isin)
     if (search) {
       conditions.push(`(issuer_details.issuer_name LIKE ? OR master_issuer.isin LIKE ?)`);
       params.push(`%${search}%`, `%${search}%`);
     }
 
+    // Arranger (single-select, LIKE filter)
     if (arranger) {
       conditions.push(`EXISTS (SELECT 1 FROM issuer_arranger ia JOIN master_arranger ma ON ma.id = ia.arranger_id WHERE ia.issuer_id = master_issuer.id AND ma.short_name LIKE ?)`);
       params.push(`%${arranger}%`);
     }
 
+    // Registrar (single-select, LIKE filter)
     if (registrar) {
       conditions.push(`EXISTS (SELECT 1 FROM issuer_registrar ir JOIN master_registrar mr ON mr.id = ir.registrar_id WHERE ir.issuer_id = master_issuer.id AND mr.registrar_name LIKE ?)`);
       params.push(`%${registrar}%`);
     }
 
-    // ---------------------
-    // WHERE clause
-    // ---------------------
+    // ── WHERE clause ──
     const whereClause =
       conditions.length > 0
         ? `WHERE ${conditions.join(' AND ')}`
         : '';
 
-    // ---------------------
-    // Main data query (no Cartesian product)
-    // ---------------------
+    // ── Main data query (no Cartesian product) ──
     const dataQuery = `
       SELECT
         master_issuer.id,
@@ -10065,9 +10101,7 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
       LIMIT ? OFFSET ?
     `;
 
-    // ---------------------
-    // Count query
-    // ---------------------
+    // ── Count query ──
     const countQuery = `
       SELECT COUNT(*) AS total
       FROM master_issuer
@@ -10102,9 +10136,7 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
       ${whereClause}
     `;
 
-    // ---------------------
-    // Execute queries
-    // ---------------------
+    // ── Execute queries ──
     const [result, countResult] = await Promise.all([
       prisma.$queryRawUnsafe(dataQuery, ...params, parsedLimit, parsedOffset),
       prisma.$queryRawUnsafe(countQuery, ...params)
@@ -10112,9 +10144,7 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
 
     const total = Number(countResult?.[0]?.total) || 0;
 
-    // ---------------------
-    // Final formatting
-    // ---------------------
+    // ── Final formatting ──
     const finalResult = result?.map((item) => {
 
       const allotment = item?.allotment_date
@@ -10136,13 +10166,13 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
         securityName: item?.security_name || '-',
         securityType: item?.security_type || '-',
         modeOfIssue: item?.mode_of_issue || '-',
-        issueSize: item?.issue_size || null,
-        faceValue: item?.face_value || null,
+        issueSize: item?.issue_size ?? null,
+        faceValue: item?.face_value ?? null,
         allotmentDate:
           item?.allotment_date ? allotment : '-',
         maturityDate:
           item?.maturity_date ? maturity : '-',
-        couponRate: item?.coupon_rate || '-',
+        couponRate: item?.coupon_rate ?? '-',
         creditRatingAgency:
           item?.credit_rating_agency || '-',
         creditRating:
@@ -10162,10 +10192,9 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
       };
     });
 
-    // ---------------------
-    // Response
-    // ---------------------
+    // ── Response ──
     res.status(200).json({
+      success: true,
       data: finalResult,
 
       pagination: {
@@ -10179,7 +10208,7 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('AgencyPage detailed data API error:', error);
+    console.error('Error in agencyPage_detailed_data:', error);
 
     res.status(500).json({
       error: 'Failed to fetch detailed agencyPage data',
