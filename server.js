@@ -2540,23 +2540,32 @@ app.post('/issuePage_detailed_data', async (req, res) => {
     endDate = '2026-01-01',
     limit = 25,
     offset = 0,
-    search = "",        // ← NEW: replaces issuerName
-    rating = "",
-    seniority = "",
+    search = ""        // ← NEW: replaces issuerName
     // taxFree = "",     // ← REMOVE
-    securedFlag = "",
-    sector = "",
-    trustee = "",
-    nature = "",
-    ownershipType = "",
-    creditRatingAgency = "",
     // dealSize = "",    // ← REMOVE
-    listingStatus = "",
-    securityType = "",
-    modeOfIssue = ""
   } = req.body;
 
   try {
+    // ─── Helper: normalize string/array inputs ───
+    const toArray = (val) => {
+      if (Array.isArray(val)) return val;
+      if (val && typeof val === 'string') return [val];
+      return [];
+    };
+
+    // ─── Multi-select filters (arrays) ───
+    const rating             = toArray(req.body.rating);
+    const seniority          = toArray(req.body.seniority);
+    const securedFlag        = toArray(req.body.securedFlag);
+    const sector             = toArray(req.body.sector);
+    const trustee            = toArray(req.body.trustee);
+    const nature             = toArray(req.body.nature);
+    const ownershipType      = toArray(req.body.ownershipType);
+    const creditRatingAgency = toArray(req.body.creditRatingAgency);
+    const listingStatus      = toArray(req.body.listingStatus);
+    const securityType       = toArray(req.body.securityType);
+    const modeOfIssue        = toArray(req.body.modeOfIssue);
+
     // ─── Validate and sanitize inputs ───
     const parsedLimit = Math.min(Math.max(parseInt(limit) || 25, 1), 1000); // Cap at 1000
     const parsedOffset = Math.max(parseInt(offset) || 0, 0);
@@ -2576,8 +2585,19 @@ app.post('/issuePage_detailed_data', async (req, res) => {
       return res.status(400).json({ error: 'startDate must be before endDate' });
     }
 
-    const cyStart = formatDateForSQL(currentStartDate);
-    const cyEnd = formatDateForSQL(currentEndDate);
+    // ─── FIX: Full day coverage — start at 00:00:00, end at 23:59:59 ───
+    const cyStart = formatDateForSQL(new Date(Date.UTC(
+      currentStartDate.getUTCFullYear(),
+      currentStartDate.getUTCMonth(),
+      currentStartDate.getUTCDate(),
+      0, 0, 0
+    )));
+    const cyEnd = formatDateForSQL(new Date(Date.UTC(
+      currentEndDate.getUTCFullYear(),
+      currentEndDate.getUTCMonth(),
+      currentEndDate.getUTCDate(),
+      23, 59, 59
+    )));
 
     // ─── Build dynamic filter conditions ───
     const conditions = [];
@@ -2586,58 +2606,76 @@ app.post('/issuePage_detailed_data', async (req, res) => {
     conditions.push(`master_issuer.allotment_date BETWEEN ? AND ? AND (master_issuer.is_visible = 1)`);
     params.push(cyStart, cyEnd);
 
-
     if (search && search.trim() !== "") {
       conditions.push(`(master_issuer.isin LIKE ? OR issuer_details.issuer_name LIKE ?)`);
       const searchPattern = `%${search.trim()}%`;
       params.push(searchPattern, searchPattern);
     }
 
-    if (rating) {
-      conditions.push(`master_issuer_rating.rating = ?`);
-      params.push(rating);
+    if (rating.length > 0) {
+      const placeholders = rating.map(() => '?').join(', ');
+      conditions.push(`master_issuer_rating.rating IN (${placeholders})`);
+      params.push(...rating);
     }
 
-    if (listingStatus) {
-      conditions.push(`listing_data.listing_status = ?`);
-      params.push(listingStatus);
-    }
-    if (seniority) {
-      conditions.push(`master_seniority_tier_classification.description = ?`);
-      params.push(seniority);
+    if (listingStatus.length > 0) {
+      const placeholders = listingStatus.map(() => '?').join(', ');
+      conditions.push(`listing_data.listing_status IN (${placeholders})`);
+      params.push(...listingStatus);
     }
 
-    if (securedFlag) {
-      conditions.push(`master_secured_flag.description = ?`);
-      params.push(securedFlag);
+    if (seniority.length > 0) {
+      const placeholders = seniority.map(() => '?').join(', ');
+      conditions.push(`master_seniority_tier_classification.description IN (${placeholders})`);
+      params.push(...seniority);
     }
-    if (sector) {
-      conditions.push(`master_business_sector.description = ?`);
-      params.push(sector);
+
+    if (securedFlag.length > 0) {
+      const placeholders = securedFlag.map(() => '?').join(', ');
+      conditions.push(`master_secured_flag.description IN (${placeholders})`);
+      params.push(...securedFlag);
     }
-    if (trustee) {
-      conditions.push(`master_trustee.short_name = ?`);
-      params.push(trustee);
+
+    if (sector.length > 0) {
+      const placeholders = sector.map(() => '?').join(', ');
+      conditions.push(`master_business_sector.description IN (${placeholders})`);
+      params.push(...sector);
     }
-    if (nature) {
-      conditions.push(`master_issuer_type_nature.description = ?`);
-      params.push(nature);
+
+    if (trustee.length > 0) {
+      const placeholders = trustee.map(() => '?').join(', ');
+      conditions.push(`master_trustee.short_name IN (${placeholders})`);
+      params.push(...trustee);
     }
-    if (ownershipType) {
-      conditions.push(`master_issuer_ownership_type.description = ?`);
-      params.push(ownershipType);
+
+    if (nature.length > 0) {
+      const placeholders = nature.map(() => '?').join(', ');
+      conditions.push(`master_issuer_type_nature.description IN (${placeholders})`);
+      params.push(...nature);
     }
-    if (creditRatingAgency) {
-      conditions.push(`master_agency.short_name = ?`);
-      params.push(creditRatingAgency);
+
+    if (ownershipType.length > 0) {
+      const placeholders = ownershipType.map(() => '?').join(', ');
+      conditions.push(`master_issuer_ownership_type.description IN (${placeholders})`);
+      params.push(...ownershipType);
     }
-    if (securityType) {
-      conditions.push(`master_security_type.description = ?`);
-      params.push(securityType);
+
+    if (creditRatingAgency.length > 0) {
+      const placeholders = creditRatingAgency.map(() => '?').join(', ');
+      conditions.push(`master_agency.short_name IN (${placeholders})`);
+      params.push(...creditRatingAgency);
     }
-    if (modeOfIssue) {
-      conditions.push(`master_mode_issue.description = ?`);
-      params.push(modeOfIssue);
+
+    if (securityType.length > 0) {
+      const placeholders = securityType.map(() => '?').join(', ');
+      conditions.push(`master_security_type.description IN (${placeholders})`);
+      params.push(...securityType);
+    }
+
+    if (modeOfIssue.length > 0) {
+      const placeholders = modeOfIssue.map(() => '?').join(', ');
+      conditions.push(`master_mode_issue.description IN (${placeholders})`);
+      params.push(...modeOfIssue);
     }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
