@@ -9225,7 +9225,7 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
         ? `
       SELECT
         ma.id AS agency_id,
-        ma.short_name AS name,
+        ma.short_name AS agency_name,
         RANK() OVER (
           ORDER BY COUNT(DISTINCT mi.isin) DESC, SUM(mi.issue_size) DESC
         ) AS arr_rank
@@ -9241,7 +9241,7 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
         : `
       SELECT
         ma.id AS agency_id,
-        ma.short_name AS name,
+        ma.short_name AS agency_name,
         RANK() OVER (
           ORDER BY SUM(mi.issue_size) DESC, COUNT(DISTINCT mi.isin) DESC
         ) AS arr_rank
