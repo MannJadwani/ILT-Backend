@@ -3317,19 +3317,19 @@ app.post('/issuer_page_monthly_detailed_data', async (req, res) => {
       endDate = '2026-05-28',
       limit = 25,
       offset = 0,
-      issuerName = "",
-      rating = "",
-      seniority = "",
-      taxFree = "",
-      securedFlag = "",
-      trustee = "",
-      creditRatingAgency = "",
-      listingStatus = "",
-      securityType = "",
-      modeOfIssue = "",
-      arranger = "",
-      registrar = "",
-      isin = ""
+      issuerName = [],
+      rating = [],
+      seniority = [],
+      taxFree = [],
+      securedFlag = [],
+      trustee = [],
+      creditRatingAgency = [],
+      listingStatus = [],
+      securityType = [],
+      modeOfIssue = [],
+      arranger = [],
+      registrar = [],
+      isin = []
     } = req.body;
 
     // ─── Validate and sanitize inputs ───
@@ -3366,6 +3366,26 @@ app.post('/issuer_page_monthly_detailed_data', async (req, res) => {
     )));
 
     // =========================
+    // HELPER: Build multi-value IN clause (from Arrangers API reference)
+    // =========================
+    const buildInClause = (field, values, useLike = false) => {
+      if (!values || (Array.isArray(values) && values.length === 0)) return null;
+      const vals = Array.isArray(values)
+        ? values.filter(v => v !== '' && v !== null && v !== undefined)
+        : [values].filter(v => v !== '' && v !== null && v !== undefined);
+      if (vals.length === 0) return null;
+
+      if (useLike) {
+        const clauses = vals.map(() => `${field} LIKE ?`).join(' OR ');
+        const params = vals.map(v => `%${v}%`);
+        return { clause: `(${clauses})`, params };
+      }
+
+      const placeholders = vals.map(() => '?').join(',');
+      return { clause: `${field} IN (${placeholders})`, params: vals };
+    };
+
+    // =========================
     // BUILD DYNAMIC CONDITIONS
     // =========================
 
@@ -3375,70 +3395,171 @@ app.post('/issuer_page_monthly_detailed_data', async (req, res) => {
     conditions.push(`i.allotment_date BETWEEN ? AND ? AND (i.is_visible = 1)`);
     params.push(cyStart, cyEnd);
 
-    if (issuerName) {
-      conditions.push(`id.issuer_name LIKE ?`);
-      params.push(`%${issuerName}%`);
+    // Issuer Name filter (LIKE search, array support)
+    if (issuerName && (Array.isArray(issuerName) ? issuerName.length > 0 : issuerName !== '')) {
+      const issuerNameValue = Array.isArray(issuerName) ? issuerName : [issuerName];
+      const inClause = buildInClause('id2.issuer_name', issuerNameValue, true);
+      if (inClause) {
+        conditions.push(`EXISTS (
+          SELECT 1 FROM issuer_details id2
+          WHERE id2.id = i.issuer_master_id AND ${inClause.clause}
+        )`);
+        params.push(...inClause.params);
+      }
     }
 
-    if (isin) {
-      conditions.push(`i.isin LIKE ?`);
-      params.push(`%${isin}%`);
+    // ISIN filter (LIKE search, array support)
+    if (isin && (Array.isArray(isin) ? isin.length > 0 : isin !== '')) {
+      const isinValue = Array.isArray(isin) ? isin : [isin];
+      const inClause = buildInClause('i.isin', isinValue, true);
+      if (inClause) {
+        conditions.push(inClause.clause);
+        params.push(...inClause.params);
+      }
     }
 
-    if (rating) {
-      conditions.push(`mir.rating = ?`);
-      params.push(rating);
+    // Rating filter (array support)
+    if (rating && (Array.isArray(rating) ? rating.length > 0 : rating !== '')) {
+      const ratingValue = Array.isArray(rating) ? rating : [rating];
+      const inClause = buildInClause('mir2.rating', ratingValue);
+      if (inClause) {
+        conditions.push(`EXISTS (
+          SELECT 1 FROM master_issuer_rating mir2
+          WHERE mir2.issuer_id = i.id AND ${inClause.clause}
+        )`);
+        params.push(...inClause.params);
+      }
     }
 
-    if (seniority) {
-      conditions.push(`mstc.description = ?`);
-      params.push(seniority);
+    // Seniority filter (array support)
+    if (seniority && (Array.isArray(seniority) ? seniority.length > 0 : seniority !== '')) {
+      const seniorityValue = Array.isArray(seniority) ? seniority : [seniority];
+      const inClause = buildInClause('mstc2.description', seniorityValue);
+      if (inClause) {
+        conditions.push(`EXISTS (
+          SELECT 1 FROM master_seniority_tier_classification mstc2
+          WHERE mstc2.code = i.seniority AND ${inClause.clause}
+        )`);
+        params.push(...inClause.params);
+      }
     }
 
-    if (taxFree) {
-      conditions.push(`tf.description = ?`);
-      params.push(taxFree);
+    // Tax Free filter (array support)
+    if (taxFree && (Array.isArray(taxFree) ? taxFree.length > 0 : taxFree !== '')) {
+      const taxFreeValue = Array.isArray(taxFree) ? taxFree : [taxFree];
+      const inClause = buildInClause('mtf2.description', taxFreeValue);
+      if (inClause) {
+        conditions.push(`EXISTS (
+          SELECT 1 FROM master_tax_free mtf2
+          WHERE mtf2.code = i.tax_free AND ${inClause.clause}
+        )`);
+        params.push(...inClause.params);
+      }
     }
 
-    if (securedFlag) {
-      conditions.push(`msf.description = ?`);
-      params.push(securedFlag);
+    // Secured Flag filter (array support)
+    if (securedFlag && (Array.isArray(securedFlag) ? securedFlag.length > 0 : securedFlag !== '')) {
+      const securedFlagValue = Array.isArray(securedFlag) ? securedFlag : [securedFlag];
+      const inClause = buildInClause('msf2.description', securedFlagValue);
+      if (inClause) {
+        conditions.push(`EXISTS (
+          SELECT 1 FROM master_secured_flag msf2
+          WHERE msf2.code = i.secured_flag AND ${inClause.clause}
+        )`);
+        params.push(...inClause.params);
+      }
     }
 
-    if (trustee) {
-      conditions.push(`mt.short_name = ?`);
-      params.push(trustee);
+    // Trustee filter (array support, LIKE search)
+    if (trustee && (Array.isArray(trustee) ? trustee.length > 0 : trustee !== '')) {
+      const trusteeValue = Array.isArray(trustee) ? trustee : [trustee];
+      const inClause = buildInClause('mt2.short_name', trusteeValue, true);
+      if (inClause) {
+        conditions.push(`EXISTS (
+          SELECT 1 FROM issuer_trustee it2
+          JOIN master_trustee mt2 ON mt2.id = it2.trustee_id
+          WHERE it2.issuer_id = i.id AND ${inClause.clause}
+        )`);
+        params.push(...inClause.params);
+      }
     }
 
-    if (creditRatingAgency) {
-      conditions.push(`mag.short_name = ?`);
-      params.push(creditRatingAgency);
+    // Credit Rating Agency filter (array support, LIKE search)
+    if (creditRatingAgency && (Array.isArray(creditRatingAgency) ? creditRatingAgency.length > 0 : creditRatingAgency !== '')) {
+      const agencyValue = Array.isArray(creditRatingAgency) ? creditRatingAgency : [creditRatingAgency];
+      const inClause = buildInClause('mag2.short_name', agencyValue, true);
+      if (inClause) {
+        conditions.push(`EXISTS (
+          SELECT 1 FROM master_issuer_rating mir2
+          JOIN master_agency mag2 ON mag2.id = mir2.agency_id
+          WHERE mir2.issuer_id = i.id AND ${inClause.clause}
+        )`);
+        params.push(...inClause.params);
+      }
     }
 
-    // ─── FIX: listingStatus using JOIN instead of EXISTS subquery ───
-    if (listingStatus) {
-      conditions.push(`listing_data.listing_status = ?`);
-      params.push(listingStatus);
+    // Listing Status filter (array support) — keeps using listing_data JOIN
+    if (listingStatus && (Array.isArray(listingStatus) ? listingStatus.length > 0 : listingStatus !== '')) {
+      const listingValue = Array.isArray(listingStatus) ? listingStatus : [listingStatus];
+      const inClause = buildInClause('listing_data.listing_status', listingValue);
+      if (inClause) {
+        conditions.push(inClause.clause);
+        params.push(...inClause.params);
+      }
     }
 
-    if (securityType) {
-      conditions.push(`s.description = ?`);
-      params.push(securityType);
+    // Security Type filter (array support)
+    if (securityType && (Array.isArray(securityType) ? securityType.length > 0 : securityType !== '')) {
+      const securityValue = Array.isArray(securityType) ? securityType : [securityType];
+      const inClause = buildInClause('mst2.description', securityValue);
+      if (inClause) {
+        conditions.push(`EXISTS (
+          SELECT 1 FROM master_security_type mst2
+          WHERE mst2.code = i.security_class AND ${inClause.clause}
+        )`);
+        params.push(...inClause.params);
+      }
     }
 
-    if (modeOfIssue) {
-      conditions.push(`mi.description = ?`);
-      params.push(modeOfIssue);
+    // Mode of Issue filter (array support)
+    if (modeOfIssue && (Array.isArray(modeOfIssue) ? modeOfIssue.length > 0 : modeOfIssue !== '')) {
+      const modeValue = Array.isArray(modeOfIssue) ? modeOfIssue : [modeOfIssue];
+      const inClause = buildInClause('mmi2.description', modeValue);
+      if (inClause) {
+        conditions.push(`EXISTS (
+          SELECT 1 FROM master_mode_issue mmi2
+          WHERE mmi2.code = i.mode_issue AND ${inClause.clause}
+        )`);
+        params.push(...inClause.params);
+      }
     }
 
-    if (arranger) {
-      conditions.push(`ma.short_name = ?`);
-      params.push(arranger);
+    // Arranger filter (array support, LIKE search)
+    if (arranger && (Array.isArray(arranger) ? arranger.length > 0 : arranger !== '')) {
+      const arrangerValue = Array.isArray(arranger) ? arranger : [arranger];
+      const inClause = buildInClause('ma2.short_name', arrangerValue, true);
+      if (inClause) {
+        conditions.push(`EXISTS (
+          SELECT 1 FROM issuer_arranger ia2
+          JOIN master_arranger ma2 ON ma2.id = ia2.arranger_id
+          WHERE ia2.issuer_id = i.id AND ${inClause.clause}
+        )`);
+        params.push(...inClause.params);
+      }
     }
 
-    if (registrar) {
-      conditions.push(`mr.short_name = ?`);
-      params.push(registrar);
+    // Registrar filter (array support, LIKE search)
+    if (registrar && (Array.isArray(registrar) ? registrar.length > 0 : registrar !== '')) {
+      const registrarValue = Array.isArray(registrar) ? registrar : [registrar];
+      const inClause = buildInClause('mr2.short_name', registrarValue, true);
+      if (inClause) {
+        conditions.push(`EXISTS (
+          SELECT 1 FROM issuer_registrar ir2
+          JOIN master_registrar mr2 ON mr2.id = ir2.registrar_id
+          WHERE ir2.issuer_id = i.id AND ${inClause.clause}
+        )`);
+        params.push(...inClause.params);
+      }
     }
 
     const whereClause = conditions.length
