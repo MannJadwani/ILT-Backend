@@ -3314,7 +3314,7 @@ app.post('/issuer_page_monthly_detailed_data', async (req, res) => {
   try {
     const {
       startDate = '2026-04-01',
-      endDate = '2026-05-28',
+      endDate = '2026-07-10',
       limit = 25,
       offset = 0,
       issuerName = [],
@@ -3484,26 +3484,30 @@ app.post('/issuer_page_monthly_detailed_data', async (req, res) => {
       }
     }
 
-    // Credit Rating Agency filter (array support, LIKE search)
+    // Credit Rating Agency filter (array support, EXACT match — consistent with Summary API)
     if (creditRatingAgency && (Array.isArray(creditRatingAgency) ? creditRatingAgency.length > 0 : creditRatingAgency !== '')) {
       const agencyValue = Array.isArray(creditRatingAgency) ? creditRatingAgency : [creditRatingAgency];
-      const inClause = buildInClause('mag2.short_name', agencyValue, true);
+      const inClause = buildInClause('mag2.short_name', agencyValue);
       if (inClause) {
         conditions.push(`EXISTS (
           SELECT 1 FROM master_issuer_rating mir2
-          JOIN master_agency mag2 ON mag2.id = mir2.agency_id
+          JOIN master_agency mag2 ON mag2.id = mir2.agency_id AND mag2.parent_id = 0
           WHERE mir2.issuer_id = i.id AND ${inClause.clause}
         )`);
         params.push(...inClause.params);
       }
     }
 
-    // Listing Status filter (array support) — keeps using listing_data JOIN
+    // ─── FIX: Listing Status filter — use EXISTS instead of MAX() subquery ───
     if (listingStatus && (Array.isArray(listingStatus) ? listingStatus.length > 0 : listingStatus !== '')) {
       const listingValue = Array.isArray(listingStatus) ? listingStatus : [listingStatus];
-      const inClause = buildInClause('listing_data.listing_status', listingValue);
+      const inClause = buildInClause('mls2.description', listingValue);
       if (inClause) {
-        conditions.push(inClause.clause);
+        conditions.push(`EXISTS (
+          SELECT 1 FROM master_issuer_stock_exchange mise2
+          LEFT JOIN master_listing_status mls2 ON mls2.code = mise2.listing_status
+          WHERE mise2.issuer_id = i.id AND ${inClause.clause}
+        )`);
         params.push(...inClause.params);
       }
     }
@@ -3566,12 +3570,12 @@ app.post('/issuer_page_monthly_detailed_data', async (req, res) => {
       ? `WHERE ${conditions.join(' AND ')}`
       : '';
 
-    // ─── Shared listing data subquery ───
+    // ─── FIX: listing_data subquery — use GROUP_CONCAT instead of MAX() ───
     const listingDataJoin = `
       LEFT JOIN (
         SELECT 
           mise.issuer_id, 
-          MAX(mls.description) AS listing_status
+          GROUP_CONCAT(DISTINCT mls.description ORDER BY mls.description ASC) AS listing_status
         FROM master_issuer_stock_exchange mise
         LEFT JOIN master_listing_status mls ON mls.code = mise.listing_status
         WHERE mise.listing_status IS NOT NULL
@@ -3618,7 +3622,6 @@ app.post('/issuer_page_monthly_detailed_data', async (req, res) => {
     // DATA QUERY
     // =========================
 
-    // ─── FIX: Removed all_months, proper GROUP BY, ORDER BY on GROUP_CONCAT ───
     const dataQuery = `
       SELECT
         i.id AS issuerId,
@@ -3695,12 +3698,9 @@ app.post('/issuer_page_monthly_detailed_data', async (req, res) => {
         securityName: item?.security_name ?? '-',
         securityType: item?.security_type ?? '-',
         modeOfIssue: item?.mode_issue ?? '-',
-        // ─── FIX: Timezone-safe date extraction ───
         allotmentDate: item?.allotment_date ? allotment : '-',
         maturityDate: item?.maturity_date ? maturity : '-',
-        // ─── FIX: Preserve 0 coupon rate ───
         couponRate: item?.coupon_rate !== null && item?.coupon_rate !== undefined ? item.coupon_rate : '-',
-        // ─── FIX: Use ?? to preserve 0 values ───
         issueSize: item?.issue_size ?? null,
         faceValue: item?.face_value ?? null,
         rating: item?.rating ?? '-',
