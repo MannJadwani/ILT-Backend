@@ -1189,18 +1189,8 @@ GROUP BY
 app.post('/testing', async (req, res) => {
   const { startDate, endDate } = req.body;
 
-  const query = `
-      select
-all_months.month_no as issue_month_no,
-MONTHNAME(STR_TO_DATE(all_months.month_no, '%m')) as issue_month,
-count(i.isin) as no_of_issue,
-IF(SUM(i.issue_size) > 0 , ROUND(SUM(i.issue_size) / 10000000, 2), 0) as issue_size,
-SUM(i.issue_size) as actual_issue_size 
-from all_months 
-inner join master_issuer as i on all_months.month_no = month(i.allotment_date) and i.allotment_date between ${startDate} and ${endDate} group by all_months.month_no order by all_months.id asc
-    `;
-
-  const result = await prisma.$queryRawUnsafe(query);
+  console.log('db url:', process.env.DATABASE_URL);
+  const result = ['success'];
 
   res.status(200).json(result);
 });
@@ -2554,17 +2544,17 @@ app.post('/issuePage_detailed_data', async (req, res) => {
     };
 
     // ─── Multi-select filters (arrays) ───
-    const rating             = toArray(req.body.rating);
-    const seniority          = toArray(req.body.seniority);
-    const securedFlag        = toArray(req.body.securedFlag);
-    const sector             = toArray(req.body.sector);
-    const trustee            = toArray(req.body.trustee);
-    const nature             = toArray(req.body.nature);
-    const ownershipType      = toArray(req.body.ownershipType);
+    const rating = toArray(req.body.rating);
+    const seniority = toArray(req.body.seniority);
+    const securedFlag = toArray(req.body.securedFlag);
+    const sector = toArray(req.body.sector);
+    const trustee = toArray(req.body.trustee);
+    const nature = toArray(req.body.nature);
+    const ownershipType = toArray(req.body.ownershipType);
     const creditRatingAgency = toArray(req.body.creditRatingAgency);
-    const listingStatus      = toArray(req.body.listingStatus);
-    const securityType       = toArray(req.body.securityType);
-    const modeOfIssue        = toArray(req.body.modeOfIssue);
+    const listingStatus = toArray(req.body.listingStatus);
+    const securityType = toArray(req.body.securityType);
+    const modeOfIssue = toArray(req.body.modeOfIssue);
 
     // ─── Validate and sanitize inputs ───
     const parsedLimit = Math.min(Math.max(parseInt(limit) || 25, 1), 1000); // Cap at 1000
@@ -3103,16 +3093,16 @@ app.post('/issuer_page_monthly_summary_data', async (req, res) => {
     };
 
     // ── Multi-select filters (arrays) ──
-    const ownershipType      = toArray(req.body.ownershipType);
-    const sector             = toArray(req.body.sector);
-    const nature             = toArray(req.body.nature);
-    const securityType       = toArray(req.body.securityType);
+    const ownershipType = toArray(req.body.ownershipType);
+    const sector = toArray(req.body.sector);
+    const nature = toArray(req.body.nature);
+    const securityType = toArray(req.body.securityType);
     const creditRatingAgency = toArray(req.body.creditRatingAgency);
-    const modeOfIssue        = toArray(req.body.modeOfIssue);
-    const seniority          = toArray(req.body.seniority);
-    const listingStatus      = toArray(req.body.listingStatus);
-    const securedFlag        = toArray(req.body.securedFlag);
-    const rating             = toArray(req.body.rating);
+    const modeOfIssue = toArray(req.body.modeOfIssue);
+    const seniority = toArray(req.body.seniority);
+    const listingStatus = toArray(req.body.listingStatus);
+    const securedFlag = toArray(req.body.securedFlag);
+    const rating = toArray(req.body.rating);
 
     // ─── Validate dates ───
     if (!startDate || !endDate) {
@@ -5266,20 +5256,20 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
     };
 
     // ── Multi-select filters (arrays) ──
-    const rating             = toArray(req.body.rating);
-    const seniority          = toArray(req.body.seniority);
-    const securedFlag        = toArray(req.body.securedFlag);
-    const sector             = toArray(req.body.sector);
-    const trustee            = toArray(req.body.trustee);
-    const nature             = toArray(req.body.nature);
-    const ownershipType      = toArray(req.body.ownershipType);
+    const rating = toArray(req.body.rating);
+    const seniority = toArray(req.body.seniority);
+    const securedFlag = toArray(req.body.securedFlag);
+    const sector = toArray(req.body.sector);
+    const trustee = toArray(req.body.trustee);
+    const nature = toArray(req.body.nature);
+    const ownershipType = toArray(req.body.ownershipType);
     const creditRatingAgency = toArray(req.body.creditRatingAgency);
-    const listingStatus      = toArray(req.body.listingStatus);
-    const securityType       = toArray(req.body.securityType);
-    const modeOfIssue        = toArray(req.body.modeOfIssue);
+    const listingStatus = toArray(req.body.listingStatus);
+    const securityType = toArray(req.body.securityType);
+    const modeOfIssue = toArray(req.body.modeOfIssue);
 
     // ── Single-select filters (strings) ──
-    const arranger  = req.body.arranger || "";
+    const arranger = req.body.arranger || "";
     const registrar = req.body.registrar || "";
 
     // ─── Validate dates ───
@@ -5678,17 +5668,17 @@ app.post('/arranger_page_monthly_summary_data', async (req, res) => {
     };
 
     // ── Multi-select filters (arrays) ──
-    const ownershipType      = toArray(req.body.ownershipType);
-    const sector             = toArray(req.body.sector);
-    const nature             = toArray(req.body.nature);
-    const securityType       = toArray(req.body.securityType);
+    const ownershipType = toArray(req.body.ownershipType);
+    const sector = toArray(req.body.sector);
+    const nature = toArray(req.body.nature);
+    const securityType = toArray(req.body.securityType);
     const creditRatingAgency = toArray(req.body.creditRatingAgency);
-    const modeOfIssue        = toArray(req.body.modeOfIssue);
-    const seniority          = toArray(req.body.seniority);
-    const taxFree            = toArray(req.body.taxFree);
-    const listingStatus      = toArray(req.body.listingStatus);
-    const securedFlag        = toArray(req.body.securedFlag);
-    const rating             = toArray(req.body.rating);
+    const modeOfIssue = toArray(req.body.modeOfIssue);
+    const seniority = toArray(req.body.seniority);
+    const taxFree = toArray(req.body.taxFree);
+    const listingStatus = toArray(req.body.listingStatus);
+    const securedFlag = toArray(req.body.securedFlag);
+    const rating = toArray(req.body.rating);
 
     // ── Single-select filters (strings) ──
     const dealSize = req.body.dealSize || "";
@@ -7689,17 +7679,17 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
     };
 
     // ── Multi-select filters (arrays) ──
-    const rating             = toArray(req.body.rating);
-    const seniority          = toArray(req.body.seniority);
-    const securedFlag        = toArray(req.body.securedFlag);
-    const sector             = toArray(req.body.sector);
-    const trustee            = toArray(req.body.trustee);
-    const nature             = toArray(req.body.nature);
-    const ownershipType      = toArray(req.body.ownershipType);
+    const rating = toArray(req.body.rating);
+    const seniority = toArray(req.body.seniority);
+    const securedFlag = toArray(req.body.securedFlag);
+    const sector = toArray(req.body.sector);
+    const trustee = toArray(req.body.trustee);
+    const nature = toArray(req.body.nature);
+    const ownershipType = toArray(req.body.ownershipType);
     const creditRatingAgency = toArray(req.body.creditRatingAgency);
-    const listingStatus      = toArray(req.body.listingStatus);
-    const securityType       = toArray(req.body.securityType);
-    const modeOfIssue        = toArray(req.body.modeOfIssue);
+    const listingStatus = toArray(req.body.listingStatus);
+    const securityType = toArray(req.body.securityType);
+    const modeOfIssue = toArray(req.body.modeOfIssue);
 
     // ── Single-select filters (strings) ──
     const registrar = req.body.registrar || "";
@@ -8108,21 +8098,21 @@ app.post('/trustee_page_monthly_summary_data', async (req, res) => {
     };
 
     // ── Multi-select filters (arrays) ──
-    const ownershipType      = toArray(req.body.ownershipType);
-    const sector             = toArray(req.body.sector);
-    const nature             = toArray(req.body.nature);
-    const securityType       = toArray(req.body.securityType);
+    const ownershipType = toArray(req.body.ownershipType);
+    const sector = toArray(req.body.sector);
+    const nature = toArray(req.body.nature);
+    const securityType = toArray(req.body.securityType);
     const creditRatingAgency = toArray(req.body.creditRatingAgency);
-    const modeOfIssue        = toArray(req.body.modeOfIssue);
-    const seniority          = toArray(req.body.seniority);
-    const taxFree            = toArray(req.body.taxFree);
-    const listingStatus      = toArray(req.body.listingStatus);
-    const securedFlag        = toArray(req.body.securedFlag);
-    const rating             = toArray(req.body.rating);
+    const modeOfIssue = toArray(req.body.modeOfIssue);
+    const seniority = toArray(req.body.seniority);
+    const taxFree = toArray(req.body.taxFree);
+    const listingStatus = toArray(req.body.listingStatus);
+    const securedFlag = toArray(req.body.securedFlag);
+    const rating = toArray(req.body.rating);
 
     // ── Single-select filters (strings) ──
     const dealSize = req.body.dealSize || "";
-    const trustee  = req.body.trustee || "";
+    const trustee = req.body.trustee || "";
 
     // ─── Validate dates ───
     if (!startDate || !endDate) {
@@ -9300,17 +9290,17 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
     } = req.body;
 
     // ── Multi-select filters (arrays) ──
-    const rating             = toArray(req.body.rating);
-    const registrar          = toArray(req.body.registrar);
-    const seniority          = toArray(req.body.seniority);
-    const securedFlag        = toArray(req.body.securedFlag);
-    const sector             = toArray(req.body.sector);
-    const nature             = toArray(req.body.nature);
-    const ownershipType      = toArray(req.body.ownershipType);
+    const rating = toArray(req.body.rating);
+    const registrar = toArray(req.body.registrar);
+    const seniority = toArray(req.body.seniority);
+    const securedFlag = toArray(req.body.securedFlag);
+    const sector = toArray(req.body.sector);
+    const nature = toArray(req.body.nature);
+    const ownershipType = toArray(req.body.ownershipType);
     const creditRatingAgency = toArray(req.body.creditRatingAgency);
-    const securityType       = toArray(req.body.securityType);
-    const modeOfIssue        = toArray(req.body.modeOfIssue);
-    const listingStatus      = toArray(req.body.listingStatus);
+    const securityType = toArray(req.body.securityType);
+    const modeOfIssue = toArray(req.body.modeOfIssue);
+    const listingStatus = toArray(req.body.listingStatus);
 
     if (!startDate || !endDate) {
       return res.status(400).json({ error: 'startDate, endDate are required' });
@@ -9780,17 +9770,17 @@ app.post('/rating_agencies_page_credit_rating_data', async (req, res) => {
     } = req.body;
 
     // ── Multi-select filters (arrays) ──
-    const rating             = toArray(req.body.rating);
-    const registrar          = toArray(req.body.registrar);
-    const seniority          = toArray(req.body.seniority);
-    const securedFlag        = toArray(req.body.securedFlag);
-    const sector             = toArray(req.body.sector);
-    const nature             = toArray(req.body.nature);
-    const ownershipType      = toArray(req.body.ownershipType);
+    const rating = toArray(req.body.rating);
+    const registrar = toArray(req.body.registrar);
+    const seniority = toArray(req.body.seniority);
+    const securedFlag = toArray(req.body.securedFlag);
+    const sector = toArray(req.body.sector);
+    const nature = toArray(req.body.nature);
+    const ownershipType = toArray(req.body.ownershipType);
     const creditRatingAgency = toArray(req.body.creditRatingAgency);
-    const securityType       = toArray(req.body.securityType);
-    const modeOfIssue        = toArray(req.body.modeOfIssue);
-    const listingStatus      = toArray(req.body.listingStatus);
+    const securityType = toArray(req.body.securityType);
+    const modeOfIssue = toArray(req.body.modeOfIssue);
+    const listingStatus = toArray(req.body.listingStatus);
 
     if (!startDate || !endDate) {
       return res.status(400).json({
@@ -10007,23 +9997,23 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
     };
 
     // ── Multi-select filters (arrays) ──
-    const rating             = toArray(req.body.rating);
-    const seniority          = toArray(req.body.seniority);
-    const securedFlag        = toArray(req.body.securedFlag);
-    const sector             = toArray(req.body.sector);
-    const trustee            = toArray(req.body.trustee);
-    const nature             = toArray(req.body.nature);
-    const ownershipType      = toArray(req.body.ownershipType);
+    const rating = toArray(req.body.rating);
+    const seniority = toArray(req.body.seniority);
+    const securedFlag = toArray(req.body.securedFlag);
+    const sector = toArray(req.body.sector);
+    const trustee = toArray(req.body.trustee);
+    const nature = toArray(req.body.nature);
+    const ownershipType = toArray(req.body.ownershipType);
     const creditRatingAgency = toArray(req.body.creditRatingAgency);
-    const listingStatus      = toArray(req.body.listingStatus);
-    const securityType       = toArray(req.body.securityType);
-    const modeOfIssue        = toArray(req.body.modeOfIssue);
+    const listingStatus = toArray(req.body.listingStatus);
+    const securityType = toArray(req.body.securityType);
+    const modeOfIssue = toArray(req.body.modeOfIssue);
 
     // ── Single-select filters (strings) ──
     const issuerName = req.body.issuerName || "";
-    const isin       = req.body.isin || "";
-    const arranger   = req.body.arranger || "";
-    const registrar  = req.body.registrar || "";
+    const isin = req.body.isin || "";
+    const arranger = req.body.arranger || "";
+    const registrar = req.body.registrar || "";
 
     // ── INPUT VALIDATION ──
     const parsedLimit = parseInt(limit, 10);
@@ -10463,17 +10453,17 @@ app.post('/rating_agencies_page_monthly_summary_data', async (req, res) => {
     };
 
     // ── Multi-select filters (arrays) ──
-    const ownershipType      = toArray(req.body.ownershipType);
-    const sector             = toArray(req.body.sector);
-    const nature             = toArray(req.body.nature);
-    const securityType       = toArray(req.body.securityType);
+    const ownershipType = toArray(req.body.ownershipType);
+    const sector = toArray(req.body.sector);
+    const nature = toArray(req.body.nature);
+    const securityType = toArray(req.body.securityType);
     const creditRatingAgency = toArray(req.body.creditRatingAgency);
-    const modeOfIssue        = toArray(req.body.modeOfIssue);
-    const seniority          = toArray(req.body.seniority);
-    const taxFree            = toArray(req.body.taxFree);
-    const listingStatus      = toArray(req.body.listingStatus);
-    const securedFlag        = toArray(req.body.securedFlag);
-    const rating             = toArray(req.body.rating);
+    const modeOfIssue = toArray(req.body.modeOfIssue);
+    const seniority = toArray(req.body.seniority);
+    const taxFree = toArray(req.body.taxFree);
+    const listingStatus = toArray(req.body.listingStatus);
+    const securedFlag = toArray(req.body.securedFlag);
+    const rating = toArray(req.body.rating);
 
     // ── Single-select filters (strings) ──
     const dealSize = req.body.dealSize || "";
@@ -11531,16 +11521,16 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
     } = req.body;
 
     // ── Multi-select filters (arrays) ──
-    const creditRating       = toArray(req.body.creditRating);
-    const registrar          = toArray(req.body.registrar);
-    const seniority          = toArray(req.body.seniority);
-    const securedFlag        = toArray(req.body.securedFlag);
-    const businessSector     = toArray(req.body.businessSector);
-    const issuerNatureType   = toArray(req.body.issuerNatureType);
-    const issuerOwnershipType= toArray(req.body.issuerOwnershipType);
-    const securityType       = toArray(req.body.securityType);
-    const modeOfIssue        = toArray(req.body.modeOfIssue);
-    const listingStatus      = toArray(req.body.listingStatus);
+    const creditRating = toArray(req.body.creditRating);
+    const registrar = toArray(req.body.registrar);
+    const seniority = toArray(req.body.seniority);
+    const securedFlag = toArray(req.body.securedFlag);
+    const businessSector = toArray(req.body.businessSector);
+    const issuerNatureType = toArray(req.body.issuerNatureType);
+    const issuerOwnershipType = toArray(req.body.issuerOwnershipType);
+    const securityType = toArray(req.body.securityType);
+    const modeOfIssue = toArray(req.body.modeOfIssue);
+    const listingStatus = toArray(req.body.listingStatus);
     const creditRatingAgency = toArray(req.body.creditRatingAgency);
 
     // ── VALIDATION ──
@@ -12096,16 +12086,16 @@ app.post('/registrars_page_credit_rating_data', async (req, res) => {
     } = req.body;
 
     // ── Multi-select filters (arrays) ──
-    const creditRating       = toArray(req.body.creditRating);
-    const registrar          = toArray(req.body.registrar);
-    const seniority          = toArray(req.body.seniority);
-    const securedFlag        = toArray(req.body.securedFlag);
-    const businessSector     = toArray(req.body.businessSector);
-    const issuerNatureType   = toArray(req.body.issuerNatureType);
-    const issuerOwnershipType= toArray(req.body.issuerOwnershipType);
-    const securityType       = toArray(req.body.securityType);
-    const modeOfIssue        = toArray(req.body.modeOfIssue);
-    const listingStatus      = toArray(req.body.listingStatus);
+    const creditRating = toArray(req.body.creditRating);
+    const registrar = toArray(req.body.registrar);
+    const seniority = toArray(req.body.seniority);
+    const securedFlag = toArray(req.body.securedFlag);
+    const businessSector = toArray(req.body.businessSector);
+    const issuerNatureType = toArray(req.body.issuerNatureType);
+    const issuerOwnershipType = toArray(req.body.issuerOwnershipType);
+    const securityType = toArray(req.body.securityType);
+    const modeOfIssue = toArray(req.body.modeOfIssue);
+    const listingStatus = toArray(req.body.listingStatus);
     const creditRatingAgency = toArray(req.body.creditRatingAgency);
 
     // ── VALIDATION ──
@@ -12359,16 +12349,16 @@ app.post('/registrarPage_detailed_data', async (req, res) => {
     };
 
     // ── Multi-select filters (arrays) ──
-    const rating             = toArray(req.body.rating);
-    const seniority          = toArray(req.body.seniority);
-    const securedFlag        = toArray(req.body.securedFlag);
-    const sector             = toArray(req.body.sector);
-    const nature             = toArray(req.body.nature);
-    const ownershipType      = toArray(req.body.ownershipType);
+    const rating = toArray(req.body.rating);
+    const seniority = toArray(req.body.seniority);
+    const securedFlag = toArray(req.body.securedFlag);
+    const sector = toArray(req.body.sector);
+    const nature = toArray(req.body.nature);
+    const ownershipType = toArray(req.body.ownershipType);
     const creditRatingAgency = toArray(req.body.creditRatingAgency);
-    const listingStatus      = toArray(req.body.listingStatus);
-    const securityType       = toArray(req.body.securityType);
-    const modeOfIssue        = toArray(req.body.modeOfIssue);
+    const listingStatus = toArray(req.body.listingStatus);
+    const securityType = toArray(req.body.securityType);
+    const modeOfIssue = toArray(req.body.modeOfIssue);
 
     // ── Single-select filters (strings) ──
     const registrar = req.body.registrar || "";
@@ -12778,17 +12768,17 @@ app.post('/registrar_page_monthly_summary_data', async (req, res) => {
     };
 
     // ── Multi-select filters (arrays) ──
-    const ownershipType      = toArray(req.body.ownershipType);
-    const sector             = toArray(req.body.sector);
-    const nature             = toArray(req.body.nature);
-    const securityType       = toArray(req.body.securityType);
+    const ownershipType = toArray(req.body.ownershipType);
+    const sector = toArray(req.body.sector);
+    const nature = toArray(req.body.nature);
+    const securityType = toArray(req.body.securityType);
     const creditRatingAgency = toArray(req.body.creditRatingAgency);
-    const modeOfIssue        = toArray(req.body.modeOfIssue);
-    const seniority          = toArray(req.body.seniority);
-    const taxFree            = toArray(req.body.taxFree);
-    const listingStatus      = toArray(req.body.listingStatus);
-    const securedFlag        = toArray(req.body.securedFlag);
-    const rating             = toArray(req.body.rating);
+    const modeOfIssue = toArray(req.body.modeOfIssue);
+    const seniority = toArray(req.body.seniority);
+    const taxFree = toArray(req.body.taxFree);
+    const listingStatus = toArray(req.body.listingStatus);
+    const securedFlag = toArray(req.body.securedFlag);
+    const rating = toArray(req.body.rating);
 
     // ── Single-select filters (strings) ──
     const dealSize = req.body.dealSize || "";
