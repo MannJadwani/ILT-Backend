@@ -48,6 +48,153 @@ function formatDate(date) {
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
+
+// ==========================================
+// MAIN API: POST /api/issuer/bulk-upsert
+// ==========================================
+app.post('/bulk-upsert', async (req, res) => {
+  try {
+    const { data } = req.body;
+    if (!Array.isArray(data)) {
+      return res.status(400).json({ success: false, message: '"data" must be an array' });
+    }
+
+    const results = [];
+
+    for (const item of data) {
+      const txResult = await prisma.$transaction(async (tx) => {
+        let masterId;
+
+        // --- Check if ISIN already exists ---
+        const existing = await tx.master_issuer.findFirst({
+          where: { isin: item.isin }
+        });
+
+        // ==================================
+        // UPDATE BRANCH
+        // ==================================
+        if (existing) {
+          masterId = existing.id;
+
+          const updated = await tx.master_issuer.update({
+            where: { id: masterId },
+            data: {
+              security_name: item.security_name,
+              // add other master_issuer fields here if needed
+              issuer_details: {
+                update: {
+                  issuer_name: item.issuer_name,
+                }
+              }
+            },
+            include: {
+              issuer_details: true
+            }
+          });
+
+          // --- Upsert rating + agency ---
+          let ratingResult = null;
+          if (item.agencyName && item.rating) {
+            let agency = await tx.master_agency.findFirst({
+              where: { short_name: item.agencyName }
+            });
+
+            const existingRating = await tx.master_issuer_rating.findFirst({
+              where: {
+                issuer_id: masterId,
+                agency_id: agency.id
+              }
+            });
+
+            if (existingRating) {
+              ratingResult = await tx.master_issuer_rating.update({
+                where: { id: existingRating.id },
+                data: {
+                  rating: item.rating,
+                  outlook: item.outlook || existingRating.outlook,
+                  rating_date: new Date()
+                }
+              });
+            } else {
+              ratingResult = await tx.master_issuer_rating.create({
+                data: {
+                  issuer_id: masterId,
+                  agency_id: agency.id,
+                  rating: item.rating,
+                  outlook: item.outlook || null,
+                  rating_date: new Date()
+                }
+              });
+            }
+          }
+
+          return { isin: item.isin, action: 'updated', updated, rating: ratingResult };
+        }
+
+        // ==================================
+        // INSERT BRANCH
+        // ==================================
+        else {
+          const result = await tx.master_issuer.create({
+            data: {
+              isin: item.isin,
+              security_name: item.security_name,
+              issuer_details: {
+                create: {
+                  issuer_name: item.issuer_name,
+                }
+              }
+            },
+            include: {
+              issuer_details: true
+            }
+          });
+
+          masterId = result.id;
+
+          // --- Create rating + agency ---
+          let ratingResult = null;
+          if (item.agencyName && item.rating) {
+            let agency = await tx.master_agency.findFirst({
+              where: { short_name: item.agencyName }
+            });
+
+            if (!agency) {
+              agency = await tx.master_agency.create({
+                data: {
+                  agency_name: item.agencyName,
+                  short_name: item.agencyName,
+                }
+              });
+            }
+
+            ratingResult = await tx.master_issuer_rating.create({
+              data: {
+                issuer_id: masterId,
+                agency_id: agency.id,
+                rating: item.rating,
+                outlook: item.outlook || null,
+                rating_date: new Date()
+              }
+            });
+          }
+
+          return { isin: item.isin, action: 'inserted', result, rating: ratingResult };
+        }
+      });
+
+      results.push(txResult);
+    }
+
+    return res.json({ success: true, processed: results.length, results });
+
+  } catch (err) {
+    console.error('Bulk upsert error:', err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+
 //updated Dashoard APIs DONE
 
 app.get('/dashboard_issue_volume_trends_data', async (req, res) => {
