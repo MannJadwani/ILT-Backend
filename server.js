@@ -80,7 +80,6 @@ app.post('/bulk-upsert', async (req, res) => {
             where: { id: masterId },
             data: {
               security_name: item.security_name,
-              // add other master_issuer fields here if needed
               issuer_details: {
                 update: {
                   issuer_name: item.issuer_name,
@@ -92,12 +91,48 @@ app.post('/bulk-upsert', async (req, res) => {
             }
           });
 
+          // --- Upsert master_issuer_additional (greenShoeOption) ---
+          let additionalResult = null;
+          if (item.greenShoeOption !== undefined) {
+            const existingAdditional = await tx.master_issuer_additional.findFirst({
+              where: { issuer_id: masterId }
+            });
+
+            if (existingAdditional) {
+              additionalResult = await tx.master_issuer_additional.update({
+                where: { id: existingAdditional.id },   // update by PK, not issuer_id
+                data: {
+                  greenShoeOption: item.greenShoeOption,
+                  amountRaised:item.amountRaised
+                }
+              });
+            } else {
+              additionalResult = await tx.master_issuer_additional.create({
+                data: {
+                  issuer_id: masterId,
+                  greenShoeOption: item.greenShoeOption,
+                  amountRaised:item.amountRaised
+                }
+              });
+            }
+          }
+
+
           // --- Upsert rating + agency ---
           let ratingResult = null;
           if (item.agencyName && item.rating) {
             let agency = await tx.master_agency.findFirst({
               where: { short_name: item.agencyName }
             });
+
+            if (!agency) {
+              agency = await tx.master_agency.create({
+                data: {
+                  agency_name: item.agencyName,
+                  short_name: item.agencyName,
+                }
+              });
+            }
 
             const existingRating = await tx.master_issuer_rating.findFirst({
               where: {
@@ -128,7 +163,13 @@ app.post('/bulk-upsert', async (req, res) => {
             }
           }
 
-          return { isin: item.isin, action: 'updated', updated, rating: ratingResult };
+          return {
+            isin: item.isin,
+            action: 'updated',
+            updated,
+            additional: additionalResult,
+            rating: ratingResult
+          };
         }
 
         // ==================================
@@ -151,6 +192,18 @@ app.post('/bulk-upsert', async (req, res) => {
           });
 
           masterId = result.id;
+
+          // --- Create master_issuer_additional (greenShoeOption) ---
+          let additionalResult = null;
+          if (item.greenShoeOption !== undefined) {
+            additionalResult = await tx.master_issuer_additional.create({
+              data: {
+                issuer_id: masterId,
+                greenShoeOption: item.greenShoeOption,
+                amountRaised:item.amountRaised
+              }
+            });
+          }
 
           // --- Create rating + agency ---
           let ratingResult = null;
@@ -179,7 +232,13 @@ app.post('/bulk-upsert', async (req, res) => {
             });
           }
 
-          return { isin: item.isin, action: 'inserted', result, rating: ratingResult };
+          return {
+            isin: item.isin,
+            action: 'inserted',
+            result,
+            additional: additionalResult,
+            rating: ratingResult
+          };
         }
       });
 
