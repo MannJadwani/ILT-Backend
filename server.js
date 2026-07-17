@@ -174,6 +174,38 @@ app.post('/bulk-upsert', async (req, res) => {
             }
           }
 
+          // --- Upsert issuer_tenure_details ---
+          let tenureResult = null;
+          if (
+            item.tenureInYears !== undefined ||
+            item.tenureInMonths !== undefined ||
+            item.tenureInDays !== undefined
+          ) {
+            const existingTenure = await tx.issuer_tenure_details.findFirst({
+              where: { issuer_id: masterId }
+            });
+
+            const tenureData = {
+              tenure_no_years: item.tenureInYears,
+              tenure_no_months: item.tenureInMonths,
+              tenure_no_days: item.tenureInDays
+            };
+
+            if (existingTenure) {
+              tenureResult = await tx.issuer_tenure_details.update({
+                where: { id: existingTenure.id },
+                data: tenureData
+              });
+            } else {
+              tenureResult = await tx.issuer_tenure_details.create({
+                data: {
+                  issuer_id: masterId,
+                  ...tenureData
+                }
+              });
+            }
+          }
+
           // --- Upsert rating + agency ---
           let ratingResult = null;
           if (item.agencyName && item.rating) {
@@ -225,6 +257,7 @@ app.post('/bulk-upsert', async (req, res) => {
             updated,
             additional: additionalResult,
             coupon: couponResult,
+            tenure: tenureResult,
             rating: ratingResult,
             securedFlag
           };
@@ -289,6 +322,23 @@ app.post('/bulk-upsert', async (req, res) => {
             });
           }
 
+          // --- Create issuer_tenure_details ---
+          let tenureResult = null;
+          if (
+            item.tenureInYears !== undefined ||
+            item.tenureInMonths !== undefined ||
+            item.tenureInDays !== undefined
+          ) {
+            tenureResult = await tx.issuer_tenure_details.create({
+              data: {
+                issuer_id: masterId,
+                tenure_no_years: item.tenureInYears,
+                tenure_no_months: item.tenureInMonths,
+                tenure_no_days: item.tenureInDays
+              }
+            });
+          }
+
           // --- Create rating + agency ---
           let ratingResult = null;
           if (item.agencyName && item.rating) {
@@ -322,6 +372,7 @@ app.post('/bulk-upsert', async (req, res) => {
             result,
             additional: additionalResult,
             coupon: couponResult,
+            tenure: tenureResult,
             rating: ratingResult,
             securedFlag
           };
