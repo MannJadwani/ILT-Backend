@@ -100,10 +100,10 @@ app.post('/bulk-upsert', async (req, res) => {
 
             if (existingAdditional) {
               additionalResult = await tx.master_issuer_additional.update({
-                where: { id: existingAdditional.id },   // update by PK, not issuer_id
+                where: { id: existingAdditional.id },
                 data: {
                   greenShoeOption: item.greenShoeOption,
-                  amountRaised:item.amountRaised
+                  amountRaised: item.amountRaised
                 }
               });
             } else {
@@ -111,12 +111,50 @@ app.post('/bulk-upsert', async (req, res) => {
                 data: {
                   issuer_id: masterId,
                   greenShoeOption: item.greenShoeOption,
-                  amountRaised:item.amountRaised
+                  amountRaised: item.amountRaised
                 }
               });
             }
           }
 
+          // --- Upsert issuer_coupon_details (coupon) ---
+          let couponResult = null;
+          if (item.coupon) {
+            let couponType = await tx.master_coupon_type.findFirst({
+              where: { description: item.coupon }
+            });
+
+            if (!couponType) {
+              // Generate a code from the description if not found
+              const generatedCode = item.coupon.toUpperCase().replace(/\s+/g, '_').substring(0, 10);
+              couponType = await tx.master_coupon_type.create({
+                data: {
+                  code: generatedCode,
+                  description: item.coupon
+                }
+              });
+            }
+
+            const existingCoupon = await tx.issuer_coupon_details.findFirst({
+              where: { issuer_id: masterId }
+            });
+
+            if (existingCoupon) {
+              couponResult = await tx.issuer_coupon_details.update({
+                where: { id: existingCoupon.id },
+                data: {
+                  coupon_type: String(couponType.code)
+                }
+              });
+            } else {
+              couponResult = await tx.issuer_coupon_details.create({
+                data: {
+                  issuer_id: masterId,
+                  coupon_type: String(couponType.code)
+                }
+              });
+            }
+          }
 
           // --- Upsert rating + agency ---
           let ratingResult = null;
@@ -168,6 +206,7 @@ app.post('/bulk-upsert', async (req, res) => {
             action: 'updated',
             updated,
             additional: additionalResult,
+            coupon: couponResult,
             rating: ratingResult
           };
         }
@@ -200,7 +239,32 @@ app.post('/bulk-upsert', async (req, res) => {
               data: {
                 issuer_id: masterId,
                 greenShoeOption: item.greenShoeOption,
-                amountRaised:item.amountRaised
+                amountRaised: item.amountRaised
+              }
+            });
+          }
+
+          // --- Create issuer_coupon_details (coupon) ---
+          let couponResult = null;
+          if (item.coupon) {
+            let couponType = await tx.master_coupon_type.findFirst({
+              where: { description: item.coupon }
+            });
+
+            if (!couponType) {
+              const generatedCode = item.coupon.toUpperCase().replace(/\s+/g, '_').substring(0, 10);
+              couponType = await tx.master_coupon_type.create({
+                data: {
+                  code: generatedCode,
+                  description: item.coupon
+                }
+              });
+            }
+
+            couponResult = await tx.issuer_coupon_details.create({
+              data: {
+                issuer_id: masterId,
+                coupon_type: String(couponType.code)
               }
             });
           }
@@ -237,6 +301,7 @@ app.post('/bulk-upsert', async (req, res) => {
             action: 'inserted',
             result,
             additional: additionalResult,
+            coupon: couponResult,
             rating: ratingResult
           };
         }
