@@ -64,6 +64,12 @@ app.post('/bulk-upsert', async (req, res) => {
     for (const item of data) {
       const txResult = await prisma.$transaction(async (tx) => {
         let masterId;
+        // Instead of new Date(item.allotmentDate)
+        const allotmentdate = new Date(item.allotmentDate);
+        const maturitydate = new Date(item.maturityDate);
+        // Force the date to midnight UTC to prevent the shift
+        const formattedAllotmentDate = new Date(Date.UTC(allotmentdate.getFullYear(), allotmentdate.getMonth(), allotmentdate.getDate()));
+        const formattedMaturityDate = new Date(Date.UTC(maturitydate.getFullYear(), maturitydate.getMonth(), maturitydate.getDate()));
 
         // --- Helper: resolve secured_flag from description ---
         let securedFlag = null;
@@ -73,6 +79,8 @@ app.post('/bulk-upsert', async (req, res) => {
           });
 
           if (!securedFlag) {
+            console.log('No secured flag found, need to create, ');
+            
             const generatedCode = item.securedUnsecured.toUpperCase().replace(/\s+/g, '_').substring(0, 10);
             securedFlag = await tx.master_secured_flag.create({
               data: {
@@ -95,6 +103,7 @@ app.post('/bulk-upsert', async (req, res) => {
           });
 
           if (!interestType) {
+            console.log('No interest type found, need to create, ');
             const generatedCode = item.interestPaymentType.toUpperCase().replace(/\s+/g, '_').substring(0, 10);
             interestType = await tx.master_interest_type.create({
               data: {
@@ -116,6 +125,7 @@ app.post('/bulk-upsert', async (req, res) => {
         if (existing) {
           masterId = existing.id;
 
+
           const updated = await tx.master_issuer.update({
             where: { id: masterId },
             data: {
@@ -127,6 +137,8 @@ app.post('/bulk-upsert', async (req, res) => {
               issue_size: parseFloat(item.baseIssueSize),
               freq_dis: String(item.couponFrequency),
               isin_desc: String(item.issueDescription),
+              allotment_date: item.allotmentDate ? formattedAllotmentDate : null,
+              maturity_date: item.maturityDate ? formattedMaturityDate : null,
               issuer_details: {
                 update: {
                   issuer_name: item.issuer_name,
@@ -172,6 +184,7 @@ app.post('/bulk-upsert', async (req, res) => {
             });
 
             if (!couponType) {
+              console.log('No coupon type found, need to create, ');
               const generatedCode = item.coupon.toUpperCase().replace(/\s+/g, '_').substring(0, 10);
               couponType = await tx.master_coupon_type.create({
                 data: {
@@ -242,6 +255,8 @@ app.post('/bulk-upsert', async (req, res) => {
             });
 
             if (!agency) {
+              console.log('No agency found, need to create one');
+              
               agency = await tx.master_agency.create({
                 data: {
                   agency_name: item.agencyName,
@@ -307,6 +322,8 @@ app.post('/bulk-upsert', async (req, res) => {
               issue_size: parseFloat(item.baseIssueSize),
               freq_dis: String(item.couponFrequency),
               isin_desc: String(item.issueDescription),
+              allotment_date: item.allotmentDate ? formattedAllotmentDate : null,
+              maturity_date: item.maturityDate ? formattedMaturityDate : null,
               issuer_details: {
                 create: {
                   issuer_name: item.issuer_name,
