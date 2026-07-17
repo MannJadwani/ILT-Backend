@@ -83,6 +83,28 @@ app.post('/bulk-upsert', async (req, res) => {
           }
         }
 
+        // --- Helper: resolve interest_type from description ---
+        let interestType = null;
+        if (item.interestPaymentType) {
+          interestType = await tx.master_interest_type.findFirst({
+            where: {
+              description: {
+                contains: item.interestPaymentType
+              }
+            }
+          });
+
+          if (!interestType) {
+            const generatedCode = item.interestPaymentType.toUpperCase().replace(/\s+/g, '_').substring(0, 10);
+            interestType = await tx.master_interest_type.create({
+              data: {
+                code: generatedCode,
+                description: item.interestPaymentType
+              }
+            });
+          }
+        }
+
         // --- Check if ISIN already exists ---
         const existing = await tx.master_issuer.findFirst({
           where: { isin: item.isin }
@@ -99,6 +121,7 @@ app.post('/bulk-upsert', async (req, res) => {
             data: {
               security_name: item.security_name,
               secured_flag: parseInt(securedFlag?.code),
+              interest_type: parseInt(interestType?.code),
               issuer_details: {
                 update: {
                   issuer_name: item.issuer_name,
@@ -259,7 +282,8 @@ app.post('/bulk-upsert', async (req, res) => {
             coupon: couponResult,
             tenure: tenureResult,
             rating: ratingResult,
-            securedFlag
+            securedFlag,
+            interestType
           };
         }
 
@@ -272,6 +296,7 @@ app.post('/bulk-upsert', async (req, res) => {
               isin: item.isin,
               security_name: item.security_name,
               secured_flag: parseInt(securedFlag?.code),
+              interest_type: parseInt(interestType?.code),
               issuer_details: {
                 create: {
                   issuer_name: item.issuer_name,
@@ -374,7 +399,8 @@ app.post('/bulk-upsert', async (req, res) => {
             coupon: couponResult,
             tenure: tenureResult,
             rating: ratingResult,
-            securedFlag
+            securedFlag,
+            interestType
           };
         }
       });
