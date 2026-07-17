@@ -122,6 +122,11 @@ app.post('/bulk-upsert', async (req, res) => {
               security_name: item.security_name,
               secured_flag: parseInt(securedFlag?.code),
               interest_type: parseInt(interestType?.code),
+              face_value: parseFloat(item.faceValue),
+              issue_price: parseFloat(item.price),
+              issue_size: parseFloat(item.baseIssueSize),
+              freq_dis: String(item.couponFrequency),
+              isin_desc: String(item.issueDescription),
               issuer_details: {
                 update: {
                   issuer_name: item.issuer_name,
@@ -297,6 +302,11 @@ app.post('/bulk-upsert', async (req, res) => {
               security_name: item.security_name,
               secured_flag: parseInt(securedFlag?.code),
               interest_type: parseInt(interestType?.code),
+              face_value: parseFloat(item.faceValue),
+              issue_price: parseFloat(item.price),
+              issue_size: parseFloat(item.baseIssueSize),
+              freq_dis: String(item.couponFrequency),
+              isin_desc: String(item.issueDescription),
               issuer_details: {
                 create: {
                   issuer_name: item.issuer_name,
