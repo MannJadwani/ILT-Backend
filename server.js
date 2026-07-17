@@ -65,6 +65,24 @@ app.post('/bulk-upsert', async (req, res) => {
       const txResult = await prisma.$transaction(async (tx) => {
         let masterId;
 
+        // --- Helper: resolve secured_flag from description ---
+        let securedFlag = null;
+        if (item.securedUnsecured) {
+          securedFlag = await tx.master_secured_flag.findFirst({
+            where: { description: item.securedUnsecured }
+          });
+
+          if (!securedFlag) {
+            const generatedCode = item.securedUnsecured.toUpperCase().replace(/\s+/g, '_').substring(0, 10);
+            securedFlag = await tx.master_secured_flag.create({
+              data: {
+                code: generatedCode,
+                description: item.securedUnsecured
+              }
+            });
+          }
+        }
+
         // --- Check if ISIN already exists ---
         const existing = await tx.master_issuer.findFirst({
           where: { isin: item.isin }
@@ -80,6 +98,7 @@ app.post('/bulk-upsert', async (req, res) => {
             where: { id: masterId },
             data: {
               security_name: item.security_name,
+              secured_flag: parseInt(securedFlag?.code),
               issuer_details: {
                 update: {
                   issuer_name: item.issuer_name,
@@ -125,7 +144,6 @@ app.post('/bulk-upsert', async (req, res) => {
             });
 
             if (!couponType) {
-              // Generate a code from the description if not found
               const generatedCode = item.coupon.toUpperCase().replace(/\s+/g, '_').substring(0, 10);
               couponType = await tx.master_coupon_type.create({
                 data: {
@@ -207,7 +225,8 @@ app.post('/bulk-upsert', async (req, res) => {
             updated,
             additional: additionalResult,
             coupon: couponResult,
-            rating: ratingResult
+            rating: ratingResult,
+            securedFlag
           };
         }
 
@@ -219,6 +238,7 @@ app.post('/bulk-upsert', async (req, res) => {
             data: {
               isin: item.isin,
               security_name: item.security_name,
+              secured_flag: parseInt(securedFlag?.code),
               issuer_details: {
                 create: {
                   issuer_name: item.issuer_name,
@@ -302,7 +322,8 @@ app.post('/bulk-upsert', async (req, res) => {
             result,
             additional: additionalResult,
             coupon: couponResult,
-            rating: ratingResult
+            rating: ratingResult,
+            securedFlag
           };
         }
       });
