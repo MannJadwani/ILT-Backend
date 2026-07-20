@@ -247,50 +247,55 @@ app.post('/bulk-upsert', async (req, res) => {
             }
           }
 
-          // --- Upsert rating + agency ---
-          let ratingResult = null;
-          if (item.agencyName && item.rating) {
-            let agency = await tx.master_agency.findFirst({
-              where: { short_name: item.agencyName }
-            });
+          // --- Upsert multiple ratings from creditRatingData array ---
+          let ratingResults = [];
+          if (Array.isArray(item.creditRatingData) && item.creditRatingData.length > 0) {
+            for (const ratingItem of item.creditRatingData) {
+              if (!ratingItem.agencyName || !ratingItem.rating) continue;
 
-            if (!agency) {
-              console.log('No agency found, need to create one');
-              
-              agency = await tx.master_agency.create({
-                data: {
-                  agency_name: item.agencyName,
-                  short_name: item.agencyName,
-                }
+              let agency = await tx.master_agency.findFirst({
+                where: { short_name: ratingItem.agencyName }
               });
-            }
 
-            const existingRating = await tx.master_issuer_rating.findFirst({
-              where: {
-                issuer_id: masterId,
-                agency_id: agency.id
+              if (!agency) {
+                console.log('No agency found, need to create one');
+                agency = await tx.master_agency.create({
+                  data: {
+                    agency_name: ratingItem.agencyName,
+                    short_name: ratingItem.agencyName,
+                  }
+                });
               }
-            });
 
-            if (existingRating) {
-              ratingResult = await tx.master_issuer_rating.update({
-                where: { id: existingRating.id },
-                data: {
-                  rating: item.rating,
-                  outlook: item.outlook || existingRating.outlook,
-                  rating_date: new Date()
-                }
-              });
-            } else {
-              ratingResult = await tx.master_issuer_rating.create({
-                data: {
+              const existingRating = await tx.master_issuer_rating.findFirst({
+                where: {
                   issuer_id: masterId,
-                  agency_id: agency.id,
-                  rating: item.rating,
-                  outlook: item.outlook || null,
-                  rating_date: new Date()
+                  agency_id: agency.id
                 }
               });
+
+              let ratingResult;
+              if (existingRating) {
+                ratingResult = await tx.master_issuer_rating.update({
+                  where: { id: existingRating.id },
+                  data: {
+                    rating: ratingItem.rating,
+                    outlook: ratingItem.outlook || existingRating.outlook,
+                    rating_date: new Date()
+                  }
+                });
+              } else {
+                ratingResult = await tx.master_issuer_rating.create({
+                  data: {
+                    issuer_id: masterId,
+                    agency_id: agency.id,
+                    rating: ratingItem.rating,
+                    outlook: ratingItem.outlook || null,
+                    rating_date: new Date()
+                  }
+                });
+              }
+              ratingResults.push(ratingResult);
             }
           }
 
@@ -301,7 +306,7 @@ app.post('/bulk-upsert', async (req, res) => {
             additional: additionalResult,
             coupon: couponResult,
             tenure: tenureResult,
-            rating: ratingResult,
+            ratings: ratingResults,
             securedFlag,
             interestType
           };
@@ -391,31 +396,36 @@ app.post('/bulk-upsert', async (req, res) => {
             });
           }
 
-          // --- Create rating + agency ---
-          let ratingResult = null;
-          if (item.agencyName && item.rating) {
-            let agency = await tx.master_agency.findFirst({
-              where: { short_name: item.agencyName }
-            });
+          // --- Create multiple ratings from creditRatingData array ---
+          let ratingResults = [];
+          if (Array.isArray(item.creditRatingData) && item.creditRatingData.length > 0) {
+            for (const ratingItem of item.creditRatingData) {
+              if (!ratingItem.agencyName || !ratingItem.rating) continue;
 
-            if (!agency) {
-              agency = await tx.master_agency.create({
+              let agency = await tx.master_agency.findFirst({
+                where: { short_name: ratingItem.agencyName }
+              });
+
+              if (!agency) {
+                agency = await tx.master_agency.create({
+                  data: {
+                    agency_name: ratingItem.agencyName,
+                    short_name: ratingItem.agencyName,
+                  }
+                });
+              }
+
+              const ratingResult = await tx.master_issuer_rating.create({
                 data: {
-                  agency_name: item.agencyName,
-                  short_name: item.agencyName,
+                  issuer_id: masterId,
+                  agency_id: agency.id,
+                  rating: ratingItem.rating,
+                  outlook: ratingItem.outlook || null,
+                  rating_date: new Date()
                 }
               });
+              ratingResults.push(ratingResult);
             }
-
-            ratingResult = await tx.master_issuer_rating.create({
-              data: {
-                issuer_id: masterId,
-                agency_id: agency.id,
-                rating: item.rating,
-                outlook: item.outlook || null,
-                rating_date: new Date()
-              }
-            });
           }
 
           return {
@@ -425,7 +435,7 @@ app.post('/bulk-upsert', async (req, res) => {
             additional: additionalResult,
             coupon: couponResult,
             tenure: tenureResult,
-            rating: ratingResult,
+            ratings: ratingResults,
             securedFlag,
             interestType
           };
