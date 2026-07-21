@@ -132,7 +132,6 @@ app.post('/bulk-upsert', async (req, res) => {
         if (existing) {
           masterId = existing.id;
 
-
           const updated = await tx.master_issuer.update({
             where: { id: masterId },
             data: {
@@ -185,8 +184,8 @@ app.post('/bulk-upsert', async (req, res) => {
             });
           }
 
-
           // --- Upsert issuer_coupon_details (coupon) ---
+          let couponResult = null;   // <-- FIX: declared couponResult variable
           let couponType = null;
 
           if (item.coupon?.trim()) {
@@ -220,7 +219,6 @@ app.post('/bulk-upsert', async (req, res) => {
               }
             });
           }
-
 
           // --- Upsert issuer_tenure_details ---
           let tenureResult = null;
@@ -437,7 +435,6 @@ app.post('/bulk-upsert', async (req, res) => {
     return res.status(500).json({ success: false, message: err.message });
   }
 });
-
 
 //updated Dashoard APIs DONE
 
