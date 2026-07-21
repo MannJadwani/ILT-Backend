@@ -8,7 +8,9 @@ app.use(express.json());
 app.use(cors({
   origin: [
     'http://localhost:3000',
-    '*'
+    'https://india-league-tables.vercel.app',
+    'https://*.vercel.app',// Allow all subdomains of vercel.app
+    '*' 
   ],
   credentials: true
 }));
