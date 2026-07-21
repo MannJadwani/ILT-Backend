@@ -10,7 +10,7 @@ app.use(cors({
     'http://localhost:3000',
     'https://india-league-tables.vercel.app',
     'https://*.vercel.app',// Allow all subdomains of vercel.app
-    '*' 
+    '*'
   ],
   credentials: true
 }));
@@ -125,7 +125,13 @@ app.post('/bulk-upsert', async (req, res) => {
 
         // --- Check if ISIN already exists ---
         const existing = await tx.master_issuer.findFirst({
-          where: { isin: item.isin?.trim() }
+          where: {
+            isin: item.isin?.trim()
+          },
+          select: {
+            id: true,
+            isin: true
+          }
         });
 
         // ==================================
