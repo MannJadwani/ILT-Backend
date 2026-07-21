@@ -59,64 +59,71 @@ app.post('/bulk-upsert', async (req, res) => {
       return res.status(400).json({ success: false, message: '"data" must be an array' });
     }
 
+    const checkNumber = (value) => {
+      if (value === "" || value === null || value === undefined)
+        return null;
+
+      const n = Number(value);
+
+      return Number.isFinite(n) ? n : null;
+    };
+
+    const parseDate = (value) => {
+      if (!value) return null;
+
+      const d = new Date(value);
+
+      if (isNaN(d.getTime())) return null;
+
+      return new Date(Date.UTC(
+        d.getFullYear(),
+        d.getMonth(),
+        d.getDate()
+      ));
+    };
+
     const results = [];
 
     for (const item of data) {
       const txResult = await prisma.$transaction(async (tx) => {
         let masterId;
-        // Instead of new Date(item.allotmentDate)
-        const allotmentdate = new Date(item.allotmentDate);
-        const maturitydate = new Date(item.maturityDate);
         // Force the date to midnight UTC to prevent the shift
-        const formattedAllotmentDate = new Date(Date.UTC(allotmentdate.getFullYear(), allotmentdate.getMonth(), allotmentdate.getDate()));
-        const formattedMaturityDate = new Date(Date.UTC(maturitydate.getFullYear(), maturitydate.getMonth(), maturitydate.getDate()));
+        const formattedAllotmentDate = parseDate(item.allotmentDate);
+        const formattedMaturityDate = parseDate(item.maturityDate);
 
         // --- Helper: resolve secured_flag from description ---
         let securedFlag = null;
+
         if (item.securedUnsecured) {
           securedFlag = await tx.master_secured_flag.findFirst({
-            where: { description: item.securedUnsecured }
-          });
-
-          if (!securedFlag) {
-            console.log('No secured flag found, need to create, ');
-            
-            const generatedCode = item.securedUnsecured.toUpperCase().replace(/\s+/g, '_').substring(0, 10);
-            securedFlag = await tx.master_secured_flag.create({
-              data: {
-                code: generatedCode,
-                description: item.securedUnsecured
+            where: {
+              description: {
+                contains: item.securedUnsecured?.trim()
               }
-            });
-          }
+            }
+          });
         }
 
         // --- Helper: resolve interest_type from description ---
         let interestType = null;
-        if (item.interestPaymentType) {
+
+        if (item.interestPaymentType?.trim()) {
           interestType = await tx.master_interest_type.findFirst({
             where: {
               description: {
-                contains: item.interestPaymentType
+                contains: item.interestPaymentType.trim()
               }
             }
           });
+        }
 
-          if (!interestType) {
-            console.log('No interest type found, need to create, ');
-            const generatedCode = item.interestPaymentType.toUpperCase().replace(/\s+/g, '_').substring(0, 10);
-            interestType = await tx.master_interest_type.create({
-              data: {
-                code: generatedCode,
-                description: item.interestPaymentType
-              }
-            });
-          }
+        if (!item.isin?.trim()) {
+          throw new Error("ISIN is required");
         }
 
         // --- Check if ISIN already exists ---
         const existing = await tx.master_issuer.findFirst({
-          where: { isin: item.isin }
+          where: { isin: item.isin?.trim() }
         });
 
         // ==================================
@@ -129,19 +136,23 @@ app.post('/bulk-upsert', async (req, res) => {
           const updated = await tx.master_issuer.update({
             where: { id: masterId },
             data: {
-              security_name: item.security_name,
-              secured_flag: parseInt(securedFlag?.code),
-              interest_type: parseInt(interestType?.code),
-              face_value: parseFloat(item.faceValue),
-              issue_price: parseFloat(item.price),
-              issue_size: parseFloat(item.baseIssueSize),
-              freq_dis: String(item.couponFrequency),
-              isin_desc: String(item.issueDescription),
+              security_name: item.security_name ?? null,
+              secured_flag: securedFlag ? Number(securedFlag.code) : null,
+              interest_type: interestType ? Number(interestType.code) : null,
+              face_value: checkNumber(item.faceValue),
+              issue_price: checkNumber(item.price),
+              issue_size: checkNumber(item.baseIssueSize),
+              freq_dis: item.couponFrequency !== undefined && item.couponFrequency !== null
+                ? String(item.couponFrequency)
+                : null,
+              isin_desc: item.issueDescription !== undefined && item.issueDescription !== null
+                ? String(item.issueDescription)
+                : null,
               allotment_date: item.allotmentDate ? formattedAllotmentDate : null,
               maturity_date: item.maturityDate ? formattedMaturityDate : null,
               issuer_details: {
                 update: {
-                  issuer_name: item.issuer_name,
+                  issuer_name: item.issuer_name ?? null,
                 }
               }
             },
@@ -152,150 +163,138 @@ app.post('/bulk-upsert', async (req, res) => {
 
           // --- Upsert master_issuer_additional (greenShoeOption) ---
           let additionalResult = null;
-          if (item.greenShoeOption !== undefined) {
-            const existingAdditional = await tx.master_issuer_additional.findFirst({
-              where: { issuer_id: masterId }
+          const existingAdditional = await tx.master_issuer_additional.findFirst({
+            where: { issuer_id: masterId }
+          });
+          //if existingAdditional exists, then update it else create a new record
+          if (existingAdditional) {
+            additionalResult = await tx.master_issuer_additional.update({
+              where: { id: existingAdditional.id },
+              data: {
+                greenShoeOption: item.greenShoeOption ?? null,
+                amountRaised: item.amountRaised ?? null
+              }
             });
-
-            if (existingAdditional) {
-              additionalResult = await tx.master_issuer_additional.update({
-                where: { id: existingAdditional.id },
-                data: {
-                  greenShoeOption: item.greenShoeOption,
-                  amountRaised: item.amountRaised
-                }
-              });
-            } else {
-              additionalResult = await tx.master_issuer_additional.create({
-                data: {
-                  issuer_id: masterId,
-                  greenShoeOption: item.greenShoeOption,
-                  amountRaised: item.amountRaised
-                }
-              });
-            }
+          } else {
+            additionalResult = await tx.master_issuer_additional.create({
+              data: {
+                issuer_id: masterId,
+                greenShoeOption: item.greenShoeOption ?? null,
+                amountRaised: item.amountRaised ?? null
+              }
+            });
           }
+
 
           // --- Upsert issuer_coupon_details (coupon) ---
-          let couponResult = null;
-          if (item.coupon) {
-            let couponType = await tx.master_coupon_type.findFirst({
-              where: { description: item.coupon }
+          let couponType = null;
+
+          if (item.coupon?.trim()) {
+            couponType = await tx.master_coupon_type.findFirst({
+              where: {
+                description: { contains: item.coupon.trim() }
+              }
             });
-
-            if (!couponType) {
-              console.log('No coupon type found, need to create, ');
-              const generatedCode = item.coupon.toUpperCase().replace(/\s+/g, '_').substring(0, 10);
-              couponType = await tx.master_coupon_type.create({
-                data: {
-                  code: generatedCode,
-                  description: item.coupon
-                }
-              });
-            }
-
-            const existingCoupon = await tx.issuer_coupon_details.findFirst({
-              where: { issuer_id: masterId }
-            });
-
-            if (existingCoupon) {
-              couponResult = await tx.issuer_coupon_details.update({
-                where: { id: existingCoupon.id },
-                data: {
-                  coupon_type: String(couponType.code)
-                }
-              });
-            } else {
-              couponResult = await tx.issuer_coupon_details.create({
-                data: {
-                  issuer_id: masterId,
-                  coupon_type: String(couponType.code)
-                }
-              });
-            }
           }
+
+          const existingCoupon = await tx.issuer_coupon_details.findFirst({
+            where: { issuer_id: masterId }
+          });
+          //if existingCoupon exists, then update it else create a new issuer coupon details row
+          if (existingCoupon) {
+            couponResult = await tx.issuer_coupon_details.update({
+              where: { id: existingCoupon.id },
+              data: {
+                coupon_type: couponType?.code !== undefined && couponType?.code !== null
+                  ? String(couponType?.code)
+                  : null,
+              }
+            });
+          } else {
+            couponResult = await tx.issuer_coupon_details.create({
+              data: {
+                issuer_id: masterId,
+                coupon_type: couponType?.code !== undefined && couponType?.code !== null
+                  ? String(couponType?.code)
+                  : null
+              }
+            });
+          }
+
 
           // --- Upsert issuer_tenure_details ---
           let tenureResult = null;
-          if (
-            item.tenureInYears !== undefined ||
-            item.tenureInMonths !== undefined ||
-            item.tenureInDays !== undefined
-          ) {
-            const existingTenure = await tx.issuer_tenure_details.findFirst({
-              where: { issuer_id: masterId }
+
+          const existingTenure = await tx.issuer_tenure_details.findFirst({
+            where: { issuer_id: masterId }
+          });
+          const tenureData = {
+            tenure_no_years: item.tenureInYears ?? null,
+            tenure_no_months: item.tenureInMonths ?? null,
+            tenure_no_days: item.tenureInDays ?? null
+          };
+
+          //if existingTenure exists, then update it else create a new issuer tenure details row
+          if (existingTenure) {
+            tenureResult = await tx.issuer_tenure_details.update({
+              where: { id: existingTenure.id },
+              data: tenureData
             });
-
-            const tenureData = {
-              tenure_no_years: item.tenureInYears,
-              tenure_no_months: item.tenureInMonths,
-              tenure_no_days: item.tenureInDays
-            };
-
-            if (existingTenure) {
-              tenureResult = await tx.issuer_tenure_details.update({
-                where: { id: existingTenure.id },
-                data: tenureData
-              });
-            } else {
-              tenureResult = await tx.issuer_tenure_details.create({
-                data: {
-                  issuer_id: masterId,
-                  ...tenureData
-                }
-              });
-            }
+          } else {
+            tenureResult = await tx.issuer_tenure_details.create({
+              data: {
+                issuer_id: masterId,
+                ...tenureData
+              }
+            });
           }
 
           // --- Upsert multiple ratings from creditRatingData array ---
           let ratingResults = [];
+          // checking if it is an array or not
           if (Array.isArray(item.creditRatingData) && item.creditRatingData.length > 0) {
             for (const ratingItem of item.creditRatingData) {
-              if (!ratingItem.agencyName || !ratingItem.rating) continue;
 
               let agency = await tx.master_agency.findFirst({
-                where: { short_name: ratingItem.agencyName }
+                where: { short_name: { contains: ratingItem.agencyName?.trim() } }
               });
 
               if (!agency) {
-                console.log('No agency found, need to create one');
-                agency = await tx.master_agency.create({
-                  data: {
-                    agency_name: ratingItem.agencyName,
-                    short_name: ratingItem.agencyName,
-                  }
-                });
+                console.warn(`Agency not found: ${ratingItem.agencyName}`);
+                continue; // skip this rating
               }
 
               const existingRating = await tx.master_issuer_rating.findFirst({
                 where: {
                   issuer_id: masterId,
-                  agency_id: agency.id
+                  agency_id: agency?.id ?? null
                 }
               });
 
-              let ratingResult;
+              // if existingRating exists, then update it else create a new issuer rating row
               if (existingRating) {
-                ratingResult = await tx.master_issuer_rating.update({
+                const ratingResult = await tx.master_issuer_rating.update({
                   where: { id: existingRating.id },
                   data: {
-                    rating: ratingItem.rating,
-                    outlook: ratingItem.outlook || existingRating.outlook,
+                    rating: ratingItem.rating ?? null,
+                    outlook: ratingItem.outlook ?? null,
                     rating_date: new Date()
                   }
                 });
+                ratingResults.push(ratingResult);
               } else {
-                ratingResult = await tx.master_issuer_rating.create({
+                const ratingResult = await tx.master_issuer_rating.create({
                   data: {
                     issuer_id: masterId,
-                    agency_id: agency.id,
-                    rating: ratingItem.rating,
-                    outlook: ratingItem.outlook || null,
+                    agency_id: agency?.id ?? null,
+                    rating: ratingItem.rating ?? null,
+                    outlook: ratingItem.outlook ?? null,
                     rating_date: new Date()
                   }
                 });
+                ratingResults.push(ratingResult);
               }
-              ratingResults.push(ratingResult);
+
             }
           }
 
@@ -319,19 +318,23 @@ app.post('/bulk-upsert', async (req, res) => {
           const result = await tx.master_issuer.create({
             data: {
               isin: item.isin,
-              security_name: item.security_name,
-              secured_flag: parseInt(securedFlag?.code),
-              interest_type: parseInt(interestType?.code),
-              face_value: parseFloat(item.faceValue),
-              issue_price: parseFloat(item.price),
-              issue_size: parseFloat(item.baseIssueSize),
-              freq_dis: String(item.couponFrequency),
-              isin_desc: String(item.issueDescription),
+              security_name: item.security_name ?? null,
+              secured_flag: checkNumber(securedFlag?.code) ?? null,
+              interest_type: checkNumber(interestType?.code) ?? null,
+              face_value: checkNumber(item.faceValue) ?? null,
+              issue_price: checkNumber(item.price) ?? null,
+              issue_size: checkNumber(item.baseIssueSize) ?? null,
+              freq_dis: item.couponFrequency !== undefined && item.couponFrequency !== null
+                ? String(item.couponFrequency)
+                : null,
+              isin_desc: item.issueDescription !== undefined && item.issueDescription !== null
+                ? String(item.issueDescription)
+                : null,
               allotment_date: item.allotmentDate ? formattedAllotmentDate : null,
               maturity_date: item.maturityDate ? formattedMaturityDate : null,
               issuer_details: {
                 create: {
-                  issuer_name: item.issuer_name,
+                  issuer_name: item.issuer_name ?? null,
                 }
               }
             },
@@ -343,84 +346,66 @@ app.post('/bulk-upsert', async (req, res) => {
           masterId = result.id;
 
           // --- Create master_issuer_additional (greenShoeOption) ---
-          let additionalResult = null;
-          if (item.greenShoeOption !== undefined) {
-            additionalResult = await tx.master_issuer_additional.create({
-              data: {
-                issuer_id: masterId,
-                greenShoeOption: item.greenShoeOption,
-                amountRaised: item.amountRaised
-              }
-            });
-          }
+
+          let additionalResult = await tx.master_issuer_additional.create({
+            data: {
+              issuer_id: masterId,
+              greenShoeOption: item.greenShoeOption ?? null,
+              amountRaised: item.amountRaised ?? null
+            }
+          });
 
           // --- Create issuer_coupon_details (coupon) ---
-          let couponResult = null;
-          if (item.coupon) {
-            let couponType = await tx.master_coupon_type.findFirst({
-              where: { description: item.coupon }
-            });
 
-            if (!couponType) {
-              const generatedCode = item.coupon.toUpperCase().replace(/\s+/g, '_').substring(0, 10);
-              couponType = await tx.master_coupon_type.create({
-                data: {
-                  code: generatedCode,
-                  description: item.coupon
-                }
-              });
-            }
+          let couponType = null;
 
-            couponResult = await tx.issuer_coupon_details.create({
-              data: {
-                issuer_id: masterId,
-                coupon_type: String(couponType.code)
+          if (item.coupon?.trim()) {
+            couponType = await tx.master_coupon_type.findFirst({
+              where: {
+                description: { contains: item.coupon.trim() }
               }
             });
           }
+
+          let couponResult = await tx.issuer_coupon_details.create({
+            data: {
+              issuer_id: masterId,
+              coupon_type: couponType?.code !== undefined && couponType?.code !== null
+                ? String(couponType?.code)
+                : null
+            }
+          });
 
           // --- Create issuer_tenure_details ---
-          let tenureResult = null;
-          if (
-            item.tenureInYears !== undefined ||
-            item.tenureInMonths !== undefined ||
-            item.tenureInDays !== undefined
-          ) {
-            tenureResult = await tx.issuer_tenure_details.create({
-              data: {
-                issuer_id: masterId,
-                tenure_no_years: item.tenureInYears,
-                tenure_no_months: item.tenureInMonths,
-                tenure_no_days: item.tenureInDays
-              }
-            });
-          }
+          let tenureResult = await tx.issuer_tenure_details.create({
+            data: {
+              issuer_id: masterId,
+              tenure_no_years: item.tenureInYears ?? null,
+              tenure_no_months: item.tenureInMonths ?? null,
+              tenure_no_days: item.tenureInDays ?? null
+            }
+          });
 
           // --- Create multiple ratings from creditRatingData array ---
           let ratingResults = [];
           if (Array.isArray(item.creditRatingData) && item.creditRatingData.length > 0) {
             for (const ratingItem of item.creditRatingData) {
-              if (!ratingItem.agencyName || !ratingItem.rating) continue;
 
               let agency = await tx.master_agency.findFirst({
-                where: { short_name: ratingItem.agencyName }
+                where: { short_name: { contains: ratingItem?.agencyName?.trim() } }
               });
 
               if (!agency) {
-                agency = await tx.master_agency.create({
-                  data: {
-                    agency_name: ratingItem.agencyName,
-                    short_name: ratingItem.agencyName,
-                  }
-                });
+                console.warn(`Agency not found while creating: ${ratingItem.agencyName}`);
+                continue; // skip this rating
               }
 
               const ratingResult = await tx.master_issuer_rating.create({
                 data: {
                   issuer_id: masterId,
-                  agency_id: agency.id,
-                  rating: ratingItem.rating,
-                  outlook: ratingItem.outlook || null,
+                  agency_id: agency?.id ?? null,
+                  rating: ratingItem.rating ?? null,
+                  outlook: ratingItem.outlook ?? null,
                   rating_date: new Date()
                 }
               });
