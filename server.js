@@ -125,13 +125,7 @@ app.post('/bulk-upsert', async (req, res) => {
 
         // --- Check if ISIN already exists ---
         const existing = await tx.master_issuer.findFirst({
-          where: {
-            isin: item.isin?.trim()
-          },
-          select: {
-            id: true,
-            isin: true
-          }
+          where: { isin: item.isin?.trim() }
         });
 
         // ==================================
