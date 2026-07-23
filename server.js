@@ -438,6 +438,125 @@ app.post('/bulk-upsert', async (req, res) => {
   }
 });
 
+app.post('/bulk-upsert-arrangers', async (req, res) => {
+  try {
+    const { data } = req.body;
+    if (!Array.isArray(data)) {
+      return res.status(400).json({ success: false, message: '"data" must be an array' });
+    }
+
+    const results = [];
+
+    for (const item of data) {
+      const txResult = await prisma.$transaction(async (tx) => {
+        if (!item.isin?.trim()) {
+          throw new Error("ISIN is required");
+        }
+
+        if (!item.arrangerDetailsArranger?.trim()) {
+          throw new Error("arrangerDetailsArranger is required");
+        }
+
+        // --- Find the issuer by ISIN ---
+
+        const issuer = await tx.master_issuer.findFirst({
+          where: { isin: item.isin?.trim() }
+        });
+
+        if (!issuer) {
+          throw new Error(`Issuer not found for ISIN: ${item.isin}`);
+        }
+
+        const issuerId = issuer.id;
+
+        // --- Find or create the arranger in master_arranger ---
+        let arranger = await tx.master_arranger.findFirst({
+          where: {
+            short_name: {
+              contains: item.arrangerDetailsArranger.trim()
+            }
+          }
+        });
+
+        if (!arranger) {
+          // Create new arranger if not found
+          console.log('no master arrange named', item.arrangerDetailsArranger, 'found need to create');
+
+          arranger = await tx.master_arranger.create({
+            data: {
+              short_name: item.arrangerDetailsArranger.trim(),
+              arranger_name: item.arrangerDetailsArranger.trim()
+            }
+          });
+        }
+
+        const arrangerId = arranger.id;
+
+        console.log(`arrangerId: ${arrangerId} and issuerId: ${issuerId}`);
+
+
+        if (arrangerId && issuerId) {
+
+          // --- Check if the issuer-arranger relation already exists ---
+          const existingRelation = await tx.issuer_arranger.findFirst({
+            where: {
+              issuer_id: issuerId,
+              arranger_id: arrangerId
+            }
+          });
+
+          let relationResult;
+
+          if (existingRelation) {
+            // Relation already exists — no update needed (or update if you have additional fields)
+            console.log('already exists the issuerId: ', issuerId, 'and arrangerId', arrangerId);
+
+            relationResult = {
+              action: 'existing',
+              data: existingRelation
+            };
+          } else {
+            // Create new issuer-arranger relation
+            console.log('no issuer arranger present, create one');
+
+            relationResult = await tx.issuer_arranger.create({
+              data: {
+                issuer_id: issuerId,
+                arranger_id: arrangerId
+              }
+            });
+            relationResult = {
+              action: 'inserted',
+              data: relationResult
+            };
+          }
+        }else{
+          return{
+            status:'no arrnagers id'
+          }
+        }
+
+        return {
+          isin: item.isin,
+          arranger
+        };
+      });
+
+      results.push(txResult);
+    }
+
+    return res.json({
+      success: true,
+      processed: results.length,
+      results
+    });
+
+  } catch (err) {
+    console.error('Bulk upsert arrangers error:', err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 //updated Dashoard APIs DONE
 
 app.get('/dashboard_issue_volume_trends_data', async (req, res) => {
