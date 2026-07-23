@@ -438,7 +438,7 @@ app.post('/bulk-upsert', async (req, res) => {
   }
 });
 
-app.post('/bulk-upsert-arrangers', async (req, res) => {
+app.post('/bulk-arrangers', async (req, res) => {
   try {
     const { data } = req.body;
     if (!Array.isArray(data)) {
@@ -457,88 +457,87 @@ app.post('/bulk-upsert-arrangers', async (req, res) => {
           throw new Error("arrangerDetailsArranger is required");
         }
 
+        const trimmedIsin = item.isin.trim();
+        const trimmedArranger = item.arrangerDetailsArranger.trim();
+
         // --- Find the issuer by ISIN ---
+        const issuers = await tx.$queryRawUnsafe(`
+          SELECT id FROM master_issuer WHERE isin = '${trimmedIsin}' LIMIT 1
+        `);
 
-        const issuer = await tx.master_issuer.findFirst({
-          where: { isin: item.isin?.trim() }
-        });
-
-        if (!issuer) {
-          throw new Error(`Issuer not found for ISIN: ${item.isin}`);
+        if (!issuers || issuers.length === 0) {
+          throw new Error(`Issuer not found for ISIN: ${trimmedIsin}`);
         }
 
-        const issuerId = issuer.id;
+        const issuerId = issuers[0].id;
 
         // --- Find or create the arranger in master_arranger ---
-        let arranger = await tx.master_arranger.findFirst({
-          where: {
-            short_name: {
-              contains: item.arrangerDetailsArranger.trim()
-            }
-          }
-        });
+        const arrangers = await tx.$queryRawUnsafe(`
+          SELECT id FROM master_arranger WHERE short_name LIKE '%${trimmedArranger}%' LIMIT 1
+        `);
 
-        if (!arranger) {
+        let arrangerId;
+
+        if (arrangers && arrangers.length > 0) {
+          arrangerId = arrangers[0].id;
+        } else {
           // Create new arranger if not found
-          console.log('no master arrange named', item.arrangerDetailsArranger, 'found need to create');
+          console.log('no master arranger named', trimmedArranger, 'found need to create');
 
-          arranger = await tx.master_arranger.create({
-            data: {
-              short_name: item.arrangerDetailsArranger.trim(),
-              arranger_name: item.arrangerDetailsArranger.trim()
-            }
-          });
+          await tx.$queryRawUnsafe(`
+            INSERT INTO master_arranger (short_name, arranger_name)
+            VALUES ('${trimmedArranger}', '${trimmedArranger}')
+          `);
+
+          // Fetch back the newly created arranger to get its id
+          const newArrangers = await tx.$queryRawUnsafe(`
+            SELECT id FROM master_arranger WHERE short_name = '${trimmedArranger}' LIMIT 1
+          `);
+
+          arrangerId = newArrangers[0].id;
         }
-
-        const arrangerId = arranger.id;
 
         console.log(`arrangerId: ${arrangerId} and issuerId: ${issuerId}`);
 
-
         if (arrangerId && issuerId) {
-
           // --- Check if the issuer-arranger relation already exists ---
-          const existingRelation = await tx.issuer_arranger.findFirst({
-            where: {
-              issuer_id: issuerId,
-              arranger_id: arrangerId
-            }
-          });
+          const existingRelations = await tx.$queryRawUnsafe(`
+            SELECT issuer_id, arranger_id FROM issuer_arranger 
+            WHERE issuer_id = ${issuerId} AND arranger_id = ${arrangerId} 
+            LIMIT 1
+          `);
 
-          let relationResult;
-
-          if (existingRelation) {
-            // Relation already exists — no update needed (or update if you have additional fields)
+          if (existingRelations && existingRelations.length > 0) {
+            // Relation already exists — no update needed
             console.log('already exists the issuerId: ', issuerId, 'and arrangerId', arrangerId);
 
             relationResult = {
               action: 'existing',
-              data: existingRelation
+              data: existingRelations[0]
             };
           } else {
             // Create new issuer-arranger relation
             console.log('no issuer arranger present, create one');
 
-            relationResult = await tx.issuer_arranger.create({
-              data: {
-                issuer_id: issuerId,
-                arranger_id: arrangerId
-              }
-            });
+            await tx.$queryRawUnsafe(`
+              INSERT INTO issuer_arranger (issuer_id, arranger_id)
+              VALUES (${issuerId}, ${arrangerId})
+            `);
+
             relationResult = {
               action: 'inserted',
-              data: relationResult
+              data: { issuer_id: issuerId, arranger_id: arrangerId }
             };
           }
-        }else{
-          return{
-            status:'no arrnagers id'
-          }
+        } else {
+          return {
+            status: 'no arranger id'
+          };
         }
 
         return {
-          isin: item.isin,
-          arranger
+          isin: trimmedIsin,
+          arrangerId: arrangerId
         };
       });
 
