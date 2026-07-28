@@ -50,10 +50,94 @@ function formatDate(date) {
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
+// ─── Helper: Calculate Levenshtein Distance ─────────────────────────
+function levenshteinDistance(str1, str2) {
+  const len1 = str1.length;
+  const len2 = str2.length;
+  const matrix = [];
+
+  for (let i = 0; i <= len1; i++) {
+    matrix[i] = [i];
+  }
+  for (let j = 0; j <= len2; j++) {
+    matrix[0][j] = j;
+  }
+
+  for (let i = 1; i <= len1; i++) {
+    for (let j = 1; j <= len2; j++) {
+      const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,      // deletion
+        matrix[i][j - 1] + 1,      // insertion
+        matrix[i - 1][j - 1] + cost // substitution
+      );
+    }
+  }
+
+  return matrix[len1][len2];
+}
+
+// ─── Helper: Calculate Similarity Percentage ────────────────────────
+function calculateSimilarity(str1, str2) {
+  if (!str1 || !str2) return 0;
+
+  const s1 = str1.toLowerCase().trim();
+  const s2 = str2.toLowerCase().trim();
+
+  if (s1 === s2) return 100;
+
+  const distance = levenshteinDistance(s1, s2);
+  const maxLength = Math.max(s1.length, s2.length);
+
+  if (maxLength === 0) return 100;
+
+  return ((maxLength - distance) / maxLength) * 100;
+}
+
+// ─── Helper: Token-based Word Matching (bonus similarity) ─────────
+function tokenSimilarity(str1, str2) {
+  const tokens1 = str1.toLowerCase().trim().split(/\s+/).filter(Boolean);
+  const tokens2 = str2.toLowerCase().trim().split(/\s+/).filter(Boolean);
+
+  if (tokens1.length === 0 || tokens2.length === 0) return 0;
+
+  let matchingTokens = 0;
+  const usedTokens2 = new Set();
+
+  for (const token1 of tokens1) {
+    for (let i = 0; i < tokens2.length; i++) {
+      if (usedTokens2.has(i)) continue;
+
+      const sim = calculateSimilarity(token1, tokens2[i]);
+      if (sim >= 70) { // token-level match threshold
+        matchingTokens++;
+        usedTokens2.add(i);
+        break;
+      }
+    }
+  }
+
+  const maxTokens = Math.max(tokens1.length, tokens2.length);
+  return (matchingTokens / maxTokens) * 100;
+}
+
+// ─── Helper: Combined Similarity Score ──────────────────────────────
+function getCombinedSimilarity(str1, str2) {
+  const charSim = calculateSimilarity(str1, str2);
+  const tokenSim = tokenSimilarity(str1, str2);
+
+  // Weighted: character-level 60%, token-level 40%
+  return (charSim * 0.6) + (tokenSim * 0.4);
+}
+
+
+
 
 // ==========================================
-// MAIN API: POST /api/issuer/bulk-upsert
+// MAIN ADMIN APIs:
 // ==========================================
+
+//upload re-issuance data
 app.post('/bulk-upsert', async (req, res) => {
   try {
     const { data } = req.body;
@@ -437,7 +521,7 @@ app.post('/bulk-upsert', async (req, res) => {
     return res.status(500).json({ success: false, message: err.message });
   }
 });
-
+// upload arrangers bulk
 app.post('/bulk-arrangers', async (req, res) => {
   try {
     const { data } = req.body;
@@ -479,6 +563,8 @@ app.post('/bulk-arrangers', async (req, res) => {
         let arrangerId;
 
         if (arrangers && arrangers.length > 0) {
+          console.log('already exited arranger');
+          
           arrangerId = arrangers[0].id;
         } else {
           // Create new arranger if not found
@@ -555,6 +641,711 @@ app.post('/bulk-arrangers', async (req, res) => {
     return res.status(500).json({ success: false, message: err.message });
   }
 });
+
+// merge arrangers 
+app.post('/merge-arrangers', async (req, res) => {
+  try {
+    const { mainArrangerId, mergeArrangerIds } = req.body;
+
+    // ─── Step 1: Validate Request ──────────────────────────────────────
+    if (!mainArrangerId || typeof mainArrangerId !== 'number') {
+      return res.status(400).json({
+        success: false,
+        message: 'mainArrangerId is required and must be a number'
+      });
+    }
+
+    if (!Array.isArray(mergeArrangerIds) || mergeArrangerIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'mergeArrangerIds must be a non-empty array'
+      });
+    }
+
+    if (mergeArrangerIds.includes(mainArrangerId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'mergeArrangerIds cannot include the mainArrangerId'
+      });
+    }
+
+    const mergeIdsString = mergeArrangerIds.join(', ');
+
+    // ─── Execute everything inside a single Prisma transaction ───────
+    const result = await prisma.$transaction(async (tx) => {
+
+      // ── Step 1b: Verify main arranger exists ──────────────────────
+      const mainArrangers = await tx.$queryRawUnsafe(`
+        SELECT id, arranger_name, parent_id 
+        FROM master_arranger 
+        WHERE id = ${mainArrangerId} 
+        LIMIT 1
+      `);
+
+      if (!mainArrangers || mainArrangers.length === 0) {
+        throw new Error(`Main arranger with id ${mainArrangerId} not found`);
+      }
+
+      const parentId = parseInt(mainArrangers[0].parent_id, 10) || 0;
+
+      if (parentId !== 0) {
+        throw new Error(`Cannot merge into arranger ${mainArrangerId} because it is already merged into arranger ${parentId}`);
+      }
+
+      // ── Step 2: Update duplicate arrangers' parent_id ─────────────
+      await tx.$queryRawUnsafe(`
+        UPDATE master_arranger 
+        SET parent_id = ${mainArrangerId} 
+        WHERE id IN (${mergeIdsString})
+      `);
+
+      // ── Step 3: Fetch ALL issuer_arranger records to be migrated ──
+      // Get full rows (issuer_id + arranger_id) not just distinct
+      const mappingsToMigrate = await tx.$queryRawUnsafe(`
+        SELECT issuer_id, arranger_id 
+        FROM issuer_arranger 
+        WHERE arranger_id IN (${mergeIdsString})
+      `);
+
+      if (!mappingsToMigrate || mappingsToMigrate.length === 0) {
+        return {
+          mainArrangerId,
+          mergedArrangers: mergeArrangerIds,
+          migratedMappings: 0,
+          skippedDuplicates: 0,
+          updatedIssuers: []
+        };
+      }
+
+      const affectedIssuerIds = [];
+      let skippedDuplicates = 0;
+
+      // ── Steps 4-7: Process each mapping individually ──────────────
+      for (const mapping of mappingsToMigrate) {
+        const { issuer_id, arranger_id: oldArrangerId } = mapping;
+
+        // Collect unique affected issuer IDs for Step 8
+        if (!affectedIssuerIds.includes(issuer_id)) {
+          affectedIssuerIds.push(issuer_id);
+        }
+
+        // Step 5: Delete the old mapping
+        await tx.$queryRawUnsafe(`
+          DELETE FROM issuer_arranger 
+          WHERE issuer_id = ${issuer_id} 
+          AND arranger_id = ${oldArrangerId}
+        `);
+
+        // Step 7: Check if new mapping already exists
+        const existingMapping = await tx.$queryRawUnsafe(`
+          SELECT issuer_id, arranger_id 
+          FROM issuer_arranger 
+          WHERE issuer_id = ${issuer_id} 
+          AND arranger_id = ${mainArrangerId} 
+          LIMIT 1
+        `);
+
+        if (existingMapping && existingMapping.length > 0) {
+          // Duplicate exists — skip insert
+          skippedDuplicates++;
+        } else {
+          // Step 6: Create new mapping
+          await tx.$queryRawUnsafe(`
+            INSERT INTO issuer_arranger (issuer_id, arranger_id) 
+            VALUES (${issuer_id}, ${mainArrangerId})
+          `);
+        }
+      }
+
+      // ── Step 8: Update master_issuer.is_updated for all affected ──
+      if (affectedIssuerIds.length > 0) {
+        const issuerIdsString = affectedIssuerIds.join(', ');
+
+        await tx.$queryRawUnsafe(`
+          UPDATE master_issuer 
+          SET is_updated = true 
+          WHERE id IN (${issuerIdsString})
+        `);
+      }
+
+      return {
+        mainArrangerId,
+        mergedArrangers: mergeArrangerIds,
+        migratedMappings: mappingsToMigrate.length,
+        skippedDuplicates,
+        updatedIssuers: affectedIssuerIds
+      };
+
+    }, {
+      maxWait: 10000,
+      timeout: 60000  // Increased to 60 seconds for large datasets
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Arrangers merged successfully',
+      data: result
+    });
+
+  } catch (err) {
+    console.error('Merge arrangers error:', err);
+
+    const statusCode = err.message?.includes('not found') ||
+      err.message?.includes('Cannot merge')
+      ? 400 : 500;
+
+    return res.status(statusCode).json({
+      success: false,
+      message: err.message || 'Internal server error during merge operation'
+    });
+  }
+});
+
+// ─── API: Get Similar Arrangers ────────────────────────────────────
+app.get('/arrangers/similar/:arrangerId', async (req, res) => {
+  try {
+    const { arrangerId } = req.params;
+    const { threshold = 50 } = req.query; // default 50% similarity
+
+    const similarityThreshold = parseFloat(threshold);
+    if (isNaN(similarityThreshold) || similarityThreshold < 0 || similarityThreshold > 100) {
+      return res.status(400).json({
+        success: false,
+        message: 'threshold must be a number between 0 and 100'
+      });
+    }
+
+    const arrangerIdNum = parseInt(arrangerId, 10);
+    if (isNaN(arrangerIdNum)) {
+      return res.status(400).json({
+        success: false,
+        message: 'arrangerId must be a valid number'
+      });
+    }
+
+    // ── Step 1: Fetch the main arranger ───────────────────────────
+    const mainArrangers = await prisma.$queryRawUnsafe(`
+      SELECT id, short_name, arranger_name, parent_id
+      FROM master_arranger
+      WHERE id = ${arrangerIdNum}
+      LIMIT 1
+    `);
+
+    if (!mainArrangers || mainArrangers.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: `Arranger with id ${arrangerIdNum} not found`
+      });
+    }
+
+    const mainArranger = mainArrangers[0];
+    const mainName = mainArranger.short_name || mainArranger.arranger_name;
+
+    if (!mainName || !mainName.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Main arranger has no name to compare against'
+      });
+    }
+
+    // ── Step 2: Fetch all other arrangers (exclude main + already merged) ─
+    const allArrangers = await prisma.$queryRawUnsafe(`
+      SELECT id, short_name, arranger_name, parent_id
+      FROM master_arranger
+      WHERE id != ${arrangerIdNum}
+      AND parent_id = 0
+      ORDER BY short_name ASC
+    `);
+
+    if (!allArrangers || allArrangers.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: 'No other arrangers found to compare',
+        data: {
+          mainArranger: {
+            id: mainArranger.id,
+            name: mainName,
+            short_name: mainArranger.short_name,
+            arranger_name: mainArranger.arranger_name
+          },
+          similarArrangers: [],
+          totalFound: 0
+        }
+      });
+    }
+
+    // ── Step 3: Calculate similarity for each arranger ────────────
+    const similarArrangers = [];
+
+    for (const arranger of allArrangers) {
+      const compareName = arranger.arranger_name || arranger.short_name;
+
+      if (!compareName || !compareName.trim()) continue;
+
+      const similarity = getCombinedSimilarity(mainName, compareName);
+
+      if (similarity >= similarityThreshold) {
+        similarArrangers.push({
+          id: arranger.id,
+          name: compareName,
+          short_name: arranger.short_name,
+          arranger_name: arranger.arranger_name,
+          similarity: parseFloat(similarity.toFixed(2)),
+          similarityFormatted: `${similarity.toFixed(2)}%`
+        });
+      }
+    }
+
+    // ── Step 4: Sort by similarity (highest first) ────────────────
+    similarArrangers.sort((a, b) => b.similarity - a.similarity);
+
+    return res.status(200).json({
+      success: true,
+      message: `Found ${similarArrangers.length} similar arrangers`,
+      data: {
+        mainArranger: {
+          id: mainArranger.id,
+          name: mainName,
+          short_name: mainArranger.short_name,
+          arranger_name: mainArranger.arranger_name
+        },
+        similarArrangers,
+        totalFound: similarArrangers.length,
+        threshold: similarityThreshold
+      }
+    });
+
+  } catch (err) {
+    console.error('Get similar arrangers error:', err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || 'Internal server error'
+    });
+  }
+});
+
+app.post('/admin-arrangers', async (req, res) => {
+  try {
+    const { limit = 10, offset = 0 } = req.body;
+
+    // Validate pagination params
+    const take = parseInt(limit, 10);
+    const skip = parseInt(offset, 10);
+
+    if (isNaN(take) || take < 1) {
+      return res.status(400).json({ error: 'Invalid limit. Must be a positive number.' });
+    }
+    if (isNaN(skip) || skip < 0) {
+      return res.status(400).json({ error: 'Invalid offset. Must be a non-negative number.' });
+    }
+
+    // Fetch paginated data
+    const arrangers = await prisma.$queryRawUnsafe(`
+            SELECT 
+                master_arranger.id, 
+                master_arranger.arranger_name, 
+                master_contact.contact_person, 
+                master_contact.contact_no, 
+                master_contact.email_id, 
+                master_arranger.smt_status, 
+                master_arranger.is_active, 
+                master_arranger.website 
+            FROM 
+                master_arranger 
+            LEFT JOIN 
+                master_contact 
+                ON master_contact.master_id = master_arranger.id 
+                AND master_contact.type = 1 
+            WHERE 
+                master_arranger.parent_id = 0 
+            GROUP BY 
+                master_arranger.id 
+            ORDER BY 
+                master_arranger.arranger_name ASC
+            LIMIT ${take} OFFSET ${skip}
+        `);
+
+    // Fetch total count for pagination metadata
+    const countResult = await prisma.$queryRaw`
+            SELECT COUNT(*) as total 
+            FROM master_arranger 
+            WHERE parent_id = 0
+        `;
+    const total = parseInt(countResult[0].total, 10);
+
+    return res.json({
+      success: true,
+      data: arrangers,
+      pagination: {
+        total,
+        limit: take,
+        offset: skip,
+        hasMore: skip + arrangers.length < total
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching arrangers:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to fetch arrangers'
+    });
+  }
+
+})
+
+app.post('/admin-trustees', async (req, res) => {
+  try {
+    const { limit = 10, offset = 0 } = req.body;
+
+    // Validate pagination params
+    const take = parseInt(limit, 10);
+    const skip = parseInt(offset, 10);
+
+    if (isNaN(take) || take < 1) {
+      return res.status(400).json({ error: 'Invalid limit. Must be a positive number.' });
+    }
+    if (isNaN(skip) || skip < 0) {
+      return res.status(400).json({ error: 'Invalid offset. Must be a non-negative number.' });
+    }
+
+    // Fetch paginated data
+    const trustees = await prisma.$queryRawUnsafe(`
+            SELECT 
+              id,
+              trustee_name,
+              short_name,
+              trustshpd,
+              website,
+              is_active,
+              is_deleted,
+              parent_id
+            FROM master_trustee
+            WHERE parent_id = 0
+            LIMIT ${take} OFFSET ${skip}
+        `);
+
+    // Fetch total count for pagination metadata
+    const countResult = await prisma.$queryRaw`
+        SELECT COUNT(*) as total 
+        FROM master_trustee 
+        WHERE parent_id = 0
+    `;
+    const total = parseInt(countResult[0].total, 10);
+
+    return res.json({
+      success: true,
+      data: trustees,
+      pagination: {
+        total,
+        limit: take,
+        offset: skip,
+        hasMore: skip + trustees.length < total
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching trustees:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to fetch trustees'
+    });
+  }
+
+})
+
+app.get('/trustees/similar/:trusteeId', async (req, res) => {
+  try {
+    const { trusteeId } = req.params;
+    const { threshold = 50 } = req.query; // default 50% similarity
+
+    const similarityThreshold = parseFloat(threshold);
+    if (isNaN(similarityThreshold) || similarityThreshold < 0 || similarityThreshold > 100) {
+      return res.status(400).json({
+        success: false,
+        message: 'threshold must be a number between 0 and 100'
+      });
+    }
+
+    const trusteeIdNum = parseInt(trusteeId, 10);
+    if (isNaN(trusteeIdNum)) {
+      return res.status(400).json({
+        success: false,
+        message: 'trusteeId must be a valid number'
+      });
+    }
+
+    // ── Step 1: Fetch the main trustee ───────────────────────────
+    const mainTrustees = await prisma.$queryRawUnsafe(`
+      SELECT id, short_name, trustee_name, trustshpd, website, is_active, is_deleted, parent_id
+      FROM master_trustee
+      WHERE id = ${trusteeIdNum}
+      LIMIT 1
+    `);
+
+    if (!mainTrustees || mainTrustees.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: `Trustee with id ${trusteeIdNum} not found`
+      });
+    }
+
+    const mainTrustee = mainTrustees[0];
+    const mainName = mainTrustee.short_name || mainTrustee.trustee_name;
+
+    if (!mainName || !mainName.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Main trustee has no name to compare against'
+      });
+    }
+
+    // ── Step 2: Fetch all other trustees (exclude main + already merged) ─
+    const allTrustees = await prisma.$queryRawUnsafe(`
+      SELECT id, short_name, trustee_name, trustshpd, website, is_active, is_deleted, parent_id
+      FROM master_trustee
+      WHERE id != ${trusteeIdNum}
+      AND parent_id = 0
+      ORDER BY short_name ASC
+    `);
+
+    if (!allTrustees || allTrustees.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: 'No other trustees found to compare',
+        data: {
+          mainTrustee: {
+            id: mainTrustee.id,
+            name: mainName,
+            short_name: mainTrustee.short_name,
+            trustee_name: mainTrustee.trustee_name,
+            trustshpd: mainTrustee.trustshpd,
+            website: mainTrustee.website,
+            is_active: mainTrustee.is_active,
+            is_deleted: mainTrustee.is_deleted
+          },
+          similarTrustees: [],
+          totalFound: 0
+        }
+      });
+    }
+
+    // ── Step 3: Calculate similarity for each trustee ────────────
+    const similarTrustees = [];
+
+    for (const trustee of allTrustees) {
+      const compareName = trustee.trustee_name || trustee.short_name;
+
+      if (!compareName || !compareName.trim()) continue;
+
+      const similarity = getCombinedSimilarity(mainName, compareName);
+
+      if (similarity >= similarityThreshold) {
+        similarTrustees.push({
+          id: trustee.id,
+          name: compareName,
+          short_name: trustee.short_name,
+          trustee_name: trustee.trustee_name,
+          trustshpd: trustee.trustshpd,
+          website: trustee.website,
+          is_active: trustee.is_active,
+          is_deleted: trustee.is_deleted,
+          similarity: parseFloat(similarity.toFixed(2)),
+          similarityFormatted: `${similarity.toFixed(2)}%`
+        });
+      }
+    }
+
+    // ── Step 4: Sort by similarity (highest first) ────────────────
+    similarTrustees.sort((a, b) => b.similarity - a.similarity);
+
+    return res.status(200).json({
+      success: true,
+      message: `Found ${similarTrustees.length} similar trustees`,
+      data: {
+        mainTrustee: {
+          id: mainTrustee.id,
+          name: mainName,
+          short_name: mainTrustee.short_name,
+          trustee_name: mainTrustee.trustee_name,
+          trustshpd: mainTrustee.trustshpd,
+          website: mainTrustee.website,
+          is_active: mainTrustee.is_active,
+          is_deleted: mainTrustee.is_deleted
+        },
+        similarTrustees,
+        totalFound: similarTrustees.length,
+        threshold: similarityThreshold
+      }
+    });
+
+  } catch (err) {
+    console.error('Get similar trustees error:', err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || 'Internal server error'
+    });
+  }
+});
+
+app.post('/merge-trustees', async (req, res) => {
+  try {
+    const { mainTrusteeId, mergeTrusteeIds } = req.body;
+
+    // ─── Step 1: Validate Request ──────────────────────────────────────
+    if (!mainTrusteeId || typeof mainTrusteeId !== 'number') {
+      return res.status(400).json({
+        success: false,
+        message: 'mainTrusteeId is required and must be a number'
+      });
+    }
+
+    if (!Array.isArray(mergeTrusteeIds) || mergeTrusteeIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'mergeTrusteeIds must be a non-empty array'
+      });
+    }
+
+    if (mergeTrusteeIds.includes(mainTrusteeId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'mergeTrusteeIds cannot include the mainTrusteeId'
+      });
+    }
+
+    const mergeIdsString = mergeTrusteeIds.join(', ');
+
+    // ─── Execute everything inside a single Prisma transaction ───────
+    const result = await prisma.$transaction(async (tx) => {
+
+      // ── Step 1b: Verify main trustee exists ──────────────────────
+      const mainTrustees = await tx.$queryRawUnsafe(`
+        SELECT id, trustee_name, parent_id 
+        FROM master_trustee 
+        WHERE id = ${mainTrusteeId} 
+        LIMIT 1
+      `);
+
+      if (!mainTrustees || mainTrustees.length === 0) {
+        throw new Error(`Main trustee with id ${mainTrusteeId} not found`);
+      }
+
+      const parentId = parseInt(mainTrustees[0].parent_id, 10) || 0;
+
+      if (parentId !== 0) {
+        throw new Error(`Cannot merge into trustee ${mainTrusteeId} because it is already merged into trustee ${parentId}`);
+      }
+
+      // ── Step 2: Update duplicate trustees' parent_id ─────────────
+      await tx.$queryRawUnsafe(`
+        UPDATE master_trustee 
+        SET parent_id = ${mainTrusteeId} 
+        WHERE id IN (${mergeIdsString})
+      `);
+
+      // ── Step 3: Fetch ALL issuer_trustee records to be migrated ──
+      // Get full rows (issuer_id + trustee_id) not just distinct
+      const mappingsToMigrate = await tx.$queryRawUnsafe(`
+        SELECT issuer_id, trustee_id 
+        FROM issuer_trustee 
+        WHERE trustee_id IN (${mergeIdsString})
+      `);
+
+      if (!mappingsToMigrate || mappingsToMigrate.length === 0) {
+        return {
+          mainTrusteeId,
+          mergedTrustees: mergeTrusteeIds,
+          migratedMappings: 0,
+          skippedDuplicates: 0,
+          updatedIssuers: []
+        };
+      }
+
+      const affectedIssuerIds = [];
+      let skippedDuplicates = 0;
+
+      // ── Steps 4-7: Process each mapping individually ──────────────
+      for (const mapping of mappingsToMigrate) {
+        const { issuer_id, trustee_id: oldTrusteeId } = mapping;
+
+        // Collect unique affected issuer IDs for Step 8
+        if (!affectedIssuerIds.includes(issuer_id)) {
+          affectedIssuerIds.push(issuer_id);
+        }
+
+        // Step 5: Delete the old mapping
+        await tx.$queryRawUnsafe(`
+          DELETE FROM issuer_trustee 
+          WHERE issuer_id = ${issuer_id} 
+          AND trustee_id = ${oldTrusteeId}
+        `);
+
+        // Step 7: Check if new mapping already exists
+        const existingMapping = await tx.$queryRawUnsafe(`
+          SELECT issuer_id, trustee_id 
+          FROM issuer_trustee 
+          WHERE issuer_id = ${issuer_id} 
+          AND trustee_id = ${mainTrusteeId} 
+          LIMIT 1
+        `);
+
+        if (existingMapping && existingMapping.length > 0) {
+          // Duplicate exists — skip insert
+          skippedDuplicates++;
+        } else {
+          // Step 6: Create new mapping
+          await tx.$queryRawUnsafe(`
+            INSERT INTO issuer_trustee (issuer_id, trustee_id) 
+            VALUES (${issuer_id}, ${mainTrusteeId})
+          `);
+        }
+      }
+
+      // ── Step 8: Update master_issuer.is_updated for all affected ──
+      if (affectedIssuerIds.length > 0) {
+        const issuerIdsString = affectedIssuerIds.join(', ');
+
+        await tx.$queryRawUnsafe(`
+          UPDATE master_issuer 
+          SET is_updated = true 
+          WHERE id IN (${issuerIdsString})
+        `);
+      }
+
+      return {
+        mainTrusteeId,
+        mergedTrustees: mergeTrusteeIds,
+        migratedMappings: mappingsToMigrate.length,
+        skippedDuplicates,
+        updatedIssuers: affectedIssuerIds
+      };
+
+    }, {
+      maxWait: 10000,
+      timeout: 60000  // Increased to 60 seconds for large datasets
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Trustees merged successfully',
+      data: result
+    });
+
+  } catch (err) {
+    console.error('Merge trustees error:', err);
+
+    const statusCode = err.message?.includes('not found') ||
+      err.message?.includes('Cannot merge')
+      ? 400 : 500;
+
+    return res.status(statusCode).json({
+      success: false,
+      message: err.message || 'Internal server error during merge operation'
+    });
+  }
+});
+
 
 //updated Dashoard APIs DONE
 
