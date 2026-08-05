@@ -5405,23 +5405,27 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
         }
       }
 
+      // ─── FIX: nature_type lives on master_issuer, not isin_re_issuance ───
       if (nature) {
         const inClause = buildInClause('mitn2.description', nature);
         if (inClause) {
           conditions.push(`EXISTS (
-            SELECT 1 FROM master_issuer_type_nature mitn2
-            WHERE mitn2.code = ${tableAlias}.nature_type AND ${inClause.clause}
+            SELECT 1 FROM master_issuer mi2
+            JOIN master_issuer_type_nature mitn2 ON mitn2.code = mi2.nature_type
+            WHERE mi2.id = ${tableAlias}.isin_id AND ${inClause.clause}
           )`);
           params.push(...inClause.params);
         }
       }
 
+      // ─── FIX: issuer_ownership_type lives on master_issuer, not isin_re_issuance ───
       if (ownershipType) {
         const inClause = buildInClause('miot2.description', ownershipType);
         if (inClause) {
           conditions.push(`EXISTS (
-            SELECT 1 FROM master_issuer_ownership_type miot2
-            WHERE miot2.code = ${tableAlias}.issuer_ownership_type AND ${inClause.clause}
+            SELECT 1 FROM master_issuer mi2
+            JOIN master_issuer_ownership_type miot2 ON miot2.code = mi2.issuer_ownership_type
+            WHERE mi2.id = ${tableAlias}.isin_id AND ${inClause.clause}
           )`);
           params.push(...inClause.params);
         }
@@ -5989,23 +5993,27 @@ app.post('/arrangers_page_credit_rating_data', async (req, res) => {
         }
       }
 
+      // ─── FIX: nature_type lives on master_issuer, not isin_re_issuance ───
       if (nature) {
         const inClause = buildInClause('mitn2.description', nature);
         if (inClause) {
           conditions.push(`EXISTS (
-            SELECT 1 FROM master_issuer_type_nature mitn2
-            WHERE mitn2.code = ${tableAlias}.nature_type AND ${inClause.clause}
+            SELECT 1 FROM master_issuer mi2
+            JOIN master_issuer_type_nature mitn2 ON mitn2.code = mi2.nature_type
+            WHERE mi2.id = ${tableAlias}.isin_id AND ${inClause.clause}
           )`);
           params.push(...inClause.params);
         }
       }
 
+      // ─── FIX: issuer_ownership_type lives on master_issuer, not isin_re_issuance ───
       if (ownershipType) {
         const inClause = buildInClause('miot2.description', ownershipType);
         if (inClause) {
           conditions.push(`EXISTS (
-            SELECT 1 FROM master_issuer_ownership_type miot2
-            WHERE miot2.code = ${tableAlias}.issuer_ownership_type AND ${inClause.clause}
+            SELECT 1 FROM master_issuer mi2
+            JOIN master_issuer_ownership_type miot2 ON miot2.code = mi2.issuer_ownership_type
+            WHERE mi2.id = ${tableAlias}.isin_id AND ${inClause.clause}
           )`);
           params.push(...inClause.params);
         }
@@ -6276,18 +6284,22 @@ app.post('/arrangers_page_deals_data', async (req, res) => {
         params.push(trustee);
       }
 
+      // ─── FIX: nature_type lives on master_issuer, not isin_re_issuance ───
       if (nature) {
         conditions.push(`EXISTS (
-          SELECT 1 FROM master_issuer_type_nature mitn2
-          WHERE mitn2.code = ${tableAlias}.nature_type AND mitn2.description = ?
+          SELECT 1 FROM master_issuer mi2
+          JOIN master_issuer_type_nature mitn2 ON mitn2.code = mi2.nature_type
+          WHERE mi2.id = ${tableAlias}.isin_id AND mitn2.description = ?
         )`);
         params.push(nature);
       }
 
+      // ─── FIX: issuer_ownership_type lives on master_issuer, not isin_re_issuance ───
       if (ownershipType) {
         conditions.push(`EXISTS (
-          SELECT 1 FROM master_issuer_ownership_type miot2
-          WHERE miot2.code = ${tableAlias}.issuer_ownership_type AND miot2.description = ?
+          SELECT 1 FROM master_issuer mi2
+          JOIN master_issuer_ownership_type miot2 ON miot2.code = mi2.issuer_ownership_type
+          WHERE mi2.id = ${tableAlias}.isin_id AND miot2.description = ?
         )`);
         params.push(ownershipType);
       }
@@ -6647,22 +6659,24 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
       params.push(...trustee);
     }
 
-    // Nature (multi-select)
+    // ─── FIX: nature_type lives on master_issuer, not isin_re_issuance ───
     if (nature.length > 0) {
       const placeholders = nature.map(() => '?').join(', ');
       conditions.push(`EXISTS (
-        SELECT 1 FROM master_issuer_type_nature mitn2
-        WHERE mitn2.code = mi.nature_type AND mitn2.description IN (${placeholders})
+        SELECT 1 FROM master_issuer mi2
+        JOIN master_issuer_type_nature mitn2 ON mitn2.code = mi2.nature_type
+        WHERE mi2.id = mi.isin_id AND mitn2.description IN (${placeholders})
       )`);
       params.push(...nature);
     }
 
-    // Ownership Type (multi-select)
+    // ─── FIX: issuer_ownership_type lives on master_issuer, not isin_re_issuance ───
     if (ownershipType.length > 0) {
       const placeholders = ownershipType.map(() => '?').join(', ');
       conditions.push(`EXISTS (
-        SELECT 1 FROM master_issuer_ownership_type miot2
-        WHERE miot2.code = mi.issuer_ownership_type AND miot2.description IN (${placeholders})
+        SELECT 1 FROM master_issuer mi2
+        JOIN master_issuer_ownership_type miot2 ON miot2.code = mi2.issuer_ownership_type
+        WHERE mi2.id = mi.isin_id AND miot2.description IN (${placeholders})
       )`);
       params.push(...ownershipType);
     }
@@ -7428,27 +7442,29 @@ app.post('/arrangers_page_monthly_detailed_data', async (req, res) => {
       }
     }
 
-    // Nature filter (array support)
+    // ─── FIX: nature_type lives on master_issuer, not isin_re_issuance ───
     if (nature && (Array.isArray(nature) ? nature.length > 0 : nature !== '')) {
       const natureValue = Array.isArray(nature) ? nature : [nature];
       const inClause = buildInClause('mitn2.description', natureValue);
       if (inClause) {
         conditions.push(`EXISTS (
-          SELECT 1 FROM master_issuer_type_nature mitn2
-          WHERE mitn2.code = i.nature_type AND ${inClause.clause}
+          SELECT 1 FROM master_issuer mi2
+          JOIN master_issuer_type_nature mitn2 ON mitn2.code = mi2.nature_type
+          WHERE mi2.id = i.isin_id AND ${inClause.clause}
         )`);
         params.push(...inClause.params);
       }
     }
 
-    // Ownership Type filter (array support)
+    // ─── FIX: issuer_ownership_type lives on master_issuer, not isin_re_issuance ───
     if (ownershipType && (Array.isArray(ownershipType) ? ownershipType.length > 0 : ownershipType !== '')) {
       const ownershipValue = Array.isArray(ownershipType) ? ownershipType : [ownershipType];
       const inClause = buildInClause('miot2.description', ownershipValue);
       if (inClause) {
         conditions.push(`EXISTS (
-          SELECT 1 FROM master_issuer_ownership_type miot2
-          WHERE miot2.code = i.issuer_ownership_type AND ${inClause.clause}
+          SELECT 1 FROM master_issuer mi2
+          JOIN master_issuer_ownership_type miot2 ON miot2.code = mi2.issuer_ownership_type
+          WHERE mi2.id = i.isin_id AND ${inClause.clause}
         )`);
         params.push(...inClause.params);
       }
@@ -8150,23 +8166,27 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
         }
       }
 
+      // ─── FIX: nature_type lives on master_issuer, not isin_re_issuance ───
       if (nature) {
         const inClause = buildInClause('mitn2.description', nature);
         if (inClause) {
           conditions.push(`EXISTS (
-            SELECT 1 FROM master_issuer_type_nature mitn2
-            WHERE mitn2.code = ${tableAlias}.nature_type AND ${inClause.clause}
+            SELECT 1 FROM master_issuer mi2
+            JOIN master_issuer_type_nature mitn2 ON mitn2.code = mi2.nature_type
+            WHERE mi2.id = ${tableAlias}.isin_id AND ${inClause.clause}
           )`);
           params.push(...inClause.params);
         }
       }
 
+      // ─── FIX: issuer_ownership_type lives on master_issuer, not isin_re_issuance ───
       if (ownershipType) {
         const inClause = buildInClause('miot2.description', ownershipType);
         if (inClause) {
           conditions.push(`EXISTS (
-            SELECT 1 FROM master_issuer_ownership_type miot2
-            WHERE miot2.code = ${tableAlias}.issuer_ownership_type AND ${inClause.clause}
+            SELECT 1 FROM master_issuer mi2
+            JOIN master_issuer_ownership_type miot2 ON miot2.code = mi2.issuer_ownership_type
+            WHERE mi2.id = ${tableAlias}.isin_id AND ${inClause.clause}
           )`);
           params.push(...inClause.params);
         }
@@ -8739,23 +8759,27 @@ app.post('/trustees_page_credit_rating_data', async (req, res) => {
         }
       }
 
+      // ─── FIX: nature_type lives on master_issuer, not isin_re_issuance ───
       if (nature) {
         const inClause = buildInClause('mitn2.description', nature);
         if (inClause) {
           conditions.push(`EXISTS (
-            SELECT 1 FROM master_issuer_type_nature mitn2
-            WHERE mitn2.code = ${tableAlias}.nature_type AND ${inClause.clause}
+            SELECT 1 FROM master_issuer mi2
+            JOIN master_issuer_type_nature mitn2 ON mitn2.code = mi2.nature_type
+            WHERE mi2.id = ${tableAlias}.isin_id AND ${inClause.clause}
           )`);
           params.push(...inClause.params);
         }
       }
 
+      // ─── FIX: issuer_ownership_type lives on master_issuer, not isin_re_issuance ───
       if (ownershipType) {
         const inClause = buildInClause('miot2.description', ownershipType);
         if (inClause) {
           conditions.push(`EXISTS (
-            SELECT 1 FROM master_issuer_ownership_type miot2
-            WHERE miot2.code = ${tableAlias}.issuer_ownership_type AND ${inClause.clause}
+            SELECT 1 FROM master_issuer mi2
+            JOIN master_issuer_ownership_type miot2 ON miot2.code = mi2.issuer_ownership_type
+            WHERE mi2.id = ${tableAlias}.isin_id AND ${inClause.clause}
           )`);
           params.push(...inClause.params);
         }
@@ -10625,15 +10649,25 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
         params.push(...sector);
       }
 
+      // ─── FIX: nature_type lives on master_issuer, not isin_re_issuance ───
       if (nature.length > 0) {
         const placeholders = nature.map(() => '?').join(', ');
-        conditions.push(`EXISTS (SELECT 1 FROM master_issuer_type_nature mitn WHERE mitn.code = mi.nature_type AND mitn.description IN (${placeholders}))`);
+        conditions.push(`EXISTS (
+          SELECT 1 FROM master_issuer mi2
+          JOIN master_issuer_type_nature mitn ON mitn.code = mi2.nature_type
+          WHERE mi2.id = mi.isin_id AND mitn.description IN (${placeholders})
+        )`);
         params.push(...nature);
       }
 
+      // ─── FIX: issuer_ownership_type lives on master_issuer, not isin_re_issuance ───
       if (ownershipType.length > 0) {
         const placeholders = ownershipType.map(() => '?').join(', ');
-        conditions.push(`EXISTS (SELECT 1 FROM master_issuer_ownership_type miot WHERE miot.code = mi.issuer_ownership_type AND miot.description IN (${placeholders}))`);
+        conditions.push(`EXISTS (
+          SELECT 1 FROM master_issuer mi2
+          JOIN master_issuer_ownership_type miot ON miot.code = mi2.issuer_ownership_type
+          WHERE mi2.id = mi.isin_id AND miot.description IN (${placeholders})
+        )`);
         params.push(...ownershipType);
       }
 
@@ -11092,15 +11126,25 @@ app.post('/rating_agencies_page_credit_rating_data', async (req, res) => {
         params.push(...sector);
       }
 
+      // ─── FIX: nature_type lives on master_issuer, not isin_re_issuance ───
       if (nature.length > 0) {
         const placeholders = nature.map(() => '?').join(', ');
-        conditions.push(`EXISTS (SELECT 1 FROM master_issuer_type_nature mitn WHERE mitn.code = ${issuerAlias}.nature_type AND mitn.description IN (${placeholders}))`);
+        conditions.push(`EXISTS (
+          SELECT 1 FROM master_issuer mi2
+          JOIN master_issuer_type_nature mitn ON mitn.code = mi2.nature_type
+          WHERE mi2.id = ${issuerAlias}.isin_id AND mitn.description IN (${placeholders})
+        )`);
         params.push(...nature);
       }
 
+      // ─── FIX: issuer_ownership_type lives on master_issuer, not isin_re_issuance ───
       if (ownershipType.length > 0) {
         const placeholders = ownershipType.map(() => '?').join(', ');
-        conditions.push(`EXISTS (SELECT 1 FROM master_issuer_ownership_type miot WHERE miot.code = ${issuerAlias}.issuer_ownership_type AND miot.description IN (${placeholders}))`);
+        conditions.push(`EXISTS (
+          SELECT 1 FROM master_issuer mi2
+          JOIN master_issuer_ownership_type miot ON miot.code = mi2.issuer_ownership_type
+          WHERE mi2.id = ${issuerAlias}.isin_id AND miot.description IN (${placeholders})
+        )`);
         params.push(...ownershipType);
       }
 
@@ -11370,17 +11414,25 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
       params.push(...trustee);
     }
 
-    // Nature (multi-select)
+    // ─── FIX: nature_type lives on master_issuer, not isin_re_issuance ───
     if (nature.length > 0) {
       const placeholders = nature.map(() => '?').join(', ');
-      conditions.push(`EXISTS (SELECT 1 FROM master_issuer_type_nature mitn WHERE mitn.code = isin_re_issuance.nature_type AND mitn.description IN (${placeholders}))`);
+      conditions.push(`EXISTS (
+        SELECT 1 FROM master_issuer mi2
+        JOIN master_issuer_type_nature mitn ON mitn.code = mi2.nature_type
+        WHERE mi2.id = isin_re_issuance.isin_id AND mitn.description IN (${placeholders})
+      )`);
       params.push(...nature);
     }
 
-    // Ownership Type (multi-select)
+    // ─── FIX: issuer_ownership_type lives on master_issuer, not isin_re_issuance ───
     if (ownershipType.length > 0) {
       const placeholders = ownershipType.map(() => '?').join(', ');
-      conditions.push(`EXISTS (SELECT 1 FROM master_issuer_ownership_type miot WHERE miot.code = isin_re_issuance.issuer_ownership_type AND miot.description IN (${placeholders}))`);
+      conditions.push(`EXISTS (
+        SELECT 1 FROM master_issuer mi2
+        JOIN master_issuer_ownership_type miot ON miot.code = mi2.issuer_ownership_type
+        WHERE mi2.id = isin_re_issuance.isin_id AND miot.description IN (${placeholders})
+      )`);
       params.push(...ownershipType);
     }
 
@@ -12895,15 +12947,19 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
         params.push(...businessSector);
       }
 
+      // ─── FIX: nature_type lives on master_issuer, not isin_re_issuance ───
       if (issuerNatureType.length > 0) {
-        joins.push(`LEFT JOIN master_issuer_type_nature mitn ON mitn.code = ${alias}.nature_type`);
+        joins.push(`LEFT JOIN master_issuer mi_nature ON mi_nature.id = ${alias}.isin_id`);
+        joins.push(`LEFT JOIN master_issuer_type_nature mitn ON mitn.code = mi_nature.nature_type`);
         const placeholders = issuerNatureType.map(() => '?').join(', ');
         conditions.push(`mitn.description IN (${placeholders})`);
         params.push(...issuerNatureType);
       }
 
+      // ─── FIX: issuer_ownership_type lives on master_issuer, not isin_re_issuance ───
       if (issuerOwnershipType.length > 0) {
-        joins.push(`LEFT JOIN master_issuer_ownership_type miot ON miot.code = ${alias}.issuer_ownership_type`);
+        joins.push(`LEFT JOIN master_issuer mi_ownership ON mi_ownership.id = ${alias}.isin_id`);
+        joins.push(`LEFT JOIN master_issuer_ownership_type miot ON miot.code = mi_ownership.issuer_ownership_type`);
         const placeholders = issuerOwnershipType.map(() => '?').join(', ');
         conditions.push(`miot.description IN (${placeholders})`);
         params.push(...issuerOwnershipType);
@@ -13423,15 +13479,19 @@ app.post('/registrars_page_credit_rating_data', async (req, res) => {
       filterParams.push(...businessSector);
     }
 
+    // ─── FIX: nature_type lives on master_issuer, not isin_re_issuance ───
     if (issuerNatureType.length > 0) {
-      filterJoins.push(`LEFT JOIN master_issuer_type_nature ON master_issuer_type_nature.code = isin_re_issuance.nature_type`);
+      filterJoins.push(`LEFT JOIN master_issuer mi_nature ON mi_nature.id = isin_re_issuance.isin_id`);
+      filterJoins.push(`LEFT JOIN master_issuer_type_nature ON master_issuer_type_nature.code = mi_nature.nature_type`);
       const placeholders = issuerNatureType.map(() => '?').join(', ');
       filterConditions.push(`master_issuer_type_nature.description IN (${placeholders})`);
       filterParams.push(...issuerNatureType);
     }
 
+    // ─── FIX: issuer_ownership_type lives on master_issuer, not isin_re_issuance ───
     if (issuerOwnershipType.length > 0) {
-      filterJoins.push(`LEFT JOIN master_issuer_ownership_type ON master_issuer_ownership_type.code = isin_re_issuance.issuer_ownership_type`);
+      filterJoins.push(`LEFT JOIN master_issuer mi_ownership ON mi_ownership.id = isin_re_issuance.isin_id`);
+      filterJoins.push(`LEFT JOIN master_issuer_ownership_type ON master_issuer_ownership_type.code = mi_ownership.issuer_ownership_type`);
       const placeholders = issuerOwnershipType.map(() => '?').join(', ');
       filterConditions.push(`master_issuer_ownership_type.description IN (${placeholders})`);
       filterParams.push(...issuerOwnershipType);
