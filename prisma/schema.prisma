@@ -114,7 +114,6 @@ model issuer_details {
   is_deleted         Int       @default(0) @db.TinyInt
   created_at         DateTime? @db.Timestamp(0)
   updated_at         DateTime? @db.Timestamp(0)
-  master_issuers master_issuer[]
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -164,14 +163,6 @@ model issuer_trustee {
   @@index([issuer_id], map: "issuer_trustee_issuer_id_index")
   @@index([trustee_id], map: "issuer_trustee_trustee_id_index")
   @@ignore
-}
-
-model issuers {
-  id          Int     @id @default(autoincrement())
-  name        String? @db.VarChar(255)
-  some_metric Int?
-
-  @@index([id], map: "ix_issuers_id")
 }
 
 model job_batches {
@@ -560,12 +551,12 @@ model master_issuer {
   intratlkto            String?   @db.VarChar(255)
   created_by            BigInt?
   updated_by            BigInt?
+  is_visible            Int       @default(0) @db.TinyInt
   is_active             Int       @default(1) @db.TinyInt
   is_deleted            Int       @default(0) @db.TinyInt
   is_updated            Int       @default(1) @db.TinyInt
   created_at            DateTime? @db.Timestamp(0)
   updated_at            DateTime? @db.Timestamp(0)
-  issuer_details issuer_details @relation(fields: [issuer_master_id], references: [id])
 
   @@index([allotment_date], map: "allotment_date")
   @@index([business_sector], map: "business_sector")
@@ -1122,7 +1113,100 @@ model users {
   @@index([role_id], map: "users_role_id_index")
 }
 
+model isin_re_issuance {
+  id               BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  isin_id          BigInt
+  isin             String    @db.VarChar(20)
+  issuer_master_id BigInt    @db.UnsignedBigInt
+  allotment_date   DateTime  @db.Date
+  issue_size       Decimal   @db.Decimal(18, 2)
+  nsdl_issue_size  Decimal?  @db.Decimal(18, 2)
+  source           String?   @db.VarChar(255)
+  face_value       Float?    @db.Float
+  maturity_date    DateTime? @db.Date
+  business_sector  Int?
+  security_name    String?   @db.VarChar(255)
+  security_class   String?   @db.VarChar(255)
+  mode_issue       Int?
+  seniority        Int?
+  tax_free         Float?    @db.Float
+  secured_flag     Int?
+  is_visible       Int       @default(0) @db.TinyInt
+  is_updated       Int       @default(1) @db.TinyInt
+  is_main          Int       @default(0) @db.TinyInt
+  created_at       DateTime? @db.Timestamp(0)
+  updated_at       DateTime? @db.Timestamp(0)
+
+  @@index([isin_id], map: "isin_re_issuance_isin_id_index")
+  @@index([issuer_master_id], map: "isin_re_issuance_issuer_master_id_index")
+}
+
+model isin_re_issuance_details {
+  id                                    BigInt                                         @id @default(autoincrement()) @db.UnsignedBigInt
+  re_issuance_id                        BigInt                                         @db.UnsignedBigInt
+  bidding_date                          DateTime?                                      @db.Date
+  issuer_name                           String?                                        @db.VarChar(255)
+  isin                                  String?                                        @db.VarChar(20)
+  issue_description                     String?                                        @db.Text
+  type_of_issuance                      String?                                        @db.VarChar(100)
+  allotment_date                        DateTime?                                      @db.Date
+  face_value                            Decimal?                                       @db.Decimal(18, 2)
+  credit_rating                         String?                                        @db.VarChar(255)
+  type_of_book_bidding                  isin_re_issuance_details_type_of_book_bidding?
+  price                                 Decimal?                                       @db.Decimal(18, 2)
+  spread                                Decimal?                                       @db.Decimal(10, 2)
+  yield                                 Decimal?                                       @db.Decimal(10, 2)
+  manner_of_allotment                   String?                                        @db.VarChar(255)
+  manner_of_settlement                  String?                                        @db.VarChar(255)
+  link_of_gid_ppm                       String?                                        @db.Text
+  link_of_kid_term_sheet                String?                                        @db.Text
+  base_issue_size                       Decimal?                                       @db.Decimal(18, 2)
+  green_shoe_option                     Decimal?                                       @db.Decimal(18, 2)
+  amount_raised                         Decimal?                                       @db.Decimal(18, 2)
+  coupon                                Decimal?                                       @db.Decimal(10, 2)
+  coupon_frequency                      Int?
+  successful_bidders_category           String?                                        @db.Text
+  type_of_bidding                       String?                                        @db.VarChar(100)
+  secured_unsecured                     isin_re_issuance_details_secured_unsecured?
+  tenor                                 String?                                        @db.VarChar(100)
+  maturity_type                         String?                                        @db.VarChar(100)
+  interest_payment_type                 String?                                        @db.VarChar(100)
+  anchor_amount                         Decimal?                                       @db.Decimal(18, 2)
+  number_of_anchor_investors            Int?
+  total_qib_bidding                     Decimal?                                       @db.Decimal(18, 2)
+  total_qib_amount_accepted             Decimal?                                       @db.Decimal(18, 2)
+  total_non_qib_bidding                 Decimal?                                       @db.Decimal(18, 2)
+  total_non_qib_amount_accepted         Decimal?                                       @db.Decimal(18, 2)
+  cutoff_yield_price                    Decimal?                                       @db.Decimal(18, 2)
+  weighted_average_cutoff_yield_price   Decimal?                                       @db.Decimal(18, 2)
+  issuance_done_through_bidding_process String?                                        @db.VarChar(100)
+  updated_by                            Int?
+  created_at                            DateTime?                                      @db.Timestamp(0)
+  updated_at                            DateTime?                                      @db.Timestamp(0)
+
+  @@index([re_issuance_id], map: "isin_re_issuance_details_re_issuance_id_index")
+}
+
+model isin_records {
+  id             Int       @id @default(autoincrement())
+  isin           String?   @db.VarChar(255)
+  allotment_date DateTime? @db.Date
+  status         Boolean   @default(false)
+  created_at     DateTime  @default(now()) @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+}
+
 enum users_user_type {
   TYPE_ONE @map("1")
   TYPE_TWO @map("2")
+}
+
+enum isin_re_issuance_details_type_of_book_bidding {
+  open
+  closed
+}
+
+enum isin_re_issuance_details_secured_unsecured {
+  secured
+  unsecured
 }

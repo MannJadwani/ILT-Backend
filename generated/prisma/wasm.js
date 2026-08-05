@@ -225,12 +225,6 @@ exports.Prisma.Issuer_tenure_detailsScalarFieldEnum = {
   updated_at: 'updated_at'
 };
 
-exports.Prisma.IssuersScalarFieldEnum = {
-  id: 'id',
-  name: 'name',
-  some_metric: 'some_metric'
-};
-
 exports.Prisma.Job_batchesScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -559,6 +553,7 @@ exports.Prisma.Master_issuerScalarFieldEnum = {
   intratlkto: 'intratlkto',
   created_by: 'created_by',
   updated_by: 'updated_by',
+  is_visible: 'is_visible',
   is_active: 'is_active',
   is_deleted: 'is_deleted',
   is_updated: 'is_updated',
@@ -1024,6 +1019,84 @@ exports.Prisma.UsersScalarFieldEnum = {
   utm_source: 'utm_source'
 };
 
+exports.Prisma.Isin_re_issuanceScalarFieldEnum = {
+  id: 'id',
+  isin_id: 'isin_id',
+  isin: 'isin',
+  issuer_master_id: 'issuer_master_id',
+  allotment_date: 'allotment_date',
+  issue_size: 'issue_size',
+  nsdl_issue_size: 'nsdl_issue_size',
+  source: 'source',
+  face_value: 'face_value',
+  maturity_date: 'maturity_date',
+  business_sector: 'business_sector',
+  security_name: 'security_name',
+  security_class: 'security_class',
+  mode_issue: 'mode_issue',
+  seniority: 'seniority',
+  tax_free: 'tax_free',
+  secured_flag: 'secured_flag',
+  is_visible: 'is_visible',
+  is_updated: 'is_updated',
+  is_main: 'is_main',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+};
+
+exports.Prisma.Isin_re_issuance_detailsScalarFieldEnum = {
+  id: 'id',
+  re_issuance_id: 're_issuance_id',
+  bidding_date: 'bidding_date',
+  issuer_name: 'issuer_name',
+  isin: 'isin',
+  issue_description: 'issue_description',
+  type_of_issuance: 'type_of_issuance',
+  allotment_date: 'allotment_date',
+  face_value: 'face_value',
+  credit_rating: 'credit_rating',
+  type_of_book_bidding: 'type_of_book_bidding',
+  price: 'price',
+  spread: 'spread',
+  yield: 'yield',
+  manner_of_allotment: 'manner_of_allotment',
+  manner_of_settlement: 'manner_of_settlement',
+  link_of_gid_ppm: 'link_of_gid_ppm',
+  link_of_kid_term_sheet: 'link_of_kid_term_sheet',
+  base_issue_size: 'base_issue_size',
+  green_shoe_option: 'green_shoe_option',
+  amount_raised: 'amount_raised',
+  coupon: 'coupon',
+  coupon_frequency: 'coupon_frequency',
+  successful_bidders_category: 'successful_bidders_category',
+  type_of_bidding: 'type_of_bidding',
+  secured_unsecured: 'secured_unsecured',
+  tenor: 'tenor',
+  maturity_type: 'maturity_type',
+  interest_payment_type: 'interest_payment_type',
+  anchor_amount: 'anchor_amount',
+  number_of_anchor_investors: 'number_of_anchor_investors',
+  total_qib_bidding: 'total_qib_bidding',
+  total_qib_amount_accepted: 'total_qib_amount_accepted',
+  total_non_qib_bidding: 'total_non_qib_bidding',
+  total_non_qib_amount_accepted: 'total_non_qib_amount_accepted',
+  cutoff_yield_price: 'cutoff_yield_price',
+  weighted_average_cutoff_yield_price: 'weighted_average_cutoff_yield_price',
+  issuance_done_through_bidding_process: 'issuance_done_through_bidding_process',
+  updated_by: 'updated_by',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+};
+
+exports.Prisma.Isin_recordsScalarFieldEnum = {
+  id: 'id',
+  isin: 'isin',
+  allotment_date: 'allotment_date',
+  status: 'status',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -1088,10 +1161,6 @@ exports.Prisma.issuer_redemption_detailsOrderByRelevanceFieldEnum = {
   redmp_premimum_date: 'redmp_premimum_date',
   defaultinredmptn: 'defaultinredmptn',
   redmp_details: 'redmp_details'
-};
-
-exports.Prisma.issuersOrderByRelevanceFieldEnum = {
-  name: 'name'
 };
 
 exports.Prisma.job_batchesOrderByRelevanceFieldEnum = {
@@ -1404,9 +1473,48 @@ exports.Prisma.usersOrderByRelevanceFieldEnum = {
   designation: 'designation',
   utm_source: 'utm_source'
 };
+
+exports.Prisma.isin_re_issuanceOrderByRelevanceFieldEnum = {
+  isin: 'isin',
+  source: 'source',
+  security_name: 'security_name',
+  security_class: 'security_class'
+};
+
+exports.Prisma.isin_re_issuance_detailsOrderByRelevanceFieldEnum = {
+  issuer_name: 'issuer_name',
+  isin: 'isin',
+  issue_description: 'issue_description',
+  type_of_issuance: 'type_of_issuance',
+  credit_rating: 'credit_rating',
+  manner_of_allotment: 'manner_of_allotment',
+  manner_of_settlement: 'manner_of_settlement',
+  link_of_gid_ppm: 'link_of_gid_ppm',
+  link_of_kid_term_sheet: 'link_of_kid_term_sheet',
+  successful_bidders_category: 'successful_bidders_category',
+  type_of_bidding: 'type_of_bidding',
+  tenor: 'tenor',
+  maturity_type: 'maturity_type',
+  interest_payment_type: 'interest_payment_type',
+  issuance_done_through_bidding_process: 'issuance_done_through_bidding_process'
+};
+
+exports.Prisma.isin_recordsOrderByRelevanceFieldEnum = {
+  isin: 'isin'
+};
 exports.users_user_type = exports.$Enums.users_user_type = {
   TYPE_ONE: 'TYPE_ONE',
   TYPE_TWO: 'TYPE_TWO'
+};
+
+exports.isin_re_issuance_details_type_of_book_bidding = exports.$Enums.isin_re_issuance_details_type_of_book_bidding = {
+  open: 'open',
+  closed: 'closed'
+};
+
+exports.isin_re_issuance_details_secured_unsecured = exports.$Enums.isin_re_issuance_details_secured_unsecured = {
+  secured: 'secured',
+  unsecured: 'unsecured'
 };
 
 exports.Prisma.ModelName = {
@@ -1422,7 +1530,6 @@ exports.Prisma.ModelName = {
   issuer_details: 'issuer_details',
   issuer_redemption_details: 'issuer_redemption_details',
   issuer_tenure_details: 'issuer_tenure_details',
-  issuers: 'issuers',
   job_batches: 'job_batches',
   jobs: 'jobs',
   master_agency: 'master_agency',
@@ -1474,7 +1581,10 @@ exports.Prisma.ModelName = {
   redis_iro_cron_table: 'redis_iro_cron_table',
   sessions: 'sessions',
   user_enquiry: 'user_enquiry',
-  users: 'users'
+  users: 'users',
+  isin_re_issuance: 'isin_re_issuance',
+  isin_re_issuance_details: 'isin_re_issuance_details',
+  isin_records: 'isin_records'
 };
 
 /**

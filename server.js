@@ -146,252 +146,190 @@ app.post('/bulk-upsert', async (req, res) => {
     }
 
     const checkNumber = (value) => {
-      if (value === "" || value === null || value === undefined)
-        return null;
-
+      if (value === "" || value === null || value === undefined) return null;
       const n = Number(value);
-
       return Number.isFinite(n) ? n : null;
     };
 
     const parseDate = (value) => {
       if (!value) return null;
 
+      // Handle Excel serial numbers (e.g. 46184 → 2026-06-10)
+      const num = Number(value);
+      if (!isNaN(num) && num > 30000 && num < 100000) {
+        const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+        const days = num > 60 ? num - 1 : num; // adjust for Excel 1900 leap-year bug
+        const result = new Date(excelEpoch.getTime() + days * 24 * 60 * 60 * 1000);
+        return new Date(Date.UTC(result.getFullYear(), result.getMonth(), result.getDate()));
+      }
+
+      // Handle ISO / standard date strings
       const d = new Date(value);
+      if (!isNaN(d.getTime())) {
+        return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+      }
 
-      if (isNaN(d.getTime())) return null;
-
-      return new Date(Date.UTC(
-        d.getFullYear(),
-        d.getMonth(),
-        d.getDate()
-      ));
+      return null;
     };
 
     const results = [];
 
     for (const item of data) {
       const txResult = await prisma.$transaction(async (tx) => {
-        let masterId;
-        // Force the date to midnight UTC to prevent the shift
-        const formattedAllotmentDate = parseDate(item.allotmentDate);
-        const formattedMaturityDate = parseDate(item.maturityDate);
-
-        // --- Helper: resolve secured_flag from description ---
-        let securedFlag = null;
-
-        if (item.securedUnsecured) {
-          securedFlag = await tx.master_secured_flag.findFirst({
-            where: {
-              description: {
-                contains: item.securedUnsecured?.trim()
-              }
-            }
-          });
-        }
-
-        // --- Helper: resolve interest_type from description ---
-        let interestType = null;
-
-        if (item.interestPaymentType?.trim()) {
-          interestType = await tx.master_interest_type.findFirst({
-            where: {
-              description: {
-                contains: item.interestPaymentType.trim()
-              }
-            }
-          });
-        }
-
         if (!item.isin?.trim()) {
           throw new Error("ISIN is required");
         }
 
-        // --- Check if ISIN already exists ---
-        const existing = await tx.master_issuer.findFirst({
-          where: { isin: item.isin?.trim() }
+        const formattedAllotmentDate = parseDate(item.allotmentDate);
+        const formattedMaturityDate = parseDate(item.maturityDate);
+        const formattedBiddingDate = parseDate(item.biddingDate);
+
+        // --- Lookup master_issuer for isin_id FK (read-only) ---
+        const masterIssuer = await tx.master_issuer.findFirst({
+          where: { isin: item.isin.trim() }
+        });
+
+        // --- Lookup issuer_details for issuer_master_id FK (read-only) ---
+        let issuerDetails = null;
+        if (item.issuerName?.trim()) {
+          issuerDetails = await tx.issuer_details.findFirst({
+            where: {
+              issuer_name: {
+                contains: item.issuerName.trim()
+              }
+            }
+          });
+        }
+
+        // --- Resolve secured_flag code from description ---
+        let securedFlagRecord = null;
+        if (item.securedUnsecured?.trim()) {
+          securedFlagRecord = await tx.master_secured_flag.findFirst({
+            where: {
+              description: {
+                contains: item.securedUnsecured.trim()
+              }
+            }
+          });
+        }
+
+        // --- Check if ISIN already exists in isin_re_issuance ---
+        const existingReIssuance = await tx.isin_re_issuance.findFirst({
+          where: { isin: item.isin.trim() }
+        });
+
+        let reIssuanceResult;
+        let detailsResult;
+
+        const couponFrequencyRecord = await tx.master_coupon_type.findFirst({
+          where: {
+            description: {
+              contains: item.couponFrequency.trim()
+            }
+          }
         });
 
         // ==================================
         // UPDATE BRANCH
         // ==================================
-        if (existing) {
-          masterId = existing.id;
+        if (existingReIssuance) {
+          const reIssuanceId = existingReIssuance.id;
 
-          const updated = await tx.master_issuer.update({
-            where: { id: masterId },
+          // 1. Update isin_re_issuance
+          reIssuanceResult = await tx.isin_re_issuance.update({
+            where: { id: reIssuanceId },
             data: {
-              security_name: item.security_name ?? null,
-              secured_flag: securedFlag ? Number(securedFlag.code) : null,
-              interest_type: interestType ? Number(interestType.code) : null,
-              face_value: checkNumber(item.faceValue),
-              issue_price: checkNumber(item.price),
+              isin_id:
+                masterIssuer?.id !== undefined && masterIssuer?.id !== null
+                  ? BigInt(masterIssuer.id)
+                  : existingReIssuance.isin_id,
+              issuer_master_id:
+                issuerDetails?.id !== undefined && issuerDetails?.id !== null
+                  ? BigInt(issuerDetails.id)
+                  : existingReIssuance.issuer_master_id,
+              allotment_date: formattedAllotmentDate,
               issue_size: checkNumber(item.baseIssueSize),
-              freq_dis: item.couponFrequency !== undefined && item.couponFrequency !== null
-                ? String(item.couponFrequency)
-                : null,
-              isin_desc: item.issueDescription !== undefined && item.issueDescription !== null
-                ? String(item.issueDescription)
-                : null,
-              allotment_date: item.allotmentDate ? formattedAllotmentDate : null,
-              maturity_date: item.maturityDate ? formattedMaturityDate : null,
-              issuer_details: {
-                update: {
-                  issuer_name: item.issuer_name ?? null,
-                }
-              }
-            },
-            include: {
-              issuer_details: true
+              face_value: checkNumber(item.faceValue),
+              maturity_date: formattedMaturityDate,
+              secured_flag: securedFlagRecord
+                ? Number(securedFlagRecord.code)
+                : existingReIssuance.secured_flag,
+              is_updated: 1,
+              updated_at: new Date()
             }
           });
 
-          // --- Upsert master_issuer_additional (greenShoeOption) ---
-          let additionalResult = null;
-          const existingAdditional = await tx.master_issuer_additional.findFirst({
-            where: { issuer_id: masterId }
-          });
-          //if existingAdditional exists, then update it else create a new record
-          if (existingAdditional) {
-            additionalResult = await tx.master_issuer_additional.update({
-              where: { id: existingAdditional.id },
-              data: {
-                greenShoeOption: item.greenShoeOption ?? null,
-                amountRaised: item.amountRaised ?? null
-              }
-            });
-          } else {
-            additionalResult = await tx.master_issuer_additional.create({
-              data: {
-                issuer_id: masterId,
-                greenShoeOption: item.greenShoeOption ?? null,
-                amountRaised: item.amountRaised ?? null
-              }
-            });
-          }
-
-          // --- Upsert issuer_coupon_details (coupon) ---
-          let couponResult = null;   // <-- FIX: declared couponResult variable
-          let couponType = null;
-
-          if (item.coupon?.trim()) {
-            couponType = await tx.master_coupon_type.findFirst({
-              where: {
-                description: { contains: item.coupon.trim() }
-              }
-            });
-          }
-
-          const existingCoupon = await tx.issuer_coupon_details.findFirst({
-            where: { issuer_id: masterId }
-          });
-          //if existingCoupon exists, then update it else create a new issuer coupon details row
-          if (existingCoupon) {
-            couponResult = await tx.issuer_coupon_details.update({
-              where: { id: existingCoupon.id },
-              data: {
-                coupon_type: couponType?.code !== undefined && couponType?.code !== null
-                  ? String(couponType?.code)
-                  : null,
-              }
-            });
-          } else {
-            couponResult = await tx.issuer_coupon_details.create({
-              data: {
-                issuer_id: masterId,
-                coupon_type: couponType?.code !== undefined && couponType?.code !== null
-                  ? String(couponType?.code)
-                  : null
-              }
-            });
-          }
-
-          // --- Upsert issuer_tenure_details ---
-          let tenureResult = null;
-
-          const existingTenure = await tx.issuer_tenure_details.findFirst({
-            where: { issuer_id: masterId }
-          });
-          const tenureData = {
-            tenure_no_years: item.tenureInYears ?? null,
-            tenure_no_months: item.tenureInMonths ?? null,
-            tenure_no_days: item.tenureInDays ?? null
+          // 2. Build details payload
+          const detailsPayload = {
+            bidding_date: formattedBiddingDate,
+            issuer_name: item.issuerName ?? null,
+            isin: item.isin ?? null,
+            issue_description: item.issueDescription ?? null,
+            type_of_issuance: item.typeOfIssuance ?? null,
+            allotment_date: formattedAllotmentDate,
+            face_value: checkNumber(item.faceValue),
+            credit_rating: item.creditRating ?? null,
+            type_of_book_bidding: String(item.typeOfBookBidding)?.toLocaleLowerCase() ?? null,   // Enum
+            price: checkNumber(item.price),
+            spread: checkNumber(item.spread),
+            yield: checkNumber(item.yield),
+            manner_of_allotment: item.mannerOfAllotment ?? null,
+            manner_of_settlement: item.mannerOfSettlement ?? null,
+            link_of_gid_ppm: item.linkOfGidPpm ?? null,
+            link_of_kid_term_sheet: item.linkOfKidTermSheet ?? null,
+            base_issue_size: checkNumber(item.baseIssueSize),
+            green_shoe_option: checkNumber(item.greenShoeOption),
+            amount_raised: checkNumber(item.amountRaised),
+            coupon: checkNumber(item.coupon),
+            // Int column
+            coupon_frequency: couponFrequencyRecord?.code
+              ? Number(couponFrequencyRecord.code)
+              : null,
+            successful_bidders_category: item.successfulBiddersCategory ?? null,
+            type_of_bidding: item.typeOfBidding ?? null,
+            // Enum
+            secured_unsecured: String(item.securedUnsecured)?.toLocaleLowerCase() ?? null,
+            tenor: item.tenor ?? null,
+            maturity_type: item.maturityType ?? null,
+            interest_payment_type: item.interestPaymentType ?? null,
+            anchor_amount: checkNumber(item.anchorAmount),
+            number_of_anchor_investors: checkNumber(item.numberOfAnchorInvestors),
+            total_qib_bidding: checkNumber(item.totalQibBidding),
+            total_qib_amount_accepted: checkNumber(item.totalQibAmountAccepted),
+            total_non_qib_bidding: checkNumber(item.totalNonQibBidding),
+            total_non_qib_amount_accepted: checkNumber(item.totalNonQibAmountAccepted),
+            cutoff_yield_price: checkNumber(item.cutoffYieldPrice),
+            weighted_average_cutoff_yield_price: checkNumber(item.weightedAverageCutoffYieldPrice),
+            // String column
+            issuance_done_through_bidding_process:
+              item.issuanceDoneThroughBiddingProcess != null
+                ? String(item.issuanceDoneThroughBiddingProcess)
+                : null,
+            updated_at: new Date()
           };
 
-          //if existingTenure exists, then update it else create a new issuer tenure details row
-          if (existingTenure) {
-            tenureResult = await tx.issuer_tenure_details.update({
-              where: { id: existingTenure.id },
-              data: tenureData
+          // 3. Upsert isin_re_issuance_details
+          const existingDetails = await tx.isin_re_issuance_details.findFirst({
+            where: { re_issuance_id: reIssuanceId }
+          });
+
+          if (existingDetails) {
+            detailsResult = await tx.isin_re_issuance_details.update({
+              where: { id: existingDetails.id },
+              data: detailsPayload
             });
           } else {
-            tenureResult = await tx.issuer_tenure_details.create({
-              data: {
-                issuer_id: masterId,
-                ...tenureData
-              }
+            detailsResult = await tx.isin_re_issuance_details.create({
+              data: { re_issuance_id: reIssuanceId, ...detailsPayload }
             });
-          }
-
-          // --- Upsert multiple ratings from creditRatingData array ---
-          let ratingResults = [];
-          // checking if it is an array or not
-          if (Array.isArray(item.creditRatingData) && item.creditRatingData.length > 0) {
-            for (const ratingItem of item.creditRatingData) {
-
-              let agency = await tx.master_agency.findFirst({
-                where: { short_name: { contains: ratingItem.agencyName?.trim() } }
-              });
-
-              if (!agency) {
-                console.warn(`Agency not found: ${ratingItem.agencyName}`);
-                continue; // skip this rating
-              }
-
-              const existingRating = await tx.master_issuer_rating.findFirst({
-                where: {
-                  issuer_id: masterId,
-                  agency_id: agency?.id ?? null
-                }
-              });
-
-              // if existingRating exists, then update it else create a new issuer rating row
-              if (existingRating) {
-                const ratingResult = await tx.master_issuer_rating.update({
-                  where: { id: existingRating.id },
-                  data: {
-                    rating: ratingItem.rating ?? null,
-                    outlook: ratingItem.outlook ?? null,
-                    rating_date: new Date()
-                  }
-                });
-                ratingResults.push(ratingResult);
-              } else {
-                const ratingResult = await tx.master_issuer_rating.create({
-                  data: {
-                    issuer_id: masterId,
-                    agency_id: agency?.id ?? null,
-                    rating: ratingItem.rating ?? null,
-                    outlook: ratingItem.outlook ?? null,
-                    rating_date: new Date()
-                  }
-                });
-                ratingResults.push(ratingResult);
-              }
-
-            }
           }
 
           return {
             isin: item.isin,
             action: 'updated',
-            updated,
-            additional: additionalResult,
-            coupon: couponResult,
-            tenure: tenureResult,
-            ratings: ratingResults,
-            securedFlag,
-            interestType
+            reIssuance: reIssuanceResult,
+            details: detailsResult,
+            securedFlag: securedFlagRecord
           };
         }
 
@@ -399,114 +337,95 @@ app.post('/bulk-upsert', async (req, res) => {
         // INSERT BRANCH
         // ==================================
         else {
-          const result = await tx.master_issuer.create({
+          // 1. Create isin_re_issuance
+          // 1. Create isin_re_issuance
+          reIssuanceResult = await tx.isin_re_issuance.create({
             data: {
-              isin: item.isin,
-              security_name: item.security_name ?? null,
-              secured_flag: checkNumber(securedFlag?.code) ?? null,
-              interest_type: checkNumber(interestType?.code) ?? null,
-              face_value: checkNumber(item.faceValue) ?? null,
-              issue_price: checkNumber(item.price) ?? null,
-              issue_size: checkNumber(item.baseIssueSize) ?? null,
-              freq_dis: item.couponFrequency !== undefined && item.couponFrequency !== null
-                ? String(item.couponFrequency)
+              isin: item.isin.trim(),
+              // Required BigInt fields
+              isin_id: BigInt(masterIssuer.id),
+              issuer_master_id: BigInt(issuerDetails.id),
+              // Required fields
+              allotment_date: formattedAllotmentDate,
+              issue_size: checkNumber(item.baseIssueSize),
+              // Optional fields
+              face_value: checkNumber(item.faceValue),
+              maturity_date: formattedMaturityDate,
+              secured_flag: securedFlagRecord
+                ? Number(securedFlagRecord.code)
                 : null,
-              isin_desc: item.issueDescription !== undefined && item.issueDescription !== null
-                ? String(item.issueDescription)
+              is_visible: 1,
+              is_updated: 0,
+              is_main:
+                item.typeOfIssuance?.trim().toLowerCase() === "re-issuance"
+                  ? 0
+                  : 1,
+              created_at: new Date(),
+              updated_at: new Date()
+            }
+          });
+
+          const reIssuanceId = reIssuanceResult.id;
+
+          // 2. Create isin_re_issuance_details
+          detailsResult = await tx.isin_re_issuance_details.create({
+            data: {
+              re_issuance_id: BigInt(reIssuanceId),
+              bidding_date: formattedBiddingDate,
+              issuer_name: item.issuerName ?? null,
+              isin: item.isin ?? null,
+              issue_description: item.issueDescription ?? null,
+              type_of_issuance: item.typeOfIssuance ?? null,
+              allotment_date: formattedAllotmentDate,
+              face_value: checkNumber(item.faceValue),
+              credit_rating: item.creditRating ?? null,
+              // Enum value
+              type_of_book_bidding: String(item.typeOfBookBidding)?.toLocaleLowerCase() ?? null,
+              price: checkNumber(item.price),
+              spread: checkNumber(item.spread),
+              yield: checkNumber(item.yield),
+              manner_of_allotment: item.mannerOfAllotment ?? null,
+              manner_of_settlement: item.mannerOfSettlement ?? null,
+              link_of_gid_ppm: item.linkOfGidPpm ?? null,
+              link_of_kid_term_sheet: item.linkOfKidTermSheet ?? null,
+              base_issue_size: checkNumber(item.baseIssueSize),
+              green_shoe_option: checkNumber(item.greenShoeOption),
+              amount_raised: checkNumber(item.amountRaised),
+              coupon: checkNumber(item.coupon),
+              // Int column (replace with your lookup if you have one)
+              coupon_frequency: couponFrequencyRecord
+                ? Number(couponFrequencyRecord.code)
                 : null,
-              allotment_date: item.allotmentDate ? formattedAllotmentDate : null,
-              maturity_date: item.maturityDate ? formattedMaturityDate : null,
-              issuer_details: {
-                create: {
-                  issuer_name: item.issuer_name ?? null,
-                }
-              }
-            },
-            include: {
-              issuer_details: true
+              successful_bidders_category: item.successfulBiddersCategory ?? null,
+              type_of_bidding: item.typeOfBidding ?? null,
+              // Enum value
+              secured_unsecured: String(item.securedUnsecured)?.toLocaleLowerCase() ?? null,
+              tenor: item.tenor ?? null,
+              maturity_type: item.maturityType ?? null,
+              interest_payment_type: item.interestPaymentType ?? null,
+              anchor_amount: checkNumber(item.anchorAmount),
+              number_of_anchor_investors: checkNumber(item.numberOfAnchorInvestors),
+              total_qib_bidding: checkNumber(item.totalQibBidding),
+              total_qib_amount_accepted: checkNumber(item.totalQibAmountAccepted),
+              total_non_qib_bidding: checkNumber(item.totalNonQibBidding),
+              total_non_qib_amount_accepted: checkNumber(item.totalNonQibAmountAccepted),
+              cutoff_yield_price: checkNumber(item.cutoffYieldPrice),
+              weighted_average_cutoff_yield_price: checkNumber(item.weightedAverageCutoffYieldPrice),
+              issuance_done_through_bidding_process:
+                item.issuanceDoneThroughBiddingProcess != null
+                  ? String(item.issuanceDoneThroughBiddingProcess)
+                  : null,
+              created_at: new Date(),
+              updated_at: new Date()
             }
           });
-
-          masterId = result.id;
-
-          // --- Create master_issuer_additional (greenShoeOption) ---
-
-          let additionalResult = await tx.master_issuer_additional.create({
-            data: {
-              issuer_id: masterId,
-              greenShoeOption: item.greenShoeOption ?? null,
-              amountRaised: item.amountRaised ?? null
-            }
-          });
-
-          // --- Create issuer_coupon_details (coupon) ---
-
-          let couponType = null;
-
-          if (item.coupon?.trim()) {
-            couponType = await tx.master_coupon_type.findFirst({
-              where: {
-                description: { contains: item.coupon.trim() }
-              }
-            });
-          }
-
-          let couponResult = await tx.issuer_coupon_details.create({
-            data: {
-              issuer_id: masterId,
-              coupon_type: couponType?.code !== undefined && couponType?.code !== null
-                ? String(couponType?.code)
-                : null
-            }
-          });
-
-          // --- Create issuer_tenure_details ---
-          let tenureResult = await tx.issuer_tenure_details.create({
-            data: {
-              issuer_id: masterId,
-              tenure_no_years: item.tenureInYears ?? null,
-              tenure_no_months: item.tenureInMonths ?? null,
-              tenure_no_days: item.tenureInDays ?? null
-            }
-          });
-
-          // --- Create multiple ratings from creditRatingData array ---
-          let ratingResults = [];
-          if (Array.isArray(item.creditRatingData) && item.creditRatingData.length > 0) {
-            for (const ratingItem of item.creditRatingData) {
-
-              let agency = await tx.master_agency.findFirst({
-                where: { short_name: { contains: ratingItem?.agencyName?.trim() } }
-              });
-
-              if (!agency) {
-                console.warn(`Agency not found while creating: ${ratingItem.agencyName}`);
-                continue; // skip this rating
-              }
-
-              const ratingResult = await tx.master_issuer_rating.create({
-                data: {
-                  issuer_id: masterId,
-                  agency_id: agency?.id ?? null,
-                  rating: ratingItem.rating ?? null,
-                  outlook: ratingItem.outlook ?? null,
-                  rating_date: new Date()
-                }
-              });
-              ratingResults.push(ratingResult);
-            }
-          }
 
           return {
             isin: item.isin,
             action: 'inserted',
-            result,
-            additional: additionalResult,
-            coupon: couponResult,
-            tenure: tenureResult,
-            ratings: ratingResults,
-            securedFlag,
-            interestType
+            reIssuance: reIssuanceResult,
+            details: detailsResult,
+            securedFlag: securedFlagRecord
           };
         }
       });
@@ -564,7 +483,7 @@ app.post('/bulk-arrangers', async (req, res) => {
 
         if (arrangers && arrangers.length > 0) {
           console.log('already exited arranger');
-          
+
           arrangerId = arrangers[0].id;
         } else {
           // Create new arranger if not found
@@ -1370,7 +1289,7 @@ app.get('/dashboard_issue_volume_trends_data', async (req, res) => {
     ROUND(SUM(issue_size) / 10000000, 2) AS total_issue_size_cr,
     COUNT(isin) AS total_no_of_issues
     FROM
-        master_issuer
+        isin_re_issuance
     WHERE
         allotment_date BETWEEN ${startDate} AND ${endDate} AND (is_visible = 1)
     GROUP BY
@@ -1399,8 +1318,8 @@ app.post('/dashboard_issuer_table_data', async (req, res) => {
         COALESCE(ROUND(SUM(issue_size) / 10000000), 0) AS issueSize,
         CONCAT('#', SUBSTRING(LPAD(HEX(ROUND(RAND() * 10000000)), 6, 0), -6)) AS color
       FROM issuer_details 
-      INNER JOIN master_issuer
-        ON master_issuer.issuer_master_id = issuer_details.id
+      INNER JOIN isin_re_issuance
+        ON isin_re_issuance.issuer_master_id = issuer_details.id
       WHERE allotment_date BETWEEN '${startDate}' AND '${endDate}' AND (is_visible = 1)
       GROUP BY issuer_details.id
       ORDER BY SUM(issue_size) DESC
@@ -1425,10 +1344,10 @@ app.post('/dashboard_arranger_table_data', async (req, res) => {
       FROM master_arranger
       INNER JOIN issuer_arranger 
         ON master_arranger.id = issuer_arranger.arranger_id
-      INNER JOIN master_issuer 
-        ON issuer_arranger.issuer_id = master_issuer.id
+      INNER JOIN isin_re_issuance 
+        ON issuer_arranger.issuer_id = isin_re_issuance.isin_id
       INNER JOIN issuer_details 
-        ON master_issuer.issuer_master_id = issuer_details.id
+        ON isin_re_issuance.issuer_master_id = issuer_details.id
       WHERE
         allotment_date BETWEEN '${startDate}' AND '${endDate}' AND (is_visible = 1)
       GROUP BY
@@ -1456,10 +1375,10 @@ app.post('/dashboard_trustee_table_data', async (req, res) => {
       FROM master_trustee
       INNER JOIN issuer_trustee 
         ON master_trustee.id = issuer_trustee.trustee_id
-      INNER JOIN master_issuer 
-        ON issuer_trustee.issuer_id = master_issuer.id
+      INNER JOIN isin_re_issuance 
+        ON issuer_trustee.issuer_id = isin_re_issuance.isin_id
       INNER JOIN issuer_details 
-        ON master_issuer.issuer_master_id = issuer_details.id
+        ON isin_re_issuance.issuer_master_id = issuer_details.id
       WHERE
         allotment_date BETWEEN '${startDate}' AND '${endDate}' AND (is_visible = 1)
       GROUP BY
@@ -1487,10 +1406,10 @@ app.post('/dashboard_registrar_table_data', async (req, res) => {
       FROM master_registrar
       INNER JOIN issuer_registrar 
         ON master_registrar.id = issuer_registrar.registrar_id
-      INNER JOIN master_issuer 
-        ON issuer_registrar.issuer_id = master_issuer.id
+      INNER JOIN isin_re_issuance 
+        ON issuer_registrar.issuer_id = isin_re_issuance.isin_id
       INNER JOIN issuer_details 
-        ON master_issuer.issuer_master_id = issuer_details.id
+        ON isin_re_issuance.issuer_master_id = issuer_details.id
       WHERE
         allotment_date BETWEEN '${startDate}' AND '${endDate}' AND (is_visible = 1)
       GROUP BY
@@ -1518,10 +1437,10 @@ app.post('/dashboard_agency_table_data', async (req, res) => {
       FROM master_agency
       INNER JOIN master_issuer_rating 
         ON master_agency.id = master_issuer_rating.agency_id
-      INNER JOIN master_issuer 
-        ON master_issuer_rating.issuer_id = master_issuer.id
+      INNER JOIN isin_re_issuance 
+        ON master_issuer_rating.issuer_id = isin_re_issuance.isin_id
       INNER JOIN issuer_details 
-        ON master_issuer.issuer_master_id = issuer_details.id
+        ON isin_re_issuance.issuer_master_id = issuer_details.id
       WHERE
         allotment_date BETWEEN '${startDate}' AND '${endDate}' AND (is_visible = 1)
       GROUP BY
@@ -1553,10 +1472,10 @@ app.post('/dashboard_sectors_data', async (req, res) => {
         COALESCE((ROUND(SUM(issue_size)/10000000)),0) as issue_size,
         COUNT(isin) AS no_of_issue,
         concat("#",SUBSTRING((lpad(hex(round(rand() * 10000000)),6,0)),-6)) as color
-      FROM master_issuer
-      INNER JOIN master_business_sector as b on b.code = master_issuer.business_sector
+      FROM isin_re_issuance
+      INNER JOIN master_business_sector as b on b.code = isin_re_issuance.business_sector
       WHERE allotment_date BETWEEN '${startDate}' AND '${endDate}' AND business_sector IS NOT NULL AND (is_visible = 1)
-      GROUP BY master_issuer.business_sector, b.description
+      GROUP BY isin_re_issuance.business_sector, b.description
       ORDER BY issue_size DESC
       LIMIT 10;
     `;
@@ -1567,11 +1486,11 @@ app.post('/dashboard_sectors_data', async (req, res) => {
         COALESCE((ROUND(SUM(issue_size)/10000000)),0) as issue_size,
         COUNT(isin) AS no_of_issue,
         concat("#",SUBSTRING((lpad(hex(round(rand() * 10000000)),6,0)),-6)) as color
-      FROM master_issuer
-      INNER JOIN master_business_sector as b on b.code = master_issuer.business_sector
-      INNER JOIN issuer_arranger on issuer_arranger.issuer_id = master_issuer.id
+      FROM isin_re_issuance
+      INNER JOIN master_business_sector as b on b.code = isin_re_issuance.business_sector
+      INNER JOIN issuer_arranger on issuer_arranger.issuer_id = isin_re_issuance.isin_id
       WHERE allotment_date BETWEEN '${startDate}' AND '${endDate}' AND business_sector IS NOT NULL AND (is_visible = 1)
-      GROUP BY master_issuer.business_sector, b.description
+      GROUP BY isin_re_issuance.business_sector, b.description
       ORDER BY issue_size DESC
       LIMIT 10;
     `;
@@ -1582,11 +1501,11 @@ app.post('/dashboard_sectors_data', async (req, res) => {
         COALESCE((ROUND(SUM(issue_size)/10000000)),0) as issue_size,
         COUNT(isin) AS no_of_issue,
         concat("#",SUBSTRING((lpad(hex(round(rand() * 10000000)),6,0)),-6)) as color
-      FROM master_issuer
-      INNER JOIN master_business_sector as b on b.code = master_issuer.business_sector
-      INNER JOIN issuer_trustee on issuer_trustee.issuer_id = master_issuer.id
+      FROM isin_re_issuance
+      INNER JOIN master_business_sector as b on b.code = isin_re_issuance.business_sector
+      INNER JOIN issuer_trustee on issuer_trustee.issuer_id = isin_re_issuance.isin_id
       WHERE allotment_date BETWEEN '${startDate}' AND '${endDate}' AND business_sector IS NOT NULL AND (is_visible = 1)
-      GROUP BY master_issuer.business_sector, b.description
+      GROUP BY isin_re_issuance.business_sector, b.description
       ORDER BY issue_size DESC
       LIMIT 10;
     `;
@@ -1597,11 +1516,11 @@ app.post('/dashboard_sectors_data', async (req, res) => {
         COALESCE((ROUND(SUM(issue_size)/10000000)),0) as issue_size,
         COUNT(isin) AS no_of_issue,
         concat("#",SUBSTRING((lpad(hex(round(rand() * 10000000)),6,0)),-6)) as color
-      FROM master_issuer
-      INNER JOIN master_business_sector as b on b.code = master_issuer.business_sector
-      INNER JOIN issuer_registrar on issuer_registrar.issuer_id = master_issuer.id
+      FROM isin_re_issuance
+      INNER JOIN master_business_sector as b on b.code = isin_re_issuance.business_sector
+      INNER JOIN issuer_registrar on issuer_registrar.issuer_id = isin_re_issuance.isin_id
       WHERE allotment_date BETWEEN '${startDate}' AND '${endDate}' AND business_sector IS NOT NULL AND (is_visible = 1)
-      GROUP BY master_issuer.business_sector, b.description
+      GROUP BY isin_re_issuance.business_sector, b.description
       ORDER BY issue_size DESC
       LIMIT 10;
     `;
@@ -1612,11 +1531,11 @@ app.post('/dashboard_sectors_data', async (req, res) => {
         COALESCE((ROUND(SUM(issue_size)/10000000)),0) as issue_size,
         COUNT(isin) AS no_of_issue,
         concat("#",SUBSTRING((lpad(hex(round(rand() * 10000000)),6,0)),-6)) as color
-      FROM master_issuer
-      INNER JOIN master_business_sector as b on b.code = master_issuer.business_sector
-      INNER JOIN master_issuer_rating on master_issuer_rating.issuer_id = master_issuer.id
+      FROM isin_re_issuance
+      INNER JOIN master_business_sector as b on b.code = isin_re_issuance.business_sector
+      INNER JOIN master_issuer_rating on master_issuer_rating.issuer_id = isin_re_issuance.isin_id
       WHERE allotment_date BETWEEN '${startDate}' AND '${endDate}' AND business_sector IS NOT NULL AND (is_visible = 1)
-      GROUP BY master_issuer.business_sector, b.description
+      GROUP BY isin_re_issuance.business_sector, b.description
       ORDER BY issue_size DESC
       LIMIT 10;
     `;
@@ -1679,7 +1598,7 @@ app.post('/dashboard_agency_rating_data', async (req, res) => {
         GROUP_CONCAT(DISTINCT master_issuer_rating.rating SEPARATOR ', ') as name
       FROM master_agency
       INNER JOIN master_issuer_rating ON master_issuer_rating.agency_id = master_agency.id
-      LEFT JOIN master_issuer as i ON i.id = master_issuer_rating.issuer_id
+      LEFT JOIN isin_re_issuance as i ON i.id = master_issuer_rating.issuer_id
       ${joinClause}
       WHERE i.allotment_date BETWEEN '${startDate}' AND '${endDate}' AND (is_visible = 1)
       GROUP BY master_agency.short_name
@@ -1728,26 +1647,26 @@ app.post('/dashboard_monthly_comparison_data', async (req, res) => {
     // Step 2: Define the two SQL queries using dynamic dates
     const currentYearQuery = `
       SELECT
-        MONTH(master_issuer.allotment_date) as allotment_month,
+        MONTH(isin_re_issuance.allotment_date) as allotment_month,
         a.month_name as month_name,
-        ROUND(SUM(master_issuer.issue_size) / 10000000, 2) AS total_issue_size,
-        COUNT(master_issuer.isin) AS issue_count
-      FROM master_issuer
-      JOIN all_months as a ON a.month_no = MONTH(master_issuer.allotment_date)
-      WHERE master_issuer.allotment_date BETWEEN '${formatDate(currentStartDate)}' AND '${formatDate(currentEndDate)}' AND (is_visible = 1)
+        ROUND(SUM(isin_re_issuance.issue_size) / 10000000, 2) AS total_issue_size,
+        COUNT(isin_re_issuance.isin) AS issue_count
+      FROM isin_re_issuance
+      JOIN all_months as a ON a.month_no = MONTH(isin_re_issuance.allotment_date)
+      WHERE isin_re_issuance.allotment_date BETWEEN '${formatDate(currentStartDate)}' AND '${formatDate(currentEndDate)}' AND (is_visible = 1)
       GROUP BY allotment_month, a.month_name
       ORDER BY allotment_month ASC
     `;
 
     const previousYearQuery = `
       SELECT
-        MONTH(master_issuer.allotment_date) as allotment_month,
+        MONTH(isin_re_issuance.allotment_date) as allotment_month,
         a.month_name as month_name,
-        ROUND(SUM(master_issuer.issue_size) / 10000000, 2) AS total_issue_size,
-        COUNT(master_issuer.isin) AS issue_count
-      FROM master_issuer
-      JOIN all_months as a ON a.month_no = MONTH(master_issuer.allotment_date)
-      WHERE master_issuer.allotment_date BETWEEN '${formatDate(previousStartDate)}' AND '${formatDate(previousEndDate)}' AND (is_visible = 1)
+        ROUND(SUM(isin_re_issuance.issue_size) / 10000000, 2) AS total_issue_size,
+        COUNT(isin_re_issuance.isin) AS issue_count
+      FROM isin_re_issuance
+      JOIN all_months as a ON a.month_no = MONTH(isin_re_issuance.allotment_date)
+      WHERE isin_re_issuance.allotment_date BETWEEN '${formatDate(previousStartDate)}' AND '${formatDate(previousEndDate)}' AND (is_visible = 1)
       GROUP BY allotment_month, a.month_name
       ORDER BY allotment_month ASC
     `;
@@ -1793,14 +1712,14 @@ app.post('/dashboard_top_stats_data', async (req, res) => {
       SELECT
         (
           SELECT COALESCE(ROUND(MAX(mi.issue_size) / 10000000), 0)
-          FROM master_issuer mi
+          FROM isin_re_issuance mi
           WHERE mi.allotment_date BETWEEN '${startDate}' AND '${endDate}'
             AND mi.is_visible = 1
         ) AS largest_issue_size,
 
         (
           SELECT id.issuer_name
-          FROM master_issuer mi
+          FROM isin_re_issuance mi
           INNER JOIN issuer_details id
             ON id.id = mi.issuer_master_id
           WHERE mi.allotment_date BETWEEN '${startDate}' AND '${endDate}'
@@ -1817,7 +1736,7 @@ app.post('/dashboard_top_stats_data', async (req, res) => {
 
         (
           SELECT b.description
-          FROM master_issuer mi
+          FROM isin_re_issuance mi
           INNER JOIN master_business_sector b
             ON b.code = mi.business_sector
           WHERE mi.allotment_date BETWEEN '${startDate}' AND '${endDate}'
@@ -1828,7 +1747,7 @@ app.post('/dashboard_top_stats_data', async (req, res) => {
           LIMIT 1
         ) AS top_sector_by_volume
 
-      FROM master_issuer
+      FROM isin_re_issuance
       WHERE allotment_date BETWEEN '${startDate}' AND '${endDate}'
         AND is_visible = 1;
     `);
@@ -1901,26 +1820,26 @@ app.post('/dashboard_specific_entity_data', async (req, res) => {
       case 'issuers':
         currentYearQuery = `
   SELECT
-    MONTH(master_issuer.allotment_date) as allotment_month,
+    MONTH(isin_re_issuance.allotment_date) as allotment_month,
     a.month_name as month_name,
-    ROUND(SUM(master_issuer.issue_size) / 10000000, 2) AS total_issue_size,
-    COUNT(master_issuer.isin) AS issue_count
-  FROM master_issuer
-  JOIN all_months as a ON a.month_no = MONTH(master_issuer.allotment_date)
-  WHERE master_issuer.allotment_date BETWEEN '${formatDate(currentStartDate)}' AND '${formatDate(currentEndDate)}' AND (is_visible = 1)
+    ROUND(SUM(isin_re_issuance.issue_size) / 10000000, 2) AS total_issue_size,
+    COUNT(isin_re_issuance.isin) AS issue_count
+  FROM isin_re_issuance
+  JOIN all_months as a ON a.month_no = MONTH(isin_re_issuance.allotment_date)
+  WHERE isin_re_issuance.allotment_date BETWEEN '${formatDate(currentStartDate)}' AND '${formatDate(currentEndDate)}' AND (is_visible = 1)
   AND issuer_master_id = ${id}
   GROUP BY allotment_month, a.month_name
   ORDER BY allotment_month ASC
         `;
         previousYearQuery = `
           SELECT
-    MONTH(master_issuer.allotment_date) as allotment_month,
+    MONTH(isin_re_issuance.allotment_date) as allotment_month,
     a.month_name as month_name,
-    ROUND(SUM(master_issuer.issue_size) / 10000000, 2) AS total_issue_size,
-    COUNT(master_issuer.isin) AS issue_count
-  FROM master_issuer
-  JOIN all_months as a ON a.month_no = MONTH(master_issuer.allotment_date)
-  WHERE master_issuer.allotment_date BETWEEN '${formatDate(previousStartDate)}' AND '${formatDate(previousEndDate)}' AND (is_visible = 1)
+    ROUND(SUM(isin_re_issuance.issue_size) / 10000000, 2) AS total_issue_size,
+    COUNT(isin_re_issuance.isin) AS issue_count
+  FROM isin_re_issuance
+  JOIN all_months as a ON a.month_no = MONTH(isin_re_issuance.allotment_date)
+  WHERE isin_re_issuance.allotment_date BETWEEN '${formatDate(previousStartDate)}' AND '${formatDate(previousEndDate)}' AND (is_visible = 1)
   AND issuer_master_id = ${id}
   GROUP BY allotment_month, a.month_name
   ORDER BY allotment_month ASC
@@ -1931,11 +1850,11 @@ app.post('/dashboard_specific_entity_data', async (req, res) => {
         COALESCE((ROUND(SUM(issue_size)/10000000)),0) as issue_size,
         COUNT(isin) AS no_of_issue,
         concat("#",SUBSTRING((lpad(hex(round(rand() * 10000000)),6,0)),-6)) as color
-      FROM master_issuer
-      INNER JOIN master_business_sector as b on b.code = master_issuer.business_sector
+      FROM isin_re_issuance
+      INNER JOIN master_business_sector as b on b.code = isin_re_issuance.business_sector
       WHERE allotment_date BETWEEN '${startDate}' AND '${endDate}' AND business_sector IS NOT NULL AND (is_visible = 1)
       and issuer_master_id = ${id}
-      GROUP BY master_issuer.business_sector, b.description
+      GROUP BY isin_re_issuance.business_sector, b.description
       ORDER BY issue_size DESC
       LIMIT 10;
 
@@ -1951,7 +1870,7 @@ app.post('/dashboard_specific_entity_data', async (req, res) => {
       from master_issuer_rating 
       left join master_agency on master_agency.id = master_issuer_rating.agency_id 
       left join master_credit_rating_watch as w on w.code = master_issuer_rating.watch 
-      left join master_issuer as i on i.id = master_issuer_rating.issuer_id 
+      left join isin_re_issuance as i on i.id = master_issuer_rating.issuer_id 
       where issuer_master_id = ${id} 
       and i.allotment_date between '${startDate}' AND '${endDate}' AND (is_visible = 1)
       and FIND_IN_SET(i.id,master_issuer_rating.issuer_id) 
@@ -1966,11 +1885,11 @@ app.post('/dashboard_specific_entity_data', async (req, res) => {
     a.month_name AS month_name,
     ROUND(SUM(mi.issue_size) / 10000000, 2) AS total_issue_size,
     COUNT(mi.isin) AS issue_count
-FROM master_issuer AS mi
+FROM isin_re_issuance AS mi
 JOIN all_months AS a 
     ON a.month_no = MONTH(mi.allotment_date)
 JOIN issuer_arranger AS ia 
-    ON ia.issuer_id = mi.id
+    ON ia.issuer_id = mi.isin_id
 WHERE mi.allotment_date BETWEEN '${formatDate(currentStartDate)}' AND '${formatDate(currentEndDate)}' AND (is_visible = 1)
   AND ia.arranger_id = ${id}
 GROUP BY allotment_month, a.month_name
@@ -1983,11 +1902,11 @@ ORDER BY allotment_month ASC;
     a.month_name AS month_name,
     ROUND(SUM(mi.issue_size) / 10000000, 2) AS total_issue_size,
     COUNT(mi.isin) AS issue_count
-FROM master_issuer AS mi
+FROM isin_re_issuance AS mi
 JOIN all_months AS a 
     ON a.month_no = MONTH(mi.allotment_date)
 JOIN issuer_arranger AS ia 
-    ON ia.issuer_id = mi.id
+    ON ia.issuer_id = mi.isin_id
 WHERE mi.allotment_date BETWEEN '${formatDate(previousStartDate)}' AND '${formatDate(previousEndDate)}' AND (is_visible = 1)
   AND ia.arranger_id = ${id}
   GROUP BY allotment_month, a.month_name
@@ -2002,11 +1921,11 @@ WHERE mi.allotment_date BETWEEN '${formatDate(previousStartDate)}' AND '${format
         "#",
         SUBSTRING(LPAD(HEX(ROUND(RAND() * 10000000)), 6, 0), -6)
     ) AS color
-FROM master_issuer AS mi
+FROM isin_re_issuance AS mi
 INNER JOIN master_business_sector AS b 
     ON b.code = mi.business_sector
 INNER JOIN issuer_arranger AS ia
-    ON ia.issuer_id = mi.id
+    ON ia.issuer_id = mi.isin_id
 WHERE mi.allotment_date BETWEEN '${startDate}' AND '${endDate}' AND (is_visible = 1)
   AND mi.business_sector IS NOT NULL
   AND ia.arranger_id = ${id}
@@ -2034,7 +1953,7 @@ LIMIT 10;
 FROM master_agency
 INNER JOIN master_issuer_rating 
     ON master_issuer_rating.agency_id = master_agency.id
-LEFT JOIN master_issuer AS i 
+LEFT JOIN isin_re_issuance AS i 
     ON i.id = master_issuer_rating.issuer_id
 INNER JOIN issuer_arranger 
     ON issuer_arranger.issuer_id = i.id
@@ -2055,11 +1974,11 @@ GROUP BY
     a.month_name AS month_name,
     ROUND(SUM(mi.issue_size) / 10000000, 2) AS total_issue_size,
     COUNT(mi.isin) AS issue_count
-FROM master_issuer AS mi
+FROM isin_re_issuance AS mi
 JOIN all_months AS a 
     ON a.month_no = MONTH(mi.allotment_date)
 JOIN issuer_trustee AS it
-    ON it.issuer_id = mi.id
+    ON it.issuer_id = mi.isin_id
 WHERE mi.allotment_date BETWEEN '${formatDate(currentStartDate)}' AND '${formatDate(currentEndDate)}' AND (is_visible = 1)
   AND it.trustee_id = ${id}
 GROUP BY allotment_month, a.month_name
@@ -2072,11 +1991,11 @@ ORDER BY allotment_month ASC;
     a.month_name AS month_name,
     ROUND(SUM(mi.issue_size) / 10000000, 2) AS total_issue_size,
     COUNT(mi.isin) AS issue_count
-FROM master_issuer AS mi
+FROM isin_re_issuance AS mi
 JOIN all_months AS a 
     ON a.month_no = MONTH(mi.allotment_date)
 JOIN issuer_trustee AS it
-    ON it.issuer_id = mi.id
+    ON it.issuer_id = mi.isin_id
 WHERE mi.allotment_date BETWEEN '${formatDate(previousStartDate)}' AND '${formatDate(previousEndDate)}' AND (is_visible = 1)
   AND it.trustee_id = ${id}
 GROUP BY allotment_month, a.month_name
@@ -2092,11 +2011,11 @@ ORDER BY allotment_month ASC;
         "#",
         SUBSTRING(LPAD(HEX(ROUND(RAND() * 10000000)), 6, 0), -6)
     ) AS color
-FROM master_issuer AS mi
+FROM isin_re_issuance AS mi
 INNER JOIN master_business_sector AS b 
     ON b.code = mi.business_sector
 INNER JOIN issuer_trustee AS it
-    ON it.issuer_id = mi.id
+    ON it.issuer_id = mi.isin_id
 WHERE mi.allotment_date BETWEEN '${startDate}' AND '${endDate}' AND (is_visible = 1)
   AND mi.business_sector IS NOT NULL
   AND it.trustee_id = ${id}
@@ -2124,7 +2043,7 @@ LIMIT 10;
 FROM master_agency
 INNER JOIN master_issuer_rating 
     ON master_issuer_rating.agency_id = master_agency.id
-LEFT JOIN master_issuer AS i 
+LEFT JOIN isin_re_issuance AS i 
     ON i.id = master_issuer_rating.issuer_id
 INNER JOIN issuer_trustee 
     ON issuer_trustee.issuer_id = i.id
@@ -2144,11 +2063,11 @@ SELECT
     a.month_name AS month_name,
     ROUND(SUM(mi.issue_size) / 10000000, 2) AS total_issue_size,
     COUNT(mi.isin) AS issue_count
-FROM master_issuer AS mi
+FROM isin_re_issuance AS mi
 JOIN all_months AS a 
     ON a.month_no = MONTH(mi.allotment_date)
 JOIN issuer_registrar AS ir 
-    ON ir.issuer_id = mi.id
+    ON ir.issuer_id = mi.isin_id
 WHERE mi.allotment_date BETWEEN '${formatDate(currentStartDate)}' AND '${formatDate(currentEndDate)}' AND (is_visible = 1)
   AND ir.registrar_id = ${id}
 GROUP BY allotment_month, a.month_name
@@ -2161,11 +2080,11 @@ SELECT
     a.month_name AS month_name,
     ROUND(SUM(mi.issue_size) / 10000000, 2) AS total_issue_size,
     COUNT(mi.isin) AS issue_count
-FROM master_issuer AS mi
+FROM isin_re_issuance AS mi
 JOIN all_months AS a 
     ON a.month_no = MONTH(mi.allotment_date)
 JOIN issuer_registrar AS ir 
-    ON ir.issuer_id = mi.id
+    ON ir.issuer_id = mi.isin_id
 WHERE mi.allotment_date BETWEEN '${formatDate(previousStartDate)}' AND '${formatDate(previousEndDate)}' AND (is_visible = 1)
   AND ir.registrar_id = ${id}
 GROUP BY allotment_month, a.month_name
@@ -2181,11 +2100,11 @@ ORDER BY allotment_month ASC;
         "#",
         SUBSTRING(LPAD(HEX(ROUND(RAND() * 10000000)), 6, 0), -6)
     ) AS color
-FROM master_issuer AS mi
+FROM isin_re_issuance AS mi
 INNER JOIN master_business_sector AS b 
     ON b.code = mi.business_sector
 INNER JOIN issuer_registrar AS ir
-    ON ir.issuer_id = mi.id
+    ON ir.issuer_id = mi.isin_id
 WHERE mi.allotment_date BETWEEN '${startDate}' AND '${endDate}' AND (is_visible = 1)
   AND mi.business_sector IS NOT NULL
   AND ir.registrar_id = ${id}
@@ -2213,7 +2132,7 @@ LIMIT 10;
 FROM master_agency
 INNER JOIN master_issuer_rating 
     ON master_issuer_rating.agency_id = master_agency.id
-LEFT JOIN master_issuer AS i 
+LEFT JOIN isin_re_issuance AS i 
     ON i.id = master_issuer_rating.issuer_id
 INNER JOIN issuer_registrar 
     ON issuer_registrar.issuer_id = i.id
@@ -2234,11 +2153,11 @@ GROUP BY
     a.month_name AS month_name,
     ROUND(SUM(mi.issue_size) / 10000000, 2) AS total_issue_size,
     COUNT(mi.isin) AS issue_count
-FROM master_issuer AS mi
+FROM isin_re_issuance AS mi
 JOIN all_months AS a 
     ON a.month_no = MONTH(mi.allotment_date)
 JOIN master_issuer_rating AS mir
-    ON mir.issuer_id = mi.id
+    ON mir.issuer_id = mi.isin_id
 WHERE mi.allotment_date BETWEEN '${formatDate(currentStartDate)}' AND '${formatDate(currentEndDate)}' AND (is_visible = 1)
   AND mir.agency_id = ${id}
 GROUP BY allotment_month, a.month_name
@@ -2251,11 +2170,11 @@ ORDER BY allotment_month ASC;
     a.month_name AS month_name,
     ROUND(SUM(mi.issue_size) / 10000000, 2) AS total_issue_size,
     COUNT(mi.isin) AS issue_count
-FROM master_issuer AS mi
+FROM isin_re_issuance AS mi
 JOIN all_months AS a 
     ON a.month_no = MONTH(mi.allotment_date)
 JOIN master_issuer_rating AS mir
-    ON mir.issuer_id = mi.id
+    ON mir.issuer_id = mi.isin_id
 WHERE mi.allotment_date BETWEEN '${formatDate(previousStartDate)}' AND '${formatDate(previousEndDate)}' AND (is_visible = 1)
   AND mir.agency_id = ${id}
 GROUP BY allotment_month, a.month_name
@@ -2272,11 +2191,11 @@ ORDER BY allotment_month ASC;
         "#",
         SUBSTRING(LPAD(HEX(ROUND(RAND() * 10000000)), 6, 0), -6)
     ) AS color
-FROM master_issuer AS mi
+FROM isin_re_issuance AS mi
 INNER JOIN master_business_sector AS b 
     ON b.code = mi.business_sector
 INNER JOIN master_issuer_rating AS mir
-    ON mir.issuer_id = mi.id
+    ON mir.issuer_id = mi.isin_id
 WHERE mi.allotment_date BETWEEN '${startDate}' AND '${endDate}' AND (is_visible = 1)
   AND mi.business_sector IS NOT NULL
   AND mir.agency_id = ${id}
@@ -2304,7 +2223,7 @@ LIMIT 10;
 FROM master_agency
 INNER JOIN master_issuer_rating 
     ON master_issuer_rating.agency_id = master_agency.id
-LEFT JOIN master_issuer AS i
+LEFT JOIN isin_re_issuance AS i
     ON i.id = master_issuer_rating.issuer_id
 WHERE 
     i.allotment_date BETWEEN '${startDate}' AND '${endDate}' AND (is_visible = 1)
@@ -2318,26 +2237,26 @@ GROUP BY
       default:
         currentYearQuery = `
   SELECT
-    MONTH(master_issuer.allotment_date) as allotment_month,
+    MONTH(isin_re_issuance.allotment_date) as allotment_month,
     a.month_name as month_name,
-    ROUND(SUM(master_issuer.issue_size) / 10000000, 2) AS total_issue_size,
-    COUNT(master_issuer.isin) AS issue_count
-  FROM master_issuer
-  JOIN all_months as a ON a.month_no = MONTH(master_issuer.allotment_date)
-  WHERE master_issuer.allotment_date BETWEEN '${formatDate(currentStartDate)}' AND '${formatDate(currentEndDate)}' AND (is_visible = 1)
+    ROUND(SUM(isin_re_issuance.issue_size) / 10000000, 2) AS total_issue_size,
+    COUNT(isin_re_issuance.isin) AS issue_count
+  FROM isin_re_issuance
+  JOIN all_months as a ON a.month_no = MONTH(isin_re_issuance.allotment_date)
+  WHERE isin_re_issuance.allotment_date BETWEEN '${formatDate(currentStartDate)}' AND '${formatDate(currentEndDate)}' AND (is_visible = 1)
   AND issuer_master_id = ${id}
   GROUP BY allotment_month, a.month_name
   ORDER BY allotment_month ASC
         `;
         previousYearQuery = `
           SELECT
-    MONTH(master_issuer.allotment_date) as allotment_month,
+    MONTH(isin_re_issuance.allotment_date) as allotment_month,
     a.month_name as month_name,
-    ROUND(SUM(master_issuer.issue_size) / 10000000, 2) AS total_issue_size,
-    COUNT(master_issuer.isin) AS issue_count
-  FROM master_issuer
-  JOIN all_months as a ON a.month_no = MONTH(master_issuer.allotment_date)
-  WHERE master_issuer.allotment_date BETWEEN '${formatDate(previousStartDate)}' AND '${formatDate(previousEndDate)}' AND (is_visible = 1)
+    ROUND(SUM(isin_re_issuance.issue_size) / 10000000, 2) AS total_issue_size,
+    COUNT(isin_re_issuance.isin) AS issue_count
+  FROM isin_re_issuance
+  JOIN all_months as a ON a.month_no = MONTH(isin_re_issuance.allotment_date)
+  WHERE isin_re_issuance.allotment_date BETWEEN '${formatDate(previousStartDate)}' AND '${formatDate(previousEndDate)}' AND (is_visible = 1)
   AND issuer_master_id = ${id}
   GROUP BY allotment_month, a.month_name
   ORDER BY allotment_month ASC
@@ -2348,11 +2267,11 @@ GROUP BY
         COALESCE((ROUND(SUM(issue_size)/10000000)),0) as issue_size,
         COUNT(isin) AS no_of_issue,
         concat("#",SUBSTRING((lpad(hex(round(rand() * 10000000)),6,0)),-6)) as color
-      FROM master_issuer
-      INNER JOIN master_business_sector as b on b.code = master_issuer.business_sector
+      FROM isin_re_issuance
+      INNER JOIN master_business_sector as b on b.code = isin_re_issuance.business_sector
       WHERE allotment_date BETWEEN '${startDate}' AND '${endDate}' AND business_sector IS NOT NULL AND (is_visible = 1)
       and issuer_master_id = ${id}
-      GROUP BY master_issuer.business_sector, b.description
+      GROUP BY isin_re_issuance.business_sector, b.description
       ORDER BY issue_size DESC
       LIMIT 10;
 
@@ -2368,7 +2287,7 @@ GROUP BY
       from master_issuer_rating 
       left join master_agency on master_agency.id = master_issuer_rating.agency_id 
       left join master_credit_rating_watch as w on w.code = master_issuer_rating.watch 
-      left join master_issuer as i on i.id = master_issuer_rating.issuer_id 
+      left join isin_re_issuance as i on i.id = master_issuer_rating.issuer_id 
       where issuer_master_id = ${id} 
       and i.allotment_date between '${startDate}' AND '${endDate}' AND (is_visible = 1)
       and FIND_IN_SET(i.id,master_issuer_rating.issuer_id) 
@@ -2380,13 +2299,13 @@ GROUP BY
     //monthly comparison query
     //     const currentYearQuery = `
     //   SELECT
-    //     MONTH(master_issuer.allotment_date) as allotment_month,
+    //     MONTH(isin_re_issuance.allotment_date) as allotment_month,
     //     a.month_name as month_name,
-    //     ROUND(SUM(master_issuer.issue_size) / 10000000, 2) AS total_issue_size,
-    //     COUNT(master_issuer.isin) AS issue_count
-    //   FROM master_issuer
-    //   JOIN all_months as a ON a.month_no = MONTH(master_issuer.allotment_date)
-    //   WHERE master_issuer.allotment_date BETWEEN '${formatDate(currentStartDate)}' AND '${formatDate(currentEndDate)}'
+    //     ROUND(SUM(isin_re_issuance.issue_size) / 10000000, 2) AS total_issue_size,
+    //     COUNT(isin_re_issuance.isin) AS issue_count
+    //   FROM isin_re_issuance
+    //   JOIN all_months as a ON a.month_no = MONTH(isin_re_issuance.allotment_date)
+    //   WHERE isin_re_issuance.allotment_date BETWEEN '${formatDate(currentStartDate)}' AND '${formatDate(currentEndDate)}'
     //   AND issuer_master_id = ${id}
     //   GROUP BY allotment_month, a.month_name
     //   ORDER BY a.id ASC
@@ -2394,13 +2313,13 @@ GROUP BY
 
     //     const previousYearQuery = `
     //   SELECT
-    //     MONTH(master_issuer.allotment_date) as allotment_month,
+    //     MONTH(isin_re_issuance.allotment_date) as allotment_month,
     //     a.month_name as month_name,
-    //     ROUND(SUM(master_issuer.issue_size) / 10000000, 2) AS total_issue_size,
-    //     COUNT(master_issuer.isin) AS issue_count
-    //   FROM master_issuer
-    //   JOIN all_months as a ON a.month_no = MONTH(master_issuer.allotment_date)
-    //   WHERE master_issuer.allotment_date BETWEEN '${formatDate(previousStartDate)}' AND '${formatDate(previousEndDate)}'
+    //     ROUND(SUM(isin_re_issuance.issue_size) / 10000000, 2) AS total_issue_size,
+    //     COUNT(isin_re_issuance.isin) AS issue_count
+    //   FROM isin_re_issuance
+    //   JOIN all_months as a ON a.month_no = MONTH(isin_re_issuance.allotment_date)
+    //   WHERE isin_re_issuance.allotment_date BETWEEN '${formatDate(previousStartDate)}' AND '${formatDate(previousEndDate)}'
     //   AND issuer_master_id = ${id}
     //   GROUP BY allotment_month, a.month_name
     //   ORDER BY a.id ASC
@@ -2441,11 +2360,11 @@ GROUP BY
     //     COALESCE((ROUND(SUM(issue_size)/10000000)),0) as issue_size,
     //     COUNT(isin) AS no_of_issue,
     //     concat("#",SUBSTRING((lpad(hex(round(rand() * 10000000)),6,0)),-6)) as color
-    //   FROM master_issuer
-    //   INNER JOIN master_business_sector as b on b.code = master_issuer.business_sector
+    //   FROM isin_re_issuance
+    //   INNER JOIN master_business_sector as b on b.code = isin_re_issuance.business_sector
     //   WHERE allotment_date BETWEEN '${startDate}' AND '${endDate}' AND business_sector IS NOT NULL
     //   and issuer_master_id = ${id}
-    //   GROUP BY master_issuer.business_sector
+    //   GROUP BY isin_re_issuance.business_sector
     //   ORDER BY issue_size DESC
     //   LIMIT 10;
     // `;
@@ -2463,7 +2382,7 @@ GROUP BY
       from master_issuer_rating 
       left join master_agency on master_agency.id = master_issuer_rating.agency_id 
       left join master_credit_rating_watch as w on w.code = master_issuer_rating.watch 
-      left join master_issuer as i on i.id = master_issuer_rating.issuer_id 
+      left join isin_re_issuance as i on i.id = master_issuer_rating.issuer_id 
       where issuer_master_id = ${id} 
       and i.allotment_date between "2025-04-01 00:00:00" and "2025-11-07 23:59:59"  
       and FIND_IN_SET(i.id,master_issuer_rating.issuer_id) 
@@ -2493,6 +2412,7 @@ app.post('/testing', async (req, res) => {
 
   res.status(200).json(result);
 });
+
 //updated Analysis page APIs DONE
 
 app.post('/analysisPage_entity_ranking_data', async (req, res) => {
@@ -2525,7 +2445,7 @@ app.post('/analysisPage_entity_ranking_data', async (req, res) => {
           nameField: 'issuer_details.issuer_name',
           joins: `
             join issuer_details 
-              on issuer_details.id = master_issuer.issuer_master_id
+              on issuer_details.id = isin_re_issuance.issuer_master_id
           `,
           groupBy: 'issuer_details.id'
         };
@@ -2537,9 +2457,9 @@ app.post('/analysisPage_entity_ranking_data', async (req, res) => {
           nameField: 'master_arranger.short_name',
           joins: `
             join issuer_details 
-              on issuer_details.id = master_issuer.issuer_master_id
+              on issuer_details.id = isin_re_issuance.issuer_master_id
             join issuer_arranger 
-              on issuer_arranger.issuer_id = master_issuer.id
+              on issuer_arranger.issuer_id = isin_re_issuance.isin_id
             join master_arranger 
               on master_arranger.id = issuer_arranger.arranger_id
           `,
@@ -2553,9 +2473,9 @@ app.post('/analysisPage_entity_ranking_data', async (req, res) => {
           nameField: 'master_trustee.short_name',
           joins: `
             join issuer_details 
-              on issuer_details.id = master_issuer.issuer_master_id
+              on issuer_details.id = isin_re_issuance.issuer_master_id
             join issuer_trustee 
-              on issuer_trustee.issuer_id = master_issuer.id
+              on issuer_trustee.issuer_id = isin_re_issuance.isin_id
             join master_trustee 
               on master_trustee.id = issuer_trustee.trustee_id
           `,
@@ -2569,9 +2489,9 @@ app.post('/analysisPage_entity_ranking_data', async (req, res) => {
           nameField: 'master_registrar.short_name',
           joins: `
             join issuer_details 
-              on issuer_details.id = master_issuer.issuer_master_id
+              on issuer_details.id = isin_re_issuance.issuer_master_id
             join issuer_registrar 
-              on issuer_registrar.issuer_id = master_issuer.id
+              on issuer_registrar.issuer_id = isin_re_issuance.isin_id
             join master_registrar 
               on master_registrar.id = issuer_registrar.registrar_id
           `,
@@ -2586,11 +2506,11 @@ app.post('/analysisPage_entity_ranking_data', async (req, res) => {
     }
 
     const totalIssueSize = await prisma.$queryRawUnsafe(`
-        select sum(issue_size) as aggregate from master_issuer where allotment_date between '${startDate}' AND '${endDate}' AND (is_visible = 1)
+        select sum(issue_size) as aggregate from isin_re_issuance where allotment_date between '${startDate}' AND '${endDate}' AND (is_visible = 1)
       `)
 
     const totalIssueSizePrevYear = await prisma.$queryRawUnsafe(`
-        select sum(issue_size) as aggregate from master_issuer where allotment_date between '${formatDate(pyStartDate)}' AND '${formatDate(pyEndDate)}' AND (is_visible = 1)
+        select sum(issue_size) as aggregate from isin_re_issuance where allotment_date between '${formatDate(pyStartDate)}' AND '${formatDate(pyEndDate)}' AND (is_visible = 1)
       `)
 
 
@@ -2627,7 +2547,7 @@ app.post('/analysisPage_entity_ranking_data', async (req, res) => {
             ORDER BY ROUND(SUM(issue_size) / 10000000, 2) DESC,
             COUNT(isin) DESC
           ) AS arr_rank
-        FROM master_issuer
+        FROM isin_re_issuance
         ${config.joins}
         WHERE allotment_date BETWEEN '${startDate}' AND '${endDate}' AND (is_visible = 1)
         GROUP BY ${config.groupBy}
@@ -2645,7 +2565,7 @@ app.post('/analysisPage_entity_ranking_data', async (req, res) => {
             ORDER BY ROUND(SUM(issue_size) / 10000000, 2) DESC,
             COUNT(isin) DESC
           ) AS arr_rank
-        FROM master_issuer
+        FROM isin_re_issuance
         ${config.joins}
         WHERE allotment_date BETWEEN '${formatDate(pyStartDate)}' AND '${formatDate(pyEndDate)}' AND (is_visible = 1)
         GROUP BY ${config.groupBy}
@@ -2739,7 +2659,7 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
     const filterParams = [];
 
     // Date range is always first two params for each period
-    const dateConditions = `master_issuer.allotment_date BETWEEN ? AND ? AND (is_visible = 1)`;
+    const dateConditions = `isin_re_issuance.allotment_date BETWEEN ? AND ? AND (is_visible = 1)`;
 
     if (issuerName) {
       const inClause = buildInClause('issuer_details.issuer_name', issuerName, true);
@@ -2756,7 +2676,7 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
       }
     }
     if (dealSize) {
-      const inClause = buildInClause('master_issuer.issue_size', dealSize, true);
+      const inClause = buildInClause('isin_re_issuance.issue_size', dealSize, true);
       if (inClause) {
         conditions.push(inClause.clause);
         filterParams.push(...inClause.params);
@@ -2844,19 +2764,20 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
 
     // ─── Base joins needed for all filter conditions ───
     const baseJoins = `
-      LEFT JOIN issuer_details ON issuer_details.id = master_issuer.issuer_master_id
-      LEFT JOIN master_issuer_rating ON master_issuer_rating.issuer_id = master_issuer.id
+      LEFT JOIN issuer_details ON issuer_details.id = isin_re_issuance.issuer_master_id
+      LEFT JOIN master_issuer_rating ON master_issuer_rating.issuer_id = isin_re_issuance.isin_id
       LEFT JOIN master_agency ON master_agency.id = master_issuer_rating.agency_id
-      LEFT JOIN master_seniority_tier_classification ON master_seniority_tier_classification.code = master_issuer.seniority
-      LEFT JOIN master_tax_free ON master_tax_free.code = master_issuer.tax_free
-      LEFT JOIN master_secured_flag ON master_secured_flag.code = master_issuer.secured_flag
-      LEFT JOIN master_business_sector ON master_business_sector.code = master_issuer.business_sector
-      LEFT JOIN issuer_trustee ON issuer_trustee.issuer_id = master_issuer.id
+      LEFT JOIN master_seniority_tier_classification ON master_seniority_tier_classification.code = isin_re_issuance.seniority
+      LEFT JOIN master_tax_free ON master_tax_free.code = isin_re_issuance.tax_free
+      LEFT JOIN master_secured_flag ON master_secured_flag.code = isin_re_issuance.secured_flag
+      LEFT JOIN master_business_sector ON master_business_sector.code = isin_re_issuance.business_sector
+      LEFT JOIN issuer_trustee ON issuer_trustee.issuer_id = isin_re_issuance.isin_id
       LEFT JOIN master_trustee ON master_trustee.id = issuer_trustee.trustee_id
+      LEFT JOIN master_issuer ON master_issuer.id = isin_re_issuance.isin_id
       LEFT JOIN master_issuer_type_nature ON master_issuer_type_nature.code = master_issuer.nature_type
       LEFT JOIN master_issuer_ownership_type ON master_issuer_ownership_type.code = master_issuer.issuer_ownership_type
-      LEFT JOIN master_security_type ON master_security_type.code = master_issuer.security_class
-      LEFT JOIN master_mode_issue ON master_mode_issue.code = master_issuer.mode_issue
+      LEFT JOIN master_security_type ON master_security_type.code = isin_re_issuance.security_class
+      LEFT JOIN master_mode_issue ON master_mode_issue.code = isin_re_issuance.mode_issue
       LEFT JOIN (
         SELECT 
           mise.issuer_id, 
@@ -2865,24 +2786,24 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
         LEFT JOIN master_listing_status mls ON mls.code = mise.listing_status
         WHERE mise.listing_status IS NOT NULL
         GROUP BY mise.issuer_id
-      ) AS listing_data ON listing_data.issuer_id = master_issuer.id
+      ) AS listing_data ON listing_data.issuer_id = isin_re_issuance.isin_id
     `;
 
     // ─── Total aggregate queries (deduplicated to avoid join inflation) ───
     const totalIssueSizeQuery = `
       SELECT SUM(m.issue_size) as aggregate 
-      FROM master_issuer m
+      FROM isin_re_issuance m
       WHERE m.id IN (
-        SELECT DISTINCT master_issuer.id
-        FROM master_issuer
+        SELECT DISTINCT isin_re_issuance.isin_id
+        FROM isin_re_issuance
         ${baseJoins}
         WHERE ${dateConditions} ${filterClause}
       )
     `;
 
     const totalIssuesCountQuery = `
-      SELECT COUNT(DISTINCT master_issuer.id) as aggregate
-      FROM master_issuer
+      SELECT COUNT(DISTINCT isin_re_issuance.isin_id) as aggregate
+      FROM isin_re_issuance
       ${baseJoins}
       WHERE ${dateConditions} ${filterClause}
     `;
@@ -2933,8 +2854,8 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
           ROUND(SUM(mi.issue_size) / 10000000, 2) as issue_size,
           RANK() OVER ( ORDER BY ${rankOrder} ) as arr_rank
         FROM (
-          SELECT DISTINCT master_issuer.id, master_issuer.issuer_master_id, master_issuer.isin, master_issuer.issue_size
-          FROM master_issuer
+          SELECT DISTINCT isin_re_issuance.isin_id, isin_re_issuance.issuer_master_id, isin_re_issuance.isin, isin_re_issuance.issue_size
+          FROM isin_re_issuance
           ${baseJoins}
           WHERE ${dateConditions} ${filterClause}
         ) AS mi
@@ -2951,8 +2872,8 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
           ROUND(SUM(mi.issue_size) / 10000000, 2) as issue_size,
           RANK() OVER ( ORDER BY ${rankOrder} ) as arr_rank
         FROM (
-          SELECT DISTINCT master_issuer.id, master_issuer.issuer_master_id, master_issuer.isin, master_issuer.issue_size
-          FROM master_issuer
+          SELECT DISTINCT isin_re_issuance.isin_id, isin_re_issuance.issuer_master_id, isin_re_issuance.isin, isin_re_issuance.issue_size
+          FROM isin_re_issuance
           ${baseJoins}
           WHERE ${dateConditions} ${filterClause}
         ) AS mi
@@ -3101,7 +3022,7 @@ app.post('/issuers_page_top_sectors_data', async (req, res) => {
       if (inClause) { conditions.push(inClause.clause); filterParams.push(...inClause.params); }
     }
     if (dealSize) {
-      const inClause = buildInClause('master_issuer.issue_size', dealSize, true);
+      const inClause = buildInClause('isin_re_issuance.issue_size', dealSize, true);
       if (inClause) { conditions.push(inClause.clause); filterParams.push(...inClause.params); }
     }
     if (listingStatus) {
@@ -3153,19 +3074,20 @@ app.post('/issuers_page_top_sectors_data', async (req, res) => {
 
     // ─── Base joins needed for all filter conditions ───
     const baseJoins = `
-      LEFT JOIN issuer_details ON issuer_details.id = master_issuer.issuer_master_id
-      LEFT JOIN master_issuer_rating ON master_issuer_rating.issuer_id = master_issuer.id
+      LEFT JOIN issuer_details ON issuer_details.id = isin_re_issuance.issuer_master_id
+      LEFT JOIN master_issuer_rating ON master_issuer_rating.issuer_id = isin_re_issuance.isin_id
       LEFT JOIN master_agency ON master_agency.id = master_issuer_rating.agency_id
-      LEFT JOIN master_seniority_tier_classification ON master_seniority_tier_classification.code = master_issuer.seniority
-      LEFT JOIN master_tax_free ON master_tax_free.code = master_issuer.tax_free
-      LEFT JOIN master_secured_flag ON master_secured_flag.code = master_issuer.secured_flag
-      LEFT JOIN master_business_sector ON master_business_sector.code = master_issuer.business_sector
-      LEFT JOIN issuer_trustee ON issuer_trustee.issuer_id = master_issuer.id
+      LEFT JOIN master_seniority_tier_classification ON master_seniority_tier_classification.code = isin_re_issuance.seniority
+      LEFT JOIN master_tax_free ON master_tax_free.code = isin_re_issuance.tax_free
+      LEFT JOIN master_secured_flag ON master_secured_flag.code = isin_re_issuance.secured_flag
+      LEFT JOIN master_business_sector ON master_business_sector.code = isin_re_issuance.business_sector
+      LEFT JOIN issuer_trustee ON issuer_trustee.issuer_id = isin_re_issuance.isin_id
       LEFT JOIN master_trustee ON master_trustee.id = issuer_trustee.trustee_id
+      LEFT JOIN master_issuer ON master_issuer.id = isin_re_issuance.isin_id
       LEFT JOIN master_issuer_type_nature ON master_issuer_type_nature.code = master_issuer.nature_type
       LEFT JOIN master_issuer_ownership_type ON master_issuer_ownership_type.code = master_issuer.issuer_ownership_type
-      LEFT JOIN master_security_type ON master_security_type.code = master_issuer.security_class
-      LEFT JOIN master_mode_issue ON master_mode_issue.code = master_issuer.mode_issue
+      LEFT JOIN master_security_type ON master_security_type.code = isin_re_issuance.security_class
+      LEFT JOIN master_mode_issue ON master_mode_issue.code = isin_re_issuance.mode_issue
       LEFT JOIN (
         SELECT 
           mise.issuer_id, 
@@ -3174,7 +3096,7 @@ app.post('/issuers_page_top_sectors_data', async (req, res) => {
         LEFT JOIN master_listing_status mls ON mls.code = mise.listing_status
         WHERE mise.listing_status IS NOT NULL
         GROUP BY mise.issuer_id
-      ) AS listing_data ON listing_data.issuer_id = master_issuer.id
+      ) AS listing_data ON listing_data.issuer_id = isin_re_issuance.isin_id
     `;
 
     const rankByCount = issueType === 'count';
@@ -3191,10 +3113,10 @@ app.post('/issuers_page_top_sectors_data', async (req, res) => {
           ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
           COUNT(DISTINCT mi.isin) AS issue_no
         FROM (
-          SELECT DISTINCT master_issuer.id, master_issuer.business_sector, master_issuer.isin, master_issuer.issue_size
-          FROM master_issuer
+          SELECT DISTINCT isin_re_issuance.isin_id, isin_re_issuance.business_sector, isin_re_issuance.isin, isin_re_issuance.issue_size
+          FROM isin_re_issuance
           ${baseJoins}
-          WHERE master_issuer.allotment_date BETWEEN ? AND ? AND (is_visible = 1) ${filterClause}
+          WHERE isin_re_issuance.allotment_date BETWEEN ? AND ? AND (is_visible = 1) ${filterClause}
         ) AS mi
         JOIN master_business_sector mbs ON mi.business_sector = mbs.code
         GROUP BY mi.business_sector
@@ -3208,10 +3130,10 @@ app.post('/issuers_page_top_sectors_data', async (req, res) => {
           ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
           COUNT(DISTINCT mi.isin) AS issue_no
         FROM (
-          SELECT DISTINCT master_issuer.id, master_issuer.business_sector, master_issuer.isin, master_issuer.issue_size
-          FROM master_issuer
+          SELECT DISTINCT isin_re_issuance.isin_id, isin_re_issuance.business_sector, isin_re_issuance.isin, isin_re_issuance.issue_size
+          FROM isin_re_issuance
           ${baseJoins}
-          WHERE master_issuer.allotment_date BETWEEN ? AND ? AND (is_visible = 1) ${filterClause}
+          WHERE isin_re_issuance.allotment_date BETWEEN ? AND ? AND (is_visible = 1) ${filterClause}
         ) AS mi
         JOIN master_business_sector mbs ON mi.business_sector = mbs.code
         GROUP BY mi.business_sector
@@ -3326,7 +3248,7 @@ app.post('/issuers_page_outstanding_data', async (req, res) => {
       if (inClause) { filterConditions.push(inClause.clause); filterParams.push(...inClause.params); }
     }
     if (dealSize) {
-      const inClause = buildInClause('master_issuer.issue_size', dealSize, true);
+      const inClause = buildInClause('isin_re_issuance.issue_size', dealSize, true);
       if (inClause) { filterConditions.push(inClause.clause); filterParams.push(...inClause.params); }
     }
     if (listingStatus) {
@@ -3378,19 +3300,20 @@ app.post('/issuers_page_outstanding_data', async (req, res) => {
 
     // ─── Base joins needed for all filter conditions ───
     const baseJoins = `
-      LEFT JOIN issuer_details ON issuer_details.id = master_issuer.issuer_master_id
-      LEFT JOIN master_issuer_rating ON master_issuer_rating.issuer_id = master_issuer.id
+      LEFT JOIN issuer_details ON issuer_details.id = isin_re_issuance.issuer_master_id
+      LEFT JOIN master_issuer_rating ON master_issuer_rating.issuer_id = isin_re_issuance.isin_id
       LEFT JOIN master_agency ON master_agency.id = master_issuer_rating.agency_id
-      LEFT JOIN master_seniority_tier_classification ON master_seniority_tier_classification.code = master_issuer.seniority
-      LEFT JOIN master_tax_free ON master_tax_free.code = master_issuer.tax_free
-      LEFT JOIN master_secured_flag ON master_secured_flag.code = master_issuer.secured_flag
-      LEFT JOIN master_business_sector ON master_business_sector.code = master_issuer.business_sector
-      LEFT JOIN issuer_trustee ON issuer_trustee.issuer_id = master_issuer.id
+      LEFT JOIN master_seniority_tier_classification ON master_seniority_tier_classification.code = isin_re_issuance.seniority
+      LEFT JOIN master_tax_free ON master_tax_free.code = isin_re_issuance.tax_free
+      LEFT JOIN master_secured_flag ON master_secured_flag.code = isin_re_issuance.secured_flag
+      LEFT JOIN master_business_sector ON master_business_sector.code = isin_re_issuance.business_sector
+      LEFT JOIN issuer_trustee ON issuer_trustee.issuer_id = isin_re_issuance.isin_id
       LEFT JOIN master_trustee ON master_trustee.id = issuer_trustee.trustee_id
+      LEFT JOIN master_issuer ON master_issuer.id = isin_re_issuance.isin_id
       LEFT JOIN master_issuer_type_nature ON master_issuer_type_nature.code = master_issuer.nature_type
       LEFT JOIN master_issuer_ownership_type ON master_issuer_ownership_type.code = master_issuer.issuer_ownership_type
-      LEFT JOIN master_security_type ON master_security_type.code = master_issuer.security_class
-      LEFT JOIN master_mode_issue ON master_mode_issue.code = master_issuer.mode_issue
+      LEFT JOIN master_security_type ON master_security_type.code = isin_re_issuance.security_class
+      LEFT JOIN master_mode_issue ON master_mode_issue.code = isin_re_issuance.mode_issue
       LEFT JOIN (
         SELECT 
           mise.issuer_id, 
@@ -3399,7 +3322,7 @@ app.post('/issuers_page_outstanding_data', async (req, res) => {
         LEFT JOIN master_listing_status mls ON mls.code = mise.listing_status
         WHERE mise.listing_status IS NOT NULL
         GROUP BY mise.issuer_id
-      ) AS listing_data ON listing_data.issuer_id = master_issuer.id
+      ) AS listing_data ON listing_data.issuer_id = isin_re_issuance.isin_id
     `;
 
     // ─── Issue data (current year) ───
@@ -3410,10 +3333,10 @@ app.post('/issuers_page_outstanding_data', async (req, res) => {
         ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
         COUNT(DISTINCT mi.isin) AS isin_count
       FROM (
-        SELECT DISTINCT master_issuer.id, master_issuer.allotment_date, master_issuer.isin, master_issuer.issue_size
-        FROM master_issuer
+        SELECT DISTINCT isin_re_issuance.isin_id, isin_re_issuance.allotment_date, isin_re_issuance.isin, isin_re_issuance.issue_size
+        FROM isin_re_issuance
         ${baseJoins}
-        WHERE master_issuer.allotment_date BETWEEN ? AND ? AND (is_visible = 1) ${filterClause}
+        WHERE isin_re_issuance.allotment_date BETWEEN ? AND ? AND (is_visible = 1) ${filterClause}
       ) AS mi
       GROUP BY month, label
       ORDER BY month ASC
@@ -3427,10 +3350,10 @@ app.post('/issuers_page_outstanding_data', async (req, res) => {
         ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
         COUNT(DISTINCT mi.isin) AS isin_count
       FROM (
-        SELECT DISTINCT master_issuer.id, master_issuer.maturity_date, master_issuer.isin, master_issuer.issue_size
-        FROM master_issuer
+        SELECT DISTINCT isin_re_issuance.isin_id, isin_re_issuance.maturity_date, isin_re_issuance.isin, isin_re_issuance.issue_size
+        FROM isin_re_issuance
         ${baseJoins}
-        WHERE master_issuer.maturity_date BETWEEN ? AND ? AND (is_visible = 1) ${filterClause}
+        WHERE isin_re_issuance.maturity_date BETWEEN ? AND ? AND (is_visible = 1) ${filterClause}
       ) AS mi
       GROUP BY month, label
       ORDER BY month ASC
@@ -3471,13 +3394,13 @@ app.post('/issuers_page_outstanding_data', async (req, res) => {
       const [result] = await prisma.$queryRawUnsafe(`
         SELECT ROUND(SUM(mi.issue_size) / 10000000, 2) AS aggregate
         FROM (
-          SELECT DISTINCT master_issuer.id, master_issuer.issue_size
-          FROM master_issuer
+          SELECT DISTINCT isin_re_issuance.isin_id, isin_re_issuance.issue_size
+          FROM isin_re_issuance
           ${baseJoins}
-          WHERE master_issuer.allotment_date < ?
-            AND master_issuer.maturity_date > ? 
-            AND master_issuer.is_visible = 1
-            AND master_issuer.security_status = 1${filterClause}
+          WHERE isin_re_issuance.allotment_date < ?
+            AND isin_re_issuance.maturity_date > ? 
+            AND isin_re_issuance.is_visible = 1
+            AND isin_re_issuance.security_status = 1${filterClause}
         ) AS mi
       `, end, end, ...filterParams);
 
@@ -3531,7 +3454,7 @@ app.get('/issuers_page_current_year_debt_redemption_data', async (req, res) => {
         YEAR(maturity_date) AS year,
         ROUND(SUM(issue_size) / 10000000, 2) AS issue_size,
         COUNT(DISTINCT isin) AS isin_count
-      FROM master_issuer
+      FROM isin_re_issuance
       WHERE maturity_date BETWEEN ? AND ? AND (is_visible = 1)
       GROUP BY YEAR(maturity_date), MONTH(maturity_date), MONTHNAME(maturity_date)
       ORDER BY YEAR(maturity_date) ASC, MONTH(maturity_date) ASC
@@ -3557,7 +3480,7 @@ app.get('/issuers_page_next_year_redemption_data', async (req, res) => {
         YEAR(maturity_date) AS year,
         ROUND(SUM(issue_size) / 10000000, 2) AS issue_size,
         COUNT(DISTINCT isin) AS isin_count
-      FROM master_issuer
+      FROM isin_re_issuance
       WHERE maturity_date BETWEEN ? AND ? AND (is_visible = 1)
       GROUP BY YEAR(maturity_date), MONTH(maturity_date), MONTHNAME(maturity_date)
       ORDER BY YEAR(maturity_date) ASC, MONTH(maturity_date) ASC
@@ -3712,7 +3635,7 @@ app.post('/issuers_page_agency_rating_data', async (req, res) => {
       SELECT COUNT(DISTINCT mir.id) as aggregate 
       FROM master_issuer_rating mir
       INNER JOIN master_agency ma ON ma.id = mir.agency_id
-      INNER JOIN master_issuer i ON i.id = mir.issuer_id
+      INNER JOIN isin_re_issuance i ON i.id = mir.issuer_id
       LEFT JOIN issuer_details ON issuer_details.id = i.issuer_master_id
       LEFT JOIN master_seniority_tier_classification ON master_seniority_tier_classification.code = i.seniority
       LEFT JOIN master_tax_free ON master_tax_free.code = i.tax_free
@@ -3720,8 +3643,9 @@ app.post('/issuers_page_agency_rating_data', async (req, res) => {
       LEFT JOIN master_business_sector ON master_business_sector.code = i.business_sector
       LEFT JOIN issuer_trustee ON issuer_trustee.issuer_id = i.id
       LEFT JOIN master_trustee ON master_trustee.id = issuer_trustee.trustee_id
-      LEFT JOIN master_issuer_type_nature ON master_issuer_type_nature.code = i.nature_type
-      LEFT JOIN master_issuer_ownership_type ON master_issuer_ownership_type.code = i.issuer_ownership_type
+      LEFT JOIN master_issuer ON master_issuer.id = i.isin_id
+      LEFT JOIN master_issuer_type_nature ON master_issuer_type_nature.code = master_issuer.nature_type
+      LEFT JOIN master_issuer_ownership_type ON master_issuer_ownership_type.code = master_issuer.issuer_ownership_type
       LEFT JOIN master_security_type ON master_security_type.code = i.security_class
       LEFT JOIN master_mode_issue ON master_mode_issue.code = i.mode_issue
       LEFT JOIN (
@@ -3741,7 +3665,7 @@ app.post('/issuers_page_agency_rating_data', async (req, res) => {
 
     // ─── Base joins needed for filters ───
     const baseJoins = `
-      INNER JOIN master_issuer i ON i.id = mir.issuer_id
+      INNER JOIN isin_re_issuance i ON i.id = mir.issuer_id
       LEFT JOIN issuer_details ON issuer_details.id = i.issuer_master_id
       LEFT JOIN master_seniority_tier_classification ON master_seniority_tier_classification.code = i.seniority
       LEFT JOIN master_tax_free ON master_tax_free.code = i.tax_free
@@ -3749,8 +3673,9 @@ app.post('/issuers_page_agency_rating_data', async (req, res) => {
       LEFT JOIN master_business_sector ON master_business_sector.code = i.business_sector
       LEFT JOIN issuer_trustee ON issuer_trustee.issuer_id = i.id
       LEFT JOIN master_trustee ON master_trustee.id = issuer_trustee.trustee_id
-      LEFT JOIN master_issuer_type_nature ON master_issuer_type_nature.code = i.nature_type
-      LEFT JOIN master_issuer_ownership_type ON master_issuer_ownership_type.code = i.issuer_ownership_type
+      LEFT JOIN master_issuer ON master_issuer.id = i.isin_id
+      LEFT JOIN master_issuer_type_nature ON master_issuer_type_nature.code = master_issuer.nature_type
+      LEFT JOIN master_issuer_ownership_type ON master_issuer_ownership_type.code = master_issuer.issuer_ownership_type
       LEFT JOIN master_security_type ON master_security_type.code = i.security_class
       LEFT JOIN master_mode_issue ON master_mode_issue.code = i.mode_issue
       LEFT JOIN (
@@ -3892,11 +3817,11 @@ app.post('/issuePage_detailed_data', async (req, res) => {
     const conditions = [];
     const params = [];
 
-    conditions.push(`master_issuer.allotment_date BETWEEN ? AND ? AND (master_issuer.is_visible = 1)`);
+    conditions.push(`isin_re_issuance.allotment_date BETWEEN ? AND ? AND (isin_re_issuance.is_visible = 1)`);
     params.push(cyStart, cyEnd);
 
     if (search && search.trim() !== "") {
-      conditions.push(`(master_issuer.isin LIKE ? OR issuer_details.issuer_name LIKE ?)`);
+      conditions.push(`(isin_re_issuance.isin LIKE ? OR issuer_details.issuer_name LIKE ?)`);
       const searchPattern = `%${search.trim()}%`;
       params.push(searchPattern, searchPattern);
     }
@@ -3979,55 +3904,57 @@ app.post('/issuePage_detailed_data', async (req, res) => {
         LEFT JOIN master_listing_status mls ON mls.code = mise.listing_status
         WHERE mise.listing_status IS NOT NULL
         GROUP BY mise.issuer_id
-      ) AS listing_data ON listing_data.issuer_id = master_issuer.id
+      ) AS listing_data ON listing_data.issuer_id = isin_re_issuance.isin_id
+      LEFT JOIN master_issuer 
+        ON master_issuer.id = isin_re_issuance.isin_id
       LEFT JOIN master_issuer_type_nature
         ON master_issuer_type_nature.code = master_issuer.nature_type
       LEFT JOIN master_issuer_ownership_type
         ON master_issuer_ownership_type.code = master_issuer.issuer_ownership_type
       LEFT JOIN issuer_details 
-        ON issuer_details.id = master_issuer.issuer_master_id
+        ON issuer_details.id = isin_re_issuance.issuer_master_id
       LEFT JOIN master_security_type 
-        ON master_security_type.code = master_issuer.security_class
+        ON master_security_type.code = isin_re_issuance.security_class
       LEFT JOIN master_mode_issue
-        ON master_mode_issue.code = master_issuer.mode_issue
+        ON master_mode_issue.code = isin_re_issuance.mode_issue
       LEFT JOIN issuer_coupon_details 
-        ON issuer_coupon_details.issuer_id = master_issuer.id
+        ON issuer_coupon_details.issuer_id = isin_re_issuance.isin_id
       LEFT JOIN master_issuer_rating 
-        ON master_issuer_rating.issuer_id = master_issuer.id
+        ON master_issuer_rating.issuer_id = isin_re_issuance.isin_id
       LEFT JOIN master_agency 
         ON master_agency.id = master_issuer_rating.agency_id
       LEFT JOIN issuer_trustee 
-        ON issuer_trustee.issuer_id = master_issuer.id
+        ON issuer_trustee.issuer_id = isin_re_issuance.isin_id
       LEFT JOIN master_trustee 
         ON master_trustee.id = issuer_trustee.trustee_id
       LEFT JOIN issuer_registrar 
-        ON issuer_registrar.issuer_id = master_issuer.id
+        ON issuer_registrar.issuer_id = isin_re_issuance.isin_id
       LEFT JOIN master_registrar 
         ON master_registrar.id = issuer_registrar.registrar_id
       LEFT JOIN issuer_arranger 
-        ON issuer_arranger.issuer_id = master_issuer.id
+        ON issuer_arranger.issuer_id = isin_re_issuance.isin_id
       LEFT JOIN master_arranger 
         ON master_arranger.id = issuer_arranger.arranger_id
       LEFT JOIN master_seniority_tier_classification 
-        ON master_seniority_tier_classification.code = master_issuer.seniority
+        ON master_seniority_tier_classification.code = isin_re_issuance.seniority
       LEFT JOIN master_tax_free 
-        ON master_tax_free.code = master_issuer.tax_free
+        ON master_tax_free.code = isin_re_issuance.tax_free
       LEFT JOIN master_secured_flag 
-        ON master_secured_flag.code = master_issuer.secured_flag
+        ON master_secured_flag.code = isin_re_issuance.secured_flag
       LEFT JOIN master_business_sector 
-        ON master_business_sector.code = master_issuer.business_sector
+        ON master_business_sector.code = isin_re_issuance.business_sector
     `;
 
     // ─── FIX: Use DISTINCT in data query to prevent row multiplication from joins ───
     const dataQuery = `
       SELECT DISTINCT
-        master_issuer.id,
-        master_issuer.isin,
-        master_issuer.security_name,
-        master_issuer.issue_size,
-        master_issuer.face_value,
-        master_issuer.allotment_date,
-        master_issuer.maturity_date,
+        isin_re_issuance.isin_id,
+        isin_re_issuance.isin,
+        isin_re_issuance.security_name,
+        isin_re_issuance.issue_size,
+        isin_re_issuance.face_value,
+        isin_re_issuance.allotment_date,
+        isin_re_issuance.maturity_date,
         issuer_details.issuer_name AS issuer_name,
         listing_data.listing_status AS listing_status,
         master_issuer_type_nature.description AS nature,
@@ -4044,17 +3971,17 @@ app.post('/issuePage_detailed_data', async (req, res) => {
         master_tax_free.description AS tax_free,
         master_secured_flag.description AS secured_flag,
         master_business_sector.description AS sector
-      FROM master_issuer
+      FROM isin_re_issuance
       ${baseJoins}
       ${whereClause}
-      ORDER BY master_issuer.allotment_date ASC
+      ORDER BY isin_re_issuance.allotment_date ASC
       LIMIT ? OFFSET ?
     `;
 
     // ─── Count query using same joins ───
     const countQuery = `
-      SELECT COUNT(DISTINCT master_issuer.id) as total
-      FROM master_issuer
+      SELECT COUNT(DISTINCT isin_re_issuance.isin_id) as total
+      FROM isin_re_issuance
       ${baseJoins}
       ${whereClause}
     `;
@@ -4124,7 +4051,9 @@ app.post('/issuepage_filterinputs_data', async (req, res) => {
 
     const natureType = await prisma.$queryRawUnsafe(`
         SELECT DISTINCT master_issuer_type_nature.description AS nature
-        FROM master_issuer
+        FROM isin_re_issuance
+        LEFT JOIN master_issuer 
+          ON master_issuer.id = isin_re_issuance.isin_id
         LEFT JOIN master_issuer_type_nature 
           ON master_issuer_type_nature.code = master_issuer.nature_type
         WHERE master_issuer_type_nature.description IS NOT NULL;
@@ -4138,18 +4067,20 @@ app.post('/issuepage_filterinputs_data', async (req, res) => {
       `);
     const lownershipTypesOptions = await prisma.$queryRawUnsafe(`
         SELECT DISTINCT master_issuer_ownership_type.description AS ownership_type
-        FROM master_issuer
+        FROM isin_re_issuance
+        LEFT JOIN master_issuer 
+          ON master_issuer.id = isin_re_issuance.isin_id
         LEFT JOIN master_issuer_ownership_type
           ON master_issuer_ownership_type.code = master_issuer.issuer_ownership_type
         WHERE master_issuer_ownership_type.description IS NOT NULL;
       `);
     const sectorOptions = await prisma.$queryRawUnsafe(`
         SELECT DISTINCT master_business_sector.description AS sector
-        FROM master_issuer
+        FROM isin_re_issuance
         LEFT JOIN master_business_sector 
-          ON master_business_sector.code = master_issuer.business_sector
+          ON master_business_sector.code = isin_re_issuance.business_sector
         WHERE 
-        master_issuer.allotment_date BETWEEN '${startDate}' AND '${endDate}'
+        isin_re_issuance.allotment_date BETWEEN '${startDate}' AND '${endDate}'
         AND master_business_sector.description IS NOT NULL;
       `);
     const securityTypeOptions = await prisma.$queryRawUnsafe(`
@@ -4159,27 +4090,27 @@ app.post('/issuepage_filterinputs_data', async (req, res) => {
     `);
     const modeissueOptions = await prisma.$queryRawUnsafe(`
       SELECT DISTINCT master_mode_issue.description AS mode_of_issue
-      FROM master_issuer
+      FROM isin_re_issuance
       LEFT JOIN master_mode_issue
-        ON master_mode_issue.code = master_issuer.mode_issue
+        ON master_mode_issue.code = isin_re_issuance.mode_issue
       WHERE master_mode_issue.description IS NOT NULL 
         AND master_mode_issue.is_active = 1;
     `);
 
     const creditRatingOptions = await prisma.$queryRawUnsafe(`
         SELECT DISTINCT master_issuer_rating.rating AS credit_rating
-        FROM master_issuer
+        FROM isin_re_issuance
         LEFT JOIN master_issuer_rating 
-          ON master_issuer_rating.issuer_id = master_issuer.id
+          ON master_issuer_rating.issuer_id = isin_re_issuance.isin_id
         WHERE 
-        master_issuer.allotment_date BETWEEN '${startDate}' AND '${endDate}'
+        isin_re_issuance.allotment_date BETWEEN '${startDate}' AND '${endDate}'
         AND master_issuer_rating.rating IS NOT NULL;
       `);
     const creditRatingAgencyOptions = await prisma.$queryRawUnsafe(`
         SELECT DISTINCT master_agency.short_name AS credit_rating_agency
-        FROM master_issuer
+        FROM isin_re_issuance
         LEFT JOIN master_issuer_rating 
-          ON master_issuer_rating.issuer_id = master_issuer.id
+          ON master_issuer_rating.issuer_id = isin_re_issuance.isin_id
         LEFT JOIN master_agency 
           ON master_agency.id = master_issuer_rating.agency_id
         WHERE 
@@ -4188,30 +4119,30 @@ app.post('/issuepage_filterinputs_data', async (req, res) => {
 
     const seniorityOptions = await prisma.$queryRawUnsafe(`
         SELECT DISTINCT master_seniority_tier_classification.description AS Seniority
-        FROM master_issuer
+        FROM isin_re_issuance
         LEFT JOIN master_seniority_tier_classification 
-          ON master_seniority_tier_classification.code = master_issuer.seniority
+          ON master_seniority_tier_classification.code = isin_re_issuance.seniority
         WHERE 
-        master_issuer.allotment_date BETWEEN '${startDate}' AND '${endDate}'
+        isin_re_issuance.allotment_date BETWEEN '${startDate}' AND '${endDate}'
         AND master_seniority_tier_classification.description IS NOT NULL;
       `);
 
     const securedFlagOptions = await prisma.$queryRawUnsafe(`
         SELECT DISTINCT master_secured_flag.description AS secured_flag
-        FROM master_issuer
+        FROM isin_re_issuance
         LEFT JOIN master_secured_flag 
-          ON master_secured_flag.code = master_issuer.secured_flag
+          ON master_secured_flag.code = isin_re_issuance.secured_flag
         WHERE 
-        master_issuer.allotment_date BETWEEN '${startDate}' AND '${endDate}'
+        isin_re_issuance.allotment_date BETWEEN '${startDate}' AND '${endDate}'
         AND master_secured_flag.description IS NOT NULL;
       `);
     const taxFreeOptions = await prisma.$queryRawUnsafe(`
         SELECT DISTINCT master_tax_free.description AS tax_free
-        FROM master_issuer
+        FROM isin_re_issuance
         LEFT JOIN master_tax_free 
-          ON master_tax_free.code = master_issuer.tax_free
+          ON master_tax_free.code = isin_re_issuance.tax_free
         WHERE 
-        master_issuer.allotment_date BETWEEN '${startDate}' AND '${endDate}'
+        isin_re_issuance.allotment_date BETWEEN '${startDate}' AND '${endDate}'
         AND master_tax_free.description IS NOT NULL;
       `);
     // let filterInputsValues ={ownershipType:[],nature:[],sector:[],securityType:[],modeOfIssue:[],creditRatingAgency:[],creditRating:[],seniority:[],securedFlag:[],listingStatus:[],taxFree:[]};
@@ -4293,7 +4224,7 @@ app.post('/debt_redemption_specific_month_data', async (req, res) => {
     // ── COUNT QUERY (simplified) ──
     const countQuery = `
       SELECT COUNT(DISTINCT i.isin) AS aggregate
-      FROM master_issuer AS i
+      FROM isin_re_issuance AS i
       WHERE i.maturity_date BETWEEN ? AND ?
         AND i.is_visible = 1
     `;
@@ -4330,7 +4261,7 @@ app.post('/debt_redemption_specific_month_data', async (req, res) => {
               ORDER BY mise.listing_status
               LIMIT 1
           )) AS listingStatus
-      FROM master_issuer AS i
+      FROM isin_re_issuance AS i
       LEFT JOIN issuer_details AS id ON i.issuer_master_id = id.id
       LEFT JOIN master_security_type AS s ON i.security_class = s.code
       LEFT JOIN master_mode_issue AS mi ON i.mode_issue = mi.code
@@ -4526,23 +4457,25 @@ app.post('/issuer_page_monthly_summary_data', async (req, res) => {
         SUM(fi.issue_size) AS actual_issue_size
       FROM (
         SELECT DISTINCT
-          mi.id,
+          mi.isin_id,
           mi.isin,
           mi.issue_size,
           mi.allotment_date
-        FROM master_issuer mi
+        FROM isin_re_issuance mi
         LEFT JOIN issuer_details
           ON issuer_details.id = mi.issuer_master_id
+        LEFT JOIN master_issuer 
+          ON master_issuer.id = mi.isin_id
         LEFT JOIN master_issuer_ownership_type miot
-          ON miot.code = mi.issuer_ownership_type
+          ON miot.code = master_issuer.issuer_ownership_type
         LEFT JOIN master_business_sector mbs
           ON mbs.code = mi.business_sector
         LEFT JOIN master_issuer_type_nature mint
-          ON mint.code = mi.nature_type
+          ON mint.code = master_issuer.nature_type
         LEFT JOIN master_security_type mst
           ON mst.code = mi.security_class
         LEFT JOIN master_issuer_rating mir
-          ON mir.issuer_id = mi.id
+          ON mir.issuer_id = mi.isin_id
         LEFT JOIN master_agency ma
           ON ma.id = mir.agency_id
           AND ma.parent_id = 0
@@ -4551,7 +4484,7 @@ app.post('/issuer_page_monthly_summary_data', async (req, res) => {
         LEFT JOIN master_seniority_tier_classification mstc
           ON mstc.code = mi.seniority
         LEFT JOIN master_issuer_stock_exchange mise
-          ON mise.issuer_id = mi.id
+          ON mise.issuer_id = mi.isin_id
         LEFT JOIN master_listing_status mls
           ON mls.code = mise.listing_status
         LEFT JOIN master_secured_flag msf
@@ -4933,7 +4866,7 @@ app.post('/issuer_page_monthly_detailed_data', async (req, res) => {
         tf.description AS tax_free,
         msf.description AS secured_flag,
         listing_data.listing_status
-      FROM master_issuer AS i
+      FROM isin_re_issuance AS i
       ${baseJoins}
       ${whereClause}
       GROUP BY
@@ -4954,7 +4887,7 @@ app.post('/issuer_page_monthly_detailed_data', async (req, res) => {
       SELECT COUNT(*) AS total
       FROM (
         SELECT i.isin
-        FROM master_issuer AS i
+        FROM isin_re_issuance AS i
         ${baseJoins}
         ${whereClause}
         GROUP BY i.isin
@@ -5075,45 +5008,45 @@ app.post('/issuePage_specific_isin_detailed_data', async (req, res) => {
         LEFT JOIN master_listing_status mls ON mls.code = mise.listing_status
         WHERE mise.listing_status IS NOT NULL
         GROUP BY mise.issuer_id
-      ) AS listing_data ON listing_data.issuer_id = master_issuer.id
+      ) AS listing_data ON listing_data.issuer_id = isin_re_issuance.isin_id
     `;
 
     const resultQuery = `
       SELECT DISTINCT
-        master_issuer.isin,
-        master_issuer.series,
-        master_issuer.convertible_flag,
-        master_issuer.option_flag,
-        master_issuer.tier_classification,
-        master_issuer.security_name,
-        master_issuer.issue_size,
-        master_issuer.face_value,
-        master_issuer.allotment_date,
-        master_issuer.maturity_date,
-        master_issuer.call_desc,
-        master_issuer.put_desc,
-        master_issuer.isin_desc,
-        master_issuer.convertible_details,
-        master_issuer.stipulation_details,
-        master_issuer.guaranteed,
-        master_issuer.if_taxable,
-        master_issuer.allotment_qty,
-        master_issuer.stepupdwnbasis,
-        master_issuer.stepupdwndtls,
-        master_issuer.call_option,
-        master_issuer.put_option,
-        master_issuer.infra_category,
-        master_issuer.issue_price,
-        master_issuer.fintrpydte,
-        master_issuer.freq,
-        master_issuer.freq_dis,
-        master_issuer.next_sch_date,
-        master_issuer.intratupto,
-        master_issuer.intratlkto,
-        master_issuer.created_by,
-        master_issuer.created_at,
-        master_issuer.updated_by,
-        master_issuer.updated_at,
+        isin_re_issuance.isin,
+        isin_re_issuance.series,
+        isin_re_issuance.convertible_flag,
+        isin_re_issuance.option_flag,
+        isin_re_issuance.tier_classification,
+        isin_re_issuance.security_name,
+        isin_re_issuance.issue_size,
+        isin_re_issuance.face_value,
+        isin_re_issuance.allotment_date,
+        isin_re_issuance.maturity_date,
+        isin_re_issuance.call_desc,
+        isin_re_issuance.put_desc,
+        isin_re_issuance.isin_desc,
+        isin_re_issuance.convertible_details,
+        isin_re_issuance.stipulation_details,
+        isin_re_issuance.guaranteed,
+        isin_re_issuance.if_taxable,
+        isin_re_issuance.allotment_qty,
+        isin_re_issuance.stepupdwnbasis,
+        isin_re_issuance.stepupdwndtls,
+        isin_re_issuance.call_option,
+        isin_re_issuance.put_option,
+        isin_re_issuance.infra_category,
+        isin_re_issuance.issue_price,
+        isin_re_issuance.fintrpydte,
+        isin_re_issuance.freq,
+        isin_re_issuance.freq_dis,
+        isin_re_issuance.next_sch_date,
+        isin_re_issuance.intratupto,
+        isin_re_issuance.intratlkto,
+        isin_re_issuance.created_by,
+        isin_re_issuance.created_at,
+        isin_re_issuance.updated_by,
+        isin_re_issuance.updated_at,
         master_interest_type.description AS interest_type,
         master_perpetual_nature_indicator.description AS perpetual_nature,
         master_security_status.description AS security_status,
@@ -5141,64 +5074,66 @@ app.post('/issuePage_specific_isin_detailed_data', async (req, res) => {
         master_tax_free.description AS tax_free,
         master_secured_flag.description AS secured_flag,
         master_business_sector.description AS sector
-      FROM master_issuer
+      FROM isin_re_issuance
       ${listingDataJoin}
+      LEFT JOIN master_issuer 
+        ON master_issuer.id = isin_re_issuance.isin_id
       LEFT JOIN master_issuer_type_nature
         ON master_issuer_type_nature.code = master_issuer.nature_type
       LEFT JOIN master_issuer_ownership_type
         ON master_issuer_ownership_type.code = master_issuer.issuer_ownership_type
       LEFT JOIN issuer_details 
-        ON issuer_details.id = master_issuer.issuer_master_id
+        ON issuer_details.id = isin_re_issuance.issuer_master_id
       LEFT JOIN master_day_count 
-        ON master_day_count.code = master_issuer.day_count
+        ON master_day_count.code = isin_re_issuance.day_count
       LEFT JOIN master_frequency 
-        ON master_frequency.code = master_issuer.compound_frequency
+        ON master_frequency.code = isin_re_issuance.compound_frequency
       LEFT JOIN master_cra_status 
-        ON master_cra_status.code = master_issuer.rated_flag
+        ON master_cra_status.code = isin_re_issuance.rated_flag
       LEFT JOIN master_convertible_type_a 
-        ON master_convertible_type_a.code = master_issuer.convertible_type_a
+        ON master_convertible_type_a.code = isin_re_issuance.convertible_type_a
       LEFT JOIN master_convertible_type_b
-        ON master_convertible_type_b.code = master_issuer.convertible_type_b
+        ON master_convertible_type_b.code = isin_re_issuance.convertible_type_b
       LEFT JOIN master_guaranteed_type 
-        ON master_guaranteed_type.code = master_issuer.guaranteed_type
+        ON master_guaranteed_type.code = isin_re_issuance.guaranteed_type
       LEFT JOIN master_perpetual_nature_indicator 
-        ON master_perpetual_nature_indicator.code = master_issuer.perpetual_nature
+        ON master_perpetual_nature_indicator.code = isin_re_issuance.perpetual_nature
       LEFT JOIN master_interest_type 
-        ON master_interest_type.code = master_issuer.interest_type
+        ON master_interest_type.code = isin_re_issuance.interest_type
       LEFT JOIN master_security_status 
-        ON master_security_status.code = master_issuer.security_status
+        ON master_security_status.code = isin_re_issuance.security_status
       LEFT JOIN master_security_type 
-        ON master_security_type.code = master_issuer.security_class
+        ON master_security_type.code = isin_re_issuance.security_class
       LEFT JOIN master_mode_issue
-        ON master_mode_issue.code = master_issuer.mode_issue
+        ON master_mode_issue.code = isin_re_issuance.mode_issue
       LEFT JOIN issuer_coupon_details 
-        ON issuer_coupon_details.issuer_id = master_issuer.id
+        ON issuer_coupon_details.issuer_id = isin_re_issuance.isin_id
       LEFT JOIN master_issuer_rating 
-        ON master_issuer_rating.issuer_id = master_issuer.id
+        ON master_issuer_rating.issuer_id = isin_re_issuance.isin_id
       LEFT JOIN master_agency 
         ON master_agency.id = master_issuer_rating.agency_id
       LEFT JOIN issuer_trustee 
-        ON issuer_trustee.issuer_id = master_issuer.id
+        ON issuer_trustee.issuer_id = isin_re_issuance.isin_id
       LEFT JOIN master_trustee 
         ON master_trustee.id = issuer_trustee.trustee_id
       LEFT JOIN issuer_registrar 
-        ON issuer_registrar.issuer_id = master_issuer.id
+        ON issuer_registrar.issuer_id = isin_re_issuance.isin_id
       LEFT JOIN master_registrar 
         ON master_registrar.id = issuer_registrar.registrar_id
       LEFT JOIN issuer_arranger 
-        ON issuer_arranger.issuer_id = master_issuer.id
+        ON issuer_arranger.issuer_id = isin_re_issuance.isin_id
       LEFT JOIN master_arranger 
         ON master_arranger.id = issuer_arranger.arranger_id
       LEFT JOIN master_seniority_tier_classification 
-        ON master_seniority_tier_classification.code = master_issuer.seniority
+        ON master_seniority_tier_classification.code = isin_re_issuance.seniority
       LEFT JOIN master_tax_free 
-        ON master_tax_free.code = master_issuer.tax_free
+        ON master_tax_free.code = isin_re_issuance.tax_free
       LEFT JOIN master_secured_flag 
-        ON master_secured_flag.code = master_issuer.secured_flag
+        ON master_secured_flag.code = isin_re_issuance.secured_flag
       LEFT JOIN master_business_sector 
-        ON master_business_sector.code = master_issuer.business_sector
-      WHERE master_issuer.id IN (${idPlaceholders})
-      ORDER BY master_issuer.allotment_date ASC
+        ON master_business_sector.code = isin_re_issuance.business_sector
+      WHERE isin_re_issuance.isin_id IN (${idPlaceholders})
+      ORDER BY isin_re_issuance.allotment_date ASC
       LIMIT ? OFFSET ?
     `;
 
@@ -5564,9 +5499,9 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
     const totalIssueSize = await prisma.$queryRawUnsafe(`
       SELECT
         SUM(mi.issue_size) AS aggregate
-      FROM master_issuer mi
+      FROM isin_re_issuance mi
       JOIN issuer_arranger ia
-        ON ia.issuer_id = mi.id
+        ON ia.issuer_id = mi.isin_id
       WHERE mi.allotment_date BETWEEN ? AND ?
         AND mi.is_visible = 1
         ${filterSql}
@@ -5575,9 +5510,9 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
     const totalIssueSizePrevYear = await prisma.$queryRawUnsafe(`
       SELECT
         SUM(mi.issue_size) AS aggregate
-      FROM master_issuer mi
+      FROM isin_re_issuance mi
       JOIN issuer_arranger ia
-        ON ia.issuer_id = mi.id
+        ON ia.issuer_id = mi.isin_id
       WHERE mi.allotment_date BETWEEN ? AND ?
         AND mi.is_visible = 1
         ${filterSql}
@@ -5585,18 +5520,18 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
 
     const totalIssuesCountCurrYear = await prisma.$queryRawUnsafe(`
       SELECT COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS aggregate
-      FROM master_issuer mi
+      FROM isin_re_issuance mi
       JOIN issuer_arranger ia
-        ON ia.issuer_id = mi.id
+        ON ia.issuer_id = mi.isin_id
       WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${filterSql}
     `, cyStart, cyEnd, ...filterParams);
 
     const totalIssuesCountPrevYear = await prisma.$queryRawUnsafe(`
       SELECT COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS aggregate
-      FROM master_issuer mi
+      FROM isin_re_issuance mi
       JOIN issuer_arranger ia
-        ON ia.issuer_id = mi.id
+        ON ia.issuer_id = mi.isin_id
       WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${filterSql}
     `, pyStart, pyEnd, ...filterParams);
@@ -5655,8 +5590,8 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
             RANK() OVER (
               ORDER BY COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC, SUM(mi.issue_size) DESC
             ) AS arr_rank
-          FROM master_issuer mi
-          JOIN issuer_arranger ia ON ia.issuer_id = mi.id
+          FROM isin_re_issuance mi
+          JOIN issuer_arranger ia ON ia.issuer_id = mi.isin_id
           JOIN master_arranger ma ON ma.id = ia.arranger_id
           WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
           ${filterSql}
@@ -5672,8 +5607,8 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
             RANK() OVER (
               ORDER BY COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC, SUM(mi.issue_size) DESC
             ) AS arr_rank
-          FROM master_issuer mi
-          JOIN issuer_arranger ia ON ia.issuer_id = mi.id
+          FROM isin_re_issuance mi
+          JOIN issuer_arranger ia ON ia.issuer_id = mi.isin_id
           JOIN master_arranger ma ON ma.id = ia.arranger_id
           WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
           ${filterSql}
@@ -5719,8 +5654,8 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
             RANK() OVER (
               ORDER BY SUM(mi.issue_size) DESC, COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC
             ) AS arr_rank
-          FROM master_issuer mi
-          JOIN issuer_arranger ia ON ia.issuer_id = mi.id
+          FROM isin_re_issuance mi
+          JOIN issuer_arranger ia ON ia.issuer_id = mi.isin_id
           JOIN master_arranger ma ON ma.id = ia.arranger_id
           WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
           ${filterSql}
@@ -5736,8 +5671,8 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
             RANK() OVER (
               ORDER BY SUM(mi.issue_size) DESC, COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC
             ) AS arr_rank
-          FROM master_issuer mi
-          JOIN issuer_arranger ia ON ia.issuer_id = mi.id
+          FROM isin_re_issuance mi
+          JOIN issuer_arranger ia ON ia.issuer_id = mi.isin_id
           JOIN master_arranger ma ON ma.id = ia.arranger_id
           WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
           ${filterSql}
@@ -5762,8 +5697,8 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
 
     const totalCountResult = await prisma.$queryRawUnsafe(`
       SELECT COUNT(DISTINCT ia.arranger_id) AS total
-      FROM master_issuer mi
-      JOIN issuer_arranger ia ON ia.issuer_id = mi.id
+      FROM isin_re_issuance mi
+      JOIN issuer_arranger ia ON ia.issuer_id = mi.isin_id
       WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${filterSql}
     `, cyStart, cyEnd, ...filterParams);
@@ -5786,8 +5721,8 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
             RANK() OVER (
               ORDER BY COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC, SUM(mi.issue_size) DESC
             ) AS arr_rank
-          FROM master_issuer mi
-          JOIN issuer_arranger ia ON ia.issuer_id = mi.id
+          FROM isin_re_issuance mi
+          JOIN issuer_arranger ia ON ia.issuer_id = mi.isin_id
           JOIN master_arranger ma ON ma.id = ia.arranger_id
           WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
           ${filterSql}
@@ -5802,8 +5737,8 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
             RANK() OVER (
               ORDER BY SUM(mi.issue_size) DESC, COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC
             ) AS arr_rank
-          FROM master_issuer mi
-          JOIN issuer_arranger ia ON ia.issuer_id = mi.id
+          FROM isin_re_issuance mi
+          JOIN issuer_arranger ia ON ia.issuer_id = mi.isin_id
           JOIN master_arranger ma ON ma.id = ia.arranger_id
           WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
           ${filterSql}
@@ -5822,7 +5757,7 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
         ${sectorValueSelect} AS value
       FROM (${rankedArrangersSubQuery}) r
       JOIN issuer_arranger ia ON ia.arranger_id = r.arranger_id
-      JOIN master_issuer mi ON mi.id = ia.issuer_id
+      JOIN isin_re_issuance mi ON mi.isin_id = ia.issuer_id
       JOIN master_business_sector mbs ON mi.business_sector = mbs.code
       WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${filterSql}
@@ -6142,7 +6077,7 @@ app.post('/arrangers_page_credit_rating_data', async (req, res) => {
     const totalRatingQuery = `
       SELECT COUNT(master_issuer_rating.id) AS aggregate
       FROM master_issuer_rating
-      INNER JOIN master_issuer i ON i.id = master_issuer_rating.issuer_id
+      INNER JOIN isin_re_issuance i ON i.id = master_issuer_rating.issuer_id
       INNER JOIN issuer_arranger ON issuer_arranger.issuer_id = i.id
       INNER JOIN master_agency ON master_agency.id = master_issuer_rating.agency_id
       WHERE i.allotment_date BETWEEN ? AND ? AND (i.is_visible = 1)
@@ -6171,7 +6106,7 @@ app.post('/arrangers_page_credit_rating_data', async (req, res) => {
         FROM master_agency
         INNER JOIN master_issuer_rating
           ON master_issuer_rating.agency_id = master_agency.id
-        LEFT JOIN master_issuer AS i
+        LEFT JOIN isin_re_issuance AS i
           ON i.id = master_issuer_rating.issuer_id
         INNER JOIN issuer_arranger
           ON issuer_arranger.issuer_id = i.id
@@ -6443,7 +6378,7 @@ app.post('/arrangers_page_deals_data', async (req, res) => {
           LIMIT 1
         ) AS listing_status,
         i.issuer_master_id
-      FROM master_issuer AS i
+      FROM isin_re_issuance AS i
       LEFT JOIN issuer_details AS id ON i.issuer_master_id = id.id
       LEFT JOIN master_security_type AS s ON i.security_class = s.code
       LEFT JOIN master_mode_issue AS mi ON i.mode_issue = mi.code
@@ -6498,7 +6433,7 @@ app.post('/arrangers_page_deals_data', async (req, res) => {
     // Fix: Removed all_months JOIN to match table query logic
     const countQuery = `
       SELECT COUNT(DISTINCT i.id) AS total
-      FROM master_issuer AS i
+      FROM isin_re_issuance AS i
       INNER JOIN issuer_arranger AS ia ON i.id = ia.issuer_id
       WHERE ia.arranger_id = ?
         AND i.allotment_date BETWEEN ? AND ?
@@ -6619,7 +6554,7 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
       EXISTS (
         SELECT 1 
         FROM issuer_arranger ia 
-        WHERE ia.issuer_id = mi.id
+        WHERE ia.issuer_id = mi.isin_id
       )
     `);
 
@@ -6644,7 +6579,7 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
       const placeholders = rating.map(() => '?').join(', ');
       conditions.push(`EXISTS (
         SELECT 1 FROM master_issuer_rating mir2 
-        WHERE mir2.issuer_id = mi.id AND mir2.rating IN (${placeholders})
+        WHERE mir2.issuer_id = mi.isin_id AND mir2.rating IN (${placeholders})
       )`);
       params.push(...rating);
     }
@@ -6655,7 +6590,7 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
       conditions.push(`EXISTS (
         SELECT 1 FROM master_issuer_rating mir2 
         JOIN master_agency mag2 ON mag2.id = mir2.agency_id
-        WHERE mir2.issuer_id = mi.id AND mag2.short_name IN (${placeholders})
+        WHERE mir2.issuer_id = mi.isin_id AND mag2.short_name IN (${placeholders})
       )`);
       params.push(...creditRatingAgency);
     }
@@ -6666,7 +6601,7 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
       conditions.push(`EXISTS (
         SELECT 1 FROM master_issuer_stock_exchange mise2
         JOIN master_listing_status mls2 ON mls2.code = mise2.listing_status
-        WHERE mise2.issuer_id = mi.id AND mls2.description IN (${placeholders})
+        WHERE mise2.issuer_id = mi.isin_id AND mls2.description IN (${placeholders})
       )`);
       params.push(...listingStatus);
     }
@@ -6707,7 +6642,7 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
       conditions.push(`EXISTS (
         SELECT 1 FROM issuer_trustee it2
         JOIN master_trustee mt2 ON mt2.id = it2.trustee_id
-        WHERE it2.issuer_id = mi.id AND mt2.short_name IN (${placeholders})
+        WHERE it2.issuer_id = mi.isin_id AND mt2.short_name IN (${placeholders})
       )`);
       params.push(...trustee);
     }
@@ -6757,7 +6692,7 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
       conditions.push(`EXISTS (
         SELECT 1 FROM issuer_arranger ia2
         JOIN master_arranger ma2 ON ma2.id = ia2.arranger_id
-        WHERE ia2.issuer_id = mi.id AND ma2.short_name LIKE ?
+        WHERE ia2.issuer_id = mi.isin_id AND ma2.short_name LIKE ?
       )`);
       params.push(`%${arranger}%`);
     }
@@ -6767,7 +6702,7 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
       conditions.push(`EXISTS (
         SELECT 1 FROM issuer_registrar ir2
         JOIN master_registrar mr2 ON mr2.id = ir2.registrar_id
-        WHERE ir2.issuer_id = mi.id AND mr2.registrar_name LIKE ?
+        WHERE ir2.issuer_id = mi.isin_id AND mr2.registrar_name LIKE ?
       )`);
       params.push(`%${registrar}%`);
     }
@@ -6782,7 +6717,7 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
     // ---------------------
     const dataQuery = `
       SELECT
-        mi.id,
+        mi.isin_id,
         mi.isin,
         mi.security_name,
         mi.issue_size,
@@ -6817,39 +6752,40 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
           SELECT mls.description
           FROM master_issuer_stock_exchange mise
           INNER JOIN master_listing_status mls ON mls.code = mise.listing_status
-          WHERE mise.issuer_id = mi.id
+          WHERE mise.issuer_id = mi.isin_id
           ORDER BY mise.listing_status ASC, mise.id ASC
           LIMIT 1
         ) AS listing_status
 
-      FROM master_issuer mi
+      FROM isin_re_issuance mi
 
       LEFT JOIN issuer_details id ON id.id = mi.issuer_master_id
-      LEFT JOIN master_issuer_ownership_type miot ON miot.code = mi.issuer_ownership_type
-      LEFT JOIN master_issuer_type_nature mitn ON mitn.code = mi.nature_type
+      LEFT JOIN master_issuer ON master_issuer.id = mi.isin_id
+      LEFT JOIN master_issuer_ownership_type miot ON miot.code = master_issuer.issuer_ownership_type
+      LEFT JOIN master_issuer_type_nature mitn ON mitn.code = master_issuer.nature_type
       LEFT JOIN master_business_sector mbs ON mbs.code = mi.business_sector
       LEFT JOIN master_security_type mst ON mst.code = mi.security_class
       LEFT JOIN master_mode_issue mmi ON mmi.code = mi.mode_issue
-      LEFT JOIN issuer_coupon_details icd ON icd.issuer_id = mi.id
+      LEFT JOIN issuer_coupon_details icd ON icd.issuer_id = mi.isin_id
       LEFT JOIN master_seniority_tier_classification mstc ON mstc.code = mi.seniority
       LEFT JOIN master_secured_flag msf ON msf.code = mi.secured_flag
 
-      LEFT JOIN issuer_arranger ia ON ia.issuer_id = mi.id
+      LEFT JOIN issuer_arranger ia ON ia.issuer_id = mi.isin_id
       LEFT JOIN master_arranger ma ON ma.id = ia.arranger_id
 
-      LEFT JOIN master_issuer_rating mir ON mir.issuer_id = mi.id
+      LEFT JOIN master_issuer_rating mir ON mir.issuer_id = mi.isin_id
       LEFT JOIN master_agency mag ON mag.id = mir.agency_id
 
-      LEFT JOIN issuer_trustee it ON it.issuer_id = mi.id
+      LEFT JOIN issuer_trustee it ON it.issuer_id = mi.isin_id
       LEFT JOIN master_trustee mt ON mt.id = it.trustee_id
 
-      LEFT JOIN issuer_registrar ir ON ir.issuer_id = mi.id
+      LEFT JOIN issuer_registrar ir ON ir.issuer_id = mi.isin_id
       LEFT JOIN master_registrar mr ON mr.id = ir.registrar_id
 
       ${whereClause}
 
       GROUP BY
-        mi.id,
+        mi.isin_id,
         mi.isin,
         mi.security_name,
         mi.issue_size,
@@ -6875,8 +6811,8 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
     // Count query
     // ---------------------
     const countQuery = `
-      SELECT COUNT(DISTINCT mi.id) AS total
-      FROM master_issuer mi
+      SELECT COUNT(DISTINCT mi.isin_id) AS total
+      FROM isin_re_issuance mi
       ${whereClause}
     `;
 
@@ -7135,24 +7071,26 @@ app.post('/arranger_page_monthly_summary_data', async (req, res) => {
         SUM(fi.issue_size) AS actual_issue_size
       FROM (
         SELECT DISTINCT
-          mi.id,
+          mi.isin_id,
           ia.arranger_id,
           mi.isin,
           mi.issue_size,
           mi.allotment_date
-        FROM master_issuer mi
+        FROM isin_re_issuance mi
         INNER JOIN issuer_arranger ia
-          ON ia.issuer_id = mi.id
+          ON ia.issuer_id = mi.isin_id
+        LEFT JOIN master_issuer 
+          ON master_issuer.id = mi.isin_id
         LEFT JOIN master_issuer_ownership_type miot
-          ON miot.code = mi.issuer_ownership_type
+          ON miot.code = master_issuer.issuer_ownership_type
         LEFT JOIN master_business_sector mbs
           ON mbs.code = mi.business_sector
         LEFT JOIN master_issuer_type_nature mint
-          ON mint.code = mi.nature_type
+          ON mint.code = master_issuer.nature_type
         LEFT JOIN master_security_type mst
           ON mst.code = mi.security_class
         LEFT JOIN master_issuer_rating mir
-          ON mir.issuer_id = mi.id
+          ON mir.issuer_id = mi.isin_id
         LEFT JOIN master_agency ma
           ON ma.id = mir.agency_id
           AND ma.parent_id = 0
@@ -7163,7 +7101,7 @@ app.post('/arranger_page_monthly_summary_data', async (req, res) => {
         LEFT JOIN master_tax_free mtf
           ON mtf.code = mi.tax_free
         LEFT JOIN master_issuer_stock_exchange mise
-          ON mise.issuer_id = mi.id
+          ON mise.issuer_id = mi.isin_id
         LEFT JOIN master_listing_status mls
           ON mls.code = mise.listing_status
         LEFT JOIN master_secured_flag msf
@@ -7557,7 +7495,7 @@ app.post('/arrangers_page_monthly_detailed_data', async (req, res) => {
           ) AS listing_status,
           i.issuer_master_id
 
-      FROM master_issuer AS i
+      FROM isin_re_issuance AS i
 
       LEFT JOIN issuer_details AS id
           ON i.issuer_master_id = id.id
@@ -7633,7 +7571,7 @@ app.post('/arrangers_page_monthly_detailed_data', async (req, res) => {
     // =========================
     const countQuery = `
       SELECT COUNT(DISTINCT CONCAT(i.id, '-', ia.arranger_id)) AS total
-      FROM master_issuer AS i
+      FROM isin_re_issuance AS i
       INNER JOIN issuer_arranger AS ia ON i.id = ia.issuer_id
       INNER JOIN master_arranger AS ma ON ia.arranger_id = ma.id
       ${whereClause}
@@ -7842,7 +7780,7 @@ app.post('/arranger_top_participants_details', async (req, res) => {
           ) AS listing_status,
           i.issuer_master_id
 
-      FROM master_issuer i
+      FROM isin_re_issuance i
 
       LEFT JOIN issuer_details id
           ON i.issuer_master_id = id.id
@@ -8312,7 +8250,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
         sql: ` AND EXISTS (
           SELECT 1 FROM issuer_trustee it2
           JOIN master_trustee mt2 ON mt2.id = it2.trustee_id
-          WHERE it2.issuer_id = mi.id AND ${inClause.clause}
+          WHERE it2.issuer_id = mi.isin_id AND ${inClause.clause}
         )`,
         params: inClause.params
       };
@@ -8330,9 +8268,9 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
 
     const totalIssueSizeRaw = await prisma.$queryRawUnsafe(`
       SELECT COALESCE(SUM(mi.issue_size), 0) AS aggregate
-      FROM master_issuer mi
+      FROM isin_re_issuance mi
       JOIN issuer_trustee it
-        ON it.issuer_id = mi.id
+        ON it.issuer_id = mi.isin_id
       WHERE mi.allotment_date BETWEEN ? AND ?
         AND mi.is_visible = 1
         ${trusteeExistsSql}
@@ -8346,9 +8284,9 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
 
     const totalIssueSizePrevYearRaw = await prisma.$queryRawUnsafe(`
       SELECT COALESCE(SUM(mi.issue_size), 0) AS aggregate
-      FROM master_issuer mi
+      FROM isin_re_issuance mi
       JOIN issuer_trustee it
-        ON it.issuer_id = mi.id
+        ON it.issuer_id = mi.isin_id
       WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${trusteeExistsSql}
       ${filterSql}
@@ -8356,9 +8294,9 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
 
     const totalIssuesCountCurrYearRaw = await prisma.$queryRawUnsafe(`
       SELECT COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS aggregate
-      FROM master_issuer mi
+      FROM isin_re_issuance mi
       JOIN issuer_trustee it
-        ON it.issuer_id = mi.id
+        ON it.issuer_id = mi.isin_id
       WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${trusteeExistsSql}
       ${filterSql}
@@ -8366,9 +8304,9 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
 
     const totalIssuesCountPrevYearRaw = await prisma.$queryRawUnsafe(`
       SELECT COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS aggregate
-      FROM master_issuer mi
+      FROM isin_re_issuance mi
       JOIN issuer_trustee it
-        ON it.issuer_id = mi.id
+        ON it.issuer_id = mi.isin_id
       WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${trusteeExistsSql}
       ${filterSql}
@@ -8422,8 +8360,8 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
           RANK() OVER (
             ORDER BY SUM(mi.issue_size) DESC, COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC
           ) AS arr_rank
-        FROM master_issuer mi
-        JOIN issuer_trustee it ON it.issuer_id = mi.id
+        FROM isin_re_issuance mi
+        JOIN issuer_trustee it ON it.issuer_id = mi.isin_id
         JOIN master_trustee mt ON mt.id = it.trustee_id
         WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
         ${trusteeDirectSql}
@@ -8440,8 +8378,8 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
           RANK() OVER (
             ORDER BY SUM(mi.issue_size) DESC, COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC
           ) AS arr_rank
-        FROM master_issuer mi
-        JOIN issuer_trustee it ON it.issuer_id = mi.id
+        FROM isin_re_issuance mi
+        JOIN issuer_trustee it ON it.issuer_id = mi.isin_id
         JOIN master_trustee mt ON mt.id = it.trustee_id
         WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
         ${trusteeDirectSql}
@@ -8480,8 +8418,8 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
           RANK() OVER (
             ORDER BY SUM(mi.issue_size) DESC, COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC
           ) AS arr_rank
-        FROM master_issuer mi
-        JOIN issuer_trustee it ON it.issuer_id = mi.id
+        FROM isin_re_issuance mi
+        JOIN issuer_trustee it ON it.issuer_id = mi.isin_id
         JOIN master_trustee mt ON mt.id = it.trustee_id
         WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
         ${trusteeDirectSql}
@@ -8498,8 +8436,8 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
           RANK() OVER (
             ORDER BY SUM(mi.issue_size) DESC, COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC
           ) AS arr_rank
-        FROM master_issuer mi
-        JOIN issuer_trustee it ON it.issuer_id = mi.id
+        FROM isin_re_issuance mi
+        JOIN issuer_trustee it ON it.issuer_id = mi.isin_id
         JOIN master_trustee mt ON mt.id = it.trustee_id
         WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
         ${trusteeDirectSql}
@@ -8518,8 +8456,8 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
     /*----total count for table pagination ---*/
     const totalCountResult = await prisma.$queryRawUnsafe(`
       SELECT COUNT(DISTINCT mt.id) AS total
-      FROM master_issuer mi
-      JOIN issuer_trustee it ON it.issuer_id = mi.id
+      FROM isin_re_issuance mi
+      JOIN issuer_trustee it ON it.issuer_id = mi.isin_id
       JOIN master_trustee mt ON mt.id = it.trustee_id
       WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${trusteeDirectSql}
@@ -8546,8 +8484,8 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
         RANK() OVER (
           ORDER BY COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC, SUM(mi.issue_size) DESC
         ) AS arr_rank
-      FROM master_issuer mi
-      JOIN issuer_trustee it ON it.issuer_id = mi.id
+      FROM isin_re_issuance mi
+      JOIN issuer_trustee it ON it.issuer_id = mi.isin_id
       JOIN master_trustee mt ON mt.id = it.trustee_id
       WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${trusteeDirectSql}
@@ -8562,8 +8500,8 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
         RANK() OVER (
           ORDER BY SUM(mi.issue_size) DESC, COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC
         ) AS arr_rank
-      FROM master_issuer mi
-      JOIN issuer_trustee it ON it.issuer_id = mi.id
+      FROM isin_re_issuance mi
+      JOIN issuer_trustee it ON it.issuer_id = mi.isin_id
       JOIN master_trustee mt ON mt.id = it.trustee_id
       WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${trusteeDirectSql}
@@ -8582,7 +8520,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
         ${sectorValueSelect} AS value
       FROM (${rankedTrusteesSubQuery}) r
       JOIN issuer_trustee it ON it.trustee_id = r.trustee_id
-      JOIN master_issuer mi ON mi.id = it.issuer_id
+      JOIN isin_re_issuance mi ON mi.isin_id = it.issuer_id
       JOIN master_business_sector mbs ON mi.business_sector = mbs.code
       WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${filterSql}
@@ -8890,7 +8828,7 @@ app.post('/trustees_page_credit_rating_data', async (req, res) => {
     const totalRatingNoResult = await prisma.$queryRawUnsafe(`
       SELECT COUNT(DISTINCT master_issuer_rating.id) AS aggregate
       FROM master_issuer_rating
-      JOIN master_issuer i ON i.id = master_issuer_rating.issuer_id
+      JOIN isin_re_issuance i ON i.id = master_issuer_rating.issuer_id
       JOIN master_agency ON master_agency.id = master_issuer_rating.agency_id
       JOIN issuer_trustee ON issuer_trustee.issuer_id = i.id
       WHERE i.allotment_date BETWEEN ? AND ? AND (is_visible = 1)
@@ -8921,7 +8859,7 @@ app.post('/trustees_page_credit_rating_data', async (req, res) => {
       FROM master_agency
       INNER JOIN master_issuer_rating
         ON master_issuer_rating.agency_id = master_agency.id
-      LEFT JOIN master_issuer AS i
+      LEFT JOIN isin_re_issuance AS i
         ON i.id = master_issuer_rating.issuer_id
       INNER JOIN issuer_trustee
         ON issuer_trustee.issuer_id = i.id
@@ -9033,14 +8971,14 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
     const conditions = [];
     const params = [];
 
-    conditions.push(`master_issuer.allotment_date BETWEEN ? AND ? AND (master_issuer.is_visible = 1)`);
+    conditions.push(`isin_re_issuance.allotment_date BETWEEN ? AND ? AND (isin_re_issuance.is_visible = 1)`);
     params.push(cyStart, cyEnd);
 
     conditions.push(`
       EXISTS (
         SELECT 1
         FROM issuer_trustee it
-        WHERE it.issuer_id = master_issuer.id
+        WHERE it.issuer_id = isin_re_issuance.isin_id
       )
     `);
 
@@ -9048,7 +8986,7 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
     if (search && search.trim() !== '') {
       conditions.push(`(
         issuer_details.issuer_name LIKE ? 
-        OR master_issuer.isin LIKE ?
+        OR isin_re_issuance.isin LIKE ?
       )`);
       const searchParam = `%${search}%`;
       params.push(searchParam, searchParam);
@@ -9057,14 +8995,14 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
     // Rating (multi-select)
     if (rating.length > 0) {
       const placeholders = rating.map(() => '?').join(', ');
-      conditions.push(`EXISTS (SELECT 1 FROM master_issuer_rating mir WHERE mir.issuer_id = master_issuer.id AND mir.rating IN (${placeholders}))`);
+      conditions.push(`EXISTS (SELECT 1 FROM master_issuer_rating mir WHERE mir.issuer_id = isin_re_issuance.isin_id AND mir.rating IN (${placeholders}))`);
       params.push(...rating);
     }
 
     // Listing Status (multi-select)
     if (listingStatus.length > 0) {
       const placeholders = listingStatus.map(() => '?').join(', ');
-      conditions.push(`EXISTS (SELECT 1 FROM master_issuer_stock_exchange mise2 LEFT JOIN master_listing_status mls2 ON mls2.code = mise2.listing_status WHERE mise2.issuer_id = master_issuer.id AND mls2.description IN (${placeholders}))`);
+      conditions.push(`EXISTS (SELECT 1 FROM master_issuer_stock_exchange mise2 LEFT JOIN master_listing_status mls2 ON mls2.code = mise2.listing_status WHERE mise2.issuer_id = isin_re_issuance.isin_id AND mls2.description IN (${placeholders}))`);
       params.push(...listingStatus);
     }
 
@@ -9092,7 +9030,7 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
     // Trustee (multi-select)
     if (trustee.length > 0) {
       const placeholders = trustee.map(() => '?').join(', ');
-      conditions.push(`EXISTS (SELECT 1 FROM issuer_trustee it2 JOIN master_trustee mt2 ON mt2.id = it2.trustee_id WHERE it2.issuer_id = master_issuer.id AND mt2.short_name IN (${placeholders}))`);
+      conditions.push(`EXISTS (SELECT 1 FROM issuer_trustee it2 JOIN master_trustee mt2 ON mt2.id = it2.trustee_id WHERE it2.issuer_id = isin_re_issuance.isin_id AND mt2.short_name IN (${placeholders}))`);
       params.push(...trustee);
     }
 
@@ -9113,7 +9051,7 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
     // Credit Rating Agency (multi-select)
     if (creditRatingAgency.length > 0) {
       const placeholders = creditRatingAgency.map(() => '?').join(', ');
-      conditions.push(`EXISTS (SELECT 1 FROM master_issuer_rating mir2 JOIN master_agency ma2 ON ma2.id = mir2.agency_id WHERE mir2.issuer_id = master_issuer.id AND ma2.short_name IN (${placeholders}))`);
+      conditions.push(`EXISTS (SELECT 1 FROM master_issuer_rating mir2 JOIN master_agency ma2 ON ma2.id = mir2.agency_id WHERE mir2.issuer_id = isin_re_issuance.isin_id AND ma2.short_name IN (${placeholders}))`);
       params.push(...creditRatingAgency);
     }
 
@@ -9133,7 +9071,7 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
 
     // Registrar (single-select, LIKE filter)
     if (registrar) {
-      conditions.push(`EXISTS (SELECT 1 FROM issuer_registrar ir2 JOIN master_registrar mr2 ON mr2.id = ir2.registrar_id WHERE ir2.issuer_id = master_issuer.id AND mr2.registrar_name LIKE ?)`);
+      conditions.push(`EXISTS (SELECT 1 FROM issuer_registrar ir2 JOIN master_registrar mr2 ON mr2.id = ir2.registrar_id WHERE ir2.issuer_id = isin_re_issuance.isin_id AND mr2.registrar_name LIKE ?)`);
       params.push(`%${registrar}%`);
     }
 
@@ -9147,13 +9085,13 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
     // ─────────────────────
     const dataQuery = `
       SELECT
-        master_issuer.id,
-        master_issuer.isin,
-        master_issuer.security_name,
-        master_issuer.issue_size,
-        master_issuer.face_value,
-        master_issuer.allotment_date,
-        master_issuer.maturity_date,
+        isin_re_issuance.isin_id,
+        isin_re_issuance.isin,
+        isin_re_issuance.security_name,
+        isin_re_issuance.issue_size,
+        isin_re_issuance.face_value,
+        isin_re_issuance.allotment_date,
+        isin_re_issuance.maturity_date,
 
         issuer_details.issuer_name AS issuer_name,
 
@@ -9175,35 +9113,35 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
           SELECT GROUP_CONCAT(DISTINCT mt.short_name SEPARATOR ', ')
           FROM issuer_trustee it
           JOIN master_trustee mt ON mt.id = it.trustee_id
-          WHERE it.issuer_id = master_issuer.id
+          WHERE it.issuer_id = isin_re_issuance.isin_id
         ) AS debenture_trustee,
 
         (
           SELECT GROUP_CONCAT(DISTINCT ma.short_name SEPARATOR ', ')
           FROM issuer_arranger ia
           JOIN master_arranger ma ON ma.id = ia.arranger_id
-          WHERE ia.issuer_id = master_issuer.id
+          WHERE ia.issuer_id = isin_re_issuance.isin_id
         ) AS Arranger,
 
         (
           SELECT GROUP_CONCAT(DISTINCT mr.registrar_name SEPARATOR ', ')
           FROM issuer_registrar ir
           JOIN master_registrar mr ON mr.id = ir.registrar_id
-          WHERE ir.issuer_id = master_issuer.id
+          WHERE ir.issuer_id = isin_re_issuance.isin_id
         ) AS Registrar,
 
         (
           SELECT GROUP_CONCAT(DISTINCT CONCAT(ma.short_name, ': ', mir.rating) SEPARATOR '; ')
           FROM master_issuer_rating mir
           JOIN master_agency ma ON ma.id = mir.agency_id
-          WHERE mir.issuer_id = master_issuer.id
+          WHERE mir.issuer_id = isin_re_issuance.isin_id
         ) AS credit_rating_info,
 
         (
           SELECT mir.rating
           FROM master_issuer_rating mir
           JOIN master_agency ma ON ma.id = mir.agency_id
-          WHERE mir.issuer_id = master_issuer.id
+          WHERE mir.issuer_id = isin_re_issuance.isin_id
           ORDER BY ma.id
           LIMIT 1
         ) AS credit_rating,
@@ -9212,7 +9150,7 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
           SELECT ma.short_name
           FROM master_issuer_rating mir
           JOIN master_agency ma ON ma.id = mir.agency_id
-          WHERE mir.issuer_id = master_issuer.id
+          WHERE mir.issuer_id = isin_re_issuance.isin_id
           ORDER BY ma.id
           LIMIT 1
         ) AS credit_rating_agency,
@@ -9221,7 +9159,7 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
           SELECT mls.description
           FROM master_issuer_stock_exchange mise
           LEFT JOIN master_listing_status mls ON mls.code = mise.listing_status
-          WHERE mise.issuer_id = master_issuer.id
+          WHERE mise.issuer_id = isin_re_issuance.isin_id
             AND mise.listing_status IS NOT NULL
           ORDER BY mise.id
           LIMIT 1
@@ -9230,7 +9168,7 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
         (
           SELECT mise.listing_status
           FROM master_issuer_stock_exchange mise
-          WHERE mise.issuer_id = master_issuer.id
+          WHERE mise.issuer_id = isin_re_issuance.isin_id
             AND mise.listing_status IS NOT NULL
           ORDER BY mise.id
           LIMIT 1
@@ -9239,40 +9177,44 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
         (
           SELECT icd.coupon_rate
           FROM issuer_coupon_details icd
-          WHERE icd.issuer_id = master_issuer.id
+          WHERE icd.issuer_id = isin_re_issuance.isin_id
           ORDER BY icd.id
           LIMIT 1
         ) AS coupon_rate
 
-      FROM master_issuer
+      FROM isin_re_issuance
 
       LEFT JOIN issuer_details
-        ON issuer_details.id = master_issuer.issuer_master_id
+        ON issuer_details.id = isin_re_issuance.issuer_master_id
+
+      LEFT JOIN master_issuer 
+        ON master_issuer.id = isin_re_issuance.isin_id
 
       LEFT JOIN master_issuer_ownership_type
         ON master_issuer_ownership_type.code = master_issuer.issuer_ownership_type
+
 
       LEFT JOIN master_issuer_type_nature
         ON master_issuer_type_nature.code = master_issuer.nature_type
 
       LEFT JOIN master_business_sector
-        ON master_business_sector.code = master_issuer.business_sector
+        ON master_business_sector.code = isin_re_issuance.business_sector
 
       LEFT JOIN master_mode_issue
-        ON master_mode_issue.code = master_issuer.mode_issue
+        ON master_mode_issue.code = isin_re_issuance.mode_issue
 
       LEFT JOIN master_security_type
-        ON master_security_type.code = master_issuer.security_class
+        ON master_security_type.code = isin_re_issuance.security_class
 
       LEFT JOIN master_seniority_tier_classification
-        ON master_seniority_tier_classification.code = master_issuer.seniority
+        ON master_seniority_tier_classification.code = isin_re_issuance.seniority
 
       LEFT JOIN master_secured_flag
-        ON master_secured_flag.code = master_issuer.secured_flag
+        ON master_secured_flag.code = isin_re_issuance.secured_flag
 
       ${whereClause}
 
-      ORDER BY master_issuer.allotment_date ASC
+      ORDER BY isin_re_issuance.allotment_date ASC
 
       LIMIT ? OFFSET ?
     `;
@@ -9281,32 +9223,36 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
     // Count query
     // ─────────────────────
     const countQuery = `
-      SELECT COUNT(DISTINCT master_issuer.id) AS total
-      FROM master_issuer
+      SELECT COUNT(DISTINCT isin_re_issuance.isin_id) AS total
+      FROM isin_re_issuance
 
       LEFT JOIN issuer_details
-        ON issuer_details.id = master_issuer.issuer_master_id
+        ON issuer_details.id = isin_re_issuance.issuer_master_id
 
+      LEFT JOIN master_issuer 
+       ON master_issuer.id = isin_re_issuance.isin_id
+       
       LEFT JOIN master_issuer_ownership_type
         ON master_issuer_ownership_type.code = master_issuer.issuer_ownership_type
+
 
       LEFT JOIN master_issuer_type_nature
         ON master_issuer_type_nature.code = master_issuer.nature_type
 
       LEFT JOIN master_business_sector
-        ON master_business_sector.code = master_issuer.business_sector
+        ON master_business_sector.code = isin_re_issuance.business_sector
 
       LEFT JOIN master_mode_issue
-        ON master_mode_issue.code = master_issuer.mode_issue
+        ON master_mode_issue.code = isin_re_issuance.mode_issue
 
       LEFT JOIN master_security_type
-        ON master_security_type.code = master_issuer.security_class
+        ON master_security_type.code = isin_re_issuance.security_class
 
       LEFT JOIN master_seniority_tier_classification
-        ON master_seniority_tier_classification.code = master_issuer.seniority
+        ON master_seniority_tier_classification.code = isin_re_issuance.seniority
 
       LEFT JOIN master_secured_flag
-        ON master_secured_flag.code = master_issuer.secured_flag
+        ON master_secured_flag.code = isin_re_issuance.secured_flag
 
       ${whereClause}
     `;
@@ -9565,26 +9511,28 @@ app.post('/trustee_page_monthly_summary_data', async (req, res) => {
         SUM(fi.issue_size) AS actual_issue_size
       FROM (
         SELECT DISTINCT
-          mi.id,
+          mi.isin_id,
           it.trustee_id,
           mi.isin,
           mi.issue_size,
           mi.allotment_date
-        FROM master_issuer mi
+        FROM isin_re_issuance mi
         INNER JOIN issuer_trustee it
-          ON it.issuer_id = mi.id
+          ON it.issuer_id = mi.isin_id
         INNER JOIN master_trustee mt
           ON mt.id = it.trustee_id
+        LEFT JOIN master_issuer 
+          ON master_issuer.id = mi.isin_id
         LEFT JOIN master_issuer_ownership_type miot
-          ON miot.code = mi.issuer_ownership_type
+          ON miot.code = master_issuer.issuer_ownership_type
         LEFT JOIN master_business_sector mbs
           ON mbs.code = mi.business_sector
         LEFT JOIN master_issuer_type_nature mint
-          ON mint.code = mi.nature_type
+          ON mint.code = master_issuer.nature_type
         LEFT JOIN master_security_type mst
           ON mst.code = mi.security_class
         LEFT JOIN master_issuer_rating mir
-          ON mir.issuer_id = mi.id
+          ON mir.issuer_id = mi.isin_id
         LEFT JOIN master_agency ma
           ON ma.id = mir.agency_id
           AND ma.parent_id = 0
@@ -9595,7 +9543,7 @@ app.post('/trustee_page_monthly_summary_data', async (req, res) => {
         LEFT JOIN master_tax_free mtf
           ON mtf.code = mi.tax_free
         LEFT JOIN master_issuer_stock_exchange mise
-          ON mise.issuer_id = mi.id
+          ON mise.issuer_id = mi.isin_id
         LEFT JOIN master_listing_status mls
           ON mls.code = mise.listing_status
         LEFT JOIN master_secured_flag msf
@@ -9954,7 +9902,7 @@ app.post('/trustee_page_monthly_detailed_data', async (req, res) => {
           MAX(i.issuer_master_id) AS issuer_master_id,
           it.trustee_id
 
-      FROM master_issuer i
+      FROM isin_re_issuance i
 
       INNER JOIN issuer_trustee it
           ON i.id = it.issuer_id
@@ -10023,7 +9971,7 @@ app.post('/trustee_page_monthly_detailed_data', async (req, res) => {
               MAX(i.id) AS issuerId,
               i.isin
 
-          FROM master_issuer i
+          FROM isin_re_issuance i
 
           INNER JOIN issuer_trustee it
               ON i.id = it.issuer_id
@@ -10340,7 +10288,7 @@ app.post('/trustee_top_participants_details', async (req, res) => {
                   LIMIT 1
               ) AS listing_status
 
-          FROM master_issuer i
+          FROM isin_re_issuance i
 
           INNER JOIN issuer_trustee it
               ON i.id = it.issuer_id
@@ -10449,7 +10397,7 @@ app.post('/trustee_top_participants_details', async (req, res) => {
                   ORDER BY mise.listing_status
                   LIMIT 1
               ) AS listing_status
-          FROM master_issuer i
+          FROM isin_re_issuance i
 
           INNER JOIN issuer_trustee it
               ON i.id = it.issuer_id
@@ -10654,7 +10602,7 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
         conditions.push(`EXISTS (
           SELECT 1 FROM master_issuer_stock_exchange mise
           LEFT JOIN master_listing_status mls ON mls.code = mise.listing_status
-          WHERE mise.issuer_id = mi.id AND mls.description IN (${placeholders})
+          WHERE mise.issuer_id = mi.isin_id AND mls.description IN (${placeholders})
         )`);
         params.push(...listingStatus);
       }
@@ -10717,7 +10665,7 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
         conditions.push(`EXISTS (
           SELECT 1 FROM issuer_registrar ir
           JOIN master_registrar mr ON mr.id = ir.registrar_id
-          WHERE ir.issuer_id = mi.id AND mr.registrar_name IN (${placeholders})
+          WHERE ir.issuer_id = mi.isin_id AND mr.registrar_name IN (${placeholders})
         )`);
         params.push(...registrar);
       }
@@ -10732,9 +10680,9 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
 
     const totalIssueSizeResult = await prisma.$queryRawUnsafe(`
         SELECT COALESCE(SUM(mi.issue_size),0) AS aggregate
-        FROM master_issuer mi
+        FROM isin_re_issuance mi
         JOIN master_issuer_rating mir
-            ON mir.issuer_id = mi.id
+            ON mir.issuer_id = mi.isin_id
         JOIN master_agency ma
             ON ma.id = mir.agency_id
         WHERE mi.allotment_date BETWEEN ? AND ?
@@ -10744,9 +10692,9 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
 
     const totalIssueSizePrevYearResult = await prisma.$queryRawUnsafe(`
         SELECT COALESCE(SUM(mi.issue_size),0) AS aggregate
-        FROM master_issuer mi
+        FROM isin_re_issuance mi
         JOIN master_issuer_rating mir
-            ON mir.issuer_id = mi.id
+            ON mir.issuer_id = mi.isin_id
         JOIN master_agency ma
             ON ma.id = mir.agency_id
         WHERE mi.allotment_date BETWEEN ? AND ?
@@ -10756,9 +10704,9 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
 
     const totalIssuesCountCurrYearResult = await prisma.$queryRawUnsafe(`
         SELECT COUNT(DISTINCT mi.isin) AS aggregate
-        FROM master_issuer mi
+        FROM isin_re_issuance mi
         JOIN master_issuer_rating mir
-            ON mir.issuer_id = mi.id
+            ON mir.issuer_id = mi.isin_id
         JOIN master_agency ma
             ON ma.id = mir.agency_id
         WHERE mi.allotment_date BETWEEN ? AND ?
@@ -10768,9 +10716,9 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
 
     const totalIssuesCountPrevYearResult = await prisma.$queryRawUnsafe(`
         SELECT COUNT(DISTINCT mi.isin) AS aggregate
-        FROM master_issuer mi
+        FROM isin_re_issuance mi
         JOIN master_issuer_rating mir
-            ON mir.issuer_id = mi.id
+            ON mir.issuer_id = mi.isin_id
         JOIN master_agency ma
             ON ma.id = mir.agency_id
         WHERE mi.allotment_date BETWEEN ? AND ?
@@ -10827,9 +10775,9 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
                     COUNT(mi.isin) DESC,
                     ROUND(SUM(mi.issue_size) / 10000000, 2) DESC
             ) AS arr_rank
-        FROM master_issuer mi
+        FROM isin_re_issuance mi
         JOIN issuer_details ON issuer_details.id = mi.issuer_master_id
-        JOIN master_issuer_rating mir ON mir.issuer_id = mi.id
+        JOIN master_issuer_rating mir ON mir.issuer_id = mi.isin_id
         JOIN master_agency ma ON ma.id = mir.agency_id
         WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
         ${filterSql}
@@ -10847,9 +10795,9 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
                   COUNT(mi.isin) DESC,
                   ROUND(SUM(mi.issue_size) / 10000000, 2) DESC
           ) AS arr_rank
-        FROM master_issuer mi
+        FROM isin_re_issuance mi
         JOIN issuer_details ON issuer_details.id = mi.issuer_master_id
-        JOIN master_issuer_rating mir ON mir.issuer_id = mi.id
+        JOIN master_issuer_rating mir ON mir.issuer_id = mi.isin_id
         JOIN master_agency ma ON ma.id = mir.agency_id
         WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
         ${filterSql}
@@ -10889,8 +10837,8 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
                   ROUND(SUM(issue_size) / 10000000, 2) DESC,
                   COUNT(isin) DESC
           ) AS arr_rank
-        FROM master_issuer mi
-        JOIN master_issuer_rating mir ON mir.issuer_id = mi.id
+        FROM isin_re_issuance mi
+        JOIN master_issuer_rating mir ON mir.issuer_id = mi.isin_id
         JOIN master_agency ma ON ma.id = mir.agency_id
         WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
         ${filterSql}
@@ -10908,8 +10856,8 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
                   ROUND(SUM(issue_size) / 10000000, 2) DESC,
                   COUNT(isin) DESC
           ) AS arr_rank
-        FROM master_issuer mi
-        JOIN master_issuer_rating mir ON mir.issuer_id = mi.id
+        FROM isin_re_issuance mi
+        JOIN master_issuer_rating mir ON mir.issuer_id = mi.isin_id
         JOIN master_agency ma ON ma.id = mir.agency_id
         WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
         ${filterSql}
@@ -10928,8 +10876,8 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
 
     const totalCountResult = await prisma.$queryRawUnsafe(`
       SELECT COUNT(*) AS total
-      FROM master_issuer mi
-      JOIN master_issuer_rating mir ON mir.issuer_id = mi.id
+      FROM isin_re_issuance mi
+      JOIN master_issuer_rating mir ON mir.issuer_id = mi.isin_id
       JOIN master_agency ma ON ma.id = mir.agency_id
       WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${filterSql}
@@ -10953,8 +10901,8 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
         RANK() OVER (
           ORDER BY COUNT(DISTINCT mi.isin) DESC, SUM(mi.issue_size) DESC
         ) AS arr_rank
-      FROM master_issuer mi
-      JOIN master_issuer_rating mir ON mir.issuer_id = mi.id
+      FROM isin_re_issuance mi
+      JOIN master_issuer_rating mir ON mir.issuer_id = mi.isin_id
       JOIN master_agency ma ON ma.id = mir.agency_id
       WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${filterSql}
@@ -10969,8 +10917,8 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
         RANK() OVER (
           ORDER BY SUM(mi.issue_size) DESC, COUNT(DISTINCT mi.isin) DESC
         ) AS arr_rank
-      FROM master_issuer mi
-      JOIN master_issuer_rating mir ON mir.issuer_id = mi.id
+      FROM isin_re_issuance mi
+      JOIN master_issuer_rating mir ON mir.issuer_id = mi.isin_id
       JOIN master_agency ma ON ma.id = mir.agency_id
       WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       ${filterSql}
@@ -10989,7 +10937,7 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
         ${sectorValueSelect} AS value
       FROM (${rankedAgenciesSubQuery}) r
       JOIN master_issuer_rating mir ON mir.agency_id = r.agency_id
-      JOIN master_issuer mi ON mi.id = mir.issuer_id
+      JOIN isin_re_issuance mi ON mi.isin_id = mir.issuer_id
       JOIN master_business_sector mbs ON mi.business_sector = mbs.code
       WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
       GROUP BY
@@ -11203,7 +11151,7 @@ app.post('/rating_agencies_page_credit_rating_data', async (req, res) => {
     const totalRatingNoResult = await prisma.$queryRawUnsafe(`
       SELECT COUNT(*) AS aggregate
       FROM master_issuer_rating mir
-      INNER JOIN master_issuer i ON i.id = mir.issuer_id
+      INNER JOIN isin_re_issuance i ON i.id = mir.issuer_id
       LEFT JOIN master_agency ON master_agency.id = mir.agency_id
       WHERE i.allotment_date BETWEEN ? AND ? AND (i.is_visible = 1)
       ${filterSql}
@@ -11229,7 +11177,7 @@ app.post('/rating_agencies_page_credit_rating_data', async (req, res) => {
           mir.rating
         FROM master_agency
         INNER JOIN master_issuer_rating mir ON mir.agency_id = master_agency.id
-        LEFT JOIN master_issuer i ON i.id = mir.issuer_id
+        LEFT JOIN isin_re_issuance i ON i.id = mir.issuer_id
         WHERE i.allotment_date BETWEEN ? AND ? AND (i.is_visible = 1)
           ${filterSql}
           AND master_agency.id = ?
@@ -11247,7 +11195,7 @@ app.post('/rating_agencies_page_credit_rating_data', async (req, res) => {
           mir.rating
         FROM master_agency
         INNER JOIN master_issuer_rating mir ON mir.agency_id = master_agency.id
-        LEFT JOIN master_issuer i ON i.id = mir.issuer_id
+        LEFT JOIN isin_re_issuance i ON i.id = mir.issuer_id
         WHERE i.allotment_date BETWEEN ? AND ? AND (i.is_visible = 1)
           ${filterSql}
         GROUP BY mir.rating
@@ -11356,14 +11304,14 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
     const params = [];
 
     // Base conditions
-    conditions.push(`master_issuer.allotment_date BETWEEN ? AND ? AND (master_issuer.is_visible = 1)`);
+    conditions.push(`isin_re_issuance.allotment_date BETWEEN ? AND ? AND (isin_re_issuance.is_visible = 1)`);
     params.push(cyStart, cyEnd);
 
     conditions.push(`
       EXISTS (
         SELECT 1
         FROM master_issuer_rating mir
-        WHERE mir.issuer_id = master_issuer.id
+        WHERE mir.issuer_id = isin_re_issuance.isin_id
       )
     `);
 
@@ -11378,7 +11326,7 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
     // Rating (multi-select)
     if (rating.length > 0) {
       const placeholders = rating.map(() => '?').join(', ');
-      conditions.push(`EXISTS (SELECT 1 FROM master_issuer_rating mir WHERE mir.issuer_id = master_issuer.id AND mir.rating IN (${placeholders}))`);
+      conditions.push(`EXISTS (SELECT 1 FROM master_issuer_rating mir WHERE mir.issuer_id = isin_re_issuance.isin_id AND mir.rating IN (${placeholders}))`);
       params.push(...rating);
     }
 
@@ -11389,7 +11337,7 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
         SELECT 1
         FROM master_issuer_stock_exchange mise
         LEFT JOIN master_listing_status mls ON mls.code = mise.listing_status
-        WHERE mise.issuer_id = master_issuer.id AND mls.description IN (${placeholders})
+        WHERE mise.issuer_id = isin_re_issuance.isin_id AND mls.description IN (${placeholders})
       )`);
       params.push(...listingStatus);
     }
@@ -11397,87 +11345,87 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
     // Seniority (multi-select)
     if (seniority.length > 0) {
       const placeholders = seniority.map(() => '?').join(', ');
-      conditions.push(`EXISTS (SELECT 1 FROM master_seniority_tier_classification mstc WHERE mstc.code = master_issuer.seniority AND mstc.description IN (${placeholders}))`);
+      conditions.push(`EXISTS (SELECT 1 FROM master_seniority_tier_classification mstc WHERE mstc.code = isin_re_issuance.seniority AND mstc.description IN (${placeholders}))`);
       params.push(...seniority);
     }
 
     // Secured Flag (multi-select)
     if (securedFlag.length > 0) {
       const placeholders = securedFlag.map(() => '?').join(', ');
-      conditions.push(`EXISTS (SELECT 1 FROM master_secured_flag msf WHERE msf.code = master_issuer.secured_flag AND msf.description IN (${placeholders}))`);
+      conditions.push(`EXISTS (SELECT 1 FROM master_secured_flag msf WHERE msf.code = isin_re_issuance.secured_flag AND msf.description IN (${placeholders}))`);
       params.push(...securedFlag);
     }
 
     // Sector (multi-select)
     if (sector.length > 0) {
       const placeholders = sector.map(() => '?').join(', ');
-      conditions.push(`EXISTS (SELECT 1 FROM master_business_sector mbs WHERE mbs.code = master_issuer.business_sector AND mbs.description IN (${placeholders}))`);
+      conditions.push(`EXISTS (SELECT 1 FROM master_business_sector mbs WHERE mbs.code = isin_re_issuance.business_sector AND mbs.description IN (${placeholders}))`);
       params.push(...sector);
     }
 
     // Trustee (multi-select)
     if (trustee.length > 0) {
       const placeholders = trustee.map(() => '?').join(', ');
-      conditions.push(`EXISTS (SELECT 1 FROM issuer_trustee it JOIN master_trustee mt ON mt.id = it.trustee_id WHERE it.issuer_id = master_issuer.id AND mt.short_name IN (${placeholders}))`);
+      conditions.push(`EXISTS (SELECT 1 FROM issuer_trustee it JOIN master_trustee mt ON mt.id = it.trustee_id WHERE it.issuer_id = isin_re_issuance.isin_id AND mt.short_name IN (${placeholders}))`);
       params.push(...trustee);
     }
 
     // Nature (multi-select)
     if (nature.length > 0) {
       const placeholders = nature.map(() => '?').join(', ');
-      conditions.push(`EXISTS (SELECT 1 FROM master_issuer_type_nature mitn WHERE mitn.code = master_issuer.nature_type AND mitn.description IN (${placeholders}))`);
+      conditions.push(`EXISTS (SELECT 1 FROM master_issuer_type_nature mitn WHERE mitn.code = isin_re_issuance.nature_type AND mitn.description IN (${placeholders}))`);
       params.push(...nature);
     }
 
     // Ownership Type (multi-select)
     if (ownershipType.length > 0) {
       const placeholders = ownershipType.map(() => '?').join(', ');
-      conditions.push(`EXISTS (SELECT 1 FROM master_issuer_ownership_type miot WHERE miot.code = master_issuer.issuer_ownership_type AND miot.description IN (${placeholders}))`);
+      conditions.push(`EXISTS (SELECT 1 FROM master_issuer_ownership_type miot WHERE miot.code = isin_re_issuance.issuer_ownership_type AND miot.description IN (${placeholders}))`);
       params.push(...ownershipType);
     }
 
     // Credit Rating Agency (multi-select)
     if (creditRatingAgency.length > 0) {
       const placeholders = creditRatingAgency.map(() => '?').join(', ');
-      conditions.push(`EXISTS (SELECT 1 FROM master_issuer_rating mir2 JOIN master_agency ma2 ON ma2.id = mir2.agency_id WHERE mir2.issuer_id = master_issuer.id AND ma2.short_name IN (${placeholders}))`);
+      conditions.push(`EXISTS (SELECT 1 FROM master_issuer_rating mir2 JOIN master_agency ma2 ON ma2.id = mir2.agency_id WHERE mir2.issuer_id = isin_re_issuance.isin_id AND ma2.short_name IN (${placeholders}))`);
       params.push(...creditRatingAgency);
     }
 
     // Security Type (multi-select)
     if (securityType.length > 0) {
       const placeholders = securityType.map(() => '?').join(', ');
-      conditions.push(`EXISTS (SELECT 1 FROM master_security_type mst WHERE mst.code = master_issuer.security_class AND mst.description IN (${placeholders}))`);
+      conditions.push(`EXISTS (SELECT 1 FROM master_security_type mst WHERE mst.code = isin_re_issuance.security_class AND mst.description IN (${placeholders}))`);
       params.push(...securityType);
     }
 
     // Mode Of Issue (multi-select)
     if (modeOfIssue.length > 0) {
       const placeholders = modeOfIssue.map(() => '?').join(', ');
-      conditions.push(`EXISTS (SELECT 1 FROM master_mode_issue mmi WHERE mmi.code = master_issuer.mode_issue AND mmi.description IN (${placeholders}))`);
+      conditions.push(`EXISTS (SELECT 1 FROM master_mode_issue mmi WHERE mmi.code = isin_re_issuance.mode_issue AND mmi.description IN (${placeholders}))`);
       params.push(...modeOfIssue);
     }
 
     // ISIN (single-select, LIKE filter)
     if (isin) {
-      conditions.push(`master_issuer.isin LIKE ?`);
+      conditions.push(`isin_re_issuance.isin LIKE ?`);
       params.push(`%${isin}%`);
     }
 
     // Search (single-select, LIKE filter on issuer_name or isin)
     if (search) {
-      conditions.push(`(issuer_details.issuer_name LIKE ? OR master_issuer.isin LIKE ?)`);
+      conditions.push(`(issuer_details.issuer_name LIKE ? OR isin_re_issuance.isin LIKE ?)`);
       params.push(`%${search}%`, `%${search}%`);
     }
 
     // Arranger (single-select, LIKE filter)
     if (arranger) {
-      conditions.push(`EXISTS (SELECT 1 FROM issuer_arranger ia JOIN master_arranger ma ON ma.id = ia.arranger_id WHERE ia.issuer_id = master_issuer.id AND ma.short_name LIKE ?)`);
+      conditions.push(`EXISTS (SELECT 1 FROM issuer_arranger ia JOIN master_arranger ma ON ma.id = ia.arranger_id WHERE ia.issuer_id = isin_re_issuance.isin_id AND ma.short_name LIKE ?)`);
       params.push(`%${arranger}%`);
     }
 
     // Registrar (single-select, LIKE filter)
     if (registrar) {
-      conditions.push(`EXISTS (SELECT 1 FROM issuer_registrar ir JOIN master_registrar mr ON mr.id = ir.registrar_id WHERE ir.issuer_id = master_issuer.id AND mr.registrar_name LIKE ?)`);
+      conditions.push(`EXISTS (SELECT 1 FROM issuer_registrar ir JOIN master_registrar mr ON mr.id = ir.registrar_id WHERE ir.issuer_id = isin_re_issuance.isin_id AND mr.registrar_name LIKE ?)`);
       params.push(`%${registrar}%`);
     }
 
@@ -11490,13 +11438,13 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
     // ── Main data query (no Cartesian product) ──
     const dataQuery = `
       SELECT
-        master_issuer.id,
-        master_issuer.isin,
-        master_issuer.security_name,
-        master_issuer.issue_size,
-        master_issuer.face_value,
-        master_issuer.allotment_date,
-        master_issuer.maturity_date,
+        isin_re_issuance.isin_id,
+        isin_re_issuance.isin,
+        isin_re_issuance.security_name,
+        isin_re_issuance.issue_size,
+        isin_re_issuance.face_value,
+        isin_re_issuance.allotment_date,
+        isin_re_issuance.maturity_date,
 
         issuer_details.issuer_name AS issuer_name,
 
@@ -11520,41 +11468,41 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
           SELECT GROUP_CONCAT(DISTINCT mt.short_name SEPARATOR ', ')
           FROM issuer_trustee it
           JOIN master_trustee mt ON mt.id = it.trustee_id
-          WHERE it.issuer_id = master_issuer.id
+          WHERE it.issuer_id = isin_re_issuance.isin_id
         ) AS debenture_trustee,
 
         (
           SELECT GROUP_CONCAT(DISTINCT ma.short_name SEPARATOR ', ')
           FROM issuer_arranger ia
           JOIN master_arranger ma ON ma.id = ia.arranger_id
-          WHERE ia.issuer_id = master_issuer.id
+          WHERE ia.issuer_id = isin_re_issuance.isin_id
         ) AS Arranger,
 
         (
           SELECT GROUP_CONCAT(DISTINCT mr.registrar_name SEPARATOR ', ')
           FROM issuer_registrar ir
           JOIN master_registrar mr ON mr.id = ir.registrar_id
-          WHERE ir.issuer_id = master_issuer.id
+          WHERE ir.issuer_id = isin_re_issuance.isin_id
         ) AS Registrar,
 
         (
           SELECT GROUP_CONCAT(DISTINCT CONCAT(mag.short_name, ': ', mir.rating) SEPARATOR '; ')
           FROM master_issuer_rating mir
           JOIN master_agency mag ON mag.id = mir.agency_id
-          WHERE mir.issuer_id = master_issuer.id
+          WHERE mir.issuer_id = isin_re_issuance.isin_id
         ) AS credit_rating_info,
 
         (
           SELECT GROUP_CONCAT(DISTINCT mir.rating SEPARATOR ', ')
           FROM master_issuer_rating mir
-          WHERE mir.issuer_id = master_issuer.id
+          WHERE mir.issuer_id = isin_re_issuance.isin_id
         ) AS credit_rating,
 
         (
           SELECT GROUP_CONCAT(DISTINCT mag.short_name SEPARATOR ', ')
           FROM master_issuer_rating mir
           JOIN master_agency mag ON mag.id = mir.agency_id
-          WHERE mir.issuer_id = master_issuer.id
+          WHERE mir.issuer_id = isin_re_issuance.isin_id
         ) AS credit_rating_agency,
 
         (
@@ -11562,7 +11510,7 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
           FROM master_issuer_stock_exchange AS mise
           LEFT JOIN master_listing_status AS mls
             ON mls.code = mise.listing_status
-          WHERE mise.issuer_id = master_issuer.id
+          WHERE mise.issuer_id = isin_re_issuance.isin_id
             AND mise.listing_status IS NOT NULL
           ORDER BY mise.listing_status
           LIMIT 1
@@ -11571,7 +11519,7 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
         (
           SELECT mise.listing_status
           FROM master_issuer_stock_exchange AS mise
-          WHERE mise.issuer_id = master_issuer.id
+          WHERE mise.issuer_id = isin_re_issuance.isin_id
             AND mise.listing_status IS NOT NULL
           ORDER BY mise.listing_status
           LIMIT 1
@@ -11580,43 +11528,47 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
         (
           SELECT icd.coupon_rate
           FROM issuer_coupon_details icd
-          WHERE icd.issuer_id = master_issuer.id
+          WHERE icd.issuer_id = isin_re_issuance.isin_id
           ORDER BY icd.id
           LIMIT 1
         ) AS coupon_rate
 
-      FROM master_issuer
+      FROM isin_re_issuance
 
       LEFT JOIN issuer_details
-        ON issuer_details.id = master_issuer.issuer_master_id
+        ON issuer_details.id = isin_re_issuance.issuer_master_id
+
+      LEFT JOIN master_issuer 
+        ON master_issuer.id = isin_re_issuance.isin_id
 
       LEFT JOIN master_issuer_ownership_type
         ON master_issuer_ownership_type.code = master_issuer.issuer_ownership_type
+
 
       LEFT JOIN master_issuer_type_nature
         ON master_issuer_type_nature.code = master_issuer.nature_type
 
       LEFT JOIN master_business_sector
-        ON master_business_sector.code = master_issuer.business_sector
+        ON master_business_sector.code = isin_re_issuance.business_sector
 
       LEFT JOIN master_mode_issue
-        ON master_mode_issue.code = master_issuer.mode_issue
+        ON master_mode_issue.code = isin_re_issuance.mode_issue
 
       LEFT JOIN master_security_type
-        ON master_security_type.code = master_issuer.security_class
+        ON master_security_type.code = isin_re_issuance.security_class
 
       LEFT JOIN master_seniority_tier_classification
-        ON master_seniority_tier_classification.code = master_issuer.seniority
+        ON master_seniority_tier_classification.code = isin_re_issuance.seniority
 
       LEFT JOIN master_tax_free
-        ON master_tax_free.code = master_issuer.tax_free
+        ON master_tax_free.code = isin_re_issuance.tax_free
 
       LEFT JOIN master_secured_flag
-        ON master_secured_flag.code = master_issuer.secured_flag
+        ON master_secured_flag.code = isin_re_issuance.secured_flag
 
       ${whereClause}
 
-      ORDER BY master_issuer.allotment_date ASC
+      ORDER BY isin_re_issuance.allotment_date ASC
 
       LIMIT ? OFFSET ?
     `;
@@ -11624,34 +11576,38 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
     // ── Count query ──
     const countQuery = `
       SELECT COUNT(*) AS total
-      FROM master_issuer
+      FROM isin_re_issuance
 
       LEFT JOIN issuer_details
-        ON issuer_details.id = master_issuer.issuer_master_id
+        ON issuer_details.id = isin_re_issuance.issuer_master_id
+
+      LEFT JOIN master_issuer 
+        ON master_issuer.id = isin_re_issuance.isin_id
 
       LEFT JOIN master_issuer_ownership_type
         ON master_issuer_ownership_type.code = master_issuer.issuer_ownership_type
+
 
       LEFT JOIN master_issuer_type_nature
         ON master_issuer_type_nature.code = master_issuer.nature_type
 
       LEFT JOIN master_business_sector
-        ON master_business_sector.code = master_issuer.business_sector
+        ON master_business_sector.code = isin_re_issuance.business_sector
 
       LEFT JOIN master_mode_issue
-        ON master_mode_issue.code = master_issuer.mode_issue
+        ON master_mode_issue.code = isin_re_issuance.mode_issue
 
       LEFT JOIN master_security_type
-        ON master_security_type.code = master_issuer.security_class
+        ON master_security_type.code = isin_re_issuance.security_class
 
       LEFT JOIN master_seniority_tier_classification
-        ON master_seniority_tier_classification.code = master_issuer.seniority
+        ON master_seniority_tier_classification.code = isin_re_issuance.seniority
 
       LEFT JOIN master_tax_free
-        ON master_tax_free.code = master_issuer.tax_free
+        ON master_tax_free.code = isin_re_issuance.tax_free
 
       LEFT JOIN master_secured_flag
-        ON master_secured_flag.code = master_issuer.secured_flag
+        ON master_secured_flag.code = isin_re_issuance.secured_flag
 
       ${whereClause}
     `;
@@ -11913,22 +11869,24 @@ app.post('/rating_agencies_page_monthly_summary_data', async (req, res) => {
         SUM(fi.issue_size) AS actual_issue_size
       FROM (
         SELECT DISTINCT
-          mi.id,
+          mi.isin_id,
           mir.agency_id,
           mi.isin,
           mi.issue_size,
           mi.allotment_date
-        FROM master_issuer mi
+        FROM isin_re_issuance mi
         INNER JOIN master_issuer_rating mir
-          ON mir.issuer_id = mi.id
+          ON mir.issuer_id = mi.isin_id
         INNER JOIN master_agency mag
           ON mag.id = mir.agency_id
+        LEFT JOIN master_issuer 
+          ON master_issuer.id = mi.isin_id
         LEFT JOIN master_issuer_ownership_type miot
-          ON miot.code = mi.issuer_ownership_type
+          ON miot.code = master_issuer.issuer_ownership_type
         LEFT JOIN master_business_sector mbs
           ON mbs.code = mi.business_sector
         LEFT JOIN master_issuer_type_nature mint
-          ON mint.code = mi.nature_type
+          ON mint.code = master_issuer.nature_type
         LEFT JOIN master_security_type mst
           ON mst.code = mi.security_class
         LEFT JOIN master_mode_issue mmi
@@ -11938,7 +11896,7 @@ app.post('/rating_agencies_page_monthly_summary_data', async (req, res) => {
         LEFT JOIN master_tax_free mtf
           ON mtf.code = mi.tax_free
         LEFT JOIN master_issuer_stock_exchange mise
-          ON mise.issuer_id = mi.id
+          ON mise.issuer_id = mi.isin_id
         LEFT JOIN master_listing_status mls
           ON mls.code = mise.listing_status
         LEFT JOIN master_secured_flag msf
@@ -12264,7 +12222,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
     // =========================
     const baseJoins = `
       FROM all_months 
-      INNER JOIN master_issuer AS i
+      INNER JOIN isin_re_issuance AS i
         ON all_months.month_no = MONTH(i.allotment_date)
         AND i.allotment_date BETWEEN ? AND ?
       LEFT JOIN issuer_details AS id 
@@ -12590,7 +12548,7 @@ app.post('/rating_agency_top_participants_details', async (req, res) => {
                   LIMIT 1
               ) AS listing_status
 
-          FROM master_issuer i
+          FROM isin_re_issuance i
 
           LEFT JOIN issuer_details id
               ON i.issuer_master_id = id.id
@@ -12671,7 +12629,7 @@ app.post('/rating_agency_top_participants_details', async (req, res) => {
     // =========================
     const countQuery = `
       SELECT COUNT(DISTINCT i.isin) AS total
-      FROM master_issuer i
+      FROM isin_re_issuance i
 
       LEFT JOIN issuer_details id
           ON i.issuer_master_id = id.id
@@ -13000,9 +12958,9 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
     /* ── TOTALS (common filters only) ── */
     const totalIssueSizePromise = prisma.$queryRawUnsafe(`
         SELECT COALESCE(SUM(mi.issue_size), 0) AS aggregate
-        FROM master_issuer mi
+        FROM isin_re_issuance mi
         JOIN issuer_registrar ir
-          ON ir.issuer_id = mi.id
+          ON ir.issuer_id = mi.isin_id
         ${commonJoinsSql}
         WHERE mi.allotment_date BETWEEN ? AND ?
           AND mi.is_visible = 1
@@ -13017,9 +12975,9 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
 
     const totalIssueSizePrevYearPromise = prisma.$queryRawUnsafe(`
       SELECT COALESCE(SUM(mi.issue_size), 0) AS aggregate
-      FROM master_issuer mi
+      FROM isin_re_issuance mi
       JOIN issuer_registrar ir
-        ON ir.issuer_id = mi.id
+        ON ir.issuer_id = mi.isin_id
       ${commonJoinsSql}
       WHERE mi.allotment_date BETWEEN ? AND ?
         AND mi.is_visible = 1
@@ -13034,9 +12992,9 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
 
     const totalIssuesCountCurrYearPromise = prisma.$queryRawUnsafe(`
       SELECT COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS aggregate
-      FROM master_issuer mi
+      FROM isin_re_issuance mi
       JOIN issuer_registrar ir
-        ON ir.issuer_id = mi.id
+        ON ir.issuer_id = mi.isin_id
       ${commonJoinsSql}
       WHERE mi.allotment_date BETWEEN ? AND ?
         AND mi.is_visible = 1
@@ -13051,9 +13009,9 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
 
     const totalIssuesCountPrevYearPromise = prisma.$queryRawUnsafe(`
       SELECT COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS aggregate
-      FROM master_issuer mi
+      FROM isin_re_issuance mi
       JOIN issuer_registrar ir
-        ON ir.issuer_id = mi.id
+        ON ir.issuer_id = mi.isin_id
       ${commonJoinsSql}
       WHERE mi.allotment_date BETWEEN ? AND ?
         AND mi.is_visible = 1
@@ -13133,8 +13091,8 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
           RANK() OVER (
             ORDER BY SUM(mi.issue_size)DESC, COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC
           ) AS arr_rank
-        FROM master_issuer mi
-        JOIN issuer_registrar ir ON ir.issuer_id = mi.id
+        FROM isin_re_issuance mi
+        JOIN issuer_registrar ir ON ir.issuer_id = mi.isin_id
         JOIN master_registrar mr ON mr.id = ir.registrar_id
         ${t1t2Joins}
         WHERE mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1
@@ -13151,8 +13109,8 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
           RANK() OVER (
             ORDER BY SUM(mi.issue_size)DESC, COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC
           ) AS arr_rank
-        FROM master_issuer mi
-        JOIN issuer_registrar ir ON ir.issuer_id = mi.id
+        FROM isin_re_issuance mi
+        JOIN issuer_registrar ir ON ir.issuer_id = mi.isin_id
         JOIN master_registrar mr ON mr.id = ir.registrar_id
         ${t1t2Joins}
         WHERE mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1
@@ -13190,8 +13148,8 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
           RANK() OVER (
             ORDER BY SUM(mi.issue_size)DESC, COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC
           ) AS arr_rank
-        FROM master_issuer mi
-        JOIN issuer_registrar ir ON ir.issuer_id = mi.id
+        FROM isin_re_issuance mi
+        JOIN issuer_registrar ir ON ir.issuer_id = mi.isin_id
         JOIN master_registrar mr ON mr.id = ir.registrar_id
         ${t1t2Joins}
         WHERE mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1
@@ -13208,8 +13166,8 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
           RANK() OVER (
             ORDER BY SUM(mi.issue_size)DESC, COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC
           ) AS arr_rank
-        FROM master_issuer mi
-        JOIN issuer_registrar ir ON ir.issuer_id = mi.id
+        FROM isin_re_issuance mi
+        JOIN issuer_registrar ir ON ir.issuer_id = mi.isin_id
         JOIN master_registrar mr ON mr.id = ir.registrar_id
         ${t1t2Joins}
         WHERE mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1
@@ -13234,8 +13192,8 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
 
     const totalCountResult = await prisma.$queryRawUnsafe(`
       SELECT COUNT(DISTINCT ir.registrar_id) AS total
-      FROM master_issuer mi
-      JOIN issuer_registrar ir ON ir.issuer_id = mi.id
+      FROM isin_re_issuance mi
+      JOIN issuer_registrar ir ON ir.issuer_id = mi.isin_id
       ${countJoins}
       WHERE mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1
       ${countWhere}
@@ -13262,8 +13220,8 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
         RANK() OVER (
           ORDER BY SUM(mi.issue_size)DESC, COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC
         ) AS arr_rank
-      FROM master_issuer mi
-      JOIN issuer_registrar ir ON ir.issuer_id = mi.id
+      FROM isin_re_issuance mi
+      JOIN issuer_registrar ir ON ir.issuer_id = mi.isin_id
       JOIN master_registrar mr ON mr.id = ir.registrar_id
       ${rankJoins}
       WHERE mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1
@@ -13279,8 +13237,8 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
         RANK() OVER (
           ORDER BY SUM(mi.issue_size)DESC, COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC
         ) AS arr_rank
-      FROM master_issuer mi
-      JOIN issuer_registrar ir ON ir.issuer_id = mi.id
+      FROM isin_re_issuance mi
+      JOIN issuer_registrar ir ON ir.issuer_id = mi.isin_id
       JOIN master_registrar mr ON mr.id = ir.registrar_id
       ${rankJoins}
       WHERE mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1
@@ -13305,7 +13263,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
         ${sectorValueSelect} AS value
       FROM (${rankedRegistrarsSubQuery}) r
       JOIN issuer_registrar ir ON ir.registrar_id = r.registrar_id
-      JOIN master_issuer mi ON mi.id = ir.issuer_id
+      JOIN isin_re_issuance mi ON mi.isin_id = ir.issuer_id
       JOIN master_business_sector mbs ON mi.business_sector = mbs.code
       ${sectorJoins}
       WHERE mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1
@@ -13445,35 +13403,35 @@ app.post('/registrars_page_credit_rating_data', async (req, res) => {
     }
 
     if (seniority.length > 0) {
-      filterJoins.push(`LEFT JOIN master_seniority_tier_classification ON master_seniority_tier_classification.code = master_issuer.seniority`);
+      filterJoins.push(`LEFT JOIN master_seniority_tier_classification ON master_seniority_tier_classification.code = isin_re_issuance.seniority`);
       const placeholders = seniority.map(() => '?').join(', ');
       filterConditions.push(`master_seniority_tier_classification.description IN (${placeholders})`);
       filterParams.push(...seniority);
     }
 
     if (securedFlag.length > 0) {
-      filterJoins.push(`LEFT JOIN master_secured_flag ON master_secured_flag.code = master_issuer.secured_flag`);
+      filterJoins.push(`LEFT JOIN master_secured_flag ON master_secured_flag.code = isin_re_issuance.secured_flag`);
       const placeholders = securedFlag.map(() => '?').join(', ');
       filterConditions.push(`master_secured_flag.description IN (${placeholders})`);
       filterParams.push(...securedFlag);
     }
 
     if (businessSector.length > 0) {
-      filterJoins.push(`LEFT JOIN master_business_sector ON master_business_sector.code = master_issuer.business_sector`);
+      filterJoins.push(`LEFT JOIN master_business_sector ON master_business_sector.code = isin_re_issuance.business_sector`);
       const placeholders = businessSector.map(() => '?').join(', ');
       filterConditions.push(`master_business_sector.description IN (${placeholders})`);
       filterParams.push(...businessSector);
     }
 
     if (issuerNatureType.length > 0) {
-      filterJoins.push(`LEFT JOIN master_issuer_type_nature ON master_issuer_type_nature.code = master_issuer.nature_type`);
+      filterJoins.push(`LEFT JOIN master_issuer_type_nature ON master_issuer_type_nature.code = isin_re_issuance.nature_type`);
       const placeholders = issuerNatureType.map(() => '?').join(', ');
       filterConditions.push(`master_issuer_type_nature.description IN (${placeholders})`);
       filterParams.push(...issuerNatureType);
     }
 
     if (issuerOwnershipType.length > 0) {
-      filterJoins.push(`LEFT JOIN master_issuer_ownership_type ON master_issuer_ownership_type.code = master_issuer.issuer_ownership_type`);
+      filterJoins.push(`LEFT JOIN master_issuer_ownership_type ON master_issuer_ownership_type.code = isin_re_issuance.issuer_ownership_type`);
       const placeholders = issuerOwnershipType.map(() => '?').join(', ');
       filterConditions.push(`master_issuer_ownership_type.description IN (${placeholders})`);
       filterParams.push(...issuerOwnershipType);
@@ -13484,27 +13442,27 @@ app.post('/registrars_page_credit_rating_data', async (req, res) => {
       filterConditions.push(`EXISTS (
         SELECT 1 FROM master_issuer_stock_exchange mise
         JOIN master_listing_status mls ON mls.code = mise.listing_status
-        WHERE mise.issuer_id = master_issuer.id AND mls.description IN (${placeholders})
+        WHERE mise.issuer_id = isin_re_issuance.isin_id AND mls.description IN (${placeholders})
       )`);
       filterParams.push(...listingStatus);
     }
 
     if (securityType.length > 0) {
-      filterJoins.push(`LEFT JOIN master_security_type ON master_security_type.code = master_issuer.security_class`);
+      filterJoins.push(`LEFT JOIN master_security_type ON master_security_type.code = isin_re_issuance.security_class`);
       const placeholders = securityType.map(() => '?').join(', ');
       filterConditions.push(`master_security_type.description IN (${placeholders})`);
       filterParams.push(...securityType);
     }
 
     if (modeOfIssue.length > 0) {
-      filterJoins.push(`LEFT JOIN master_mode_issue ON master_mode_issue.code = master_issuer.mode_issue`);
+      filterJoins.push(`LEFT JOIN master_mode_issue ON master_mode_issue.code = isin_re_issuance.mode_issue`);
       const placeholders = modeOfIssue.map(() => '?').join(', ');
       filterConditions.push(`master_mode_issue.description IN (${placeholders})`);
       filterParams.push(...modeOfIssue);
     }
 
     if (isin) {
-      filterConditions.push(`master_issuer.isin LIKE ?`);
+      filterConditions.push(`isin_re_issuance.isin LIKE ?`);
       filterParams.push(`%${isin}%`);
     }
 
@@ -13525,12 +13483,12 @@ app.post('/registrars_page_credit_rating_data', async (req, res) => {
     const totalQuery = `
       SELECT COUNT(*) AS aggregate
       FROM master_issuer_rating
-      INNER JOIN master_issuer
-        ON master_issuer.id = master_issuer_rating.issuer_id
+      INNER JOIN isin_re_issuance
+        ON isin_re_issuance.isin_id = master_issuer_rating.issuer_id
       INNER JOIN issuer_registrar
-        ON issuer_registrar.issuer_id = master_issuer.id
+        ON issuer_registrar.issuer_id = isin_re_issuance.isin_id
       ${joinsSql}
-      WHERE master_issuer.allotment_date BETWEEN ? AND ? AND master_issuer.is_visible = 1
+      WHERE isin_re_issuance.allotment_date BETWEEN ? AND ? AND isin_re_issuance.is_visible = 1
       ${conditionsSql}
     `;
 
@@ -13583,15 +13541,15 @@ app.post('/registrars_page_credit_rating_data', async (req, res) => {
       INNER JOIN master_issuer_rating
         ON master_issuer_rating.agency_id = master_agency.id
 
-      LEFT JOIN master_issuer
-        ON master_issuer.id = master_issuer_rating.issuer_id
+      LEFT JOIN isin_re_issuance
+        ON isin_re_issuance.isin_id = master_issuer_rating.issuer_id
 
       INNER JOIN issuer_registrar
-        ON issuer_registrar.issuer_id = master_issuer.id
+        ON issuer_registrar.issuer_id = isin_re_issuance.isin_id
 
       ${joinsSql}
 
-      WHERE master_issuer.allotment_date BETWEEN ? AND ? AND master_issuer.is_visible = 1
+      WHERE isin_re_issuance.allotment_date BETWEEN ? AND ? AND isin_re_issuance.is_visible = 1
 
       ${conditionsSql}
 
@@ -13703,14 +13661,14 @@ app.post('/registrarPage_detailed_data', async (req, res) => {
     const conditions = [];
     const params = [];
 
-    conditions.push(`master_issuer.allotment_date BETWEEN ? AND ? AND master_issuer.is_visible = 1`);
+    conditions.push(`isin_re_issuance.allotment_date BETWEEN ? AND ? AND isin_re_issuance.is_visible = 1`);
     params.push(cyStart, cyEnd);
 
     conditions.push(`
       EXISTS (
         SELECT 1
         FROM issuer_registrar ir
-        WHERE ir.issuer_id = master_issuer.id
+        WHERE ir.issuer_id = isin_re_issuance.isin_id
       )
     `);
 
@@ -13718,7 +13676,7 @@ app.post('/registrarPage_detailed_data', async (req, res) => {
     if (search) {
       conditions.push(`(
         issuer_details.issuer_name LIKE ? 
-        OR master_issuer.isin LIKE ?
+        OR isin_re_issuance.isin LIKE ?
       )`);
       params.push(`%${search}%`, `%${search}%`);
     }
@@ -13812,13 +13770,13 @@ app.post('/registrarPage_detailed_data', async (req, res) => {
     // ── MAIN DATA QUERY (GROUP BY to prevent Cartesian product) ──
     const dataQuery = `
       SELECT
-        master_issuer.id,
-        master_issuer.isin,
-        master_issuer.security_name,
-        master_issuer.issue_size,
-        master_issuer.face_value,
-        master_issuer.allotment_date,
-        master_issuer.maturity_date,
+        isin_re_issuance.isin_id,
+        isin_re_issuance.isin,
+        isin_re_issuance.security_name,
+        isin_re_issuance.issue_size,
+        isin_re_issuance.face_value,
+        isin_re_issuance.allotment_date,
+        isin_re_issuance.maturity_date,
         MIN(master_trustee.short_name) AS debenture_trustee,
         MIN(master_arranger.short_name) AS Arranger,
         MIN(master_issuer_ownership_type.description) AS ownership_type,
@@ -13837,7 +13795,7 @@ app.post('/registrarPage_detailed_data', async (req, res) => {
         MIN(master_tax_free.description) AS tax_free,
         MIN(master_secured_flag.description) AS secured_flag
 
-      FROM master_issuer
+      FROM isin_re_issuance
 
       LEFT JOIN (
         SELECT
@@ -13850,19 +13808,22 @@ app.post('/registrarPage_detailed_data', async (req, res) => {
         WHERE mise.listing_status IS NOT NULL
         GROUP BY mise.issuer_id
       ) AS listing_data
-        ON listing_data.issuer_id = master_issuer.id
+        ON listing_data.issuer_id = isin_re_issuance.isin_id
 
       LEFT JOIN issuer_trustee
-        ON issuer_trustee.issuer_id = master_issuer.id
+        ON issuer_trustee.issuer_id = isin_re_issuance.isin_id
 
       LEFT JOIN master_trustee
         ON master_trustee.id = issuer_trustee.trustee_id
 
       LEFT JOIN issuer_arranger
-        ON issuer_arranger.issuer_id = master_issuer.id
+        ON issuer_arranger.issuer_id = isin_re_issuance.isin_id
 
       LEFT JOIN master_arranger
         ON master_arranger.id = issuer_arranger.arranger_id
+
+      LEFT JOIN master_issuer 
+        ON master_issuer.id = isin_re_issuance.isin_id
 
       LEFT JOIN master_issuer_ownership_type
         ON master_issuer_ownership_type.code = master_issuer.issuer_ownership_type
@@ -13871,55 +13832,55 @@ app.post('/registrarPage_detailed_data', async (req, res) => {
         ON master_issuer_type_nature.code = master_issuer.nature_type
 
       LEFT JOIN master_business_sector
-        ON master_business_sector.code = master_issuer.business_sector
+        ON master_business_sector.code = isin_re_issuance.business_sector
 
       LEFT JOIN issuer_details
-        ON issuer_details.id = master_issuer.issuer_master_id
+        ON issuer_details.id = isin_re_issuance.issuer_master_id
 
       LEFT JOIN master_mode_issue
-        ON master_mode_issue.code = master_issuer.mode_issue
+        ON master_mode_issue.code = isin_re_issuance.mode_issue
 
       LEFT JOIN master_security_type
-        ON master_security_type.code = master_issuer.security_class
+        ON master_security_type.code = isin_re_issuance.security_class
 
       LEFT JOIN issuer_coupon_details
         ON issuer_coupon_details.issuer_id = issuer_details.id
 
       LEFT JOIN master_issuer_rating
-        ON master_issuer_rating.issuer_id = master_issuer.id
+        ON master_issuer_rating.issuer_id = isin_re_issuance.isin_id
 
       LEFT JOIN master_agency
         ON master_agency.id = master_issuer_rating.agency_id
 
       LEFT JOIN issuer_registrar
-        ON issuer_registrar.issuer_id = master_issuer.id
+        ON issuer_registrar.issuer_id = isin_re_issuance.isin_id
 
       LEFT JOIN master_registrar
         ON master_registrar.id = issuer_registrar.registrar_id
 
       LEFT JOIN master_seniority_tier_classification
-        ON master_seniority_tier_classification.code = master_issuer.seniority
+        ON master_seniority_tier_classification.code = isin_re_issuance.seniority
 
       LEFT JOIN master_tax_free
-        ON master_tax_free.code = master_issuer.tax_free
+        ON master_tax_free.code = isin_re_issuance.tax_free
 
       LEFT JOIN master_secured_flag
-        ON master_secured_flag.code = master_issuer.secured_flag
+        ON master_secured_flag.code = isin_re_issuance.secured_flag
 
       ${whereClause}
 
-      GROUP BY master_issuer.id
+      GROUP BY isin_re_issuance.isin_id
 
-      ORDER BY master_issuer.allotment_date ASC
+      ORDER BY isin_re_issuance.allotment_date ASC
 
       LIMIT ? OFFSET ?
     `;
 
     // ── COUNT QUERY ──
     const countQuery = `
-      SELECT COUNT(DISTINCT master_issuer.id) AS total
+      SELECT COUNT(DISTINCT isin_re_issuance.isin_id) AS total
 
-      FROM master_issuer
+      FROM isin_re_issuance
 
       LEFT JOIN (
         SELECT
@@ -13932,58 +13893,61 @@ app.post('/registrarPage_detailed_data', async (req, res) => {
         WHERE mise.listing_status IS NOT NULL
         GROUP BY mise.issuer_id
       ) AS listing_data
-        ON listing_data.issuer_id = master_issuer.id
+        ON listing_data.issuer_id = isin_re_issuance.isin_id
 
       LEFT JOIN issuer_trustee
-        ON issuer_trustee.issuer_id = master_issuer.id
+        ON issuer_trustee.issuer_id = isin_re_issuance.isin_id
 
       LEFT JOIN master_trustee
         ON master_trustee.id = issuer_trustee.trustee_id
 
       LEFT JOIN issuer_arranger
-        ON issuer_arranger.issuer_id = master_issuer.id
+        ON issuer_arranger.issuer_id = isin_re_issuance.isin_id
 
       LEFT JOIN master_arranger
         ON master_arranger.id = issuer_arranger.arranger_id
 
+      LEFT JOIN master_issuer 
+        ON master_issuer.id = isin_re_issuance.isin_id
+
       LEFT JOIN master_issuer_ownership_type
         ON master_issuer_ownership_type.code = master_issuer.issuer_ownership_type
-
-      LEFT JOIN master_issuer_type_nature
+        
+        LEFT JOIN master_issuer_type_nature
         ON master_issuer_type_nature.code = master_issuer.nature_type
 
       LEFT JOIN master_business_sector
-        ON master_business_sector.code = master_issuer.business_sector
+        ON master_business_sector.code = isin_re_issuance.business_sector
 
       LEFT JOIN issuer_details
-        ON issuer_details.id = master_issuer.issuer_master_id
+        ON issuer_details.id = isin_re_issuance.issuer_master_id
 
       LEFT JOIN master_mode_issue
-        ON master_mode_issue.code = master_issuer.mode_issue
+        ON master_mode_issue.code = isin_re_issuance.mode_issue
 
       LEFT JOIN master_security_type
-        ON master_security_type.code = master_issuer.security_class
+        ON master_security_type.code = isin_re_issuance.security_class
 
       LEFT JOIN master_issuer_rating
-        ON master_issuer_rating.issuer_id = master_issuer.id
+        ON master_issuer_rating.issuer_id = isin_re_issuance.isin_id
 
       LEFT JOIN master_agency
         ON master_agency.id = master_issuer_rating.agency_id
 
       LEFT JOIN issuer_registrar
-        ON issuer_registrar.issuer_id = master_issuer.id
+        ON issuer_registrar.issuer_id = isin_re_issuance.isin_id
 
       LEFT JOIN master_registrar
         ON master_registrar.id = issuer_registrar.registrar_id
 
       LEFT JOIN master_seniority_tier_classification
-        ON master_seniority_tier_classification.code = master_issuer.seniority
+        ON master_seniority_tier_classification.code = isin_re_issuance.seniority
 
       LEFT JOIN master_tax_free
-        ON master_tax_free.code = master_issuer.tax_free
+        ON master_tax_free.code = isin_re_issuance.tax_free
 
       LEFT JOIN master_secured_flag
-        ON master_secured_flag.code = master_issuer.secured_flag
+        ON master_secured_flag.code = isin_re_issuance.secured_flag
 
       ${whereClause}
     `;
@@ -14235,26 +14199,28 @@ app.post('/registrar_page_monthly_summary_data', async (req, res) => {
         SUM(fi.issue_size) AS actual_issue_size
       FROM (
         SELECT DISTINCT
-          mi.id,
+          mi.isin_id,
           ir.registrar_id,
           mi.isin,
           mi.issue_size,
           mi.allotment_date
-        FROM master_issuer mi
+        FROM isin_re_issuance mi
         INNER JOIN issuer_registrar ir
-          ON ir.issuer_id = mi.id
+          ON ir.issuer_id = mi.isin_id
         INNER JOIN master_registrar registrar_master
           ON registrar_master.id = ir.registrar_id
+        LEFT JOIN master_issuer 
+          ON master_issuer.id = mi.isin_id
         LEFT JOIN master_issuer_ownership_type miot
-          ON miot.code = mi.issuer_ownership_type
+          ON miot.code = master_issuer.issuer_ownership_type
         LEFT JOIN master_business_sector mbs
           ON mbs.code = mi.business_sector
         LEFT JOIN master_issuer_type_nature mint
-          ON mint.code = mi.nature_type
+          ON mint.code = master_issuer.nature_type
         LEFT JOIN master_security_type mst
           ON mst.code = mi.security_class
         LEFT JOIN master_issuer_rating mir
-          ON mir.issuer_id = mi.id
+          ON mir.issuer_id = mi.isin_id
         LEFT JOIN master_agency rating_agency
           ON rating_agency.id = mir.agency_id
           AND rating_agency.parent_id = 0
@@ -14265,7 +14231,7 @@ app.post('/registrar_page_monthly_summary_data', async (req, res) => {
         LEFT JOIN master_tax_free mtf
           ON mtf.code = mi.tax_free
         LEFT JOIN master_issuer_stock_exchange mise
-          ON mise.issuer_id = mi.id
+          ON mise.issuer_id = mi.isin_id
         LEFT JOIN master_listing_status mls
           ON mls.code = mise.listing_status
         LEFT JOIN master_secured_flag msf
@@ -14667,7 +14633,7 @@ app.post('/registrars_page_monthly_detailed_data', async (req, res) => {
 
           i.issuer_master_id
 
-      FROM master_issuer AS i
+      FROM isin_re_issuance AS i
 
       LEFT JOIN issuer_details AS id
           ON i.issuer_master_id = id.id
@@ -14730,7 +14696,7 @@ app.post('/registrars_page_monthly_detailed_data', async (req, res) => {
       SELECT COUNT(*) AS total
       FROM (
         SELECT DISTINCT i.id, i.isin
-        FROM master_issuer AS i
+        FROM isin_re_issuance AS i
 
         LEFT JOIN issuer_details AS id
             ON i.issuer_master_id = id.id
@@ -15009,7 +14975,7 @@ app.post('/registrar_top_participants_details', async (req, res) => {
               )) AS listing_status,
               MIN(i.issuer_master_id) AS issuer_master_id
 
-          FROM master_issuer i
+          FROM isin_re_issuance i
 
           LEFT JOIN issuer_details id
               ON i.issuer_master_id = id.id
@@ -15077,7 +15043,7 @@ app.post('/registrar_top_participants_details', async (req, res) => {
       SELECT COUNT(DISTINCT t.issuer_master_id, t.allotment_date) AS total
       FROM (
           SELECT i.issuer_master_id, i.allotment_date
-          FROM master_issuer i
+          FROM isin_re_issuance i
 
           LEFT JOIN issuer_details id
               ON i.issuer_master_id = id.id

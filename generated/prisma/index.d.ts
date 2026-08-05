@@ -74,11 +74,6 @@ export type issuer_redemption_details = $Result.DefaultSelection<Prisma.$issuer_
  */
 export type issuer_tenure_details = $Result.DefaultSelection<Prisma.$issuer_tenure_detailsPayload>
 /**
- * Model issuers
- * 
- */
-export type issuers = $Result.DefaultSelection<Prisma.$issuersPayload>
-/**
  * Model job_batches
  * 
  */
@@ -338,6 +333,21 @@ export type user_enquiry = $Result.DefaultSelection<Prisma.$user_enquiryPayload>
  * This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
  */
 export type users = $Result.DefaultSelection<Prisma.$usersPayload>
+/**
+ * Model isin_re_issuance
+ * 
+ */
+export type isin_re_issuance = $Result.DefaultSelection<Prisma.$isin_re_issuancePayload>
+/**
+ * Model isin_re_issuance_details
+ * 
+ */
+export type isin_re_issuance_details = $Result.DefaultSelection<Prisma.$isin_re_issuance_detailsPayload>
+/**
+ * Model isin_records
+ * 
+ */
+export type isin_records = $Result.DefaultSelection<Prisma.$isin_recordsPayload>
 
 /**
  * Enums
@@ -350,11 +360,35 @@ export namespace $Enums {
 
 export type users_user_type = (typeof users_user_type)[keyof typeof users_user_type]
 
+
+export const isin_re_issuance_details_type_of_book_bidding: {
+  open: 'open',
+  closed: 'closed'
+};
+
+export type isin_re_issuance_details_type_of_book_bidding = (typeof isin_re_issuance_details_type_of_book_bidding)[keyof typeof isin_re_issuance_details_type_of_book_bidding]
+
+
+export const isin_re_issuance_details_secured_unsecured: {
+  secured: 'secured',
+  unsecured: 'unsecured'
+};
+
+export type isin_re_issuance_details_secured_unsecured = (typeof isin_re_issuance_details_secured_unsecured)[keyof typeof isin_re_issuance_details_secured_unsecured]
+
 }
 
 export type users_user_type = $Enums.users_user_type
 
 export const users_user_type: typeof $Enums.users_user_type
+
+export type isin_re_issuance_details_type_of_book_bidding = $Enums.isin_re_issuance_details_type_of_book_bidding
+
+export const isin_re_issuance_details_type_of_book_bidding: typeof $Enums.isin_re_issuance_details_type_of_book_bidding
+
+export type isin_re_issuance_details_secured_unsecured = $Enums.isin_re_issuance_details_secured_unsecured
+
+export const isin_re_issuance_details_secured_unsecured: typeof $Enums.isin_re_issuance_details_secured_unsecured
 
 /**
  * ##  Prisma Client ʲˢ
@@ -600,16 +634,6 @@ export class PrismaClient<
     * ```
     */
   get issuer_tenure_details(): Prisma.issuer_tenure_detailsDelegate<ExtArgs, ClientOptions>;
-
-  /**
-   * `prisma.issuers`: Exposes CRUD operations for the **issuers** model.
-    * Example usage:
-    * ```ts
-    * // Fetch zero or more Issuers
-    * const issuers = await prisma.issuers.findMany()
-    * ```
-    */
-  get issuers(): Prisma.issuersDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.job_batches`: Exposes CRUD operations for the **job_batches** model.
@@ -1130,6 +1154,36 @@ export class PrismaClient<
     * ```
     */
   get users(): Prisma.usersDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.isin_re_issuance`: Exposes CRUD operations for the **isin_re_issuance** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Isin_re_issuances
+    * const isin_re_issuances = await prisma.isin_re_issuance.findMany()
+    * ```
+    */
+  get isin_re_issuance(): Prisma.isin_re_issuanceDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.isin_re_issuance_details`: Exposes CRUD operations for the **isin_re_issuance_details** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Isin_re_issuance_details
+    * const isin_re_issuance_details = await prisma.isin_re_issuance_details.findMany()
+    * ```
+    */
+  get isin_re_issuance_details(): Prisma.isin_re_issuance_detailsDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.isin_records`: Exposes CRUD operations for the **isin_records** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Isin_records
+    * const isin_records = await prisma.isin_records.findMany()
+    * ```
+    */
+  get isin_records(): Prisma.isin_recordsDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -1582,7 +1636,6 @@ export namespace Prisma {
     issuer_details: 'issuer_details',
     issuer_redemption_details: 'issuer_redemption_details',
     issuer_tenure_details: 'issuer_tenure_details',
-    issuers: 'issuers',
     job_batches: 'job_batches',
     jobs: 'jobs',
     master_agency: 'master_agency',
@@ -1634,7 +1687,10 @@ export namespace Prisma {
     redis_iro_cron_table: 'redis_iro_cron_table',
     sessions: 'sessions',
     user_enquiry: 'user_enquiry',
-    users: 'users'
+    users: 'users',
+    isin_re_issuance: 'isin_re_issuance',
+    isin_re_issuance_details: 'isin_re_issuance_details',
+    isin_records: 'isin_records'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -1653,7 +1709,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "admin_setting" | "all_months" | "cache" | "cache_locks" | "cron_status" | "daily_issuer_cron_table" | "failed_jobs" | "incorporatedate_cron" | "issuer_coupon_details" | "issuer_details" | "issuer_redemption_details" | "issuer_tenure_details" | "issuers" | "job_batches" | "jobs" | "master_agency" | "master_arranger" | "master_booking_basis" | "master_businees_sector_v1" | "master_business_sector" | "master_call_option_details" | "master_contact" | "master_convertible_type_a" | "master_convertible_type_b" | "master_coupon_basis" | "master_coupon_type" | "master_cra" | "master_cra_status" | "master_credit_rating_watch" | "master_day_count" | "master_depository_indicator" | "master_exchange_bp_id" | "master_frequency" | "master_guaranteed_type" | "master_interest_type" | "master_issuer" | "master_issuer_additional" | "master_issuer_daily" | "master_issuer_ownership_type" | "master_issuer_rating" | "master_issuer_stock_exchange" | "master_issuer_type_nature" | "master_issuer_type_roles" | "master_law_firm" | "master_listing_status" | "master_mode_issue" | "master_perpetual_nature_indicator" | "master_put_option_details" | "master_redemption_type" | "master_registrar" | "master_secured_flag" | "master_security_status" | "master_security_type" | "master_seniority_tier_classification" | "master_step_up_down_coupon_basis" | "master_tax_free" | "master_trustee" | "migrations" | "password_reset_tokens" | "personal_access_tokens" | "redis_cron_table" | "redis_iro_cron_table" | "sessions" | "user_enquiry" | "users"
+      modelProps: "admin_setting" | "all_months" | "cache" | "cache_locks" | "cron_status" | "daily_issuer_cron_table" | "failed_jobs" | "incorporatedate_cron" | "issuer_coupon_details" | "issuer_details" | "issuer_redemption_details" | "issuer_tenure_details" | "job_batches" | "jobs" | "master_agency" | "master_arranger" | "master_booking_basis" | "master_businees_sector_v1" | "master_business_sector" | "master_call_option_details" | "master_contact" | "master_convertible_type_a" | "master_convertible_type_b" | "master_coupon_basis" | "master_coupon_type" | "master_cra" | "master_cra_status" | "master_credit_rating_watch" | "master_day_count" | "master_depository_indicator" | "master_exchange_bp_id" | "master_frequency" | "master_guaranteed_type" | "master_interest_type" | "master_issuer" | "master_issuer_additional" | "master_issuer_daily" | "master_issuer_ownership_type" | "master_issuer_rating" | "master_issuer_stock_exchange" | "master_issuer_type_nature" | "master_issuer_type_roles" | "master_law_firm" | "master_listing_status" | "master_mode_issue" | "master_perpetual_nature_indicator" | "master_put_option_details" | "master_redemption_type" | "master_registrar" | "master_secured_flag" | "master_security_status" | "master_security_type" | "master_seniority_tier_classification" | "master_step_up_down_coupon_basis" | "master_tax_free" | "master_trustee" | "migrations" | "password_reset_tokens" | "personal_access_tokens" | "redis_cron_table" | "redis_iro_cron_table" | "sessions" | "user_enquiry" | "users" | "isin_re_issuance" | "isin_re_issuance_details" | "isin_records"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -2446,72 +2502,6 @@ export namespace Prisma {
           count: {
             args: Prisma.issuer_tenure_detailsCountArgs<ExtArgs>
             result: $Utils.Optional<Issuer_tenure_detailsCountAggregateOutputType> | number
-          }
-        }
-      }
-      issuers: {
-        payload: Prisma.$issuersPayload<ExtArgs>
-        fields: Prisma.issuersFieldRefs
-        operations: {
-          findUnique: {
-            args: Prisma.issuersFindUniqueArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$issuersPayload> | null
-          }
-          findUniqueOrThrow: {
-            args: Prisma.issuersFindUniqueOrThrowArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$issuersPayload>
-          }
-          findFirst: {
-            args: Prisma.issuersFindFirstArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$issuersPayload> | null
-          }
-          findFirstOrThrow: {
-            args: Prisma.issuersFindFirstOrThrowArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$issuersPayload>
-          }
-          findMany: {
-            args: Prisma.issuersFindManyArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$issuersPayload>[]
-          }
-          create: {
-            args: Prisma.issuersCreateArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$issuersPayload>
-          }
-          createMany: {
-            args: Prisma.issuersCreateManyArgs<ExtArgs>
-            result: BatchPayload
-          }
-          delete: {
-            args: Prisma.issuersDeleteArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$issuersPayload>
-          }
-          update: {
-            args: Prisma.issuersUpdateArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$issuersPayload>
-          }
-          deleteMany: {
-            args: Prisma.issuersDeleteManyArgs<ExtArgs>
-            result: BatchPayload
-          }
-          updateMany: {
-            args: Prisma.issuersUpdateManyArgs<ExtArgs>
-            result: BatchPayload
-          }
-          upsert: {
-            args: Prisma.issuersUpsertArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$issuersPayload>
-          }
-          aggregate: {
-            args: Prisma.IssuersAggregateArgs<ExtArgs>
-            result: $Utils.Optional<AggregateIssuers>
-          }
-          groupBy: {
-            args: Prisma.issuersGroupByArgs<ExtArgs>
-            result: $Utils.Optional<IssuersGroupByOutputType>[]
-          }
-          count: {
-            args: Prisma.issuersCountArgs<ExtArgs>
-            result: $Utils.Optional<IssuersCountAggregateOutputType> | number
           }
         }
       }
@@ -5947,6 +5937,204 @@ export namespace Prisma {
           }
         }
       }
+      isin_re_issuance: {
+        payload: Prisma.$isin_re_issuancePayload<ExtArgs>
+        fields: Prisma.isin_re_issuanceFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.isin_re_issuanceFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$isin_re_issuancePayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.isin_re_issuanceFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$isin_re_issuancePayload>
+          }
+          findFirst: {
+            args: Prisma.isin_re_issuanceFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$isin_re_issuancePayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.isin_re_issuanceFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$isin_re_issuancePayload>
+          }
+          findMany: {
+            args: Prisma.isin_re_issuanceFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$isin_re_issuancePayload>[]
+          }
+          create: {
+            args: Prisma.isin_re_issuanceCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$isin_re_issuancePayload>
+          }
+          createMany: {
+            args: Prisma.isin_re_issuanceCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.isin_re_issuanceDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$isin_re_issuancePayload>
+          }
+          update: {
+            args: Prisma.isin_re_issuanceUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$isin_re_issuancePayload>
+          }
+          deleteMany: {
+            args: Prisma.isin_re_issuanceDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.isin_re_issuanceUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.isin_re_issuanceUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$isin_re_issuancePayload>
+          }
+          aggregate: {
+            args: Prisma.Isin_re_issuanceAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateIsin_re_issuance>
+          }
+          groupBy: {
+            args: Prisma.isin_re_issuanceGroupByArgs<ExtArgs>
+            result: $Utils.Optional<Isin_re_issuanceGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.isin_re_issuanceCountArgs<ExtArgs>
+            result: $Utils.Optional<Isin_re_issuanceCountAggregateOutputType> | number
+          }
+        }
+      }
+      isin_re_issuance_details: {
+        payload: Prisma.$isin_re_issuance_detailsPayload<ExtArgs>
+        fields: Prisma.isin_re_issuance_detailsFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.isin_re_issuance_detailsFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$isin_re_issuance_detailsPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.isin_re_issuance_detailsFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$isin_re_issuance_detailsPayload>
+          }
+          findFirst: {
+            args: Prisma.isin_re_issuance_detailsFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$isin_re_issuance_detailsPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.isin_re_issuance_detailsFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$isin_re_issuance_detailsPayload>
+          }
+          findMany: {
+            args: Prisma.isin_re_issuance_detailsFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$isin_re_issuance_detailsPayload>[]
+          }
+          create: {
+            args: Prisma.isin_re_issuance_detailsCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$isin_re_issuance_detailsPayload>
+          }
+          createMany: {
+            args: Prisma.isin_re_issuance_detailsCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.isin_re_issuance_detailsDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$isin_re_issuance_detailsPayload>
+          }
+          update: {
+            args: Prisma.isin_re_issuance_detailsUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$isin_re_issuance_detailsPayload>
+          }
+          deleteMany: {
+            args: Prisma.isin_re_issuance_detailsDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.isin_re_issuance_detailsUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.isin_re_issuance_detailsUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$isin_re_issuance_detailsPayload>
+          }
+          aggregate: {
+            args: Prisma.Isin_re_issuance_detailsAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateIsin_re_issuance_details>
+          }
+          groupBy: {
+            args: Prisma.isin_re_issuance_detailsGroupByArgs<ExtArgs>
+            result: $Utils.Optional<Isin_re_issuance_detailsGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.isin_re_issuance_detailsCountArgs<ExtArgs>
+            result: $Utils.Optional<Isin_re_issuance_detailsCountAggregateOutputType> | number
+          }
+        }
+      }
+      isin_records: {
+        payload: Prisma.$isin_recordsPayload<ExtArgs>
+        fields: Prisma.isin_recordsFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.isin_recordsFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$isin_recordsPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.isin_recordsFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$isin_recordsPayload>
+          }
+          findFirst: {
+            args: Prisma.isin_recordsFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$isin_recordsPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.isin_recordsFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$isin_recordsPayload>
+          }
+          findMany: {
+            args: Prisma.isin_recordsFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$isin_recordsPayload>[]
+          }
+          create: {
+            args: Prisma.isin_recordsCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$isin_recordsPayload>
+          }
+          createMany: {
+            args: Prisma.isin_recordsCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.isin_recordsDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$isin_recordsPayload>
+          }
+          update: {
+            args: Prisma.isin_recordsUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$isin_recordsPayload>
+          }
+          deleteMany: {
+            args: Prisma.isin_recordsDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.isin_recordsUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.isin_recordsUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$isin_recordsPayload>
+          }
+          aggregate: {
+            args: Prisma.Isin_recordsAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateIsin_records>
+          }
+          groupBy: {
+            args: Prisma.isin_recordsGroupByArgs<ExtArgs>
+            result: $Utils.Optional<Isin_recordsGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.isin_recordsCountArgs<ExtArgs>
+            result: $Utils.Optional<Isin_recordsCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -6043,7 +6231,6 @@ export namespace Prisma {
     issuer_details?: issuer_detailsOmit
     issuer_redemption_details?: issuer_redemption_detailsOmit
     issuer_tenure_details?: issuer_tenure_detailsOmit
-    issuers?: issuersOmit
     job_batches?: job_batchesOmit
     jobs?: jobsOmit
     master_agency?: master_agencyOmit
@@ -6096,6 +6283,9 @@ export namespace Prisma {
     sessions?: sessionsOmit
     user_enquiry?: user_enquiryOmit
     users?: usersOmit
+    isin_re_issuance?: isin_re_issuanceOmit
+    isin_re_issuance_details?: isin_re_issuance_detailsOmit
+    isin_records?: isin_recordsOmit
   }
 
   /* Types for Logging */
@@ -6184,36 +6374,6 @@ export namespace Prisma {
    * Count Types
    */
 
-
-  /**
-   * Count Type Issuer_detailsCountOutputType
-   */
-
-  export type Issuer_detailsCountOutputType = {
-    master_issuers: number
-  }
-
-  export type Issuer_detailsCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    master_issuers?: boolean | Issuer_detailsCountOutputTypeCountMaster_issuersArgs
-  }
-
-  // Custom InputTypes
-  /**
-   * Issuer_detailsCountOutputType without action
-   */
-  export type Issuer_detailsCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the Issuer_detailsCountOutputType
-     */
-    select?: Issuer_detailsCountOutputTypeSelect<ExtArgs> | null
-  }
-
-  /**
-   * Issuer_detailsCountOutputType without action
-   */
-  export type Issuer_detailsCountOutputTypeCountMaster_issuersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: master_issuerWhereInput
-  }
 
 
   /**
@@ -14757,8 +14917,6 @@ export namespace Prisma {
     is_deleted?: boolean
     created_at?: boolean
     updated_at?: boolean
-    master_issuers?: boolean | issuer_details$master_issuersArgs<ExtArgs>
-    _count?: boolean | Issuer_detailsCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["issuer_details"]>
 
 
@@ -14777,16 +14935,10 @@ export namespace Prisma {
   }
 
   export type issuer_detailsOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "issuer_name" | "issuer_former_name" | "parent_id" | "created_by" | "updated_by" | "is_active" | "is_deleted" | "created_at" | "updated_at", ExtArgs["result"]["issuer_details"]>
-  export type issuer_detailsInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    master_issuers?: boolean | issuer_details$master_issuersArgs<ExtArgs>
-    _count?: boolean | Issuer_detailsCountOutputTypeDefaultArgs<ExtArgs>
-  }
 
   export type $issuer_detailsPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "issuer_details"
-    objects: {
-      master_issuers: Prisma.$master_issuerPayload<ExtArgs>[]
-    }
+    objects: {}
     scalars: $Extensions.GetPayloadResult<{
       id: bigint
       issuer_name: string | null
@@ -15138,7 +15290,6 @@ export namespace Prisma {
    */
   export interface Prisma__issuer_detailsClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
-    master_issuers<T extends issuer_details$master_issuersArgs<ExtArgs> = {}>(args?: Subset<T, issuer_details$master_issuersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$master_issuerPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -15195,10 +15346,6 @@ export namespace Prisma {
      */
     omit?: issuer_detailsOmit<ExtArgs> | null
     /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: issuer_detailsInclude<ExtArgs> | null
-    /**
      * Filter, which issuer_details to fetch.
      */
     where: issuer_detailsWhereUniqueInput
@@ -15217,10 +15364,6 @@ export namespace Prisma {
      */
     omit?: issuer_detailsOmit<ExtArgs> | null
     /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: issuer_detailsInclude<ExtArgs> | null
-    /**
      * Filter, which issuer_details to fetch.
      */
     where: issuer_detailsWhereUniqueInput
@@ -15238,10 +15381,6 @@ export namespace Prisma {
      * Omit specific fields from the issuer_details
      */
     omit?: issuer_detailsOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: issuer_detailsInclude<ExtArgs> | null
     /**
      * Filter, which issuer_details to fetch.
      */
@@ -15291,10 +15430,6 @@ export namespace Prisma {
      */
     omit?: issuer_detailsOmit<ExtArgs> | null
     /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: issuer_detailsInclude<ExtArgs> | null
-    /**
      * Filter, which issuer_details to fetch.
      */
     where?: issuer_detailsWhereInput
@@ -15343,10 +15478,6 @@ export namespace Prisma {
      */
     omit?: issuer_detailsOmit<ExtArgs> | null
     /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: issuer_detailsInclude<ExtArgs> | null
-    /**
      * Filter, which issuer_details to fetch.
      */
     where?: issuer_detailsWhereInput
@@ -15390,10 +15521,6 @@ export namespace Prisma {
      */
     omit?: issuer_detailsOmit<ExtArgs> | null
     /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: issuer_detailsInclude<ExtArgs> | null
-    /**
      * The data needed to create a issuer_details.
      */
     data?: XOR<issuer_detailsCreateInput, issuer_detailsUncheckedCreateInput>
@@ -15422,10 +15549,6 @@ export namespace Prisma {
      * Omit specific fields from the issuer_details
      */
     omit?: issuer_detailsOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: issuer_detailsInclude<ExtArgs> | null
     /**
      * The data needed to update a issuer_details.
      */
@@ -15467,10 +15590,6 @@ export namespace Prisma {
      */
     omit?: issuer_detailsOmit<ExtArgs> | null
     /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: issuer_detailsInclude<ExtArgs> | null
-    /**
      * The filter to search for the issuer_details to update in case it exists.
      */
     where: issuer_detailsWhereUniqueInput
@@ -15497,10 +15616,6 @@ export namespace Prisma {
      */
     omit?: issuer_detailsOmit<ExtArgs> | null
     /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: issuer_detailsInclude<ExtArgs> | null
-    /**
      * Filter which issuer_details to delete.
      */
     where: issuer_detailsWhereUniqueInput
@@ -15521,30 +15636,6 @@ export namespace Prisma {
   }
 
   /**
-   * issuer_details.master_issuers
-   */
-  export type issuer_details$master_issuersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the master_issuer
-     */
-    select?: master_issuerSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the master_issuer
-     */
-    omit?: master_issuerOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: master_issuerInclude<ExtArgs> | null
-    where?: master_issuerWhereInput
-    orderBy?: master_issuerOrderByWithRelationInput | master_issuerOrderByWithRelationInput[]
-    cursor?: master_issuerWhereUniqueInput
-    take?: number
-    skip?: number
-    distinct?: Master_issuerScalarFieldEnum | Master_issuerScalarFieldEnum[]
-  }
-
-  /**
    * issuer_details without action
    */
   export type issuer_detailsDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -15556,10 +15647,6 @@ export namespace Prisma {
      * Omit specific fields from the issuer_details
      */
     omit?: issuer_detailsOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: issuer_detailsInclude<ExtArgs> | null
   }
 
 
@@ -17486,904 +17573,6 @@ export namespace Prisma {
      * Omit specific fields from the issuer_tenure_details
      */
     omit?: issuer_tenure_detailsOmit<ExtArgs> | null
-  }
-
-
-  /**
-   * Model issuers
-   */
-
-  export type AggregateIssuers = {
-    _count: IssuersCountAggregateOutputType | null
-    _avg: IssuersAvgAggregateOutputType | null
-    _sum: IssuersSumAggregateOutputType | null
-    _min: IssuersMinAggregateOutputType | null
-    _max: IssuersMaxAggregateOutputType | null
-  }
-
-  export type IssuersAvgAggregateOutputType = {
-    id: number | null
-    some_metric: number | null
-  }
-
-  export type IssuersSumAggregateOutputType = {
-    id: number | null
-    some_metric: number | null
-  }
-
-  export type IssuersMinAggregateOutputType = {
-    id: number | null
-    name: string | null
-    some_metric: number | null
-  }
-
-  export type IssuersMaxAggregateOutputType = {
-    id: number | null
-    name: string | null
-    some_metric: number | null
-  }
-
-  export type IssuersCountAggregateOutputType = {
-    id: number
-    name: number
-    some_metric: number
-    _all: number
-  }
-
-
-  export type IssuersAvgAggregateInputType = {
-    id?: true
-    some_metric?: true
-  }
-
-  export type IssuersSumAggregateInputType = {
-    id?: true
-    some_metric?: true
-  }
-
-  export type IssuersMinAggregateInputType = {
-    id?: true
-    name?: true
-    some_metric?: true
-  }
-
-  export type IssuersMaxAggregateInputType = {
-    id?: true
-    name?: true
-    some_metric?: true
-  }
-
-  export type IssuersCountAggregateInputType = {
-    id?: true
-    name?: true
-    some_metric?: true
-    _all?: true
-  }
-
-  export type IssuersAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Filter which issuers to aggregate.
-     */
-    where?: issuersWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of issuers to fetch.
-     */
-    orderBy?: issuersOrderByWithRelationInput | issuersOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the start position
-     */
-    cursor?: issuersWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` issuers from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` issuers.
-     */
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Count returned issuers
-    **/
-    _count?: true | IssuersCountAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to average
-    **/
-    _avg?: IssuersAvgAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to sum
-    **/
-    _sum?: IssuersSumAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to find the minimum value
-    **/
-    _min?: IssuersMinAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to find the maximum value
-    **/
-    _max?: IssuersMaxAggregateInputType
-  }
-
-  export type GetIssuersAggregateType<T extends IssuersAggregateArgs> = {
-        [P in keyof T & keyof AggregateIssuers]: P extends '_count' | 'count'
-      ? T[P] extends true
-        ? number
-        : GetScalarType<T[P], AggregateIssuers[P]>
-      : GetScalarType<T[P], AggregateIssuers[P]>
-  }
-
-
-
-
-  export type issuersGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: issuersWhereInput
-    orderBy?: issuersOrderByWithAggregationInput | issuersOrderByWithAggregationInput[]
-    by: IssuersScalarFieldEnum[] | IssuersScalarFieldEnum
-    having?: issuersScalarWhereWithAggregatesInput
-    take?: number
-    skip?: number
-    _count?: IssuersCountAggregateInputType | true
-    _avg?: IssuersAvgAggregateInputType
-    _sum?: IssuersSumAggregateInputType
-    _min?: IssuersMinAggregateInputType
-    _max?: IssuersMaxAggregateInputType
-  }
-
-  export type IssuersGroupByOutputType = {
-    id: number
-    name: string | null
-    some_metric: number | null
-    _count: IssuersCountAggregateOutputType | null
-    _avg: IssuersAvgAggregateOutputType | null
-    _sum: IssuersSumAggregateOutputType | null
-    _min: IssuersMinAggregateOutputType | null
-    _max: IssuersMaxAggregateOutputType | null
-  }
-
-  type GetIssuersGroupByPayload<T extends issuersGroupByArgs> = Prisma.PrismaPromise<
-    Array<
-      PickEnumerable<IssuersGroupByOutputType, T['by']> &
-        {
-          [P in ((keyof T) & (keyof IssuersGroupByOutputType))]: P extends '_count'
-            ? T[P] extends boolean
-              ? number
-              : GetScalarType<T[P], IssuersGroupByOutputType[P]>
-            : GetScalarType<T[P], IssuersGroupByOutputType[P]>
-        }
-      >
-    >
-
-
-  export type issuersSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    name?: boolean
-    some_metric?: boolean
-  }, ExtArgs["result"]["issuers"]>
-
-
-
-  export type issuersSelectScalar = {
-    id?: boolean
-    name?: boolean
-    some_metric?: boolean
-  }
-
-  export type issuersOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "some_metric", ExtArgs["result"]["issuers"]>
-
-  export type $issuersPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    name: "issuers"
-    objects: {}
-    scalars: $Extensions.GetPayloadResult<{
-      id: number
-      name: string | null
-      some_metric: number | null
-    }, ExtArgs["result"]["issuers"]>
-    composites: {}
-  }
-
-  type issuersGetPayload<S extends boolean | null | undefined | issuersDefaultArgs> = $Result.GetResult<Prisma.$issuersPayload, S>
-
-  type issuersCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
-    Omit<issuersFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
-      select?: IssuersCountAggregateInputType | true
-    }
-
-  export interface issuersDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
-    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['issuers'], meta: { name: 'issuers' } }
-    /**
-     * Find zero or one Issuers that matches the filter.
-     * @param {issuersFindUniqueArgs} args - Arguments to find a Issuers
-     * @example
-     * // Get one Issuers
-     * const issuers = await prisma.issuers.findUnique({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findUnique<T extends issuersFindUniqueArgs>(args: SelectSubset<T, issuersFindUniqueArgs<ExtArgs>>): Prisma__issuersClient<$Result.GetResult<Prisma.$issuersPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Find one Issuers that matches the filter or throw an error with `error.code='P2025'`
-     * if no matches were found.
-     * @param {issuersFindUniqueOrThrowArgs} args - Arguments to find a Issuers
-     * @example
-     * // Get one Issuers
-     * const issuers = await prisma.issuers.findUniqueOrThrow({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findUniqueOrThrow<T extends issuersFindUniqueOrThrowArgs>(args: SelectSubset<T, issuersFindUniqueOrThrowArgs<ExtArgs>>): Prisma__issuersClient<$Result.GetResult<Prisma.$issuersPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Find the first Issuers that matches the filter.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {issuersFindFirstArgs} args - Arguments to find a Issuers
-     * @example
-     * // Get one Issuers
-     * const issuers = await prisma.issuers.findFirst({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findFirst<T extends issuersFindFirstArgs>(args?: SelectSubset<T, issuersFindFirstArgs<ExtArgs>>): Prisma__issuersClient<$Result.GetResult<Prisma.$issuersPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Find the first Issuers that matches the filter or
-     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {issuersFindFirstOrThrowArgs} args - Arguments to find a Issuers
-     * @example
-     * // Get one Issuers
-     * const issuers = await prisma.issuers.findFirstOrThrow({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findFirstOrThrow<T extends issuersFindFirstOrThrowArgs>(args?: SelectSubset<T, issuersFindFirstOrThrowArgs<ExtArgs>>): Prisma__issuersClient<$Result.GetResult<Prisma.$issuersPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Find zero or more Issuers that matches the filter.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {issuersFindManyArgs} args - Arguments to filter and select certain fields only.
-     * @example
-     * // Get all Issuers
-     * const issuers = await prisma.issuers.findMany()
-     * 
-     * // Get first 10 Issuers
-     * const issuers = await prisma.issuers.findMany({ take: 10 })
-     * 
-     * // Only select the `id`
-     * const issuersWithIdOnly = await prisma.issuers.findMany({ select: { id: true } })
-     * 
-     */
-    findMany<T extends issuersFindManyArgs>(args?: SelectSubset<T, issuersFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$issuersPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
-
-    /**
-     * Create a Issuers.
-     * @param {issuersCreateArgs} args - Arguments to create a Issuers.
-     * @example
-     * // Create one Issuers
-     * const Issuers = await prisma.issuers.create({
-     *   data: {
-     *     // ... data to create a Issuers
-     *   }
-     * })
-     * 
-     */
-    create<T extends issuersCreateArgs>(args: SelectSubset<T, issuersCreateArgs<ExtArgs>>): Prisma__issuersClient<$Result.GetResult<Prisma.$issuersPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Create many Issuers.
-     * @param {issuersCreateManyArgs} args - Arguments to create many Issuers.
-     * @example
-     * // Create many Issuers
-     * const issuers = await prisma.issuers.createMany({
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     *     
-     */
-    createMany<T extends issuersCreateManyArgs>(args?: SelectSubset<T, issuersCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
-
-    /**
-     * Delete a Issuers.
-     * @param {issuersDeleteArgs} args - Arguments to delete one Issuers.
-     * @example
-     * // Delete one Issuers
-     * const Issuers = await prisma.issuers.delete({
-     *   where: {
-     *     // ... filter to delete one Issuers
-     *   }
-     * })
-     * 
-     */
-    delete<T extends issuersDeleteArgs>(args: SelectSubset<T, issuersDeleteArgs<ExtArgs>>): Prisma__issuersClient<$Result.GetResult<Prisma.$issuersPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Update one Issuers.
-     * @param {issuersUpdateArgs} args - Arguments to update one Issuers.
-     * @example
-     * // Update one Issuers
-     * const issuers = await prisma.issuers.update({
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: {
-     *     // ... provide data here
-     *   }
-     * })
-     * 
-     */
-    update<T extends issuersUpdateArgs>(args: SelectSubset<T, issuersUpdateArgs<ExtArgs>>): Prisma__issuersClient<$Result.GetResult<Prisma.$issuersPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Delete zero or more Issuers.
-     * @param {issuersDeleteManyArgs} args - Arguments to filter Issuers to delete.
-     * @example
-     * // Delete a few Issuers
-     * const { count } = await prisma.issuers.deleteMany({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     * 
-     */
-    deleteMany<T extends issuersDeleteManyArgs>(args?: SelectSubset<T, issuersDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
-
-    /**
-     * Update zero or more Issuers.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {issuersUpdateManyArgs} args - Arguments to update one or more rows.
-     * @example
-     * // Update many Issuers
-     * const issuers = await prisma.issuers.updateMany({
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: {
-     *     // ... provide data here
-     *   }
-     * })
-     * 
-     */
-    updateMany<T extends issuersUpdateManyArgs>(args: SelectSubset<T, issuersUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
-
-    /**
-     * Create or update one Issuers.
-     * @param {issuersUpsertArgs} args - Arguments to update or create a Issuers.
-     * @example
-     * // Update or create a Issuers
-     * const issuers = await prisma.issuers.upsert({
-     *   create: {
-     *     // ... data to create a Issuers
-     *   },
-     *   update: {
-     *     // ... in case it already exists, update
-     *   },
-     *   where: {
-     *     // ... the filter for the Issuers we want to update
-     *   }
-     * })
-     */
-    upsert<T extends issuersUpsertArgs>(args: SelectSubset<T, issuersUpsertArgs<ExtArgs>>): Prisma__issuersClient<$Result.GetResult<Prisma.$issuersPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-
-    /**
-     * Count the number of Issuers.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {issuersCountArgs} args - Arguments to filter Issuers to count.
-     * @example
-     * // Count the number of Issuers
-     * const count = await prisma.issuers.count({
-     *   where: {
-     *     // ... the filter for the Issuers we want to count
-     *   }
-     * })
-    **/
-    count<T extends issuersCountArgs>(
-      args?: Subset<T, issuersCountArgs>,
-    ): Prisma.PrismaPromise<
-      T extends $Utils.Record<'select', any>
-        ? T['select'] extends true
-          ? number
-          : GetScalarType<T['select'], IssuersCountAggregateOutputType>
-        : number
-    >
-
-    /**
-     * Allows you to perform aggregations operations on a Issuers.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {IssuersAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
-     * @example
-     * // Ordered by age ascending
-     * // Where email contains prisma.io
-     * // Limited to the 10 users
-     * const aggregations = await prisma.user.aggregate({
-     *   _avg: {
-     *     age: true,
-     *   },
-     *   where: {
-     *     email: {
-     *       contains: "prisma.io",
-     *     },
-     *   },
-     *   orderBy: {
-     *     age: "asc",
-     *   },
-     *   take: 10,
-     * })
-    **/
-    aggregate<T extends IssuersAggregateArgs>(args: Subset<T, IssuersAggregateArgs>): Prisma.PrismaPromise<GetIssuersAggregateType<T>>
-
-    /**
-     * Group by Issuers.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {issuersGroupByArgs} args - Group by arguments.
-     * @example
-     * // Group by city, order by createdAt, get count
-     * const result = await prisma.user.groupBy({
-     *   by: ['city', 'createdAt'],
-     *   orderBy: {
-     *     createdAt: true
-     *   },
-     *   _count: {
-     *     _all: true
-     *   },
-     * })
-     * 
-    **/
-    groupBy<
-      T extends issuersGroupByArgs,
-      HasSelectOrTake extends Or<
-        Extends<'skip', Keys<T>>,
-        Extends<'take', Keys<T>>
-      >,
-      OrderByArg extends True extends HasSelectOrTake
-        ? { orderBy: issuersGroupByArgs['orderBy'] }
-        : { orderBy?: issuersGroupByArgs['orderBy'] },
-      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
-      ByFields extends MaybeTupleToUnion<T['by']>,
-      ByValid extends Has<ByFields, OrderFields>,
-      HavingFields extends GetHavingFields<T['having']>,
-      HavingValid extends Has<ByFields, HavingFields>,
-      ByEmpty extends T['by'] extends never[] ? True : False,
-      InputErrors extends ByEmpty extends True
-      ? `Error: "by" must not be empty.`
-      : HavingValid extends False
-      ? {
-          [P in HavingFields]: P extends ByFields
-            ? never
-            : P extends string
-            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-            : [
-                Error,
-                'Field ',
-                P,
-                ` in "having" needs to be provided in "by"`,
-              ]
-        }[HavingFields]
-      : 'take' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
-                ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "take", you also need to provide "orderBy"'
-      : 'skip' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
-                ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "skip", you also need to provide "orderBy"'
-      : ByValid extends True
-      ? {}
-      : {
-          [P in OrderFields]: P extends ByFields
-            ? never
-            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-        }[OrderFields]
-    >(args: SubsetIntersection<T, issuersGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetIssuersGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
-  /**
-   * Fields of the issuers model
-   */
-  readonly fields: issuersFieldRefs;
-  }
-
-  /**
-   * The delegate class that acts as a "Promise-like" for issuers.
-   * Why is this prefixed with `Prisma__`?
-   * Because we want to prevent naming conflicts as mentioned in
-   * https://github.com/prisma/prisma-client-js/issues/707
-   */
-  export interface Prisma__issuersClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
-    readonly [Symbol.toStringTag]: "PrismaPromise"
-    /**
-     * Attaches callbacks for the resolution and/or rejection of the Promise.
-     * @param onfulfilled The callback to execute when the Promise is resolved.
-     * @param onrejected The callback to execute when the Promise is rejected.
-     * @returns A Promise for the completion of which ever callback is executed.
-     */
-    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
-    /**
-     * Attaches a callback for only the rejection of the Promise.
-     * @param onrejected The callback to execute when the Promise is rejected.
-     * @returns A Promise for the completion of the callback.
-     */
-    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
-    /**
-     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
-     * resolved value cannot be modified from the callback.
-     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
-     * @returns A Promise for the completion of the callback.
-     */
-    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
-  }
-
-
-
-
-  /**
-   * Fields of the issuers model
-   */
-  interface issuersFieldRefs {
-    readonly id: FieldRef<"issuers", 'Int'>
-    readonly name: FieldRef<"issuers", 'String'>
-    readonly some_metric: FieldRef<"issuers", 'Int'>
-  }
-    
-
-  // Custom InputTypes
-  /**
-   * issuers findUnique
-   */
-  export type issuersFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the issuers
-     */
-    select?: issuersSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the issuers
-     */
-    omit?: issuersOmit<ExtArgs> | null
-    /**
-     * Filter, which issuers to fetch.
-     */
-    where: issuersWhereUniqueInput
-  }
-
-  /**
-   * issuers findUniqueOrThrow
-   */
-  export type issuersFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the issuers
-     */
-    select?: issuersSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the issuers
-     */
-    omit?: issuersOmit<ExtArgs> | null
-    /**
-     * Filter, which issuers to fetch.
-     */
-    where: issuersWhereUniqueInput
-  }
-
-  /**
-   * issuers findFirst
-   */
-  export type issuersFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the issuers
-     */
-    select?: issuersSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the issuers
-     */
-    omit?: issuersOmit<ExtArgs> | null
-    /**
-     * Filter, which issuers to fetch.
-     */
-    where?: issuersWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of issuers to fetch.
-     */
-    orderBy?: issuersOrderByWithRelationInput | issuersOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for searching for issuers.
-     */
-    cursor?: issuersWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` issuers from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` issuers.
-     */
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
-     * Filter by unique combinations of issuers.
-     */
-    distinct?: IssuersScalarFieldEnum | IssuersScalarFieldEnum[]
-  }
-
-  /**
-   * issuers findFirstOrThrow
-   */
-  export type issuersFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the issuers
-     */
-    select?: issuersSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the issuers
-     */
-    omit?: issuersOmit<ExtArgs> | null
-    /**
-     * Filter, which issuers to fetch.
-     */
-    where?: issuersWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of issuers to fetch.
-     */
-    orderBy?: issuersOrderByWithRelationInput | issuersOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for searching for issuers.
-     */
-    cursor?: issuersWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` issuers from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` issuers.
-     */
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
-     * Filter by unique combinations of issuers.
-     */
-    distinct?: IssuersScalarFieldEnum | IssuersScalarFieldEnum[]
-  }
-
-  /**
-   * issuers findMany
-   */
-  export type issuersFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the issuers
-     */
-    select?: issuersSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the issuers
-     */
-    omit?: issuersOmit<ExtArgs> | null
-    /**
-     * Filter, which issuers to fetch.
-     */
-    where?: issuersWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of issuers to fetch.
-     */
-    orderBy?: issuersOrderByWithRelationInput | issuersOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for listing issuers.
-     */
-    cursor?: issuersWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` issuers from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` issuers.
-     */
-    skip?: number
-    distinct?: IssuersScalarFieldEnum | IssuersScalarFieldEnum[]
-  }
-
-  /**
-   * issuers create
-   */
-  export type issuersCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the issuers
-     */
-    select?: issuersSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the issuers
-     */
-    omit?: issuersOmit<ExtArgs> | null
-    /**
-     * The data needed to create a issuers.
-     */
-    data?: XOR<issuersCreateInput, issuersUncheckedCreateInput>
-  }
-
-  /**
-   * issuers createMany
-   */
-  export type issuersCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * The data used to create many issuers.
-     */
-    data: issuersCreateManyInput | issuersCreateManyInput[]
-    skipDuplicates?: boolean
-  }
-
-  /**
-   * issuers update
-   */
-  export type issuersUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the issuers
-     */
-    select?: issuersSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the issuers
-     */
-    omit?: issuersOmit<ExtArgs> | null
-    /**
-     * The data needed to update a issuers.
-     */
-    data: XOR<issuersUpdateInput, issuersUncheckedUpdateInput>
-    /**
-     * Choose, which issuers to update.
-     */
-    where: issuersWhereUniqueInput
-  }
-
-  /**
-   * issuers updateMany
-   */
-  export type issuersUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * The data used to update issuers.
-     */
-    data: XOR<issuersUpdateManyMutationInput, issuersUncheckedUpdateManyInput>
-    /**
-     * Filter which issuers to update
-     */
-    where?: issuersWhereInput
-    /**
-     * Limit how many issuers to update.
-     */
-    limit?: number
-  }
-
-  /**
-   * issuers upsert
-   */
-  export type issuersUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the issuers
-     */
-    select?: issuersSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the issuers
-     */
-    omit?: issuersOmit<ExtArgs> | null
-    /**
-     * The filter to search for the issuers to update in case it exists.
-     */
-    where: issuersWhereUniqueInput
-    /**
-     * In case the issuers found by the `where` argument doesn't exist, create a new issuers with this data.
-     */
-    create: XOR<issuersCreateInput, issuersUncheckedCreateInput>
-    /**
-     * In case the issuers was found with the provided `where` argument, update it with this data.
-     */
-    update: XOR<issuersUpdateInput, issuersUncheckedUpdateInput>
-  }
-
-  /**
-   * issuers delete
-   */
-  export type issuersDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the issuers
-     */
-    select?: issuersSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the issuers
-     */
-    omit?: issuersOmit<ExtArgs> | null
-    /**
-     * Filter which issuers to delete.
-     */
-    where: issuersWhereUniqueInput
-  }
-
-  /**
-   * issuers deleteMany
-   */
-  export type issuersDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Filter which issuers to delete
-     */
-    where?: issuersWhereInput
-    /**
-     * Limit how many issuers to delete.
-     */
-    limit?: number
-  }
-
-  /**
-   * issuers without action
-   */
-  export type issuersDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the issuers
-     */
-    select?: issuersSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the issuers
-     */
-    omit?: issuersOmit<ExtArgs> | null
   }
 
 
@@ -40088,6 +39277,7 @@ export namespace Prisma {
     freq: number | null
     created_by: number | null
     updated_by: number | null
+    is_visible: number | null
     is_active: number | null
     is_deleted: number | null
     is_updated: number | null
@@ -40122,6 +39312,7 @@ export namespace Prisma {
     freq: number | null
     created_by: bigint | null
     updated_by: bigint | null
+    is_visible: number | null
     is_active: number | null
     is_deleted: number | null
     is_updated: number | null
@@ -40179,6 +39370,7 @@ export namespace Prisma {
     intratlkto: string | null
     created_by: bigint | null
     updated_by: bigint | null
+    is_visible: number | null
     is_active: number | null
     is_deleted: number | null
     is_updated: number | null
@@ -40238,6 +39430,7 @@ export namespace Prisma {
     intratlkto: string | null
     created_by: bigint | null
     updated_by: bigint | null
+    is_visible: number | null
     is_active: number | null
     is_deleted: number | null
     is_updated: number | null
@@ -40297,6 +39490,7 @@ export namespace Prisma {
     intratlkto: number
     created_by: number
     updated_by: number
+    is_visible: number
     is_active: number
     is_deleted: number
     is_updated: number
@@ -40335,6 +39529,7 @@ export namespace Prisma {
     freq?: true
     created_by?: true
     updated_by?: true
+    is_visible?: true
     is_active?: true
     is_deleted?: true
     is_updated?: true
@@ -40369,6 +39564,7 @@ export namespace Prisma {
     freq?: true
     created_by?: true
     updated_by?: true
+    is_visible?: true
     is_active?: true
     is_deleted?: true
     is_updated?: true
@@ -40426,6 +39622,7 @@ export namespace Prisma {
     intratlkto?: true
     created_by?: true
     updated_by?: true
+    is_visible?: true
     is_active?: true
     is_deleted?: true
     is_updated?: true
@@ -40485,6 +39682,7 @@ export namespace Prisma {
     intratlkto?: true
     created_by?: true
     updated_by?: true
+    is_visible?: true
     is_active?: true
     is_deleted?: true
     is_updated?: true
@@ -40544,6 +39742,7 @@ export namespace Prisma {
     intratlkto?: true
     created_by?: true
     updated_by?: true
+    is_visible?: true
     is_active?: true
     is_deleted?: true
     is_updated?: true
@@ -40690,6 +39889,7 @@ export namespace Prisma {
     intratlkto: string | null
     created_by: bigint | null
     updated_by: bigint | null
+    is_visible: number
     is_active: number
     is_deleted: number
     is_updated: number
@@ -40768,12 +39968,12 @@ export namespace Prisma {
     intratlkto?: boolean
     created_by?: boolean
     updated_by?: boolean
+    is_visible?: boolean
     is_active?: boolean
     is_deleted?: boolean
     is_updated?: boolean
     created_at?: boolean
     updated_at?: boolean
-    issuer_details?: boolean | issuer_detailsDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["master_issuer"]>
 
 
@@ -40830,6 +40030,7 @@ export namespace Prisma {
     intratlkto?: boolean
     created_by?: boolean
     updated_by?: boolean
+    is_visible?: boolean
     is_active?: boolean
     is_deleted?: boolean
     is_updated?: boolean
@@ -40837,16 +40038,11 @@ export namespace Prisma {
     updated_at?: boolean
   }
 
-  export type master_issuerOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "issuer_master_id" | "isin" | "security_class" | "security_name" | "series" | "allotment_date" | "face_value" | "maturity_date" | "convertible_flag" | "option_flag" | "tier_classification" | "day_count" | "seniority" | "secured_flag" | "compound_frequency" | "call_desc" | "put_desc" | "rated_flag" | "isin_desc" | "convertible_type_a" | "convertible_type_b" | "convertible_details" | "stipulation_details" | "issue_size" | "guaranteed_type" | "guaranteed" | "tax_free" | "if_taxable" | "mode_issue" | "security_status" | "allotment_qty" | "stepupdwnbasis" | "stepupdwndtls" | "issuer_ownership_type" | "nature_type" | "business_sector" | "perpetual_nature" | "call_option" | "put_option" | "infra_category" | "issue_price" | "interest_type" | "fintrpydte" | "freq" | "freq_dis" | "next_sch_date" | "intratupto" | "intratlkto" | "created_by" | "updated_by" | "is_active" | "is_deleted" | "is_updated" | "created_at" | "updated_at", ExtArgs["result"]["master_issuer"]>
-  export type master_issuerInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    issuer_details?: boolean | issuer_detailsDefaultArgs<ExtArgs>
-  }
+  export type master_issuerOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "issuer_master_id" | "isin" | "security_class" | "security_name" | "series" | "allotment_date" | "face_value" | "maturity_date" | "convertible_flag" | "option_flag" | "tier_classification" | "day_count" | "seniority" | "secured_flag" | "compound_frequency" | "call_desc" | "put_desc" | "rated_flag" | "isin_desc" | "convertible_type_a" | "convertible_type_b" | "convertible_details" | "stipulation_details" | "issue_size" | "guaranteed_type" | "guaranteed" | "tax_free" | "if_taxable" | "mode_issue" | "security_status" | "allotment_qty" | "stepupdwnbasis" | "stepupdwndtls" | "issuer_ownership_type" | "nature_type" | "business_sector" | "perpetual_nature" | "call_option" | "put_option" | "infra_category" | "issue_price" | "interest_type" | "fintrpydte" | "freq" | "freq_dis" | "next_sch_date" | "intratupto" | "intratlkto" | "created_by" | "updated_by" | "is_visible" | "is_active" | "is_deleted" | "is_updated" | "created_at" | "updated_at", ExtArgs["result"]["master_issuer"]>
 
   export type $master_issuerPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "master_issuer"
-    objects: {
-      issuer_details: Prisma.$issuer_detailsPayload<ExtArgs>
-    }
+    objects: {}
     scalars: $Extensions.GetPayloadResult<{
       id: bigint
       issuer_master_id: bigint
@@ -40899,6 +40095,7 @@ export namespace Prisma {
       intratlkto: string | null
       created_by: bigint | null
       updated_by: bigint | null
+      is_visible: number
       is_active: number
       is_deleted: number
       is_updated: number
@@ -41244,7 +40441,6 @@ export namespace Prisma {
    */
   export interface Prisma__master_issuerClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
-    issuer_details<T extends issuer_detailsDefaultArgs<ExtArgs> = {}>(args?: Subset<T, issuer_detailsDefaultArgs<ExtArgs>>): Prisma__issuer_detailsClient<$Result.GetResult<Prisma.$issuer_detailsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -41325,6 +40521,7 @@ export namespace Prisma {
     readonly intratlkto: FieldRef<"master_issuer", 'String'>
     readonly created_by: FieldRef<"master_issuer", 'BigInt'>
     readonly updated_by: FieldRef<"master_issuer", 'BigInt'>
+    readonly is_visible: FieldRef<"master_issuer", 'Int'>
     readonly is_active: FieldRef<"master_issuer", 'Int'>
     readonly is_deleted: FieldRef<"master_issuer", 'Int'>
     readonly is_updated: FieldRef<"master_issuer", 'Int'>
@@ -41347,10 +40544,6 @@ export namespace Prisma {
      */
     omit?: master_issuerOmit<ExtArgs> | null
     /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: master_issuerInclude<ExtArgs> | null
-    /**
      * Filter, which master_issuer to fetch.
      */
     where: master_issuerWhereUniqueInput
@@ -41369,10 +40562,6 @@ export namespace Prisma {
      */
     omit?: master_issuerOmit<ExtArgs> | null
     /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: master_issuerInclude<ExtArgs> | null
-    /**
      * Filter, which master_issuer to fetch.
      */
     where: master_issuerWhereUniqueInput
@@ -41390,10 +40579,6 @@ export namespace Prisma {
      * Omit specific fields from the master_issuer
      */
     omit?: master_issuerOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: master_issuerInclude<ExtArgs> | null
     /**
      * Filter, which master_issuer to fetch.
      */
@@ -41443,10 +40628,6 @@ export namespace Prisma {
      */
     omit?: master_issuerOmit<ExtArgs> | null
     /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: master_issuerInclude<ExtArgs> | null
-    /**
      * Filter, which master_issuer to fetch.
      */
     where?: master_issuerWhereInput
@@ -41495,10 +40676,6 @@ export namespace Prisma {
      */
     omit?: master_issuerOmit<ExtArgs> | null
     /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: master_issuerInclude<ExtArgs> | null
-    /**
      * Filter, which master_issuers to fetch.
      */
     where?: master_issuerWhereInput
@@ -41542,10 +40719,6 @@ export namespace Prisma {
      */
     omit?: master_issuerOmit<ExtArgs> | null
     /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: master_issuerInclude<ExtArgs> | null
-    /**
      * The data needed to create a master_issuer.
      */
     data: XOR<master_issuerCreateInput, master_issuerUncheckedCreateInput>
@@ -41574,10 +40747,6 @@ export namespace Prisma {
      * Omit specific fields from the master_issuer
      */
     omit?: master_issuerOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: master_issuerInclude<ExtArgs> | null
     /**
      * The data needed to update a master_issuer.
      */
@@ -41619,10 +40788,6 @@ export namespace Prisma {
      */
     omit?: master_issuerOmit<ExtArgs> | null
     /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: master_issuerInclude<ExtArgs> | null
-    /**
      * The filter to search for the master_issuer to update in case it exists.
      */
     where: master_issuerWhereUniqueInput
@@ -41648,10 +40813,6 @@ export namespace Prisma {
      * Omit specific fields from the master_issuer
      */
     omit?: master_issuerOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: master_issuerInclude<ExtArgs> | null
     /**
      * Filter which master_issuer to delete.
      */
@@ -41684,10 +40845,6 @@ export namespace Prisma {
      * Omit specific fields from the master_issuer
      */
     omit?: master_issuerOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: master_issuerInclude<ExtArgs> | null
   }
 
 
@@ -71440,6 +70597,3476 @@ export namespace Prisma {
 
 
   /**
+   * Model isin_re_issuance
+   */
+
+  export type AggregateIsin_re_issuance = {
+    _count: Isin_re_issuanceCountAggregateOutputType | null
+    _avg: Isin_re_issuanceAvgAggregateOutputType | null
+    _sum: Isin_re_issuanceSumAggregateOutputType | null
+    _min: Isin_re_issuanceMinAggregateOutputType | null
+    _max: Isin_re_issuanceMaxAggregateOutputType | null
+  }
+
+  export type Isin_re_issuanceAvgAggregateOutputType = {
+    id: number | null
+    isin_id: number | null
+    issuer_master_id: number | null
+    issue_size: Decimal | null
+    nsdl_issue_size: Decimal | null
+    face_value: number | null
+    business_sector: number | null
+    mode_issue: number | null
+    seniority: number | null
+    tax_free: number | null
+    secured_flag: number | null
+    is_visible: number | null
+    is_updated: number | null
+    is_main: number | null
+  }
+
+  export type Isin_re_issuanceSumAggregateOutputType = {
+    id: bigint | null
+    isin_id: bigint | null
+    issuer_master_id: bigint | null
+    issue_size: Decimal | null
+    nsdl_issue_size: Decimal | null
+    face_value: number | null
+    business_sector: number | null
+    mode_issue: number | null
+    seniority: number | null
+    tax_free: number | null
+    secured_flag: number | null
+    is_visible: number | null
+    is_updated: number | null
+    is_main: number | null
+  }
+
+  export type Isin_re_issuanceMinAggregateOutputType = {
+    id: bigint | null
+    isin_id: bigint | null
+    isin: string | null
+    issuer_master_id: bigint | null
+    allotment_date: Date | null
+    issue_size: Decimal | null
+    nsdl_issue_size: Decimal | null
+    source: string | null
+    face_value: number | null
+    maturity_date: Date | null
+    business_sector: number | null
+    security_name: string | null
+    security_class: string | null
+    mode_issue: number | null
+    seniority: number | null
+    tax_free: number | null
+    secured_flag: number | null
+    is_visible: number | null
+    is_updated: number | null
+    is_main: number | null
+    created_at: Date | null
+    updated_at: Date | null
+  }
+
+  export type Isin_re_issuanceMaxAggregateOutputType = {
+    id: bigint | null
+    isin_id: bigint | null
+    isin: string | null
+    issuer_master_id: bigint | null
+    allotment_date: Date | null
+    issue_size: Decimal | null
+    nsdl_issue_size: Decimal | null
+    source: string | null
+    face_value: number | null
+    maturity_date: Date | null
+    business_sector: number | null
+    security_name: string | null
+    security_class: string | null
+    mode_issue: number | null
+    seniority: number | null
+    tax_free: number | null
+    secured_flag: number | null
+    is_visible: number | null
+    is_updated: number | null
+    is_main: number | null
+    created_at: Date | null
+    updated_at: Date | null
+  }
+
+  export type Isin_re_issuanceCountAggregateOutputType = {
+    id: number
+    isin_id: number
+    isin: number
+    issuer_master_id: number
+    allotment_date: number
+    issue_size: number
+    nsdl_issue_size: number
+    source: number
+    face_value: number
+    maturity_date: number
+    business_sector: number
+    security_name: number
+    security_class: number
+    mode_issue: number
+    seniority: number
+    tax_free: number
+    secured_flag: number
+    is_visible: number
+    is_updated: number
+    is_main: number
+    created_at: number
+    updated_at: number
+    _all: number
+  }
+
+
+  export type Isin_re_issuanceAvgAggregateInputType = {
+    id?: true
+    isin_id?: true
+    issuer_master_id?: true
+    issue_size?: true
+    nsdl_issue_size?: true
+    face_value?: true
+    business_sector?: true
+    mode_issue?: true
+    seniority?: true
+    tax_free?: true
+    secured_flag?: true
+    is_visible?: true
+    is_updated?: true
+    is_main?: true
+  }
+
+  export type Isin_re_issuanceSumAggregateInputType = {
+    id?: true
+    isin_id?: true
+    issuer_master_id?: true
+    issue_size?: true
+    nsdl_issue_size?: true
+    face_value?: true
+    business_sector?: true
+    mode_issue?: true
+    seniority?: true
+    tax_free?: true
+    secured_flag?: true
+    is_visible?: true
+    is_updated?: true
+    is_main?: true
+  }
+
+  export type Isin_re_issuanceMinAggregateInputType = {
+    id?: true
+    isin_id?: true
+    isin?: true
+    issuer_master_id?: true
+    allotment_date?: true
+    issue_size?: true
+    nsdl_issue_size?: true
+    source?: true
+    face_value?: true
+    maturity_date?: true
+    business_sector?: true
+    security_name?: true
+    security_class?: true
+    mode_issue?: true
+    seniority?: true
+    tax_free?: true
+    secured_flag?: true
+    is_visible?: true
+    is_updated?: true
+    is_main?: true
+    created_at?: true
+    updated_at?: true
+  }
+
+  export type Isin_re_issuanceMaxAggregateInputType = {
+    id?: true
+    isin_id?: true
+    isin?: true
+    issuer_master_id?: true
+    allotment_date?: true
+    issue_size?: true
+    nsdl_issue_size?: true
+    source?: true
+    face_value?: true
+    maturity_date?: true
+    business_sector?: true
+    security_name?: true
+    security_class?: true
+    mode_issue?: true
+    seniority?: true
+    tax_free?: true
+    secured_flag?: true
+    is_visible?: true
+    is_updated?: true
+    is_main?: true
+    created_at?: true
+    updated_at?: true
+  }
+
+  export type Isin_re_issuanceCountAggregateInputType = {
+    id?: true
+    isin_id?: true
+    isin?: true
+    issuer_master_id?: true
+    allotment_date?: true
+    issue_size?: true
+    nsdl_issue_size?: true
+    source?: true
+    face_value?: true
+    maturity_date?: true
+    business_sector?: true
+    security_name?: true
+    security_class?: true
+    mode_issue?: true
+    seniority?: true
+    tax_free?: true
+    secured_flag?: true
+    is_visible?: true
+    is_updated?: true
+    is_main?: true
+    created_at?: true
+    updated_at?: true
+    _all?: true
+  }
+
+  export type Isin_re_issuanceAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which isin_re_issuance to aggregate.
+     */
+    where?: isin_re_issuanceWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of isin_re_issuances to fetch.
+     */
+    orderBy?: isin_re_issuanceOrderByWithRelationInput | isin_re_issuanceOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: isin_re_issuanceWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` isin_re_issuances from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` isin_re_issuances.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned isin_re_issuances
+    **/
+    _count?: true | Isin_re_issuanceCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: Isin_re_issuanceAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: Isin_re_issuanceSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: Isin_re_issuanceMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: Isin_re_issuanceMaxAggregateInputType
+  }
+
+  export type GetIsin_re_issuanceAggregateType<T extends Isin_re_issuanceAggregateArgs> = {
+        [P in keyof T & keyof AggregateIsin_re_issuance]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateIsin_re_issuance[P]>
+      : GetScalarType<T[P], AggregateIsin_re_issuance[P]>
+  }
+
+
+
+
+  export type isin_re_issuanceGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: isin_re_issuanceWhereInput
+    orderBy?: isin_re_issuanceOrderByWithAggregationInput | isin_re_issuanceOrderByWithAggregationInput[]
+    by: Isin_re_issuanceScalarFieldEnum[] | Isin_re_issuanceScalarFieldEnum
+    having?: isin_re_issuanceScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: Isin_re_issuanceCountAggregateInputType | true
+    _avg?: Isin_re_issuanceAvgAggregateInputType
+    _sum?: Isin_re_issuanceSumAggregateInputType
+    _min?: Isin_re_issuanceMinAggregateInputType
+    _max?: Isin_re_issuanceMaxAggregateInputType
+  }
+
+  export type Isin_re_issuanceGroupByOutputType = {
+    id: bigint
+    isin_id: bigint
+    isin: string
+    issuer_master_id: bigint
+    allotment_date: Date
+    issue_size: Decimal
+    nsdl_issue_size: Decimal | null
+    source: string | null
+    face_value: number | null
+    maturity_date: Date | null
+    business_sector: number | null
+    security_name: string | null
+    security_class: string | null
+    mode_issue: number | null
+    seniority: number | null
+    tax_free: number | null
+    secured_flag: number | null
+    is_visible: number
+    is_updated: number
+    is_main: number
+    created_at: Date | null
+    updated_at: Date | null
+    _count: Isin_re_issuanceCountAggregateOutputType | null
+    _avg: Isin_re_issuanceAvgAggregateOutputType | null
+    _sum: Isin_re_issuanceSumAggregateOutputType | null
+    _min: Isin_re_issuanceMinAggregateOutputType | null
+    _max: Isin_re_issuanceMaxAggregateOutputType | null
+  }
+
+  type GetIsin_re_issuanceGroupByPayload<T extends isin_re_issuanceGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<Isin_re_issuanceGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof Isin_re_issuanceGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], Isin_re_issuanceGroupByOutputType[P]>
+            : GetScalarType<T[P], Isin_re_issuanceGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type isin_re_issuanceSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    isin_id?: boolean
+    isin?: boolean
+    issuer_master_id?: boolean
+    allotment_date?: boolean
+    issue_size?: boolean
+    nsdl_issue_size?: boolean
+    source?: boolean
+    face_value?: boolean
+    maturity_date?: boolean
+    business_sector?: boolean
+    security_name?: boolean
+    security_class?: boolean
+    mode_issue?: boolean
+    seniority?: boolean
+    tax_free?: boolean
+    secured_flag?: boolean
+    is_visible?: boolean
+    is_updated?: boolean
+    is_main?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+  }, ExtArgs["result"]["isin_re_issuance"]>
+
+
+
+  export type isin_re_issuanceSelectScalar = {
+    id?: boolean
+    isin_id?: boolean
+    isin?: boolean
+    issuer_master_id?: boolean
+    allotment_date?: boolean
+    issue_size?: boolean
+    nsdl_issue_size?: boolean
+    source?: boolean
+    face_value?: boolean
+    maturity_date?: boolean
+    business_sector?: boolean
+    security_name?: boolean
+    security_class?: boolean
+    mode_issue?: boolean
+    seniority?: boolean
+    tax_free?: boolean
+    secured_flag?: boolean
+    is_visible?: boolean
+    is_updated?: boolean
+    is_main?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+  }
+
+  export type isin_re_issuanceOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "isin_id" | "isin" | "issuer_master_id" | "allotment_date" | "issue_size" | "nsdl_issue_size" | "source" | "face_value" | "maturity_date" | "business_sector" | "security_name" | "security_class" | "mode_issue" | "seniority" | "tax_free" | "secured_flag" | "is_visible" | "is_updated" | "is_main" | "created_at" | "updated_at", ExtArgs["result"]["isin_re_issuance"]>
+
+  export type $isin_re_issuancePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "isin_re_issuance"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: bigint
+      isin_id: bigint
+      isin: string
+      issuer_master_id: bigint
+      allotment_date: Date
+      issue_size: Prisma.Decimal
+      nsdl_issue_size: Prisma.Decimal | null
+      source: string | null
+      face_value: number | null
+      maturity_date: Date | null
+      business_sector: number | null
+      security_name: string | null
+      security_class: string | null
+      mode_issue: number | null
+      seniority: number | null
+      tax_free: number | null
+      secured_flag: number | null
+      is_visible: number
+      is_updated: number
+      is_main: number
+      created_at: Date | null
+      updated_at: Date | null
+    }, ExtArgs["result"]["isin_re_issuance"]>
+    composites: {}
+  }
+
+  type isin_re_issuanceGetPayload<S extends boolean | null | undefined | isin_re_issuanceDefaultArgs> = $Result.GetResult<Prisma.$isin_re_issuancePayload, S>
+
+  type isin_re_issuanceCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<isin_re_issuanceFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: Isin_re_issuanceCountAggregateInputType | true
+    }
+
+  export interface isin_re_issuanceDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['isin_re_issuance'], meta: { name: 'isin_re_issuance' } }
+    /**
+     * Find zero or one Isin_re_issuance that matches the filter.
+     * @param {isin_re_issuanceFindUniqueArgs} args - Arguments to find a Isin_re_issuance
+     * @example
+     * // Get one Isin_re_issuance
+     * const isin_re_issuance = await prisma.isin_re_issuance.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends isin_re_issuanceFindUniqueArgs>(args: SelectSubset<T, isin_re_issuanceFindUniqueArgs<ExtArgs>>): Prisma__isin_re_issuanceClient<$Result.GetResult<Prisma.$isin_re_issuancePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one Isin_re_issuance that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {isin_re_issuanceFindUniqueOrThrowArgs} args - Arguments to find a Isin_re_issuance
+     * @example
+     * // Get one Isin_re_issuance
+     * const isin_re_issuance = await prisma.isin_re_issuance.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends isin_re_issuanceFindUniqueOrThrowArgs>(args: SelectSubset<T, isin_re_issuanceFindUniqueOrThrowArgs<ExtArgs>>): Prisma__isin_re_issuanceClient<$Result.GetResult<Prisma.$isin_re_issuancePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Isin_re_issuance that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {isin_re_issuanceFindFirstArgs} args - Arguments to find a Isin_re_issuance
+     * @example
+     * // Get one Isin_re_issuance
+     * const isin_re_issuance = await prisma.isin_re_issuance.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends isin_re_issuanceFindFirstArgs>(args?: SelectSubset<T, isin_re_issuanceFindFirstArgs<ExtArgs>>): Prisma__isin_re_issuanceClient<$Result.GetResult<Prisma.$isin_re_issuancePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Isin_re_issuance that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {isin_re_issuanceFindFirstOrThrowArgs} args - Arguments to find a Isin_re_issuance
+     * @example
+     * // Get one Isin_re_issuance
+     * const isin_re_issuance = await prisma.isin_re_issuance.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends isin_re_issuanceFindFirstOrThrowArgs>(args?: SelectSubset<T, isin_re_issuanceFindFirstOrThrowArgs<ExtArgs>>): Prisma__isin_re_issuanceClient<$Result.GetResult<Prisma.$isin_re_issuancePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more Isin_re_issuances that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {isin_re_issuanceFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Isin_re_issuances
+     * const isin_re_issuances = await prisma.isin_re_issuance.findMany()
+     * 
+     * // Get first 10 Isin_re_issuances
+     * const isin_re_issuances = await prisma.isin_re_issuance.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const isin_re_issuanceWithIdOnly = await prisma.isin_re_issuance.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends isin_re_issuanceFindManyArgs>(args?: SelectSubset<T, isin_re_issuanceFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$isin_re_issuancePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a Isin_re_issuance.
+     * @param {isin_re_issuanceCreateArgs} args - Arguments to create a Isin_re_issuance.
+     * @example
+     * // Create one Isin_re_issuance
+     * const Isin_re_issuance = await prisma.isin_re_issuance.create({
+     *   data: {
+     *     // ... data to create a Isin_re_issuance
+     *   }
+     * })
+     * 
+     */
+    create<T extends isin_re_issuanceCreateArgs>(args: SelectSubset<T, isin_re_issuanceCreateArgs<ExtArgs>>): Prisma__isin_re_issuanceClient<$Result.GetResult<Prisma.$isin_re_issuancePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many Isin_re_issuances.
+     * @param {isin_re_issuanceCreateManyArgs} args - Arguments to create many Isin_re_issuances.
+     * @example
+     * // Create many Isin_re_issuances
+     * const isin_re_issuance = await prisma.isin_re_issuance.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends isin_re_issuanceCreateManyArgs>(args?: SelectSubset<T, isin_re_issuanceCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a Isin_re_issuance.
+     * @param {isin_re_issuanceDeleteArgs} args - Arguments to delete one Isin_re_issuance.
+     * @example
+     * // Delete one Isin_re_issuance
+     * const Isin_re_issuance = await prisma.isin_re_issuance.delete({
+     *   where: {
+     *     // ... filter to delete one Isin_re_issuance
+     *   }
+     * })
+     * 
+     */
+    delete<T extends isin_re_issuanceDeleteArgs>(args: SelectSubset<T, isin_re_issuanceDeleteArgs<ExtArgs>>): Prisma__isin_re_issuanceClient<$Result.GetResult<Prisma.$isin_re_issuancePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one Isin_re_issuance.
+     * @param {isin_re_issuanceUpdateArgs} args - Arguments to update one Isin_re_issuance.
+     * @example
+     * // Update one Isin_re_issuance
+     * const isin_re_issuance = await prisma.isin_re_issuance.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends isin_re_issuanceUpdateArgs>(args: SelectSubset<T, isin_re_issuanceUpdateArgs<ExtArgs>>): Prisma__isin_re_issuanceClient<$Result.GetResult<Prisma.$isin_re_issuancePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more Isin_re_issuances.
+     * @param {isin_re_issuanceDeleteManyArgs} args - Arguments to filter Isin_re_issuances to delete.
+     * @example
+     * // Delete a few Isin_re_issuances
+     * const { count } = await prisma.isin_re_issuance.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends isin_re_issuanceDeleteManyArgs>(args?: SelectSubset<T, isin_re_issuanceDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Isin_re_issuances.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {isin_re_issuanceUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Isin_re_issuances
+     * const isin_re_issuance = await prisma.isin_re_issuance.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends isin_re_issuanceUpdateManyArgs>(args: SelectSubset<T, isin_re_issuanceUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one Isin_re_issuance.
+     * @param {isin_re_issuanceUpsertArgs} args - Arguments to update or create a Isin_re_issuance.
+     * @example
+     * // Update or create a Isin_re_issuance
+     * const isin_re_issuance = await prisma.isin_re_issuance.upsert({
+     *   create: {
+     *     // ... data to create a Isin_re_issuance
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Isin_re_issuance we want to update
+     *   }
+     * })
+     */
+    upsert<T extends isin_re_issuanceUpsertArgs>(args: SelectSubset<T, isin_re_issuanceUpsertArgs<ExtArgs>>): Prisma__isin_re_issuanceClient<$Result.GetResult<Prisma.$isin_re_issuancePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of Isin_re_issuances.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {isin_re_issuanceCountArgs} args - Arguments to filter Isin_re_issuances to count.
+     * @example
+     * // Count the number of Isin_re_issuances
+     * const count = await prisma.isin_re_issuance.count({
+     *   where: {
+     *     // ... the filter for the Isin_re_issuances we want to count
+     *   }
+     * })
+    **/
+    count<T extends isin_re_issuanceCountArgs>(
+      args?: Subset<T, isin_re_issuanceCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], Isin_re_issuanceCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Isin_re_issuance.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {Isin_re_issuanceAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends Isin_re_issuanceAggregateArgs>(args: Subset<T, Isin_re_issuanceAggregateArgs>): Prisma.PrismaPromise<GetIsin_re_issuanceAggregateType<T>>
+
+    /**
+     * Group by Isin_re_issuance.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {isin_re_issuanceGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends isin_re_issuanceGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: isin_re_issuanceGroupByArgs['orderBy'] }
+        : { orderBy?: isin_re_issuanceGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, isin_re_issuanceGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetIsin_re_issuanceGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the isin_re_issuance model
+   */
+  readonly fields: isin_re_issuanceFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for isin_re_issuance.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__isin_re_issuanceClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the isin_re_issuance model
+   */
+  interface isin_re_issuanceFieldRefs {
+    readonly id: FieldRef<"isin_re_issuance", 'BigInt'>
+    readonly isin_id: FieldRef<"isin_re_issuance", 'BigInt'>
+    readonly isin: FieldRef<"isin_re_issuance", 'String'>
+    readonly issuer_master_id: FieldRef<"isin_re_issuance", 'BigInt'>
+    readonly allotment_date: FieldRef<"isin_re_issuance", 'DateTime'>
+    readonly issue_size: FieldRef<"isin_re_issuance", 'Decimal'>
+    readonly nsdl_issue_size: FieldRef<"isin_re_issuance", 'Decimal'>
+    readonly source: FieldRef<"isin_re_issuance", 'String'>
+    readonly face_value: FieldRef<"isin_re_issuance", 'Float'>
+    readonly maturity_date: FieldRef<"isin_re_issuance", 'DateTime'>
+    readonly business_sector: FieldRef<"isin_re_issuance", 'Int'>
+    readonly security_name: FieldRef<"isin_re_issuance", 'String'>
+    readonly security_class: FieldRef<"isin_re_issuance", 'String'>
+    readonly mode_issue: FieldRef<"isin_re_issuance", 'Int'>
+    readonly seniority: FieldRef<"isin_re_issuance", 'Int'>
+    readonly tax_free: FieldRef<"isin_re_issuance", 'Float'>
+    readonly secured_flag: FieldRef<"isin_re_issuance", 'Int'>
+    readonly is_visible: FieldRef<"isin_re_issuance", 'Int'>
+    readonly is_updated: FieldRef<"isin_re_issuance", 'Int'>
+    readonly is_main: FieldRef<"isin_re_issuance", 'Int'>
+    readonly created_at: FieldRef<"isin_re_issuance", 'DateTime'>
+    readonly updated_at: FieldRef<"isin_re_issuance", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * isin_re_issuance findUnique
+   */
+  export type isin_re_issuanceFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the isin_re_issuance
+     */
+    select?: isin_re_issuanceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the isin_re_issuance
+     */
+    omit?: isin_re_issuanceOmit<ExtArgs> | null
+    /**
+     * Filter, which isin_re_issuance to fetch.
+     */
+    where: isin_re_issuanceWhereUniqueInput
+  }
+
+  /**
+   * isin_re_issuance findUniqueOrThrow
+   */
+  export type isin_re_issuanceFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the isin_re_issuance
+     */
+    select?: isin_re_issuanceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the isin_re_issuance
+     */
+    omit?: isin_re_issuanceOmit<ExtArgs> | null
+    /**
+     * Filter, which isin_re_issuance to fetch.
+     */
+    where: isin_re_issuanceWhereUniqueInput
+  }
+
+  /**
+   * isin_re_issuance findFirst
+   */
+  export type isin_re_issuanceFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the isin_re_issuance
+     */
+    select?: isin_re_issuanceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the isin_re_issuance
+     */
+    omit?: isin_re_issuanceOmit<ExtArgs> | null
+    /**
+     * Filter, which isin_re_issuance to fetch.
+     */
+    where?: isin_re_issuanceWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of isin_re_issuances to fetch.
+     */
+    orderBy?: isin_re_issuanceOrderByWithRelationInput | isin_re_issuanceOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for isin_re_issuances.
+     */
+    cursor?: isin_re_issuanceWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` isin_re_issuances from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` isin_re_issuances.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of isin_re_issuances.
+     */
+    distinct?: Isin_re_issuanceScalarFieldEnum | Isin_re_issuanceScalarFieldEnum[]
+  }
+
+  /**
+   * isin_re_issuance findFirstOrThrow
+   */
+  export type isin_re_issuanceFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the isin_re_issuance
+     */
+    select?: isin_re_issuanceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the isin_re_issuance
+     */
+    omit?: isin_re_issuanceOmit<ExtArgs> | null
+    /**
+     * Filter, which isin_re_issuance to fetch.
+     */
+    where?: isin_re_issuanceWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of isin_re_issuances to fetch.
+     */
+    orderBy?: isin_re_issuanceOrderByWithRelationInput | isin_re_issuanceOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for isin_re_issuances.
+     */
+    cursor?: isin_re_issuanceWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` isin_re_issuances from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` isin_re_issuances.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of isin_re_issuances.
+     */
+    distinct?: Isin_re_issuanceScalarFieldEnum | Isin_re_issuanceScalarFieldEnum[]
+  }
+
+  /**
+   * isin_re_issuance findMany
+   */
+  export type isin_re_issuanceFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the isin_re_issuance
+     */
+    select?: isin_re_issuanceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the isin_re_issuance
+     */
+    omit?: isin_re_issuanceOmit<ExtArgs> | null
+    /**
+     * Filter, which isin_re_issuances to fetch.
+     */
+    where?: isin_re_issuanceWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of isin_re_issuances to fetch.
+     */
+    orderBy?: isin_re_issuanceOrderByWithRelationInput | isin_re_issuanceOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing isin_re_issuances.
+     */
+    cursor?: isin_re_issuanceWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` isin_re_issuances from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` isin_re_issuances.
+     */
+    skip?: number
+    distinct?: Isin_re_issuanceScalarFieldEnum | Isin_re_issuanceScalarFieldEnum[]
+  }
+
+  /**
+   * isin_re_issuance create
+   */
+  export type isin_re_issuanceCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the isin_re_issuance
+     */
+    select?: isin_re_issuanceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the isin_re_issuance
+     */
+    omit?: isin_re_issuanceOmit<ExtArgs> | null
+    /**
+     * The data needed to create a isin_re_issuance.
+     */
+    data: XOR<isin_re_issuanceCreateInput, isin_re_issuanceUncheckedCreateInput>
+  }
+
+  /**
+   * isin_re_issuance createMany
+   */
+  export type isin_re_issuanceCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many isin_re_issuances.
+     */
+    data: isin_re_issuanceCreateManyInput | isin_re_issuanceCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * isin_re_issuance update
+   */
+  export type isin_re_issuanceUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the isin_re_issuance
+     */
+    select?: isin_re_issuanceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the isin_re_issuance
+     */
+    omit?: isin_re_issuanceOmit<ExtArgs> | null
+    /**
+     * The data needed to update a isin_re_issuance.
+     */
+    data: XOR<isin_re_issuanceUpdateInput, isin_re_issuanceUncheckedUpdateInput>
+    /**
+     * Choose, which isin_re_issuance to update.
+     */
+    where: isin_re_issuanceWhereUniqueInput
+  }
+
+  /**
+   * isin_re_issuance updateMany
+   */
+  export type isin_re_issuanceUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update isin_re_issuances.
+     */
+    data: XOR<isin_re_issuanceUpdateManyMutationInput, isin_re_issuanceUncheckedUpdateManyInput>
+    /**
+     * Filter which isin_re_issuances to update
+     */
+    where?: isin_re_issuanceWhereInput
+    /**
+     * Limit how many isin_re_issuances to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * isin_re_issuance upsert
+   */
+  export type isin_re_issuanceUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the isin_re_issuance
+     */
+    select?: isin_re_issuanceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the isin_re_issuance
+     */
+    omit?: isin_re_issuanceOmit<ExtArgs> | null
+    /**
+     * The filter to search for the isin_re_issuance to update in case it exists.
+     */
+    where: isin_re_issuanceWhereUniqueInput
+    /**
+     * In case the isin_re_issuance found by the `where` argument doesn't exist, create a new isin_re_issuance with this data.
+     */
+    create: XOR<isin_re_issuanceCreateInput, isin_re_issuanceUncheckedCreateInput>
+    /**
+     * In case the isin_re_issuance was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<isin_re_issuanceUpdateInput, isin_re_issuanceUncheckedUpdateInput>
+  }
+
+  /**
+   * isin_re_issuance delete
+   */
+  export type isin_re_issuanceDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the isin_re_issuance
+     */
+    select?: isin_re_issuanceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the isin_re_issuance
+     */
+    omit?: isin_re_issuanceOmit<ExtArgs> | null
+    /**
+     * Filter which isin_re_issuance to delete.
+     */
+    where: isin_re_issuanceWhereUniqueInput
+  }
+
+  /**
+   * isin_re_issuance deleteMany
+   */
+  export type isin_re_issuanceDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which isin_re_issuances to delete
+     */
+    where?: isin_re_issuanceWhereInput
+    /**
+     * Limit how many isin_re_issuances to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * isin_re_issuance without action
+   */
+  export type isin_re_issuanceDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the isin_re_issuance
+     */
+    select?: isin_re_issuanceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the isin_re_issuance
+     */
+    omit?: isin_re_issuanceOmit<ExtArgs> | null
+  }
+
+
+  /**
+   * Model isin_re_issuance_details
+   */
+
+  export type AggregateIsin_re_issuance_details = {
+    _count: Isin_re_issuance_detailsCountAggregateOutputType | null
+    _avg: Isin_re_issuance_detailsAvgAggregateOutputType | null
+    _sum: Isin_re_issuance_detailsSumAggregateOutputType | null
+    _min: Isin_re_issuance_detailsMinAggregateOutputType | null
+    _max: Isin_re_issuance_detailsMaxAggregateOutputType | null
+  }
+
+  export type Isin_re_issuance_detailsAvgAggregateOutputType = {
+    id: number | null
+    re_issuance_id: number | null
+    face_value: Decimal | null
+    price: Decimal | null
+    spread: Decimal | null
+    yield: Decimal | null
+    base_issue_size: Decimal | null
+    green_shoe_option: Decimal | null
+    amount_raised: Decimal | null
+    coupon: Decimal | null
+    coupon_frequency: number | null
+    anchor_amount: Decimal | null
+    number_of_anchor_investors: number | null
+    total_qib_bidding: Decimal | null
+    total_qib_amount_accepted: Decimal | null
+    total_non_qib_bidding: Decimal | null
+    total_non_qib_amount_accepted: Decimal | null
+    cutoff_yield_price: Decimal | null
+    weighted_average_cutoff_yield_price: Decimal | null
+    updated_by: number | null
+  }
+
+  export type Isin_re_issuance_detailsSumAggregateOutputType = {
+    id: bigint | null
+    re_issuance_id: bigint | null
+    face_value: Decimal | null
+    price: Decimal | null
+    spread: Decimal | null
+    yield: Decimal | null
+    base_issue_size: Decimal | null
+    green_shoe_option: Decimal | null
+    amount_raised: Decimal | null
+    coupon: Decimal | null
+    coupon_frequency: number | null
+    anchor_amount: Decimal | null
+    number_of_anchor_investors: number | null
+    total_qib_bidding: Decimal | null
+    total_qib_amount_accepted: Decimal | null
+    total_non_qib_bidding: Decimal | null
+    total_non_qib_amount_accepted: Decimal | null
+    cutoff_yield_price: Decimal | null
+    weighted_average_cutoff_yield_price: Decimal | null
+    updated_by: number | null
+  }
+
+  export type Isin_re_issuance_detailsMinAggregateOutputType = {
+    id: bigint | null
+    re_issuance_id: bigint | null
+    bidding_date: Date | null
+    issuer_name: string | null
+    isin: string | null
+    issue_description: string | null
+    type_of_issuance: string | null
+    allotment_date: Date | null
+    face_value: Decimal | null
+    credit_rating: string | null
+    type_of_book_bidding: $Enums.isin_re_issuance_details_type_of_book_bidding | null
+    price: Decimal | null
+    spread: Decimal | null
+    yield: Decimal | null
+    manner_of_allotment: string | null
+    manner_of_settlement: string | null
+    link_of_gid_ppm: string | null
+    link_of_kid_term_sheet: string | null
+    base_issue_size: Decimal | null
+    green_shoe_option: Decimal | null
+    amount_raised: Decimal | null
+    coupon: Decimal | null
+    coupon_frequency: number | null
+    successful_bidders_category: string | null
+    type_of_bidding: string | null
+    secured_unsecured: $Enums.isin_re_issuance_details_secured_unsecured | null
+    tenor: string | null
+    maturity_type: string | null
+    interest_payment_type: string | null
+    anchor_amount: Decimal | null
+    number_of_anchor_investors: number | null
+    total_qib_bidding: Decimal | null
+    total_qib_amount_accepted: Decimal | null
+    total_non_qib_bidding: Decimal | null
+    total_non_qib_amount_accepted: Decimal | null
+    cutoff_yield_price: Decimal | null
+    weighted_average_cutoff_yield_price: Decimal | null
+    issuance_done_through_bidding_process: string | null
+    updated_by: number | null
+    created_at: Date | null
+    updated_at: Date | null
+  }
+
+  export type Isin_re_issuance_detailsMaxAggregateOutputType = {
+    id: bigint | null
+    re_issuance_id: bigint | null
+    bidding_date: Date | null
+    issuer_name: string | null
+    isin: string | null
+    issue_description: string | null
+    type_of_issuance: string | null
+    allotment_date: Date | null
+    face_value: Decimal | null
+    credit_rating: string | null
+    type_of_book_bidding: $Enums.isin_re_issuance_details_type_of_book_bidding | null
+    price: Decimal | null
+    spread: Decimal | null
+    yield: Decimal | null
+    manner_of_allotment: string | null
+    manner_of_settlement: string | null
+    link_of_gid_ppm: string | null
+    link_of_kid_term_sheet: string | null
+    base_issue_size: Decimal | null
+    green_shoe_option: Decimal | null
+    amount_raised: Decimal | null
+    coupon: Decimal | null
+    coupon_frequency: number | null
+    successful_bidders_category: string | null
+    type_of_bidding: string | null
+    secured_unsecured: $Enums.isin_re_issuance_details_secured_unsecured | null
+    tenor: string | null
+    maturity_type: string | null
+    interest_payment_type: string | null
+    anchor_amount: Decimal | null
+    number_of_anchor_investors: number | null
+    total_qib_bidding: Decimal | null
+    total_qib_amount_accepted: Decimal | null
+    total_non_qib_bidding: Decimal | null
+    total_non_qib_amount_accepted: Decimal | null
+    cutoff_yield_price: Decimal | null
+    weighted_average_cutoff_yield_price: Decimal | null
+    issuance_done_through_bidding_process: string | null
+    updated_by: number | null
+    created_at: Date | null
+    updated_at: Date | null
+  }
+
+  export type Isin_re_issuance_detailsCountAggregateOutputType = {
+    id: number
+    re_issuance_id: number
+    bidding_date: number
+    issuer_name: number
+    isin: number
+    issue_description: number
+    type_of_issuance: number
+    allotment_date: number
+    face_value: number
+    credit_rating: number
+    type_of_book_bidding: number
+    price: number
+    spread: number
+    yield: number
+    manner_of_allotment: number
+    manner_of_settlement: number
+    link_of_gid_ppm: number
+    link_of_kid_term_sheet: number
+    base_issue_size: number
+    green_shoe_option: number
+    amount_raised: number
+    coupon: number
+    coupon_frequency: number
+    successful_bidders_category: number
+    type_of_bidding: number
+    secured_unsecured: number
+    tenor: number
+    maturity_type: number
+    interest_payment_type: number
+    anchor_amount: number
+    number_of_anchor_investors: number
+    total_qib_bidding: number
+    total_qib_amount_accepted: number
+    total_non_qib_bidding: number
+    total_non_qib_amount_accepted: number
+    cutoff_yield_price: number
+    weighted_average_cutoff_yield_price: number
+    issuance_done_through_bidding_process: number
+    updated_by: number
+    created_at: number
+    updated_at: number
+    _all: number
+  }
+
+
+  export type Isin_re_issuance_detailsAvgAggregateInputType = {
+    id?: true
+    re_issuance_id?: true
+    face_value?: true
+    price?: true
+    spread?: true
+    yield?: true
+    base_issue_size?: true
+    green_shoe_option?: true
+    amount_raised?: true
+    coupon?: true
+    coupon_frequency?: true
+    anchor_amount?: true
+    number_of_anchor_investors?: true
+    total_qib_bidding?: true
+    total_qib_amount_accepted?: true
+    total_non_qib_bidding?: true
+    total_non_qib_amount_accepted?: true
+    cutoff_yield_price?: true
+    weighted_average_cutoff_yield_price?: true
+    updated_by?: true
+  }
+
+  export type Isin_re_issuance_detailsSumAggregateInputType = {
+    id?: true
+    re_issuance_id?: true
+    face_value?: true
+    price?: true
+    spread?: true
+    yield?: true
+    base_issue_size?: true
+    green_shoe_option?: true
+    amount_raised?: true
+    coupon?: true
+    coupon_frequency?: true
+    anchor_amount?: true
+    number_of_anchor_investors?: true
+    total_qib_bidding?: true
+    total_qib_amount_accepted?: true
+    total_non_qib_bidding?: true
+    total_non_qib_amount_accepted?: true
+    cutoff_yield_price?: true
+    weighted_average_cutoff_yield_price?: true
+    updated_by?: true
+  }
+
+  export type Isin_re_issuance_detailsMinAggregateInputType = {
+    id?: true
+    re_issuance_id?: true
+    bidding_date?: true
+    issuer_name?: true
+    isin?: true
+    issue_description?: true
+    type_of_issuance?: true
+    allotment_date?: true
+    face_value?: true
+    credit_rating?: true
+    type_of_book_bidding?: true
+    price?: true
+    spread?: true
+    yield?: true
+    manner_of_allotment?: true
+    manner_of_settlement?: true
+    link_of_gid_ppm?: true
+    link_of_kid_term_sheet?: true
+    base_issue_size?: true
+    green_shoe_option?: true
+    amount_raised?: true
+    coupon?: true
+    coupon_frequency?: true
+    successful_bidders_category?: true
+    type_of_bidding?: true
+    secured_unsecured?: true
+    tenor?: true
+    maturity_type?: true
+    interest_payment_type?: true
+    anchor_amount?: true
+    number_of_anchor_investors?: true
+    total_qib_bidding?: true
+    total_qib_amount_accepted?: true
+    total_non_qib_bidding?: true
+    total_non_qib_amount_accepted?: true
+    cutoff_yield_price?: true
+    weighted_average_cutoff_yield_price?: true
+    issuance_done_through_bidding_process?: true
+    updated_by?: true
+    created_at?: true
+    updated_at?: true
+  }
+
+  export type Isin_re_issuance_detailsMaxAggregateInputType = {
+    id?: true
+    re_issuance_id?: true
+    bidding_date?: true
+    issuer_name?: true
+    isin?: true
+    issue_description?: true
+    type_of_issuance?: true
+    allotment_date?: true
+    face_value?: true
+    credit_rating?: true
+    type_of_book_bidding?: true
+    price?: true
+    spread?: true
+    yield?: true
+    manner_of_allotment?: true
+    manner_of_settlement?: true
+    link_of_gid_ppm?: true
+    link_of_kid_term_sheet?: true
+    base_issue_size?: true
+    green_shoe_option?: true
+    amount_raised?: true
+    coupon?: true
+    coupon_frequency?: true
+    successful_bidders_category?: true
+    type_of_bidding?: true
+    secured_unsecured?: true
+    tenor?: true
+    maturity_type?: true
+    interest_payment_type?: true
+    anchor_amount?: true
+    number_of_anchor_investors?: true
+    total_qib_bidding?: true
+    total_qib_amount_accepted?: true
+    total_non_qib_bidding?: true
+    total_non_qib_amount_accepted?: true
+    cutoff_yield_price?: true
+    weighted_average_cutoff_yield_price?: true
+    issuance_done_through_bidding_process?: true
+    updated_by?: true
+    created_at?: true
+    updated_at?: true
+  }
+
+  export type Isin_re_issuance_detailsCountAggregateInputType = {
+    id?: true
+    re_issuance_id?: true
+    bidding_date?: true
+    issuer_name?: true
+    isin?: true
+    issue_description?: true
+    type_of_issuance?: true
+    allotment_date?: true
+    face_value?: true
+    credit_rating?: true
+    type_of_book_bidding?: true
+    price?: true
+    spread?: true
+    yield?: true
+    manner_of_allotment?: true
+    manner_of_settlement?: true
+    link_of_gid_ppm?: true
+    link_of_kid_term_sheet?: true
+    base_issue_size?: true
+    green_shoe_option?: true
+    amount_raised?: true
+    coupon?: true
+    coupon_frequency?: true
+    successful_bidders_category?: true
+    type_of_bidding?: true
+    secured_unsecured?: true
+    tenor?: true
+    maturity_type?: true
+    interest_payment_type?: true
+    anchor_amount?: true
+    number_of_anchor_investors?: true
+    total_qib_bidding?: true
+    total_qib_amount_accepted?: true
+    total_non_qib_bidding?: true
+    total_non_qib_amount_accepted?: true
+    cutoff_yield_price?: true
+    weighted_average_cutoff_yield_price?: true
+    issuance_done_through_bidding_process?: true
+    updated_by?: true
+    created_at?: true
+    updated_at?: true
+    _all?: true
+  }
+
+  export type Isin_re_issuance_detailsAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which isin_re_issuance_details to aggregate.
+     */
+    where?: isin_re_issuance_detailsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of isin_re_issuance_details to fetch.
+     */
+    orderBy?: isin_re_issuance_detailsOrderByWithRelationInput | isin_re_issuance_detailsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: isin_re_issuance_detailsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` isin_re_issuance_details from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` isin_re_issuance_details.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned isin_re_issuance_details
+    **/
+    _count?: true | Isin_re_issuance_detailsCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: Isin_re_issuance_detailsAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: Isin_re_issuance_detailsSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: Isin_re_issuance_detailsMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: Isin_re_issuance_detailsMaxAggregateInputType
+  }
+
+  export type GetIsin_re_issuance_detailsAggregateType<T extends Isin_re_issuance_detailsAggregateArgs> = {
+        [P in keyof T & keyof AggregateIsin_re_issuance_details]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateIsin_re_issuance_details[P]>
+      : GetScalarType<T[P], AggregateIsin_re_issuance_details[P]>
+  }
+
+
+
+
+  export type isin_re_issuance_detailsGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: isin_re_issuance_detailsWhereInput
+    orderBy?: isin_re_issuance_detailsOrderByWithAggregationInput | isin_re_issuance_detailsOrderByWithAggregationInput[]
+    by: Isin_re_issuance_detailsScalarFieldEnum[] | Isin_re_issuance_detailsScalarFieldEnum
+    having?: isin_re_issuance_detailsScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: Isin_re_issuance_detailsCountAggregateInputType | true
+    _avg?: Isin_re_issuance_detailsAvgAggregateInputType
+    _sum?: Isin_re_issuance_detailsSumAggregateInputType
+    _min?: Isin_re_issuance_detailsMinAggregateInputType
+    _max?: Isin_re_issuance_detailsMaxAggregateInputType
+  }
+
+  export type Isin_re_issuance_detailsGroupByOutputType = {
+    id: bigint
+    re_issuance_id: bigint
+    bidding_date: Date | null
+    issuer_name: string | null
+    isin: string | null
+    issue_description: string | null
+    type_of_issuance: string | null
+    allotment_date: Date | null
+    face_value: Decimal | null
+    credit_rating: string | null
+    type_of_book_bidding: $Enums.isin_re_issuance_details_type_of_book_bidding | null
+    price: Decimal | null
+    spread: Decimal | null
+    yield: Decimal | null
+    manner_of_allotment: string | null
+    manner_of_settlement: string | null
+    link_of_gid_ppm: string | null
+    link_of_kid_term_sheet: string | null
+    base_issue_size: Decimal | null
+    green_shoe_option: Decimal | null
+    amount_raised: Decimal | null
+    coupon: Decimal | null
+    coupon_frequency: number | null
+    successful_bidders_category: string | null
+    type_of_bidding: string | null
+    secured_unsecured: $Enums.isin_re_issuance_details_secured_unsecured | null
+    tenor: string | null
+    maturity_type: string | null
+    interest_payment_type: string | null
+    anchor_amount: Decimal | null
+    number_of_anchor_investors: number | null
+    total_qib_bidding: Decimal | null
+    total_qib_amount_accepted: Decimal | null
+    total_non_qib_bidding: Decimal | null
+    total_non_qib_amount_accepted: Decimal | null
+    cutoff_yield_price: Decimal | null
+    weighted_average_cutoff_yield_price: Decimal | null
+    issuance_done_through_bidding_process: string | null
+    updated_by: number | null
+    created_at: Date | null
+    updated_at: Date | null
+    _count: Isin_re_issuance_detailsCountAggregateOutputType | null
+    _avg: Isin_re_issuance_detailsAvgAggregateOutputType | null
+    _sum: Isin_re_issuance_detailsSumAggregateOutputType | null
+    _min: Isin_re_issuance_detailsMinAggregateOutputType | null
+    _max: Isin_re_issuance_detailsMaxAggregateOutputType | null
+  }
+
+  type GetIsin_re_issuance_detailsGroupByPayload<T extends isin_re_issuance_detailsGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<Isin_re_issuance_detailsGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof Isin_re_issuance_detailsGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], Isin_re_issuance_detailsGroupByOutputType[P]>
+            : GetScalarType<T[P], Isin_re_issuance_detailsGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type isin_re_issuance_detailsSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    re_issuance_id?: boolean
+    bidding_date?: boolean
+    issuer_name?: boolean
+    isin?: boolean
+    issue_description?: boolean
+    type_of_issuance?: boolean
+    allotment_date?: boolean
+    face_value?: boolean
+    credit_rating?: boolean
+    type_of_book_bidding?: boolean
+    price?: boolean
+    spread?: boolean
+    yield?: boolean
+    manner_of_allotment?: boolean
+    manner_of_settlement?: boolean
+    link_of_gid_ppm?: boolean
+    link_of_kid_term_sheet?: boolean
+    base_issue_size?: boolean
+    green_shoe_option?: boolean
+    amount_raised?: boolean
+    coupon?: boolean
+    coupon_frequency?: boolean
+    successful_bidders_category?: boolean
+    type_of_bidding?: boolean
+    secured_unsecured?: boolean
+    tenor?: boolean
+    maturity_type?: boolean
+    interest_payment_type?: boolean
+    anchor_amount?: boolean
+    number_of_anchor_investors?: boolean
+    total_qib_bidding?: boolean
+    total_qib_amount_accepted?: boolean
+    total_non_qib_bidding?: boolean
+    total_non_qib_amount_accepted?: boolean
+    cutoff_yield_price?: boolean
+    weighted_average_cutoff_yield_price?: boolean
+    issuance_done_through_bidding_process?: boolean
+    updated_by?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+  }, ExtArgs["result"]["isin_re_issuance_details"]>
+
+
+
+  export type isin_re_issuance_detailsSelectScalar = {
+    id?: boolean
+    re_issuance_id?: boolean
+    bidding_date?: boolean
+    issuer_name?: boolean
+    isin?: boolean
+    issue_description?: boolean
+    type_of_issuance?: boolean
+    allotment_date?: boolean
+    face_value?: boolean
+    credit_rating?: boolean
+    type_of_book_bidding?: boolean
+    price?: boolean
+    spread?: boolean
+    yield?: boolean
+    manner_of_allotment?: boolean
+    manner_of_settlement?: boolean
+    link_of_gid_ppm?: boolean
+    link_of_kid_term_sheet?: boolean
+    base_issue_size?: boolean
+    green_shoe_option?: boolean
+    amount_raised?: boolean
+    coupon?: boolean
+    coupon_frequency?: boolean
+    successful_bidders_category?: boolean
+    type_of_bidding?: boolean
+    secured_unsecured?: boolean
+    tenor?: boolean
+    maturity_type?: boolean
+    interest_payment_type?: boolean
+    anchor_amount?: boolean
+    number_of_anchor_investors?: boolean
+    total_qib_bidding?: boolean
+    total_qib_amount_accepted?: boolean
+    total_non_qib_bidding?: boolean
+    total_non_qib_amount_accepted?: boolean
+    cutoff_yield_price?: boolean
+    weighted_average_cutoff_yield_price?: boolean
+    issuance_done_through_bidding_process?: boolean
+    updated_by?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+  }
+
+  export type isin_re_issuance_detailsOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "re_issuance_id" | "bidding_date" | "issuer_name" | "isin" | "issue_description" | "type_of_issuance" | "allotment_date" | "face_value" | "credit_rating" | "type_of_book_bidding" | "price" | "spread" | "yield" | "manner_of_allotment" | "manner_of_settlement" | "link_of_gid_ppm" | "link_of_kid_term_sheet" | "base_issue_size" | "green_shoe_option" | "amount_raised" | "coupon" | "coupon_frequency" | "successful_bidders_category" | "type_of_bidding" | "secured_unsecured" | "tenor" | "maturity_type" | "interest_payment_type" | "anchor_amount" | "number_of_anchor_investors" | "total_qib_bidding" | "total_qib_amount_accepted" | "total_non_qib_bidding" | "total_non_qib_amount_accepted" | "cutoff_yield_price" | "weighted_average_cutoff_yield_price" | "issuance_done_through_bidding_process" | "updated_by" | "created_at" | "updated_at", ExtArgs["result"]["isin_re_issuance_details"]>
+
+  export type $isin_re_issuance_detailsPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "isin_re_issuance_details"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: bigint
+      re_issuance_id: bigint
+      bidding_date: Date | null
+      issuer_name: string | null
+      isin: string | null
+      issue_description: string | null
+      type_of_issuance: string | null
+      allotment_date: Date | null
+      face_value: Prisma.Decimal | null
+      credit_rating: string | null
+      type_of_book_bidding: $Enums.isin_re_issuance_details_type_of_book_bidding | null
+      price: Prisma.Decimal | null
+      spread: Prisma.Decimal | null
+      yield: Prisma.Decimal | null
+      manner_of_allotment: string | null
+      manner_of_settlement: string | null
+      link_of_gid_ppm: string | null
+      link_of_kid_term_sheet: string | null
+      base_issue_size: Prisma.Decimal | null
+      green_shoe_option: Prisma.Decimal | null
+      amount_raised: Prisma.Decimal | null
+      coupon: Prisma.Decimal | null
+      coupon_frequency: number | null
+      successful_bidders_category: string | null
+      type_of_bidding: string | null
+      secured_unsecured: $Enums.isin_re_issuance_details_secured_unsecured | null
+      tenor: string | null
+      maturity_type: string | null
+      interest_payment_type: string | null
+      anchor_amount: Prisma.Decimal | null
+      number_of_anchor_investors: number | null
+      total_qib_bidding: Prisma.Decimal | null
+      total_qib_amount_accepted: Prisma.Decimal | null
+      total_non_qib_bidding: Prisma.Decimal | null
+      total_non_qib_amount_accepted: Prisma.Decimal | null
+      cutoff_yield_price: Prisma.Decimal | null
+      weighted_average_cutoff_yield_price: Prisma.Decimal | null
+      issuance_done_through_bidding_process: string | null
+      updated_by: number | null
+      created_at: Date | null
+      updated_at: Date | null
+    }, ExtArgs["result"]["isin_re_issuance_details"]>
+    composites: {}
+  }
+
+  type isin_re_issuance_detailsGetPayload<S extends boolean | null | undefined | isin_re_issuance_detailsDefaultArgs> = $Result.GetResult<Prisma.$isin_re_issuance_detailsPayload, S>
+
+  type isin_re_issuance_detailsCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<isin_re_issuance_detailsFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: Isin_re_issuance_detailsCountAggregateInputType | true
+    }
+
+  export interface isin_re_issuance_detailsDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['isin_re_issuance_details'], meta: { name: 'isin_re_issuance_details' } }
+    /**
+     * Find zero or one Isin_re_issuance_details that matches the filter.
+     * @param {isin_re_issuance_detailsFindUniqueArgs} args - Arguments to find a Isin_re_issuance_details
+     * @example
+     * // Get one Isin_re_issuance_details
+     * const isin_re_issuance_details = await prisma.isin_re_issuance_details.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends isin_re_issuance_detailsFindUniqueArgs>(args: SelectSubset<T, isin_re_issuance_detailsFindUniqueArgs<ExtArgs>>): Prisma__isin_re_issuance_detailsClient<$Result.GetResult<Prisma.$isin_re_issuance_detailsPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one Isin_re_issuance_details that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {isin_re_issuance_detailsFindUniqueOrThrowArgs} args - Arguments to find a Isin_re_issuance_details
+     * @example
+     * // Get one Isin_re_issuance_details
+     * const isin_re_issuance_details = await prisma.isin_re_issuance_details.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends isin_re_issuance_detailsFindUniqueOrThrowArgs>(args: SelectSubset<T, isin_re_issuance_detailsFindUniqueOrThrowArgs<ExtArgs>>): Prisma__isin_re_issuance_detailsClient<$Result.GetResult<Prisma.$isin_re_issuance_detailsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Isin_re_issuance_details that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {isin_re_issuance_detailsFindFirstArgs} args - Arguments to find a Isin_re_issuance_details
+     * @example
+     * // Get one Isin_re_issuance_details
+     * const isin_re_issuance_details = await prisma.isin_re_issuance_details.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends isin_re_issuance_detailsFindFirstArgs>(args?: SelectSubset<T, isin_re_issuance_detailsFindFirstArgs<ExtArgs>>): Prisma__isin_re_issuance_detailsClient<$Result.GetResult<Prisma.$isin_re_issuance_detailsPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Isin_re_issuance_details that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {isin_re_issuance_detailsFindFirstOrThrowArgs} args - Arguments to find a Isin_re_issuance_details
+     * @example
+     * // Get one Isin_re_issuance_details
+     * const isin_re_issuance_details = await prisma.isin_re_issuance_details.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends isin_re_issuance_detailsFindFirstOrThrowArgs>(args?: SelectSubset<T, isin_re_issuance_detailsFindFirstOrThrowArgs<ExtArgs>>): Prisma__isin_re_issuance_detailsClient<$Result.GetResult<Prisma.$isin_re_issuance_detailsPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more Isin_re_issuance_details that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {isin_re_issuance_detailsFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Isin_re_issuance_details
+     * const isin_re_issuance_details = await prisma.isin_re_issuance_details.findMany()
+     * 
+     * // Get first 10 Isin_re_issuance_details
+     * const isin_re_issuance_details = await prisma.isin_re_issuance_details.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const isin_re_issuance_detailsWithIdOnly = await prisma.isin_re_issuance_details.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends isin_re_issuance_detailsFindManyArgs>(args?: SelectSubset<T, isin_re_issuance_detailsFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$isin_re_issuance_detailsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a Isin_re_issuance_details.
+     * @param {isin_re_issuance_detailsCreateArgs} args - Arguments to create a Isin_re_issuance_details.
+     * @example
+     * // Create one Isin_re_issuance_details
+     * const Isin_re_issuance_details = await prisma.isin_re_issuance_details.create({
+     *   data: {
+     *     // ... data to create a Isin_re_issuance_details
+     *   }
+     * })
+     * 
+     */
+    create<T extends isin_re_issuance_detailsCreateArgs>(args: SelectSubset<T, isin_re_issuance_detailsCreateArgs<ExtArgs>>): Prisma__isin_re_issuance_detailsClient<$Result.GetResult<Prisma.$isin_re_issuance_detailsPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many Isin_re_issuance_details.
+     * @param {isin_re_issuance_detailsCreateManyArgs} args - Arguments to create many Isin_re_issuance_details.
+     * @example
+     * // Create many Isin_re_issuance_details
+     * const isin_re_issuance_details = await prisma.isin_re_issuance_details.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends isin_re_issuance_detailsCreateManyArgs>(args?: SelectSubset<T, isin_re_issuance_detailsCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a Isin_re_issuance_details.
+     * @param {isin_re_issuance_detailsDeleteArgs} args - Arguments to delete one Isin_re_issuance_details.
+     * @example
+     * // Delete one Isin_re_issuance_details
+     * const Isin_re_issuance_details = await prisma.isin_re_issuance_details.delete({
+     *   where: {
+     *     // ... filter to delete one Isin_re_issuance_details
+     *   }
+     * })
+     * 
+     */
+    delete<T extends isin_re_issuance_detailsDeleteArgs>(args: SelectSubset<T, isin_re_issuance_detailsDeleteArgs<ExtArgs>>): Prisma__isin_re_issuance_detailsClient<$Result.GetResult<Prisma.$isin_re_issuance_detailsPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one Isin_re_issuance_details.
+     * @param {isin_re_issuance_detailsUpdateArgs} args - Arguments to update one Isin_re_issuance_details.
+     * @example
+     * // Update one Isin_re_issuance_details
+     * const isin_re_issuance_details = await prisma.isin_re_issuance_details.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends isin_re_issuance_detailsUpdateArgs>(args: SelectSubset<T, isin_re_issuance_detailsUpdateArgs<ExtArgs>>): Prisma__isin_re_issuance_detailsClient<$Result.GetResult<Prisma.$isin_re_issuance_detailsPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more Isin_re_issuance_details.
+     * @param {isin_re_issuance_detailsDeleteManyArgs} args - Arguments to filter Isin_re_issuance_details to delete.
+     * @example
+     * // Delete a few Isin_re_issuance_details
+     * const { count } = await prisma.isin_re_issuance_details.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends isin_re_issuance_detailsDeleteManyArgs>(args?: SelectSubset<T, isin_re_issuance_detailsDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Isin_re_issuance_details.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {isin_re_issuance_detailsUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Isin_re_issuance_details
+     * const isin_re_issuance_details = await prisma.isin_re_issuance_details.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends isin_re_issuance_detailsUpdateManyArgs>(args: SelectSubset<T, isin_re_issuance_detailsUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one Isin_re_issuance_details.
+     * @param {isin_re_issuance_detailsUpsertArgs} args - Arguments to update or create a Isin_re_issuance_details.
+     * @example
+     * // Update or create a Isin_re_issuance_details
+     * const isin_re_issuance_details = await prisma.isin_re_issuance_details.upsert({
+     *   create: {
+     *     // ... data to create a Isin_re_issuance_details
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Isin_re_issuance_details we want to update
+     *   }
+     * })
+     */
+    upsert<T extends isin_re_issuance_detailsUpsertArgs>(args: SelectSubset<T, isin_re_issuance_detailsUpsertArgs<ExtArgs>>): Prisma__isin_re_issuance_detailsClient<$Result.GetResult<Prisma.$isin_re_issuance_detailsPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of Isin_re_issuance_details.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {isin_re_issuance_detailsCountArgs} args - Arguments to filter Isin_re_issuance_details to count.
+     * @example
+     * // Count the number of Isin_re_issuance_details
+     * const count = await prisma.isin_re_issuance_details.count({
+     *   where: {
+     *     // ... the filter for the Isin_re_issuance_details we want to count
+     *   }
+     * })
+    **/
+    count<T extends isin_re_issuance_detailsCountArgs>(
+      args?: Subset<T, isin_re_issuance_detailsCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], Isin_re_issuance_detailsCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Isin_re_issuance_details.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {Isin_re_issuance_detailsAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends Isin_re_issuance_detailsAggregateArgs>(args: Subset<T, Isin_re_issuance_detailsAggregateArgs>): Prisma.PrismaPromise<GetIsin_re_issuance_detailsAggregateType<T>>
+
+    /**
+     * Group by Isin_re_issuance_details.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {isin_re_issuance_detailsGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends isin_re_issuance_detailsGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: isin_re_issuance_detailsGroupByArgs['orderBy'] }
+        : { orderBy?: isin_re_issuance_detailsGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, isin_re_issuance_detailsGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetIsin_re_issuance_detailsGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the isin_re_issuance_details model
+   */
+  readonly fields: isin_re_issuance_detailsFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for isin_re_issuance_details.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__isin_re_issuance_detailsClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the isin_re_issuance_details model
+   */
+  interface isin_re_issuance_detailsFieldRefs {
+    readonly id: FieldRef<"isin_re_issuance_details", 'BigInt'>
+    readonly re_issuance_id: FieldRef<"isin_re_issuance_details", 'BigInt'>
+    readonly bidding_date: FieldRef<"isin_re_issuance_details", 'DateTime'>
+    readonly issuer_name: FieldRef<"isin_re_issuance_details", 'String'>
+    readonly isin: FieldRef<"isin_re_issuance_details", 'String'>
+    readonly issue_description: FieldRef<"isin_re_issuance_details", 'String'>
+    readonly type_of_issuance: FieldRef<"isin_re_issuance_details", 'String'>
+    readonly allotment_date: FieldRef<"isin_re_issuance_details", 'DateTime'>
+    readonly face_value: FieldRef<"isin_re_issuance_details", 'Decimal'>
+    readonly credit_rating: FieldRef<"isin_re_issuance_details", 'String'>
+    readonly type_of_book_bidding: FieldRef<"isin_re_issuance_details", 'isin_re_issuance_details_type_of_book_bidding'>
+    readonly price: FieldRef<"isin_re_issuance_details", 'Decimal'>
+    readonly spread: FieldRef<"isin_re_issuance_details", 'Decimal'>
+    readonly yield: FieldRef<"isin_re_issuance_details", 'Decimal'>
+    readonly manner_of_allotment: FieldRef<"isin_re_issuance_details", 'String'>
+    readonly manner_of_settlement: FieldRef<"isin_re_issuance_details", 'String'>
+    readonly link_of_gid_ppm: FieldRef<"isin_re_issuance_details", 'String'>
+    readonly link_of_kid_term_sheet: FieldRef<"isin_re_issuance_details", 'String'>
+    readonly base_issue_size: FieldRef<"isin_re_issuance_details", 'Decimal'>
+    readonly green_shoe_option: FieldRef<"isin_re_issuance_details", 'Decimal'>
+    readonly amount_raised: FieldRef<"isin_re_issuance_details", 'Decimal'>
+    readonly coupon: FieldRef<"isin_re_issuance_details", 'Decimal'>
+    readonly coupon_frequency: FieldRef<"isin_re_issuance_details", 'Int'>
+    readonly successful_bidders_category: FieldRef<"isin_re_issuance_details", 'String'>
+    readonly type_of_bidding: FieldRef<"isin_re_issuance_details", 'String'>
+    readonly secured_unsecured: FieldRef<"isin_re_issuance_details", 'isin_re_issuance_details_secured_unsecured'>
+    readonly tenor: FieldRef<"isin_re_issuance_details", 'String'>
+    readonly maturity_type: FieldRef<"isin_re_issuance_details", 'String'>
+    readonly interest_payment_type: FieldRef<"isin_re_issuance_details", 'String'>
+    readonly anchor_amount: FieldRef<"isin_re_issuance_details", 'Decimal'>
+    readonly number_of_anchor_investors: FieldRef<"isin_re_issuance_details", 'Int'>
+    readonly total_qib_bidding: FieldRef<"isin_re_issuance_details", 'Decimal'>
+    readonly total_qib_amount_accepted: FieldRef<"isin_re_issuance_details", 'Decimal'>
+    readonly total_non_qib_bidding: FieldRef<"isin_re_issuance_details", 'Decimal'>
+    readonly total_non_qib_amount_accepted: FieldRef<"isin_re_issuance_details", 'Decimal'>
+    readonly cutoff_yield_price: FieldRef<"isin_re_issuance_details", 'Decimal'>
+    readonly weighted_average_cutoff_yield_price: FieldRef<"isin_re_issuance_details", 'Decimal'>
+    readonly issuance_done_through_bidding_process: FieldRef<"isin_re_issuance_details", 'String'>
+    readonly updated_by: FieldRef<"isin_re_issuance_details", 'Int'>
+    readonly created_at: FieldRef<"isin_re_issuance_details", 'DateTime'>
+    readonly updated_at: FieldRef<"isin_re_issuance_details", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * isin_re_issuance_details findUnique
+   */
+  export type isin_re_issuance_detailsFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the isin_re_issuance_details
+     */
+    select?: isin_re_issuance_detailsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the isin_re_issuance_details
+     */
+    omit?: isin_re_issuance_detailsOmit<ExtArgs> | null
+    /**
+     * Filter, which isin_re_issuance_details to fetch.
+     */
+    where: isin_re_issuance_detailsWhereUniqueInput
+  }
+
+  /**
+   * isin_re_issuance_details findUniqueOrThrow
+   */
+  export type isin_re_issuance_detailsFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the isin_re_issuance_details
+     */
+    select?: isin_re_issuance_detailsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the isin_re_issuance_details
+     */
+    omit?: isin_re_issuance_detailsOmit<ExtArgs> | null
+    /**
+     * Filter, which isin_re_issuance_details to fetch.
+     */
+    where: isin_re_issuance_detailsWhereUniqueInput
+  }
+
+  /**
+   * isin_re_issuance_details findFirst
+   */
+  export type isin_re_issuance_detailsFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the isin_re_issuance_details
+     */
+    select?: isin_re_issuance_detailsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the isin_re_issuance_details
+     */
+    omit?: isin_re_issuance_detailsOmit<ExtArgs> | null
+    /**
+     * Filter, which isin_re_issuance_details to fetch.
+     */
+    where?: isin_re_issuance_detailsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of isin_re_issuance_details to fetch.
+     */
+    orderBy?: isin_re_issuance_detailsOrderByWithRelationInput | isin_re_issuance_detailsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for isin_re_issuance_details.
+     */
+    cursor?: isin_re_issuance_detailsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` isin_re_issuance_details from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` isin_re_issuance_details.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of isin_re_issuance_details.
+     */
+    distinct?: Isin_re_issuance_detailsScalarFieldEnum | Isin_re_issuance_detailsScalarFieldEnum[]
+  }
+
+  /**
+   * isin_re_issuance_details findFirstOrThrow
+   */
+  export type isin_re_issuance_detailsFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the isin_re_issuance_details
+     */
+    select?: isin_re_issuance_detailsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the isin_re_issuance_details
+     */
+    omit?: isin_re_issuance_detailsOmit<ExtArgs> | null
+    /**
+     * Filter, which isin_re_issuance_details to fetch.
+     */
+    where?: isin_re_issuance_detailsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of isin_re_issuance_details to fetch.
+     */
+    orderBy?: isin_re_issuance_detailsOrderByWithRelationInput | isin_re_issuance_detailsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for isin_re_issuance_details.
+     */
+    cursor?: isin_re_issuance_detailsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` isin_re_issuance_details from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` isin_re_issuance_details.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of isin_re_issuance_details.
+     */
+    distinct?: Isin_re_issuance_detailsScalarFieldEnum | Isin_re_issuance_detailsScalarFieldEnum[]
+  }
+
+  /**
+   * isin_re_issuance_details findMany
+   */
+  export type isin_re_issuance_detailsFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the isin_re_issuance_details
+     */
+    select?: isin_re_issuance_detailsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the isin_re_issuance_details
+     */
+    omit?: isin_re_issuance_detailsOmit<ExtArgs> | null
+    /**
+     * Filter, which isin_re_issuance_details to fetch.
+     */
+    where?: isin_re_issuance_detailsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of isin_re_issuance_details to fetch.
+     */
+    orderBy?: isin_re_issuance_detailsOrderByWithRelationInput | isin_re_issuance_detailsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing isin_re_issuance_details.
+     */
+    cursor?: isin_re_issuance_detailsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` isin_re_issuance_details from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` isin_re_issuance_details.
+     */
+    skip?: number
+    distinct?: Isin_re_issuance_detailsScalarFieldEnum | Isin_re_issuance_detailsScalarFieldEnum[]
+  }
+
+  /**
+   * isin_re_issuance_details create
+   */
+  export type isin_re_issuance_detailsCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the isin_re_issuance_details
+     */
+    select?: isin_re_issuance_detailsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the isin_re_issuance_details
+     */
+    omit?: isin_re_issuance_detailsOmit<ExtArgs> | null
+    /**
+     * The data needed to create a isin_re_issuance_details.
+     */
+    data: XOR<isin_re_issuance_detailsCreateInput, isin_re_issuance_detailsUncheckedCreateInput>
+  }
+
+  /**
+   * isin_re_issuance_details createMany
+   */
+  export type isin_re_issuance_detailsCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many isin_re_issuance_details.
+     */
+    data: isin_re_issuance_detailsCreateManyInput | isin_re_issuance_detailsCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * isin_re_issuance_details update
+   */
+  export type isin_re_issuance_detailsUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the isin_re_issuance_details
+     */
+    select?: isin_re_issuance_detailsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the isin_re_issuance_details
+     */
+    omit?: isin_re_issuance_detailsOmit<ExtArgs> | null
+    /**
+     * The data needed to update a isin_re_issuance_details.
+     */
+    data: XOR<isin_re_issuance_detailsUpdateInput, isin_re_issuance_detailsUncheckedUpdateInput>
+    /**
+     * Choose, which isin_re_issuance_details to update.
+     */
+    where: isin_re_issuance_detailsWhereUniqueInput
+  }
+
+  /**
+   * isin_re_issuance_details updateMany
+   */
+  export type isin_re_issuance_detailsUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update isin_re_issuance_details.
+     */
+    data: XOR<isin_re_issuance_detailsUpdateManyMutationInput, isin_re_issuance_detailsUncheckedUpdateManyInput>
+    /**
+     * Filter which isin_re_issuance_details to update
+     */
+    where?: isin_re_issuance_detailsWhereInput
+    /**
+     * Limit how many isin_re_issuance_details to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * isin_re_issuance_details upsert
+   */
+  export type isin_re_issuance_detailsUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the isin_re_issuance_details
+     */
+    select?: isin_re_issuance_detailsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the isin_re_issuance_details
+     */
+    omit?: isin_re_issuance_detailsOmit<ExtArgs> | null
+    /**
+     * The filter to search for the isin_re_issuance_details to update in case it exists.
+     */
+    where: isin_re_issuance_detailsWhereUniqueInput
+    /**
+     * In case the isin_re_issuance_details found by the `where` argument doesn't exist, create a new isin_re_issuance_details with this data.
+     */
+    create: XOR<isin_re_issuance_detailsCreateInput, isin_re_issuance_detailsUncheckedCreateInput>
+    /**
+     * In case the isin_re_issuance_details was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<isin_re_issuance_detailsUpdateInput, isin_re_issuance_detailsUncheckedUpdateInput>
+  }
+
+  /**
+   * isin_re_issuance_details delete
+   */
+  export type isin_re_issuance_detailsDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the isin_re_issuance_details
+     */
+    select?: isin_re_issuance_detailsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the isin_re_issuance_details
+     */
+    omit?: isin_re_issuance_detailsOmit<ExtArgs> | null
+    /**
+     * Filter which isin_re_issuance_details to delete.
+     */
+    where: isin_re_issuance_detailsWhereUniqueInput
+  }
+
+  /**
+   * isin_re_issuance_details deleteMany
+   */
+  export type isin_re_issuance_detailsDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which isin_re_issuance_details to delete
+     */
+    where?: isin_re_issuance_detailsWhereInput
+    /**
+     * Limit how many isin_re_issuance_details to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * isin_re_issuance_details without action
+   */
+  export type isin_re_issuance_detailsDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the isin_re_issuance_details
+     */
+    select?: isin_re_issuance_detailsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the isin_re_issuance_details
+     */
+    omit?: isin_re_issuance_detailsOmit<ExtArgs> | null
+  }
+
+
+  /**
+   * Model isin_records
+   */
+
+  export type AggregateIsin_records = {
+    _count: Isin_recordsCountAggregateOutputType | null
+    _avg: Isin_recordsAvgAggregateOutputType | null
+    _sum: Isin_recordsSumAggregateOutputType | null
+    _min: Isin_recordsMinAggregateOutputType | null
+    _max: Isin_recordsMaxAggregateOutputType | null
+  }
+
+  export type Isin_recordsAvgAggregateOutputType = {
+    id: number | null
+  }
+
+  export type Isin_recordsSumAggregateOutputType = {
+    id: number | null
+  }
+
+  export type Isin_recordsMinAggregateOutputType = {
+    id: number | null
+    isin: string | null
+    allotment_date: Date | null
+    status: boolean | null
+    created_at: Date | null
+    updated_at: Date | null
+  }
+
+  export type Isin_recordsMaxAggregateOutputType = {
+    id: number | null
+    isin: string | null
+    allotment_date: Date | null
+    status: boolean | null
+    created_at: Date | null
+    updated_at: Date | null
+  }
+
+  export type Isin_recordsCountAggregateOutputType = {
+    id: number
+    isin: number
+    allotment_date: number
+    status: number
+    created_at: number
+    updated_at: number
+    _all: number
+  }
+
+
+  export type Isin_recordsAvgAggregateInputType = {
+    id?: true
+  }
+
+  export type Isin_recordsSumAggregateInputType = {
+    id?: true
+  }
+
+  export type Isin_recordsMinAggregateInputType = {
+    id?: true
+    isin?: true
+    allotment_date?: true
+    status?: true
+    created_at?: true
+    updated_at?: true
+  }
+
+  export type Isin_recordsMaxAggregateInputType = {
+    id?: true
+    isin?: true
+    allotment_date?: true
+    status?: true
+    created_at?: true
+    updated_at?: true
+  }
+
+  export type Isin_recordsCountAggregateInputType = {
+    id?: true
+    isin?: true
+    allotment_date?: true
+    status?: true
+    created_at?: true
+    updated_at?: true
+    _all?: true
+  }
+
+  export type Isin_recordsAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which isin_records to aggregate.
+     */
+    where?: isin_recordsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of isin_records to fetch.
+     */
+    orderBy?: isin_recordsOrderByWithRelationInput | isin_recordsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: isin_recordsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` isin_records from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` isin_records.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned isin_records
+    **/
+    _count?: true | Isin_recordsCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: Isin_recordsAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: Isin_recordsSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: Isin_recordsMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: Isin_recordsMaxAggregateInputType
+  }
+
+  export type GetIsin_recordsAggregateType<T extends Isin_recordsAggregateArgs> = {
+        [P in keyof T & keyof AggregateIsin_records]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateIsin_records[P]>
+      : GetScalarType<T[P], AggregateIsin_records[P]>
+  }
+
+
+
+
+  export type isin_recordsGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: isin_recordsWhereInput
+    orderBy?: isin_recordsOrderByWithAggregationInput | isin_recordsOrderByWithAggregationInput[]
+    by: Isin_recordsScalarFieldEnum[] | Isin_recordsScalarFieldEnum
+    having?: isin_recordsScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: Isin_recordsCountAggregateInputType | true
+    _avg?: Isin_recordsAvgAggregateInputType
+    _sum?: Isin_recordsSumAggregateInputType
+    _min?: Isin_recordsMinAggregateInputType
+    _max?: Isin_recordsMaxAggregateInputType
+  }
+
+  export type Isin_recordsGroupByOutputType = {
+    id: number
+    isin: string | null
+    allotment_date: Date | null
+    status: boolean
+    created_at: Date
+    updated_at: Date | null
+    _count: Isin_recordsCountAggregateOutputType | null
+    _avg: Isin_recordsAvgAggregateOutputType | null
+    _sum: Isin_recordsSumAggregateOutputType | null
+    _min: Isin_recordsMinAggregateOutputType | null
+    _max: Isin_recordsMaxAggregateOutputType | null
+  }
+
+  type GetIsin_recordsGroupByPayload<T extends isin_recordsGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<Isin_recordsGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof Isin_recordsGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], Isin_recordsGroupByOutputType[P]>
+            : GetScalarType<T[P], Isin_recordsGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type isin_recordsSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    isin?: boolean
+    allotment_date?: boolean
+    status?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+  }, ExtArgs["result"]["isin_records"]>
+
+
+
+  export type isin_recordsSelectScalar = {
+    id?: boolean
+    isin?: boolean
+    allotment_date?: boolean
+    status?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+  }
+
+  export type isin_recordsOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "isin" | "allotment_date" | "status" | "created_at" | "updated_at", ExtArgs["result"]["isin_records"]>
+
+  export type $isin_recordsPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "isin_records"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: number
+      isin: string | null
+      allotment_date: Date | null
+      status: boolean
+      created_at: Date
+      updated_at: Date | null
+    }, ExtArgs["result"]["isin_records"]>
+    composites: {}
+  }
+
+  type isin_recordsGetPayload<S extends boolean | null | undefined | isin_recordsDefaultArgs> = $Result.GetResult<Prisma.$isin_recordsPayload, S>
+
+  type isin_recordsCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<isin_recordsFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: Isin_recordsCountAggregateInputType | true
+    }
+
+  export interface isin_recordsDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['isin_records'], meta: { name: 'isin_records' } }
+    /**
+     * Find zero or one Isin_records that matches the filter.
+     * @param {isin_recordsFindUniqueArgs} args - Arguments to find a Isin_records
+     * @example
+     * // Get one Isin_records
+     * const isin_records = await prisma.isin_records.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends isin_recordsFindUniqueArgs>(args: SelectSubset<T, isin_recordsFindUniqueArgs<ExtArgs>>): Prisma__isin_recordsClient<$Result.GetResult<Prisma.$isin_recordsPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one Isin_records that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {isin_recordsFindUniqueOrThrowArgs} args - Arguments to find a Isin_records
+     * @example
+     * // Get one Isin_records
+     * const isin_records = await prisma.isin_records.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends isin_recordsFindUniqueOrThrowArgs>(args: SelectSubset<T, isin_recordsFindUniqueOrThrowArgs<ExtArgs>>): Prisma__isin_recordsClient<$Result.GetResult<Prisma.$isin_recordsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Isin_records that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {isin_recordsFindFirstArgs} args - Arguments to find a Isin_records
+     * @example
+     * // Get one Isin_records
+     * const isin_records = await prisma.isin_records.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends isin_recordsFindFirstArgs>(args?: SelectSubset<T, isin_recordsFindFirstArgs<ExtArgs>>): Prisma__isin_recordsClient<$Result.GetResult<Prisma.$isin_recordsPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Isin_records that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {isin_recordsFindFirstOrThrowArgs} args - Arguments to find a Isin_records
+     * @example
+     * // Get one Isin_records
+     * const isin_records = await prisma.isin_records.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends isin_recordsFindFirstOrThrowArgs>(args?: SelectSubset<T, isin_recordsFindFirstOrThrowArgs<ExtArgs>>): Prisma__isin_recordsClient<$Result.GetResult<Prisma.$isin_recordsPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more Isin_records that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {isin_recordsFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Isin_records
+     * const isin_records = await prisma.isin_records.findMany()
+     * 
+     * // Get first 10 Isin_records
+     * const isin_records = await prisma.isin_records.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const isin_recordsWithIdOnly = await prisma.isin_records.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends isin_recordsFindManyArgs>(args?: SelectSubset<T, isin_recordsFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$isin_recordsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a Isin_records.
+     * @param {isin_recordsCreateArgs} args - Arguments to create a Isin_records.
+     * @example
+     * // Create one Isin_records
+     * const Isin_records = await prisma.isin_records.create({
+     *   data: {
+     *     // ... data to create a Isin_records
+     *   }
+     * })
+     * 
+     */
+    create<T extends isin_recordsCreateArgs>(args: SelectSubset<T, isin_recordsCreateArgs<ExtArgs>>): Prisma__isin_recordsClient<$Result.GetResult<Prisma.$isin_recordsPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many Isin_records.
+     * @param {isin_recordsCreateManyArgs} args - Arguments to create many Isin_records.
+     * @example
+     * // Create many Isin_records
+     * const isin_records = await prisma.isin_records.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends isin_recordsCreateManyArgs>(args?: SelectSubset<T, isin_recordsCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a Isin_records.
+     * @param {isin_recordsDeleteArgs} args - Arguments to delete one Isin_records.
+     * @example
+     * // Delete one Isin_records
+     * const Isin_records = await prisma.isin_records.delete({
+     *   where: {
+     *     // ... filter to delete one Isin_records
+     *   }
+     * })
+     * 
+     */
+    delete<T extends isin_recordsDeleteArgs>(args: SelectSubset<T, isin_recordsDeleteArgs<ExtArgs>>): Prisma__isin_recordsClient<$Result.GetResult<Prisma.$isin_recordsPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one Isin_records.
+     * @param {isin_recordsUpdateArgs} args - Arguments to update one Isin_records.
+     * @example
+     * // Update one Isin_records
+     * const isin_records = await prisma.isin_records.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends isin_recordsUpdateArgs>(args: SelectSubset<T, isin_recordsUpdateArgs<ExtArgs>>): Prisma__isin_recordsClient<$Result.GetResult<Prisma.$isin_recordsPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more Isin_records.
+     * @param {isin_recordsDeleteManyArgs} args - Arguments to filter Isin_records to delete.
+     * @example
+     * // Delete a few Isin_records
+     * const { count } = await prisma.isin_records.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends isin_recordsDeleteManyArgs>(args?: SelectSubset<T, isin_recordsDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Isin_records.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {isin_recordsUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Isin_records
+     * const isin_records = await prisma.isin_records.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends isin_recordsUpdateManyArgs>(args: SelectSubset<T, isin_recordsUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one Isin_records.
+     * @param {isin_recordsUpsertArgs} args - Arguments to update or create a Isin_records.
+     * @example
+     * // Update or create a Isin_records
+     * const isin_records = await prisma.isin_records.upsert({
+     *   create: {
+     *     // ... data to create a Isin_records
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Isin_records we want to update
+     *   }
+     * })
+     */
+    upsert<T extends isin_recordsUpsertArgs>(args: SelectSubset<T, isin_recordsUpsertArgs<ExtArgs>>): Prisma__isin_recordsClient<$Result.GetResult<Prisma.$isin_recordsPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of Isin_records.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {isin_recordsCountArgs} args - Arguments to filter Isin_records to count.
+     * @example
+     * // Count the number of Isin_records
+     * const count = await prisma.isin_records.count({
+     *   where: {
+     *     // ... the filter for the Isin_records we want to count
+     *   }
+     * })
+    **/
+    count<T extends isin_recordsCountArgs>(
+      args?: Subset<T, isin_recordsCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], Isin_recordsCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Isin_records.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {Isin_recordsAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends Isin_recordsAggregateArgs>(args: Subset<T, Isin_recordsAggregateArgs>): Prisma.PrismaPromise<GetIsin_recordsAggregateType<T>>
+
+    /**
+     * Group by Isin_records.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {isin_recordsGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends isin_recordsGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: isin_recordsGroupByArgs['orderBy'] }
+        : { orderBy?: isin_recordsGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, isin_recordsGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetIsin_recordsGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the isin_records model
+   */
+  readonly fields: isin_recordsFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for isin_records.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__isin_recordsClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the isin_records model
+   */
+  interface isin_recordsFieldRefs {
+    readonly id: FieldRef<"isin_records", 'Int'>
+    readonly isin: FieldRef<"isin_records", 'String'>
+    readonly allotment_date: FieldRef<"isin_records", 'DateTime'>
+    readonly status: FieldRef<"isin_records", 'Boolean'>
+    readonly created_at: FieldRef<"isin_records", 'DateTime'>
+    readonly updated_at: FieldRef<"isin_records", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * isin_records findUnique
+   */
+  export type isin_recordsFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the isin_records
+     */
+    select?: isin_recordsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the isin_records
+     */
+    omit?: isin_recordsOmit<ExtArgs> | null
+    /**
+     * Filter, which isin_records to fetch.
+     */
+    where: isin_recordsWhereUniqueInput
+  }
+
+  /**
+   * isin_records findUniqueOrThrow
+   */
+  export type isin_recordsFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the isin_records
+     */
+    select?: isin_recordsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the isin_records
+     */
+    omit?: isin_recordsOmit<ExtArgs> | null
+    /**
+     * Filter, which isin_records to fetch.
+     */
+    where: isin_recordsWhereUniqueInput
+  }
+
+  /**
+   * isin_records findFirst
+   */
+  export type isin_recordsFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the isin_records
+     */
+    select?: isin_recordsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the isin_records
+     */
+    omit?: isin_recordsOmit<ExtArgs> | null
+    /**
+     * Filter, which isin_records to fetch.
+     */
+    where?: isin_recordsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of isin_records to fetch.
+     */
+    orderBy?: isin_recordsOrderByWithRelationInput | isin_recordsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for isin_records.
+     */
+    cursor?: isin_recordsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` isin_records from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` isin_records.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of isin_records.
+     */
+    distinct?: Isin_recordsScalarFieldEnum | Isin_recordsScalarFieldEnum[]
+  }
+
+  /**
+   * isin_records findFirstOrThrow
+   */
+  export type isin_recordsFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the isin_records
+     */
+    select?: isin_recordsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the isin_records
+     */
+    omit?: isin_recordsOmit<ExtArgs> | null
+    /**
+     * Filter, which isin_records to fetch.
+     */
+    where?: isin_recordsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of isin_records to fetch.
+     */
+    orderBy?: isin_recordsOrderByWithRelationInput | isin_recordsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for isin_records.
+     */
+    cursor?: isin_recordsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` isin_records from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` isin_records.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of isin_records.
+     */
+    distinct?: Isin_recordsScalarFieldEnum | Isin_recordsScalarFieldEnum[]
+  }
+
+  /**
+   * isin_records findMany
+   */
+  export type isin_recordsFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the isin_records
+     */
+    select?: isin_recordsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the isin_records
+     */
+    omit?: isin_recordsOmit<ExtArgs> | null
+    /**
+     * Filter, which isin_records to fetch.
+     */
+    where?: isin_recordsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of isin_records to fetch.
+     */
+    orderBy?: isin_recordsOrderByWithRelationInput | isin_recordsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing isin_records.
+     */
+    cursor?: isin_recordsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` isin_records from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` isin_records.
+     */
+    skip?: number
+    distinct?: Isin_recordsScalarFieldEnum | Isin_recordsScalarFieldEnum[]
+  }
+
+  /**
+   * isin_records create
+   */
+  export type isin_recordsCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the isin_records
+     */
+    select?: isin_recordsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the isin_records
+     */
+    omit?: isin_recordsOmit<ExtArgs> | null
+    /**
+     * The data needed to create a isin_records.
+     */
+    data?: XOR<isin_recordsCreateInput, isin_recordsUncheckedCreateInput>
+  }
+
+  /**
+   * isin_records createMany
+   */
+  export type isin_recordsCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many isin_records.
+     */
+    data: isin_recordsCreateManyInput | isin_recordsCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * isin_records update
+   */
+  export type isin_recordsUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the isin_records
+     */
+    select?: isin_recordsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the isin_records
+     */
+    omit?: isin_recordsOmit<ExtArgs> | null
+    /**
+     * The data needed to update a isin_records.
+     */
+    data: XOR<isin_recordsUpdateInput, isin_recordsUncheckedUpdateInput>
+    /**
+     * Choose, which isin_records to update.
+     */
+    where: isin_recordsWhereUniqueInput
+  }
+
+  /**
+   * isin_records updateMany
+   */
+  export type isin_recordsUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update isin_records.
+     */
+    data: XOR<isin_recordsUpdateManyMutationInput, isin_recordsUncheckedUpdateManyInput>
+    /**
+     * Filter which isin_records to update
+     */
+    where?: isin_recordsWhereInput
+    /**
+     * Limit how many isin_records to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * isin_records upsert
+   */
+  export type isin_recordsUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the isin_records
+     */
+    select?: isin_recordsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the isin_records
+     */
+    omit?: isin_recordsOmit<ExtArgs> | null
+    /**
+     * The filter to search for the isin_records to update in case it exists.
+     */
+    where: isin_recordsWhereUniqueInput
+    /**
+     * In case the isin_records found by the `where` argument doesn't exist, create a new isin_records with this data.
+     */
+    create: XOR<isin_recordsCreateInput, isin_recordsUncheckedCreateInput>
+    /**
+     * In case the isin_records was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<isin_recordsUpdateInput, isin_recordsUncheckedUpdateInput>
+  }
+
+  /**
+   * isin_records delete
+   */
+  export type isin_recordsDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the isin_records
+     */
+    select?: isin_recordsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the isin_records
+     */
+    omit?: isin_recordsOmit<ExtArgs> | null
+    /**
+     * Filter which isin_records to delete.
+     */
+    where: isin_recordsWhereUniqueInput
+  }
+
+  /**
+   * isin_records deleteMany
+   */
+  export type isin_recordsDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which isin_records to delete
+     */
+    where?: isin_recordsWhereInput
+    /**
+     * Limit how many isin_records to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * isin_records without action
+   */
+  export type isin_recordsDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the isin_records
+     */
+    select?: isin_recordsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the isin_records
+     */
+    omit?: isin_recordsOmit<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -71595,15 +74222,6 @@ export namespace Prisma {
   };
 
   export type Issuer_tenure_detailsScalarFieldEnum = (typeof Issuer_tenure_detailsScalarFieldEnum)[keyof typeof Issuer_tenure_detailsScalarFieldEnum]
-
-
-  export const IssuersScalarFieldEnum: {
-    id: 'id',
-    name: 'name',
-    some_metric: 'some_metric'
-  };
-
-  export type IssuersScalarFieldEnum = (typeof IssuersScalarFieldEnum)[keyof typeof IssuersScalarFieldEnum]
 
 
   export const Job_batchesScalarFieldEnum: {
@@ -72000,6 +74618,7 @@ export namespace Prisma {
     intratlkto: 'intratlkto',
     created_by: 'created_by',
     updated_by: 'updated_by',
+    is_visible: 'is_visible',
     is_active: 'is_active',
     is_deleted: 'is_deleted',
     is_updated: 'is_updated',
@@ -72555,6 +75174,93 @@ export namespace Prisma {
   export type UsersScalarFieldEnum = (typeof UsersScalarFieldEnum)[keyof typeof UsersScalarFieldEnum]
 
 
+  export const Isin_re_issuanceScalarFieldEnum: {
+    id: 'id',
+    isin_id: 'isin_id',
+    isin: 'isin',
+    issuer_master_id: 'issuer_master_id',
+    allotment_date: 'allotment_date',
+    issue_size: 'issue_size',
+    nsdl_issue_size: 'nsdl_issue_size',
+    source: 'source',
+    face_value: 'face_value',
+    maturity_date: 'maturity_date',
+    business_sector: 'business_sector',
+    security_name: 'security_name',
+    security_class: 'security_class',
+    mode_issue: 'mode_issue',
+    seniority: 'seniority',
+    tax_free: 'tax_free',
+    secured_flag: 'secured_flag',
+    is_visible: 'is_visible',
+    is_updated: 'is_updated',
+    is_main: 'is_main',
+    created_at: 'created_at',
+    updated_at: 'updated_at'
+  };
+
+  export type Isin_re_issuanceScalarFieldEnum = (typeof Isin_re_issuanceScalarFieldEnum)[keyof typeof Isin_re_issuanceScalarFieldEnum]
+
+
+  export const Isin_re_issuance_detailsScalarFieldEnum: {
+    id: 'id',
+    re_issuance_id: 're_issuance_id',
+    bidding_date: 'bidding_date',
+    issuer_name: 'issuer_name',
+    isin: 'isin',
+    issue_description: 'issue_description',
+    type_of_issuance: 'type_of_issuance',
+    allotment_date: 'allotment_date',
+    face_value: 'face_value',
+    credit_rating: 'credit_rating',
+    type_of_book_bidding: 'type_of_book_bidding',
+    price: 'price',
+    spread: 'spread',
+    yield: 'yield',
+    manner_of_allotment: 'manner_of_allotment',
+    manner_of_settlement: 'manner_of_settlement',
+    link_of_gid_ppm: 'link_of_gid_ppm',
+    link_of_kid_term_sheet: 'link_of_kid_term_sheet',
+    base_issue_size: 'base_issue_size',
+    green_shoe_option: 'green_shoe_option',
+    amount_raised: 'amount_raised',
+    coupon: 'coupon',
+    coupon_frequency: 'coupon_frequency',
+    successful_bidders_category: 'successful_bidders_category',
+    type_of_bidding: 'type_of_bidding',
+    secured_unsecured: 'secured_unsecured',
+    tenor: 'tenor',
+    maturity_type: 'maturity_type',
+    interest_payment_type: 'interest_payment_type',
+    anchor_amount: 'anchor_amount',
+    number_of_anchor_investors: 'number_of_anchor_investors',
+    total_qib_bidding: 'total_qib_bidding',
+    total_qib_amount_accepted: 'total_qib_amount_accepted',
+    total_non_qib_bidding: 'total_non_qib_bidding',
+    total_non_qib_amount_accepted: 'total_non_qib_amount_accepted',
+    cutoff_yield_price: 'cutoff_yield_price',
+    weighted_average_cutoff_yield_price: 'weighted_average_cutoff_yield_price',
+    issuance_done_through_bidding_process: 'issuance_done_through_bidding_process',
+    updated_by: 'updated_by',
+    created_at: 'created_at',
+    updated_at: 'updated_at'
+  };
+
+  export type Isin_re_issuance_detailsScalarFieldEnum = (typeof Isin_re_issuance_detailsScalarFieldEnum)[keyof typeof Isin_re_issuance_detailsScalarFieldEnum]
+
+
+  export const Isin_recordsScalarFieldEnum: {
+    id: 'id',
+    isin: 'isin',
+    allotment_date: 'allotment_date',
+    status: 'status',
+    created_at: 'created_at',
+    updated_at: 'updated_at'
+  };
+
+  export type Isin_recordsScalarFieldEnum = (typeof Isin_recordsScalarFieldEnum)[keyof typeof Isin_recordsScalarFieldEnum]
+
+
   export const SortOrder: {
     asc: 'asc',
     desc: 'desc'
@@ -72658,13 +75364,6 @@ export namespace Prisma {
   };
 
   export type issuer_redemption_detailsOrderByRelevanceFieldEnum = (typeof issuer_redemption_detailsOrderByRelevanceFieldEnum)[keyof typeof issuer_redemption_detailsOrderByRelevanceFieldEnum]
-
-
-  export const issuersOrderByRelevanceFieldEnum: {
-    name: 'name'
-  };
-
-  export type issuersOrderByRelevanceFieldEnum = (typeof issuersOrderByRelevanceFieldEnum)[keyof typeof issuersOrderByRelevanceFieldEnum]
 
 
   export const job_batchesOrderByRelevanceFieldEnum: {
@@ -73134,6 +75833,44 @@ export namespace Prisma {
   export type usersOrderByRelevanceFieldEnum = (typeof usersOrderByRelevanceFieldEnum)[keyof typeof usersOrderByRelevanceFieldEnum]
 
 
+  export const isin_re_issuanceOrderByRelevanceFieldEnum: {
+    isin: 'isin',
+    source: 'source',
+    security_name: 'security_name',
+    security_class: 'security_class'
+  };
+
+  export type isin_re_issuanceOrderByRelevanceFieldEnum = (typeof isin_re_issuanceOrderByRelevanceFieldEnum)[keyof typeof isin_re_issuanceOrderByRelevanceFieldEnum]
+
+
+  export const isin_re_issuance_detailsOrderByRelevanceFieldEnum: {
+    issuer_name: 'issuer_name',
+    isin: 'isin',
+    issue_description: 'issue_description',
+    type_of_issuance: 'type_of_issuance',
+    credit_rating: 'credit_rating',
+    manner_of_allotment: 'manner_of_allotment',
+    manner_of_settlement: 'manner_of_settlement',
+    link_of_gid_ppm: 'link_of_gid_ppm',
+    link_of_kid_term_sheet: 'link_of_kid_term_sheet',
+    successful_bidders_category: 'successful_bidders_category',
+    type_of_bidding: 'type_of_bidding',
+    tenor: 'tenor',
+    maturity_type: 'maturity_type',
+    interest_payment_type: 'interest_payment_type',
+    issuance_done_through_bidding_process: 'issuance_done_through_bidding_process'
+  };
+
+  export type isin_re_issuance_detailsOrderByRelevanceFieldEnum = (typeof isin_re_issuance_detailsOrderByRelevanceFieldEnum)[keyof typeof isin_re_issuance_detailsOrderByRelevanceFieldEnum]
+
+
+  export const isin_recordsOrderByRelevanceFieldEnum: {
+    isin: 'isin'
+  };
+
+  export type isin_recordsOrderByRelevanceFieldEnum = (typeof isin_recordsOrderByRelevanceFieldEnum)[keyof typeof isin_recordsOrderByRelevanceFieldEnum]
+
+
   /**
    * Field references
    */
@@ -73185,6 +75922,27 @@ export namespace Prisma {
    * Reference to a field of type 'users_user_type'
    */
   export type Enumusers_user_typeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'users_user_type'>
+    
+
+
+  /**
+   * Reference to a field of type 'Decimal'
+   */
+  export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal'>
+    
+
+
+  /**
+   * Reference to a field of type 'isin_re_issuance_details_type_of_book_bidding'
+   */
+  export type Enumisin_re_issuance_details_type_of_book_biddingFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'isin_re_issuance_details_type_of_book_bidding'>
+    
+
+
+  /**
+   * Reference to a field of type 'isin_re_issuance_details_secured_unsecured'
+   */
+  export type Enumisin_re_issuance_details_secured_unsecuredFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'isin_re_issuance_details_secured_unsecured'>
     
   /**
    * Deep Input Types
@@ -73705,7 +76463,6 @@ export namespace Prisma {
     is_deleted?: IntFilter<"issuer_details"> | number
     created_at?: DateTimeNullableFilter<"issuer_details"> | Date | string | null
     updated_at?: DateTimeNullableFilter<"issuer_details"> | Date | string | null
-    master_issuers?: Master_issuerListRelationFilter
   }
 
   export type issuer_detailsOrderByWithRelationInput = {
@@ -73719,7 +76476,6 @@ export namespace Prisma {
     is_deleted?: SortOrder
     created_at?: SortOrderInput | SortOrder
     updated_at?: SortOrderInput | SortOrder
-    master_issuers?: master_issuerOrderByRelationAggregateInput
     _relevance?: issuer_detailsOrderByRelevanceInput
   }
 
@@ -73737,7 +76493,6 @@ export namespace Prisma {
     is_deleted?: IntFilter<"issuer_details"> | number
     created_at?: DateTimeNullableFilter<"issuer_details"> | Date | string | null
     updated_at?: DateTimeNullableFilter<"issuer_details"> | Date | string | null
-    master_issuers?: Master_issuerListRelationFilter
   }, "id">
 
   export type issuer_detailsOrderByWithAggregationInput = {
@@ -73911,51 +76666,6 @@ export namespace Prisma {
     tenure_no_days?: IntNullableWithAggregatesFilter<"issuer_tenure_details"> | number | null
     created_at?: DateTimeNullableWithAggregatesFilter<"issuer_tenure_details"> | Date | string | null
     updated_at?: DateTimeNullableWithAggregatesFilter<"issuer_tenure_details"> | Date | string | null
-  }
-
-  export type issuersWhereInput = {
-    AND?: issuersWhereInput | issuersWhereInput[]
-    OR?: issuersWhereInput[]
-    NOT?: issuersWhereInput | issuersWhereInput[]
-    id?: IntFilter<"issuers"> | number
-    name?: StringNullableFilter<"issuers"> | string | null
-    some_metric?: IntNullableFilter<"issuers"> | number | null
-  }
-
-  export type issuersOrderByWithRelationInput = {
-    id?: SortOrder
-    name?: SortOrderInput | SortOrder
-    some_metric?: SortOrderInput | SortOrder
-    _relevance?: issuersOrderByRelevanceInput
-  }
-
-  export type issuersWhereUniqueInput = Prisma.AtLeast<{
-    id?: number
-    AND?: issuersWhereInput | issuersWhereInput[]
-    OR?: issuersWhereInput[]
-    NOT?: issuersWhereInput | issuersWhereInput[]
-    name?: StringNullableFilter<"issuers"> | string | null
-    some_metric?: IntNullableFilter<"issuers"> | number | null
-  }, "id">
-
-  export type issuersOrderByWithAggregationInput = {
-    id?: SortOrder
-    name?: SortOrderInput | SortOrder
-    some_metric?: SortOrderInput | SortOrder
-    _count?: issuersCountOrderByAggregateInput
-    _avg?: issuersAvgOrderByAggregateInput
-    _max?: issuersMaxOrderByAggregateInput
-    _min?: issuersMinOrderByAggregateInput
-    _sum?: issuersSumOrderByAggregateInput
-  }
-
-  export type issuersScalarWhereWithAggregatesInput = {
-    AND?: issuersScalarWhereWithAggregatesInput | issuersScalarWhereWithAggregatesInput[]
-    OR?: issuersScalarWhereWithAggregatesInput[]
-    NOT?: issuersScalarWhereWithAggregatesInput | issuersScalarWhereWithAggregatesInput[]
-    id?: IntWithAggregatesFilter<"issuers"> | number
-    name?: StringNullableWithAggregatesFilter<"issuers"> | string | null
-    some_metric?: IntNullableWithAggregatesFilter<"issuers"> | number | null
   }
 
   export type job_batchesWhereInput = {
@@ -75723,12 +78433,12 @@ export namespace Prisma {
     intratlkto?: StringNullableFilter<"master_issuer"> | string | null
     created_by?: BigIntNullableFilter<"master_issuer"> | bigint | number | null
     updated_by?: BigIntNullableFilter<"master_issuer"> | bigint | number | null
+    is_visible?: IntFilter<"master_issuer"> | number
     is_active?: IntFilter<"master_issuer"> | number
     is_deleted?: IntFilter<"master_issuer"> | number
     is_updated?: IntFilter<"master_issuer"> | number
     created_at?: DateTimeNullableFilter<"master_issuer"> | Date | string | null
     updated_at?: DateTimeNullableFilter<"master_issuer"> | Date | string | null
-    issuer_details?: XOR<Issuer_detailsScalarRelationFilter, issuer_detailsWhereInput>
   }
 
   export type master_issuerOrderByWithRelationInput = {
@@ -75783,12 +78493,12 @@ export namespace Prisma {
     intratlkto?: SortOrderInput | SortOrder
     created_by?: SortOrderInput | SortOrder
     updated_by?: SortOrderInput | SortOrder
+    is_visible?: SortOrder
     is_active?: SortOrder
     is_deleted?: SortOrder
     is_updated?: SortOrder
     created_at?: SortOrderInput | SortOrder
     updated_at?: SortOrderInput | SortOrder
-    issuer_details?: issuer_detailsOrderByWithRelationInput
     _relevance?: master_issuerOrderByRelevanceInput
   }
 
@@ -75847,12 +78557,12 @@ export namespace Prisma {
     intratlkto?: StringNullableFilter<"master_issuer"> | string | null
     created_by?: BigIntNullableFilter<"master_issuer"> | bigint | number | null
     updated_by?: BigIntNullableFilter<"master_issuer"> | bigint | number | null
+    is_visible?: IntFilter<"master_issuer"> | number
     is_active?: IntFilter<"master_issuer"> | number
     is_deleted?: IntFilter<"master_issuer"> | number
     is_updated?: IntFilter<"master_issuer"> | number
     created_at?: DateTimeNullableFilter<"master_issuer"> | Date | string | null
     updated_at?: DateTimeNullableFilter<"master_issuer"> | Date | string | null
-    issuer_details?: XOR<Issuer_detailsScalarRelationFilter, issuer_detailsWhereInput>
   }, "id">
 
   export type master_issuerOrderByWithAggregationInput = {
@@ -75907,6 +78617,7 @@ export namespace Prisma {
     intratlkto?: SortOrderInput | SortOrder
     created_by?: SortOrderInput | SortOrder
     updated_by?: SortOrderInput | SortOrder
+    is_visible?: SortOrder
     is_active?: SortOrder
     is_deleted?: SortOrder
     is_updated?: SortOrder
@@ -75974,6 +78685,7 @@ export namespace Prisma {
     intratlkto?: StringNullableWithAggregatesFilter<"master_issuer"> | string | null
     created_by?: BigIntNullableWithAggregatesFilter<"master_issuer"> | bigint | number | null
     updated_by?: BigIntNullableWithAggregatesFilter<"master_issuer"> | bigint | number | null
+    is_visible?: IntWithAggregatesFilter<"master_issuer"> | number
     is_active?: IntWithAggregatesFilter<"master_issuer"> | number
     is_deleted?: IntWithAggregatesFilter<"master_issuer"> | number
     is_updated?: IntWithAggregatesFilter<"master_issuer"> | number
@@ -78704,6 +81416,441 @@ export namespace Prisma {
     utm_source?: StringNullableWithAggregatesFilter<"users"> | string | null
   }
 
+  export type isin_re_issuanceWhereInput = {
+    AND?: isin_re_issuanceWhereInput | isin_re_issuanceWhereInput[]
+    OR?: isin_re_issuanceWhereInput[]
+    NOT?: isin_re_issuanceWhereInput | isin_re_issuanceWhereInput[]
+    id?: BigIntFilter<"isin_re_issuance"> | bigint | number
+    isin_id?: BigIntFilter<"isin_re_issuance"> | bigint | number
+    isin?: StringFilter<"isin_re_issuance"> | string
+    issuer_master_id?: BigIntFilter<"isin_re_issuance"> | bigint | number
+    allotment_date?: DateTimeFilter<"isin_re_issuance"> | Date | string
+    issue_size?: DecimalFilter<"isin_re_issuance"> | Decimal | DecimalJsLike | number | string
+    nsdl_issue_size?: DecimalNullableFilter<"isin_re_issuance"> | Decimal | DecimalJsLike | number | string | null
+    source?: StringNullableFilter<"isin_re_issuance"> | string | null
+    face_value?: FloatNullableFilter<"isin_re_issuance"> | number | null
+    maturity_date?: DateTimeNullableFilter<"isin_re_issuance"> | Date | string | null
+    business_sector?: IntNullableFilter<"isin_re_issuance"> | number | null
+    security_name?: StringNullableFilter<"isin_re_issuance"> | string | null
+    security_class?: StringNullableFilter<"isin_re_issuance"> | string | null
+    mode_issue?: IntNullableFilter<"isin_re_issuance"> | number | null
+    seniority?: IntNullableFilter<"isin_re_issuance"> | number | null
+    tax_free?: FloatNullableFilter<"isin_re_issuance"> | number | null
+    secured_flag?: IntNullableFilter<"isin_re_issuance"> | number | null
+    is_visible?: IntFilter<"isin_re_issuance"> | number
+    is_updated?: IntFilter<"isin_re_issuance"> | number
+    is_main?: IntFilter<"isin_re_issuance"> | number
+    created_at?: DateTimeNullableFilter<"isin_re_issuance"> | Date | string | null
+    updated_at?: DateTimeNullableFilter<"isin_re_issuance"> | Date | string | null
+  }
+
+  export type isin_re_issuanceOrderByWithRelationInput = {
+    id?: SortOrder
+    isin_id?: SortOrder
+    isin?: SortOrder
+    issuer_master_id?: SortOrder
+    allotment_date?: SortOrder
+    issue_size?: SortOrder
+    nsdl_issue_size?: SortOrderInput | SortOrder
+    source?: SortOrderInput | SortOrder
+    face_value?: SortOrderInput | SortOrder
+    maturity_date?: SortOrderInput | SortOrder
+    business_sector?: SortOrderInput | SortOrder
+    security_name?: SortOrderInput | SortOrder
+    security_class?: SortOrderInput | SortOrder
+    mode_issue?: SortOrderInput | SortOrder
+    seniority?: SortOrderInput | SortOrder
+    tax_free?: SortOrderInput | SortOrder
+    secured_flag?: SortOrderInput | SortOrder
+    is_visible?: SortOrder
+    is_updated?: SortOrder
+    is_main?: SortOrder
+    created_at?: SortOrderInput | SortOrder
+    updated_at?: SortOrderInput | SortOrder
+    _relevance?: isin_re_issuanceOrderByRelevanceInput
+  }
+
+  export type isin_re_issuanceWhereUniqueInput = Prisma.AtLeast<{
+    id?: bigint | number
+    AND?: isin_re_issuanceWhereInput | isin_re_issuanceWhereInput[]
+    OR?: isin_re_issuanceWhereInput[]
+    NOT?: isin_re_issuanceWhereInput | isin_re_issuanceWhereInput[]
+    isin_id?: BigIntFilter<"isin_re_issuance"> | bigint | number
+    isin?: StringFilter<"isin_re_issuance"> | string
+    issuer_master_id?: BigIntFilter<"isin_re_issuance"> | bigint | number
+    allotment_date?: DateTimeFilter<"isin_re_issuance"> | Date | string
+    issue_size?: DecimalFilter<"isin_re_issuance"> | Decimal | DecimalJsLike | number | string
+    nsdl_issue_size?: DecimalNullableFilter<"isin_re_issuance"> | Decimal | DecimalJsLike | number | string | null
+    source?: StringNullableFilter<"isin_re_issuance"> | string | null
+    face_value?: FloatNullableFilter<"isin_re_issuance"> | number | null
+    maturity_date?: DateTimeNullableFilter<"isin_re_issuance"> | Date | string | null
+    business_sector?: IntNullableFilter<"isin_re_issuance"> | number | null
+    security_name?: StringNullableFilter<"isin_re_issuance"> | string | null
+    security_class?: StringNullableFilter<"isin_re_issuance"> | string | null
+    mode_issue?: IntNullableFilter<"isin_re_issuance"> | number | null
+    seniority?: IntNullableFilter<"isin_re_issuance"> | number | null
+    tax_free?: FloatNullableFilter<"isin_re_issuance"> | number | null
+    secured_flag?: IntNullableFilter<"isin_re_issuance"> | number | null
+    is_visible?: IntFilter<"isin_re_issuance"> | number
+    is_updated?: IntFilter<"isin_re_issuance"> | number
+    is_main?: IntFilter<"isin_re_issuance"> | number
+    created_at?: DateTimeNullableFilter<"isin_re_issuance"> | Date | string | null
+    updated_at?: DateTimeNullableFilter<"isin_re_issuance"> | Date | string | null
+  }, "id">
+
+  export type isin_re_issuanceOrderByWithAggregationInput = {
+    id?: SortOrder
+    isin_id?: SortOrder
+    isin?: SortOrder
+    issuer_master_id?: SortOrder
+    allotment_date?: SortOrder
+    issue_size?: SortOrder
+    nsdl_issue_size?: SortOrderInput | SortOrder
+    source?: SortOrderInput | SortOrder
+    face_value?: SortOrderInput | SortOrder
+    maturity_date?: SortOrderInput | SortOrder
+    business_sector?: SortOrderInput | SortOrder
+    security_name?: SortOrderInput | SortOrder
+    security_class?: SortOrderInput | SortOrder
+    mode_issue?: SortOrderInput | SortOrder
+    seniority?: SortOrderInput | SortOrder
+    tax_free?: SortOrderInput | SortOrder
+    secured_flag?: SortOrderInput | SortOrder
+    is_visible?: SortOrder
+    is_updated?: SortOrder
+    is_main?: SortOrder
+    created_at?: SortOrderInput | SortOrder
+    updated_at?: SortOrderInput | SortOrder
+    _count?: isin_re_issuanceCountOrderByAggregateInput
+    _avg?: isin_re_issuanceAvgOrderByAggregateInput
+    _max?: isin_re_issuanceMaxOrderByAggregateInput
+    _min?: isin_re_issuanceMinOrderByAggregateInput
+    _sum?: isin_re_issuanceSumOrderByAggregateInput
+  }
+
+  export type isin_re_issuanceScalarWhereWithAggregatesInput = {
+    AND?: isin_re_issuanceScalarWhereWithAggregatesInput | isin_re_issuanceScalarWhereWithAggregatesInput[]
+    OR?: isin_re_issuanceScalarWhereWithAggregatesInput[]
+    NOT?: isin_re_issuanceScalarWhereWithAggregatesInput | isin_re_issuanceScalarWhereWithAggregatesInput[]
+    id?: BigIntWithAggregatesFilter<"isin_re_issuance"> | bigint | number
+    isin_id?: BigIntWithAggregatesFilter<"isin_re_issuance"> | bigint | number
+    isin?: StringWithAggregatesFilter<"isin_re_issuance"> | string
+    issuer_master_id?: BigIntWithAggregatesFilter<"isin_re_issuance"> | bigint | number
+    allotment_date?: DateTimeWithAggregatesFilter<"isin_re_issuance"> | Date | string
+    issue_size?: DecimalWithAggregatesFilter<"isin_re_issuance"> | Decimal | DecimalJsLike | number | string
+    nsdl_issue_size?: DecimalNullableWithAggregatesFilter<"isin_re_issuance"> | Decimal | DecimalJsLike | number | string | null
+    source?: StringNullableWithAggregatesFilter<"isin_re_issuance"> | string | null
+    face_value?: FloatNullableWithAggregatesFilter<"isin_re_issuance"> | number | null
+    maturity_date?: DateTimeNullableWithAggregatesFilter<"isin_re_issuance"> | Date | string | null
+    business_sector?: IntNullableWithAggregatesFilter<"isin_re_issuance"> | number | null
+    security_name?: StringNullableWithAggregatesFilter<"isin_re_issuance"> | string | null
+    security_class?: StringNullableWithAggregatesFilter<"isin_re_issuance"> | string | null
+    mode_issue?: IntNullableWithAggregatesFilter<"isin_re_issuance"> | number | null
+    seniority?: IntNullableWithAggregatesFilter<"isin_re_issuance"> | number | null
+    tax_free?: FloatNullableWithAggregatesFilter<"isin_re_issuance"> | number | null
+    secured_flag?: IntNullableWithAggregatesFilter<"isin_re_issuance"> | number | null
+    is_visible?: IntWithAggregatesFilter<"isin_re_issuance"> | number
+    is_updated?: IntWithAggregatesFilter<"isin_re_issuance"> | number
+    is_main?: IntWithAggregatesFilter<"isin_re_issuance"> | number
+    created_at?: DateTimeNullableWithAggregatesFilter<"isin_re_issuance"> | Date | string | null
+    updated_at?: DateTimeNullableWithAggregatesFilter<"isin_re_issuance"> | Date | string | null
+  }
+
+  export type isin_re_issuance_detailsWhereInput = {
+    AND?: isin_re_issuance_detailsWhereInput | isin_re_issuance_detailsWhereInput[]
+    OR?: isin_re_issuance_detailsWhereInput[]
+    NOT?: isin_re_issuance_detailsWhereInput | isin_re_issuance_detailsWhereInput[]
+    id?: BigIntFilter<"isin_re_issuance_details"> | bigint | number
+    re_issuance_id?: BigIntFilter<"isin_re_issuance_details"> | bigint | number
+    bidding_date?: DateTimeNullableFilter<"isin_re_issuance_details"> | Date | string | null
+    issuer_name?: StringNullableFilter<"isin_re_issuance_details"> | string | null
+    isin?: StringNullableFilter<"isin_re_issuance_details"> | string | null
+    issue_description?: StringNullableFilter<"isin_re_issuance_details"> | string | null
+    type_of_issuance?: StringNullableFilter<"isin_re_issuance_details"> | string | null
+    allotment_date?: DateTimeNullableFilter<"isin_re_issuance_details"> | Date | string | null
+    face_value?: DecimalNullableFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    credit_rating?: StringNullableFilter<"isin_re_issuance_details"> | string | null
+    type_of_book_bidding?: Enumisin_re_issuance_details_type_of_book_biddingNullableFilter<"isin_re_issuance_details"> | $Enums.isin_re_issuance_details_type_of_book_bidding | null
+    price?: DecimalNullableFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    spread?: DecimalNullableFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    yield?: DecimalNullableFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    manner_of_allotment?: StringNullableFilter<"isin_re_issuance_details"> | string | null
+    manner_of_settlement?: StringNullableFilter<"isin_re_issuance_details"> | string | null
+    link_of_gid_ppm?: StringNullableFilter<"isin_re_issuance_details"> | string | null
+    link_of_kid_term_sheet?: StringNullableFilter<"isin_re_issuance_details"> | string | null
+    base_issue_size?: DecimalNullableFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    green_shoe_option?: DecimalNullableFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    amount_raised?: DecimalNullableFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    coupon?: DecimalNullableFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    coupon_frequency?: IntNullableFilter<"isin_re_issuance_details"> | number | null
+    successful_bidders_category?: StringNullableFilter<"isin_re_issuance_details"> | string | null
+    type_of_bidding?: StringNullableFilter<"isin_re_issuance_details"> | string | null
+    secured_unsecured?: Enumisin_re_issuance_details_secured_unsecuredNullableFilter<"isin_re_issuance_details"> | $Enums.isin_re_issuance_details_secured_unsecured | null
+    tenor?: StringNullableFilter<"isin_re_issuance_details"> | string | null
+    maturity_type?: StringNullableFilter<"isin_re_issuance_details"> | string | null
+    interest_payment_type?: StringNullableFilter<"isin_re_issuance_details"> | string | null
+    anchor_amount?: DecimalNullableFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    number_of_anchor_investors?: IntNullableFilter<"isin_re_issuance_details"> | number | null
+    total_qib_bidding?: DecimalNullableFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    total_qib_amount_accepted?: DecimalNullableFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    total_non_qib_bidding?: DecimalNullableFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    total_non_qib_amount_accepted?: DecimalNullableFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    cutoff_yield_price?: DecimalNullableFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    weighted_average_cutoff_yield_price?: DecimalNullableFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    issuance_done_through_bidding_process?: StringNullableFilter<"isin_re_issuance_details"> | string | null
+    updated_by?: IntNullableFilter<"isin_re_issuance_details"> | number | null
+    created_at?: DateTimeNullableFilter<"isin_re_issuance_details"> | Date | string | null
+    updated_at?: DateTimeNullableFilter<"isin_re_issuance_details"> | Date | string | null
+  }
+
+  export type isin_re_issuance_detailsOrderByWithRelationInput = {
+    id?: SortOrder
+    re_issuance_id?: SortOrder
+    bidding_date?: SortOrderInput | SortOrder
+    issuer_name?: SortOrderInput | SortOrder
+    isin?: SortOrderInput | SortOrder
+    issue_description?: SortOrderInput | SortOrder
+    type_of_issuance?: SortOrderInput | SortOrder
+    allotment_date?: SortOrderInput | SortOrder
+    face_value?: SortOrderInput | SortOrder
+    credit_rating?: SortOrderInput | SortOrder
+    type_of_book_bidding?: SortOrderInput | SortOrder
+    price?: SortOrderInput | SortOrder
+    spread?: SortOrderInput | SortOrder
+    yield?: SortOrderInput | SortOrder
+    manner_of_allotment?: SortOrderInput | SortOrder
+    manner_of_settlement?: SortOrderInput | SortOrder
+    link_of_gid_ppm?: SortOrderInput | SortOrder
+    link_of_kid_term_sheet?: SortOrderInput | SortOrder
+    base_issue_size?: SortOrderInput | SortOrder
+    green_shoe_option?: SortOrderInput | SortOrder
+    amount_raised?: SortOrderInput | SortOrder
+    coupon?: SortOrderInput | SortOrder
+    coupon_frequency?: SortOrderInput | SortOrder
+    successful_bidders_category?: SortOrderInput | SortOrder
+    type_of_bidding?: SortOrderInput | SortOrder
+    secured_unsecured?: SortOrderInput | SortOrder
+    tenor?: SortOrderInput | SortOrder
+    maturity_type?: SortOrderInput | SortOrder
+    interest_payment_type?: SortOrderInput | SortOrder
+    anchor_amount?: SortOrderInput | SortOrder
+    number_of_anchor_investors?: SortOrderInput | SortOrder
+    total_qib_bidding?: SortOrderInput | SortOrder
+    total_qib_amount_accepted?: SortOrderInput | SortOrder
+    total_non_qib_bidding?: SortOrderInput | SortOrder
+    total_non_qib_amount_accepted?: SortOrderInput | SortOrder
+    cutoff_yield_price?: SortOrderInput | SortOrder
+    weighted_average_cutoff_yield_price?: SortOrderInput | SortOrder
+    issuance_done_through_bidding_process?: SortOrderInput | SortOrder
+    updated_by?: SortOrderInput | SortOrder
+    created_at?: SortOrderInput | SortOrder
+    updated_at?: SortOrderInput | SortOrder
+    _relevance?: isin_re_issuance_detailsOrderByRelevanceInput
+  }
+
+  export type isin_re_issuance_detailsWhereUniqueInput = Prisma.AtLeast<{
+    id?: bigint | number
+    AND?: isin_re_issuance_detailsWhereInput | isin_re_issuance_detailsWhereInput[]
+    OR?: isin_re_issuance_detailsWhereInput[]
+    NOT?: isin_re_issuance_detailsWhereInput | isin_re_issuance_detailsWhereInput[]
+    re_issuance_id?: BigIntFilter<"isin_re_issuance_details"> | bigint | number
+    bidding_date?: DateTimeNullableFilter<"isin_re_issuance_details"> | Date | string | null
+    issuer_name?: StringNullableFilter<"isin_re_issuance_details"> | string | null
+    isin?: StringNullableFilter<"isin_re_issuance_details"> | string | null
+    issue_description?: StringNullableFilter<"isin_re_issuance_details"> | string | null
+    type_of_issuance?: StringNullableFilter<"isin_re_issuance_details"> | string | null
+    allotment_date?: DateTimeNullableFilter<"isin_re_issuance_details"> | Date | string | null
+    face_value?: DecimalNullableFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    credit_rating?: StringNullableFilter<"isin_re_issuance_details"> | string | null
+    type_of_book_bidding?: Enumisin_re_issuance_details_type_of_book_biddingNullableFilter<"isin_re_issuance_details"> | $Enums.isin_re_issuance_details_type_of_book_bidding | null
+    price?: DecimalNullableFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    spread?: DecimalNullableFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    yield?: DecimalNullableFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    manner_of_allotment?: StringNullableFilter<"isin_re_issuance_details"> | string | null
+    manner_of_settlement?: StringNullableFilter<"isin_re_issuance_details"> | string | null
+    link_of_gid_ppm?: StringNullableFilter<"isin_re_issuance_details"> | string | null
+    link_of_kid_term_sheet?: StringNullableFilter<"isin_re_issuance_details"> | string | null
+    base_issue_size?: DecimalNullableFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    green_shoe_option?: DecimalNullableFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    amount_raised?: DecimalNullableFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    coupon?: DecimalNullableFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    coupon_frequency?: IntNullableFilter<"isin_re_issuance_details"> | number | null
+    successful_bidders_category?: StringNullableFilter<"isin_re_issuance_details"> | string | null
+    type_of_bidding?: StringNullableFilter<"isin_re_issuance_details"> | string | null
+    secured_unsecured?: Enumisin_re_issuance_details_secured_unsecuredNullableFilter<"isin_re_issuance_details"> | $Enums.isin_re_issuance_details_secured_unsecured | null
+    tenor?: StringNullableFilter<"isin_re_issuance_details"> | string | null
+    maturity_type?: StringNullableFilter<"isin_re_issuance_details"> | string | null
+    interest_payment_type?: StringNullableFilter<"isin_re_issuance_details"> | string | null
+    anchor_amount?: DecimalNullableFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    number_of_anchor_investors?: IntNullableFilter<"isin_re_issuance_details"> | number | null
+    total_qib_bidding?: DecimalNullableFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    total_qib_amount_accepted?: DecimalNullableFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    total_non_qib_bidding?: DecimalNullableFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    total_non_qib_amount_accepted?: DecimalNullableFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    cutoff_yield_price?: DecimalNullableFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    weighted_average_cutoff_yield_price?: DecimalNullableFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    issuance_done_through_bidding_process?: StringNullableFilter<"isin_re_issuance_details"> | string | null
+    updated_by?: IntNullableFilter<"isin_re_issuance_details"> | number | null
+    created_at?: DateTimeNullableFilter<"isin_re_issuance_details"> | Date | string | null
+    updated_at?: DateTimeNullableFilter<"isin_re_issuance_details"> | Date | string | null
+  }, "id">
+
+  export type isin_re_issuance_detailsOrderByWithAggregationInput = {
+    id?: SortOrder
+    re_issuance_id?: SortOrder
+    bidding_date?: SortOrderInput | SortOrder
+    issuer_name?: SortOrderInput | SortOrder
+    isin?: SortOrderInput | SortOrder
+    issue_description?: SortOrderInput | SortOrder
+    type_of_issuance?: SortOrderInput | SortOrder
+    allotment_date?: SortOrderInput | SortOrder
+    face_value?: SortOrderInput | SortOrder
+    credit_rating?: SortOrderInput | SortOrder
+    type_of_book_bidding?: SortOrderInput | SortOrder
+    price?: SortOrderInput | SortOrder
+    spread?: SortOrderInput | SortOrder
+    yield?: SortOrderInput | SortOrder
+    manner_of_allotment?: SortOrderInput | SortOrder
+    manner_of_settlement?: SortOrderInput | SortOrder
+    link_of_gid_ppm?: SortOrderInput | SortOrder
+    link_of_kid_term_sheet?: SortOrderInput | SortOrder
+    base_issue_size?: SortOrderInput | SortOrder
+    green_shoe_option?: SortOrderInput | SortOrder
+    amount_raised?: SortOrderInput | SortOrder
+    coupon?: SortOrderInput | SortOrder
+    coupon_frequency?: SortOrderInput | SortOrder
+    successful_bidders_category?: SortOrderInput | SortOrder
+    type_of_bidding?: SortOrderInput | SortOrder
+    secured_unsecured?: SortOrderInput | SortOrder
+    tenor?: SortOrderInput | SortOrder
+    maturity_type?: SortOrderInput | SortOrder
+    interest_payment_type?: SortOrderInput | SortOrder
+    anchor_amount?: SortOrderInput | SortOrder
+    number_of_anchor_investors?: SortOrderInput | SortOrder
+    total_qib_bidding?: SortOrderInput | SortOrder
+    total_qib_amount_accepted?: SortOrderInput | SortOrder
+    total_non_qib_bidding?: SortOrderInput | SortOrder
+    total_non_qib_amount_accepted?: SortOrderInput | SortOrder
+    cutoff_yield_price?: SortOrderInput | SortOrder
+    weighted_average_cutoff_yield_price?: SortOrderInput | SortOrder
+    issuance_done_through_bidding_process?: SortOrderInput | SortOrder
+    updated_by?: SortOrderInput | SortOrder
+    created_at?: SortOrderInput | SortOrder
+    updated_at?: SortOrderInput | SortOrder
+    _count?: isin_re_issuance_detailsCountOrderByAggregateInput
+    _avg?: isin_re_issuance_detailsAvgOrderByAggregateInput
+    _max?: isin_re_issuance_detailsMaxOrderByAggregateInput
+    _min?: isin_re_issuance_detailsMinOrderByAggregateInput
+    _sum?: isin_re_issuance_detailsSumOrderByAggregateInput
+  }
+
+  export type isin_re_issuance_detailsScalarWhereWithAggregatesInput = {
+    AND?: isin_re_issuance_detailsScalarWhereWithAggregatesInput | isin_re_issuance_detailsScalarWhereWithAggregatesInput[]
+    OR?: isin_re_issuance_detailsScalarWhereWithAggregatesInput[]
+    NOT?: isin_re_issuance_detailsScalarWhereWithAggregatesInput | isin_re_issuance_detailsScalarWhereWithAggregatesInput[]
+    id?: BigIntWithAggregatesFilter<"isin_re_issuance_details"> | bigint | number
+    re_issuance_id?: BigIntWithAggregatesFilter<"isin_re_issuance_details"> | bigint | number
+    bidding_date?: DateTimeNullableWithAggregatesFilter<"isin_re_issuance_details"> | Date | string | null
+    issuer_name?: StringNullableWithAggregatesFilter<"isin_re_issuance_details"> | string | null
+    isin?: StringNullableWithAggregatesFilter<"isin_re_issuance_details"> | string | null
+    issue_description?: StringNullableWithAggregatesFilter<"isin_re_issuance_details"> | string | null
+    type_of_issuance?: StringNullableWithAggregatesFilter<"isin_re_issuance_details"> | string | null
+    allotment_date?: DateTimeNullableWithAggregatesFilter<"isin_re_issuance_details"> | Date | string | null
+    face_value?: DecimalNullableWithAggregatesFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    credit_rating?: StringNullableWithAggregatesFilter<"isin_re_issuance_details"> | string | null
+    type_of_book_bidding?: Enumisin_re_issuance_details_type_of_book_biddingNullableWithAggregatesFilter<"isin_re_issuance_details"> | $Enums.isin_re_issuance_details_type_of_book_bidding | null
+    price?: DecimalNullableWithAggregatesFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    spread?: DecimalNullableWithAggregatesFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    yield?: DecimalNullableWithAggregatesFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    manner_of_allotment?: StringNullableWithAggregatesFilter<"isin_re_issuance_details"> | string | null
+    manner_of_settlement?: StringNullableWithAggregatesFilter<"isin_re_issuance_details"> | string | null
+    link_of_gid_ppm?: StringNullableWithAggregatesFilter<"isin_re_issuance_details"> | string | null
+    link_of_kid_term_sheet?: StringNullableWithAggregatesFilter<"isin_re_issuance_details"> | string | null
+    base_issue_size?: DecimalNullableWithAggregatesFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    green_shoe_option?: DecimalNullableWithAggregatesFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    amount_raised?: DecimalNullableWithAggregatesFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    coupon?: DecimalNullableWithAggregatesFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    coupon_frequency?: IntNullableWithAggregatesFilter<"isin_re_issuance_details"> | number | null
+    successful_bidders_category?: StringNullableWithAggregatesFilter<"isin_re_issuance_details"> | string | null
+    type_of_bidding?: StringNullableWithAggregatesFilter<"isin_re_issuance_details"> | string | null
+    secured_unsecured?: Enumisin_re_issuance_details_secured_unsecuredNullableWithAggregatesFilter<"isin_re_issuance_details"> | $Enums.isin_re_issuance_details_secured_unsecured | null
+    tenor?: StringNullableWithAggregatesFilter<"isin_re_issuance_details"> | string | null
+    maturity_type?: StringNullableWithAggregatesFilter<"isin_re_issuance_details"> | string | null
+    interest_payment_type?: StringNullableWithAggregatesFilter<"isin_re_issuance_details"> | string | null
+    anchor_amount?: DecimalNullableWithAggregatesFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    number_of_anchor_investors?: IntNullableWithAggregatesFilter<"isin_re_issuance_details"> | number | null
+    total_qib_bidding?: DecimalNullableWithAggregatesFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    total_qib_amount_accepted?: DecimalNullableWithAggregatesFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    total_non_qib_bidding?: DecimalNullableWithAggregatesFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    total_non_qib_amount_accepted?: DecimalNullableWithAggregatesFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    cutoff_yield_price?: DecimalNullableWithAggregatesFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    weighted_average_cutoff_yield_price?: DecimalNullableWithAggregatesFilter<"isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    issuance_done_through_bidding_process?: StringNullableWithAggregatesFilter<"isin_re_issuance_details"> | string | null
+    updated_by?: IntNullableWithAggregatesFilter<"isin_re_issuance_details"> | number | null
+    created_at?: DateTimeNullableWithAggregatesFilter<"isin_re_issuance_details"> | Date | string | null
+    updated_at?: DateTimeNullableWithAggregatesFilter<"isin_re_issuance_details"> | Date | string | null
+  }
+
+  export type isin_recordsWhereInput = {
+    AND?: isin_recordsWhereInput | isin_recordsWhereInput[]
+    OR?: isin_recordsWhereInput[]
+    NOT?: isin_recordsWhereInput | isin_recordsWhereInput[]
+    id?: IntFilter<"isin_records"> | number
+    isin?: StringNullableFilter<"isin_records"> | string | null
+    allotment_date?: DateTimeNullableFilter<"isin_records"> | Date | string | null
+    status?: BoolFilter<"isin_records"> | boolean
+    created_at?: DateTimeFilter<"isin_records"> | Date | string
+    updated_at?: DateTimeNullableFilter<"isin_records"> | Date | string | null
+  }
+
+  export type isin_recordsOrderByWithRelationInput = {
+    id?: SortOrder
+    isin?: SortOrderInput | SortOrder
+    allotment_date?: SortOrderInput | SortOrder
+    status?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrderInput | SortOrder
+    _relevance?: isin_recordsOrderByRelevanceInput
+  }
+
+  export type isin_recordsWhereUniqueInput = Prisma.AtLeast<{
+    id?: number
+    AND?: isin_recordsWhereInput | isin_recordsWhereInput[]
+    OR?: isin_recordsWhereInput[]
+    NOT?: isin_recordsWhereInput | isin_recordsWhereInput[]
+    isin?: StringNullableFilter<"isin_records"> | string | null
+    allotment_date?: DateTimeNullableFilter<"isin_records"> | Date | string | null
+    status?: BoolFilter<"isin_records"> | boolean
+    created_at?: DateTimeFilter<"isin_records"> | Date | string
+    updated_at?: DateTimeNullableFilter<"isin_records"> | Date | string | null
+  }, "id">
+
+  export type isin_recordsOrderByWithAggregationInput = {
+    id?: SortOrder
+    isin?: SortOrderInput | SortOrder
+    allotment_date?: SortOrderInput | SortOrder
+    status?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrderInput | SortOrder
+    _count?: isin_recordsCountOrderByAggregateInput
+    _avg?: isin_recordsAvgOrderByAggregateInput
+    _max?: isin_recordsMaxOrderByAggregateInput
+    _min?: isin_recordsMinOrderByAggregateInput
+    _sum?: isin_recordsSumOrderByAggregateInput
+  }
+
+  export type isin_recordsScalarWhereWithAggregatesInput = {
+    AND?: isin_recordsScalarWhereWithAggregatesInput | isin_recordsScalarWhereWithAggregatesInput[]
+    OR?: isin_recordsScalarWhereWithAggregatesInput[]
+    NOT?: isin_recordsScalarWhereWithAggregatesInput | isin_recordsScalarWhereWithAggregatesInput[]
+    id?: IntWithAggregatesFilter<"isin_records"> | number
+    isin?: StringNullableWithAggregatesFilter<"isin_records"> | string | null
+    allotment_date?: DateTimeNullableWithAggregatesFilter<"isin_records"> | Date | string | null
+    status?: BoolWithAggregatesFilter<"isin_records"> | boolean
+    created_at?: DateTimeWithAggregatesFilter<"isin_records"> | Date | string
+    updated_at?: DateTimeNullableWithAggregatesFilter<"isin_records"> | Date | string | null
+  }
+
   export type admin_settingCreateInput = {
     id?: bigint | number
     name?: string | null
@@ -79223,7 +82370,6 @@ export namespace Prisma {
     is_deleted?: number
     created_at?: Date | string | null
     updated_at?: Date | string | null
-    master_issuers?: master_issuerCreateNestedManyWithoutIssuer_detailsInput
   }
 
   export type issuer_detailsUncheckedCreateInput = {
@@ -79237,7 +82383,6 @@ export namespace Prisma {
     is_deleted?: number
     created_at?: Date | string | null
     updated_at?: Date | string | null
-    master_issuers?: master_issuerUncheckedCreateNestedManyWithoutIssuer_detailsInput
   }
 
   export type issuer_detailsUpdateInput = {
@@ -79251,7 +82396,6 @@ export namespace Prisma {
     is_deleted?: IntFieldUpdateOperationsInput | number
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    master_issuers?: master_issuerUpdateManyWithoutIssuer_detailsNestedInput
   }
 
   export type issuer_detailsUncheckedUpdateInput = {
@@ -79265,7 +82409,6 @@ export namespace Prisma {
     is_deleted?: IntFieldUpdateOperationsInput | number
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    master_issuers?: master_issuerUncheckedUpdateManyWithoutIssuer_detailsNestedInput
   }
 
   export type issuer_detailsCreateManyInput = {
@@ -79459,45 +82602,6 @@ export namespace Prisma {
     tenure_no_days?: NullableIntFieldUpdateOperationsInput | number | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  }
-
-  export type issuersCreateInput = {
-    name?: string | null
-    some_metric?: number | null
-  }
-
-  export type issuersUncheckedCreateInput = {
-    id?: number
-    name?: string | null
-    some_metric?: number | null
-  }
-
-  export type issuersUpdateInput = {
-    name?: NullableStringFieldUpdateOperationsInput | string | null
-    some_metric?: NullableIntFieldUpdateOperationsInput | number | null
-  }
-
-  export type issuersUncheckedUpdateInput = {
-    id?: IntFieldUpdateOperationsInput | number
-    name?: NullableStringFieldUpdateOperationsInput | string | null
-    some_metric?: NullableIntFieldUpdateOperationsInput | number | null
-  }
-
-  export type issuersCreateManyInput = {
-    id?: number
-    name?: string | null
-    some_metric?: number | null
-  }
-
-  export type issuersUpdateManyMutationInput = {
-    name?: NullableStringFieldUpdateOperationsInput | string | null
-    some_metric?: NullableIntFieldUpdateOperationsInput | number | null
-  }
-
-  export type issuersUncheckedUpdateManyInput = {
-    id?: IntFieldUpdateOperationsInput | number
-    name?: NullableStringFieldUpdateOperationsInput | string | null
-    some_metric?: NullableIntFieldUpdateOperationsInput | number | null
   }
 
   export type job_batchesCreateInput = {
@@ -81428,6 +84532,7 @@ export namespace Prisma {
 
   export type master_issuerCreateInput = {
     id?: bigint | number
+    issuer_master_id: bigint | number
     isin?: string | null
     security_class?: string | null
     security_name?: string | null
@@ -81477,12 +84582,12 @@ export namespace Prisma {
     intratlkto?: string | null
     created_by?: bigint | number | null
     updated_by?: bigint | number | null
+    is_visible?: number
     is_active?: number
     is_deleted?: number
     is_updated?: number
     created_at?: Date | string | null
     updated_at?: Date | string | null
-    issuer_details: issuer_detailsCreateNestedOneWithoutMaster_issuersInput
   }
 
   export type master_issuerUncheckedCreateInput = {
@@ -81537,6 +84642,7 @@ export namespace Prisma {
     intratlkto?: string | null
     created_by?: bigint | number | null
     updated_by?: bigint | number | null
+    is_visible?: number
     is_active?: number
     is_deleted?: number
     is_updated?: number
@@ -81546,6 +84652,7 @@ export namespace Prisma {
 
   export type master_issuerUpdateInput = {
     id?: BigIntFieldUpdateOperationsInput | bigint | number
+    issuer_master_id?: BigIntFieldUpdateOperationsInput | bigint | number
     isin?: NullableStringFieldUpdateOperationsInput | string | null
     security_class?: NullableStringFieldUpdateOperationsInput | string | null
     security_name?: NullableStringFieldUpdateOperationsInput | string | null
@@ -81595,12 +84702,12 @@ export namespace Prisma {
     intratlkto?: NullableStringFieldUpdateOperationsInput | string | null
     created_by?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
     updated_by?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+    is_visible?: IntFieldUpdateOperationsInput | number
     is_active?: IntFieldUpdateOperationsInput | number
     is_deleted?: IntFieldUpdateOperationsInput | number
     is_updated?: IntFieldUpdateOperationsInput | number
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    issuer_details?: issuer_detailsUpdateOneRequiredWithoutMaster_issuersNestedInput
   }
 
   export type master_issuerUncheckedUpdateInput = {
@@ -81655,6 +84762,7 @@ export namespace Prisma {
     intratlkto?: NullableStringFieldUpdateOperationsInput | string | null
     created_by?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
     updated_by?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+    is_visible?: IntFieldUpdateOperationsInput | number
     is_active?: IntFieldUpdateOperationsInput | number
     is_deleted?: IntFieldUpdateOperationsInput | number
     is_updated?: IntFieldUpdateOperationsInput | number
@@ -81714,6 +84822,7 @@ export namespace Prisma {
     intratlkto?: string | null
     created_by?: bigint | number | null
     updated_by?: bigint | number | null
+    is_visible?: number
     is_active?: number
     is_deleted?: number
     is_updated?: number
@@ -81723,6 +84832,7 @@ export namespace Prisma {
 
   export type master_issuerUpdateManyMutationInput = {
     id?: BigIntFieldUpdateOperationsInput | bigint | number
+    issuer_master_id?: BigIntFieldUpdateOperationsInput | bigint | number
     isin?: NullableStringFieldUpdateOperationsInput | string | null
     security_class?: NullableStringFieldUpdateOperationsInput | string | null
     security_name?: NullableStringFieldUpdateOperationsInput | string | null
@@ -81772,6 +84882,7 @@ export namespace Prisma {
     intratlkto?: NullableStringFieldUpdateOperationsInput | string | null
     created_by?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
     updated_by?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+    is_visible?: IntFieldUpdateOperationsInput | number
     is_active?: IntFieldUpdateOperationsInput | number
     is_deleted?: IntFieldUpdateOperationsInput | number
     is_updated?: IntFieldUpdateOperationsInput | number
@@ -81831,6 +84942,7 @@ export namespace Prisma {
     intratlkto?: NullableStringFieldUpdateOperationsInput | string | null
     created_by?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
     updated_by?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+    is_visible?: IntFieldUpdateOperationsInput | number
     is_active?: IntFieldUpdateOperationsInput | number
     is_deleted?: IntFieldUpdateOperationsInput | number
     is_updated?: IntFieldUpdateOperationsInput | number
@@ -85041,6 +88153,549 @@ export namespace Prisma {
     utm_source?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
+  export type isin_re_issuanceCreateInput = {
+    id?: bigint | number
+    isin_id: bigint | number
+    isin: string
+    issuer_master_id: bigint | number
+    allotment_date: Date | string
+    issue_size: Decimal | DecimalJsLike | number | string
+    nsdl_issue_size?: Decimal | DecimalJsLike | number | string | null
+    source?: string | null
+    face_value?: number | null
+    maturity_date?: Date | string | null
+    business_sector?: number | null
+    security_name?: string | null
+    security_class?: string | null
+    mode_issue?: number | null
+    seniority?: number | null
+    tax_free?: number | null
+    secured_flag?: number | null
+    is_visible?: number
+    is_updated?: number
+    is_main?: number
+    created_at?: Date | string | null
+    updated_at?: Date | string | null
+  }
+
+  export type isin_re_issuanceUncheckedCreateInput = {
+    id?: bigint | number
+    isin_id: bigint | number
+    isin: string
+    issuer_master_id: bigint | number
+    allotment_date: Date | string
+    issue_size: Decimal | DecimalJsLike | number | string
+    nsdl_issue_size?: Decimal | DecimalJsLike | number | string | null
+    source?: string | null
+    face_value?: number | null
+    maturity_date?: Date | string | null
+    business_sector?: number | null
+    security_name?: string | null
+    security_class?: string | null
+    mode_issue?: number | null
+    seniority?: number | null
+    tax_free?: number | null
+    secured_flag?: number | null
+    is_visible?: number
+    is_updated?: number
+    is_main?: number
+    created_at?: Date | string | null
+    updated_at?: Date | string | null
+  }
+
+  export type isin_re_issuanceUpdateInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    isin_id?: BigIntFieldUpdateOperationsInput | bigint | number
+    isin?: StringFieldUpdateOperationsInput | string
+    issuer_master_id?: BigIntFieldUpdateOperationsInput | bigint | number
+    allotment_date?: DateTimeFieldUpdateOperationsInput | Date | string
+    issue_size?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    nsdl_issue_size?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    source?: NullableStringFieldUpdateOperationsInput | string | null
+    face_value?: NullableFloatFieldUpdateOperationsInput | number | null
+    maturity_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    business_sector?: NullableIntFieldUpdateOperationsInput | number | null
+    security_name?: NullableStringFieldUpdateOperationsInput | string | null
+    security_class?: NullableStringFieldUpdateOperationsInput | string | null
+    mode_issue?: NullableIntFieldUpdateOperationsInput | number | null
+    seniority?: NullableIntFieldUpdateOperationsInput | number | null
+    tax_free?: NullableFloatFieldUpdateOperationsInput | number | null
+    secured_flag?: NullableIntFieldUpdateOperationsInput | number | null
+    is_visible?: IntFieldUpdateOperationsInput | number
+    is_updated?: IntFieldUpdateOperationsInput | number
+    is_main?: IntFieldUpdateOperationsInput | number
+    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type isin_re_issuanceUncheckedUpdateInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    isin_id?: BigIntFieldUpdateOperationsInput | bigint | number
+    isin?: StringFieldUpdateOperationsInput | string
+    issuer_master_id?: BigIntFieldUpdateOperationsInput | bigint | number
+    allotment_date?: DateTimeFieldUpdateOperationsInput | Date | string
+    issue_size?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    nsdl_issue_size?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    source?: NullableStringFieldUpdateOperationsInput | string | null
+    face_value?: NullableFloatFieldUpdateOperationsInput | number | null
+    maturity_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    business_sector?: NullableIntFieldUpdateOperationsInput | number | null
+    security_name?: NullableStringFieldUpdateOperationsInput | string | null
+    security_class?: NullableStringFieldUpdateOperationsInput | string | null
+    mode_issue?: NullableIntFieldUpdateOperationsInput | number | null
+    seniority?: NullableIntFieldUpdateOperationsInput | number | null
+    tax_free?: NullableFloatFieldUpdateOperationsInput | number | null
+    secured_flag?: NullableIntFieldUpdateOperationsInput | number | null
+    is_visible?: IntFieldUpdateOperationsInput | number
+    is_updated?: IntFieldUpdateOperationsInput | number
+    is_main?: IntFieldUpdateOperationsInput | number
+    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type isin_re_issuanceCreateManyInput = {
+    id?: bigint | number
+    isin_id: bigint | number
+    isin: string
+    issuer_master_id: bigint | number
+    allotment_date: Date | string
+    issue_size: Decimal | DecimalJsLike | number | string
+    nsdl_issue_size?: Decimal | DecimalJsLike | number | string | null
+    source?: string | null
+    face_value?: number | null
+    maturity_date?: Date | string | null
+    business_sector?: number | null
+    security_name?: string | null
+    security_class?: string | null
+    mode_issue?: number | null
+    seniority?: number | null
+    tax_free?: number | null
+    secured_flag?: number | null
+    is_visible?: number
+    is_updated?: number
+    is_main?: number
+    created_at?: Date | string | null
+    updated_at?: Date | string | null
+  }
+
+  export type isin_re_issuanceUpdateManyMutationInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    isin_id?: BigIntFieldUpdateOperationsInput | bigint | number
+    isin?: StringFieldUpdateOperationsInput | string
+    issuer_master_id?: BigIntFieldUpdateOperationsInput | bigint | number
+    allotment_date?: DateTimeFieldUpdateOperationsInput | Date | string
+    issue_size?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    nsdl_issue_size?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    source?: NullableStringFieldUpdateOperationsInput | string | null
+    face_value?: NullableFloatFieldUpdateOperationsInput | number | null
+    maturity_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    business_sector?: NullableIntFieldUpdateOperationsInput | number | null
+    security_name?: NullableStringFieldUpdateOperationsInput | string | null
+    security_class?: NullableStringFieldUpdateOperationsInput | string | null
+    mode_issue?: NullableIntFieldUpdateOperationsInput | number | null
+    seniority?: NullableIntFieldUpdateOperationsInput | number | null
+    tax_free?: NullableFloatFieldUpdateOperationsInput | number | null
+    secured_flag?: NullableIntFieldUpdateOperationsInput | number | null
+    is_visible?: IntFieldUpdateOperationsInput | number
+    is_updated?: IntFieldUpdateOperationsInput | number
+    is_main?: IntFieldUpdateOperationsInput | number
+    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type isin_re_issuanceUncheckedUpdateManyInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    isin_id?: BigIntFieldUpdateOperationsInput | bigint | number
+    isin?: StringFieldUpdateOperationsInput | string
+    issuer_master_id?: BigIntFieldUpdateOperationsInput | bigint | number
+    allotment_date?: DateTimeFieldUpdateOperationsInput | Date | string
+    issue_size?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    nsdl_issue_size?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    source?: NullableStringFieldUpdateOperationsInput | string | null
+    face_value?: NullableFloatFieldUpdateOperationsInput | number | null
+    maturity_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    business_sector?: NullableIntFieldUpdateOperationsInput | number | null
+    security_name?: NullableStringFieldUpdateOperationsInput | string | null
+    security_class?: NullableStringFieldUpdateOperationsInput | string | null
+    mode_issue?: NullableIntFieldUpdateOperationsInput | number | null
+    seniority?: NullableIntFieldUpdateOperationsInput | number | null
+    tax_free?: NullableFloatFieldUpdateOperationsInput | number | null
+    secured_flag?: NullableIntFieldUpdateOperationsInput | number | null
+    is_visible?: IntFieldUpdateOperationsInput | number
+    is_updated?: IntFieldUpdateOperationsInput | number
+    is_main?: IntFieldUpdateOperationsInput | number
+    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type isin_re_issuance_detailsCreateInput = {
+    id?: bigint | number
+    re_issuance_id: bigint | number
+    bidding_date?: Date | string | null
+    issuer_name?: string | null
+    isin?: string | null
+    issue_description?: string | null
+    type_of_issuance?: string | null
+    allotment_date?: Date | string | null
+    face_value?: Decimal | DecimalJsLike | number | string | null
+    credit_rating?: string | null
+    type_of_book_bidding?: $Enums.isin_re_issuance_details_type_of_book_bidding | null
+    price?: Decimal | DecimalJsLike | number | string | null
+    spread?: Decimal | DecimalJsLike | number | string | null
+    yield?: Decimal | DecimalJsLike | number | string | null
+    manner_of_allotment?: string | null
+    manner_of_settlement?: string | null
+    link_of_gid_ppm?: string | null
+    link_of_kid_term_sheet?: string | null
+    base_issue_size?: Decimal | DecimalJsLike | number | string | null
+    green_shoe_option?: Decimal | DecimalJsLike | number | string | null
+    amount_raised?: Decimal | DecimalJsLike | number | string | null
+    coupon?: Decimal | DecimalJsLike | number | string | null
+    coupon_frequency?: number | null
+    successful_bidders_category?: string | null
+    type_of_bidding?: string | null
+    secured_unsecured?: $Enums.isin_re_issuance_details_secured_unsecured | null
+    tenor?: string | null
+    maturity_type?: string | null
+    interest_payment_type?: string | null
+    anchor_amount?: Decimal | DecimalJsLike | number | string | null
+    number_of_anchor_investors?: number | null
+    total_qib_bidding?: Decimal | DecimalJsLike | number | string | null
+    total_qib_amount_accepted?: Decimal | DecimalJsLike | number | string | null
+    total_non_qib_bidding?: Decimal | DecimalJsLike | number | string | null
+    total_non_qib_amount_accepted?: Decimal | DecimalJsLike | number | string | null
+    cutoff_yield_price?: Decimal | DecimalJsLike | number | string | null
+    weighted_average_cutoff_yield_price?: Decimal | DecimalJsLike | number | string | null
+    issuance_done_through_bidding_process?: string | null
+    updated_by?: number | null
+    created_at?: Date | string | null
+    updated_at?: Date | string | null
+  }
+
+  export type isin_re_issuance_detailsUncheckedCreateInput = {
+    id?: bigint | number
+    re_issuance_id: bigint | number
+    bidding_date?: Date | string | null
+    issuer_name?: string | null
+    isin?: string | null
+    issue_description?: string | null
+    type_of_issuance?: string | null
+    allotment_date?: Date | string | null
+    face_value?: Decimal | DecimalJsLike | number | string | null
+    credit_rating?: string | null
+    type_of_book_bidding?: $Enums.isin_re_issuance_details_type_of_book_bidding | null
+    price?: Decimal | DecimalJsLike | number | string | null
+    spread?: Decimal | DecimalJsLike | number | string | null
+    yield?: Decimal | DecimalJsLike | number | string | null
+    manner_of_allotment?: string | null
+    manner_of_settlement?: string | null
+    link_of_gid_ppm?: string | null
+    link_of_kid_term_sheet?: string | null
+    base_issue_size?: Decimal | DecimalJsLike | number | string | null
+    green_shoe_option?: Decimal | DecimalJsLike | number | string | null
+    amount_raised?: Decimal | DecimalJsLike | number | string | null
+    coupon?: Decimal | DecimalJsLike | number | string | null
+    coupon_frequency?: number | null
+    successful_bidders_category?: string | null
+    type_of_bidding?: string | null
+    secured_unsecured?: $Enums.isin_re_issuance_details_secured_unsecured | null
+    tenor?: string | null
+    maturity_type?: string | null
+    interest_payment_type?: string | null
+    anchor_amount?: Decimal | DecimalJsLike | number | string | null
+    number_of_anchor_investors?: number | null
+    total_qib_bidding?: Decimal | DecimalJsLike | number | string | null
+    total_qib_amount_accepted?: Decimal | DecimalJsLike | number | string | null
+    total_non_qib_bidding?: Decimal | DecimalJsLike | number | string | null
+    total_non_qib_amount_accepted?: Decimal | DecimalJsLike | number | string | null
+    cutoff_yield_price?: Decimal | DecimalJsLike | number | string | null
+    weighted_average_cutoff_yield_price?: Decimal | DecimalJsLike | number | string | null
+    issuance_done_through_bidding_process?: string | null
+    updated_by?: number | null
+    created_at?: Date | string | null
+    updated_at?: Date | string | null
+  }
+
+  export type isin_re_issuance_detailsUpdateInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    re_issuance_id?: BigIntFieldUpdateOperationsInput | bigint | number
+    bidding_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    issuer_name?: NullableStringFieldUpdateOperationsInput | string | null
+    isin?: NullableStringFieldUpdateOperationsInput | string | null
+    issue_description?: NullableStringFieldUpdateOperationsInput | string | null
+    type_of_issuance?: NullableStringFieldUpdateOperationsInput | string | null
+    allotment_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    face_value?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    credit_rating?: NullableStringFieldUpdateOperationsInput | string | null
+    type_of_book_bidding?: NullableEnumisin_re_issuance_details_type_of_book_biddingFieldUpdateOperationsInput | $Enums.isin_re_issuance_details_type_of_book_bidding | null
+    price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    spread?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    yield?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    manner_of_allotment?: NullableStringFieldUpdateOperationsInput | string | null
+    manner_of_settlement?: NullableStringFieldUpdateOperationsInput | string | null
+    link_of_gid_ppm?: NullableStringFieldUpdateOperationsInput | string | null
+    link_of_kid_term_sheet?: NullableStringFieldUpdateOperationsInput | string | null
+    base_issue_size?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    green_shoe_option?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    amount_raised?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    coupon?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    coupon_frequency?: NullableIntFieldUpdateOperationsInput | number | null
+    successful_bidders_category?: NullableStringFieldUpdateOperationsInput | string | null
+    type_of_bidding?: NullableStringFieldUpdateOperationsInput | string | null
+    secured_unsecured?: NullableEnumisin_re_issuance_details_secured_unsecuredFieldUpdateOperationsInput | $Enums.isin_re_issuance_details_secured_unsecured | null
+    tenor?: NullableStringFieldUpdateOperationsInput | string | null
+    maturity_type?: NullableStringFieldUpdateOperationsInput | string | null
+    interest_payment_type?: NullableStringFieldUpdateOperationsInput | string | null
+    anchor_amount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    number_of_anchor_investors?: NullableIntFieldUpdateOperationsInput | number | null
+    total_qib_bidding?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    total_qib_amount_accepted?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    total_non_qib_bidding?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    total_non_qib_amount_accepted?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    cutoff_yield_price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    weighted_average_cutoff_yield_price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    issuance_done_through_bidding_process?: NullableStringFieldUpdateOperationsInput | string | null
+    updated_by?: NullableIntFieldUpdateOperationsInput | number | null
+    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type isin_re_issuance_detailsUncheckedUpdateInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    re_issuance_id?: BigIntFieldUpdateOperationsInput | bigint | number
+    bidding_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    issuer_name?: NullableStringFieldUpdateOperationsInput | string | null
+    isin?: NullableStringFieldUpdateOperationsInput | string | null
+    issue_description?: NullableStringFieldUpdateOperationsInput | string | null
+    type_of_issuance?: NullableStringFieldUpdateOperationsInput | string | null
+    allotment_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    face_value?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    credit_rating?: NullableStringFieldUpdateOperationsInput | string | null
+    type_of_book_bidding?: NullableEnumisin_re_issuance_details_type_of_book_biddingFieldUpdateOperationsInput | $Enums.isin_re_issuance_details_type_of_book_bidding | null
+    price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    spread?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    yield?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    manner_of_allotment?: NullableStringFieldUpdateOperationsInput | string | null
+    manner_of_settlement?: NullableStringFieldUpdateOperationsInput | string | null
+    link_of_gid_ppm?: NullableStringFieldUpdateOperationsInput | string | null
+    link_of_kid_term_sheet?: NullableStringFieldUpdateOperationsInput | string | null
+    base_issue_size?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    green_shoe_option?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    amount_raised?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    coupon?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    coupon_frequency?: NullableIntFieldUpdateOperationsInput | number | null
+    successful_bidders_category?: NullableStringFieldUpdateOperationsInput | string | null
+    type_of_bidding?: NullableStringFieldUpdateOperationsInput | string | null
+    secured_unsecured?: NullableEnumisin_re_issuance_details_secured_unsecuredFieldUpdateOperationsInput | $Enums.isin_re_issuance_details_secured_unsecured | null
+    tenor?: NullableStringFieldUpdateOperationsInput | string | null
+    maturity_type?: NullableStringFieldUpdateOperationsInput | string | null
+    interest_payment_type?: NullableStringFieldUpdateOperationsInput | string | null
+    anchor_amount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    number_of_anchor_investors?: NullableIntFieldUpdateOperationsInput | number | null
+    total_qib_bidding?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    total_qib_amount_accepted?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    total_non_qib_bidding?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    total_non_qib_amount_accepted?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    cutoff_yield_price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    weighted_average_cutoff_yield_price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    issuance_done_through_bidding_process?: NullableStringFieldUpdateOperationsInput | string | null
+    updated_by?: NullableIntFieldUpdateOperationsInput | number | null
+    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type isin_re_issuance_detailsCreateManyInput = {
+    id?: bigint | number
+    re_issuance_id: bigint | number
+    bidding_date?: Date | string | null
+    issuer_name?: string | null
+    isin?: string | null
+    issue_description?: string | null
+    type_of_issuance?: string | null
+    allotment_date?: Date | string | null
+    face_value?: Decimal | DecimalJsLike | number | string | null
+    credit_rating?: string | null
+    type_of_book_bidding?: $Enums.isin_re_issuance_details_type_of_book_bidding | null
+    price?: Decimal | DecimalJsLike | number | string | null
+    spread?: Decimal | DecimalJsLike | number | string | null
+    yield?: Decimal | DecimalJsLike | number | string | null
+    manner_of_allotment?: string | null
+    manner_of_settlement?: string | null
+    link_of_gid_ppm?: string | null
+    link_of_kid_term_sheet?: string | null
+    base_issue_size?: Decimal | DecimalJsLike | number | string | null
+    green_shoe_option?: Decimal | DecimalJsLike | number | string | null
+    amount_raised?: Decimal | DecimalJsLike | number | string | null
+    coupon?: Decimal | DecimalJsLike | number | string | null
+    coupon_frequency?: number | null
+    successful_bidders_category?: string | null
+    type_of_bidding?: string | null
+    secured_unsecured?: $Enums.isin_re_issuance_details_secured_unsecured | null
+    tenor?: string | null
+    maturity_type?: string | null
+    interest_payment_type?: string | null
+    anchor_amount?: Decimal | DecimalJsLike | number | string | null
+    number_of_anchor_investors?: number | null
+    total_qib_bidding?: Decimal | DecimalJsLike | number | string | null
+    total_qib_amount_accepted?: Decimal | DecimalJsLike | number | string | null
+    total_non_qib_bidding?: Decimal | DecimalJsLike | number | string | null
+    total_non_qib_amount_accepted?: Decimal | DecimalJsLike | number | string | null
+    cutoff_yield_price?: Decimal | DecimalJsLike | number | string | null
+    weighted_average_cutoff_yield_price?: Decimal | DecimalJsLike | number | string | null
+    issuance_done_through_bidding_process?: string | null
+    updated_by?: number | null
+    created_at?: Date | string | null
+    updated_at?: Date | string | null
+  }
+
+  export type isin_re_issuance_detailsUpdateManyMutationInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    re_issuance_id?: BigIntFieldUpdateOperationsInput | bigint | number
+    bidding_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    issuer_name?: NullableStringFieldUpdateOperationsInput | string | null
+    isin?: NullableStringFieldUpdateOperationsInput | string | null
+    issue_description?: NullableStringFieldUpdateOperationsInput | string | null
+    type_of_issuance?: NullableStringFieldUpdateOperationsInput | string | null
+    allotment_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    face_value?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    credit_rating?: NullableStringFieldUpdateOperationsInput | string | null
+    type_of_book_bidding?: NullableEnumisin_re_issuance_details_type_of_book_biddingFieldUpdateOperationsInput | $Enums.isin_re_issuance_details_type_of_book_bidding | null
+    price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    spread?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    yield?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    manner_of_allotment?: NullableStringFieldUpdateOperationsInput | string | null
+    manner_of_settlement?: NullableStringFieldUpdateOperationsInput | string | null
+    link_of_gid_ppm?: NullableStringFieldUpdateOperationsInput | string | null
+    link_of_kid_term_sheet?: NullableStringFieldUpdateOperationsInput | string | null
+    base_issue_size?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    green_shoe_option?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    amount_raised?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    coupon?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    coupon_frequency?: NullableIntFieldUpdateOperationsInput | number | null
+    successful_bidders_category?: NullableStringFieldUpdateOperationsInput | string | null
+    type_of_bidding?: NullableStringFieldUpdateOperationsInput | string | null
+    secured_unsecured?: NullableEnumisin_re_issuance_details_secured_unsecuredFieldUpdateOperationsInput | $Enums.isin_re_issuance_details_secured_unsecured | null
+    tenor?: NullableStringFieldUpdateOperationsInput | string | null
+    maturity_type?: NullableStringFieldUpdateOperationsInput | string | null
+    interest_payment_type?: NullableStringFieldUpdateOperationsInput | string | null
+    anchor_amount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    number_of_anchor_investors?: NullableIntFieldUpdateOperationsInput | number | null
+    total_qib_bidding?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    total_qib_amount_accepted?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    total_non_qib_bidding?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    total_non_qib_amount_accepted?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    cutoff_yield_price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    weighted_average_cutoff_yield_price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    issuance_done_through_bidding_process?: NullableStringFieldUpdateOperationsInput | string | null
+    updated_by?: NullableIntFieldUpdateOperationsInput | number | null
+    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type isin_re_issuance_detailsUncheckedUpdateManyInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    re_issuance_id?: BigIntFieldUpdateOperationsInput | bigint | number
+    bidding_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    issuer_name?: NullableStringFieldUpdateOperationsInput | string | null
+    isin?: NullableStringFieldUpdateOperationsInput | string | null
+    issue_description?: NullableStringFieldUpdateOperationsInput | string | null
+    type_of_issuance?: NullableStringFieldUpdateOperationsInput | string | null
+    allotment_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    face_value?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    credit_rating?: NullableStringFieldUpdateOperationsInput | string | null
+    type_of_book_bidding?: NullableEnumisin_re_issuance_details_type_of_book_biddingFieldUpdateOperationsInput | $Enums.isin_re_issuance_details_type_of_book_bidding | null
+    price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    spread?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    yield?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    manner_of_allotment?: NullableStringFieldUpdateOperationsInput | string | null
+    manner_of_settlement?: NullableStringFieldUpdateOperationsInput | string | null
+    link_of_gid_ppm?: NullableStringFieldUpdateOperationsInput | string | null
+    link_of_kid_term_sheet?: NullableStringFieldUpdateOperationsInput | string | null
+    base_issue_size?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    green_shoe_option?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    amount_raised?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    coupon?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    coupon_frequency?: NullableIntFieldUpdateOperationsInput | number | null
+    successful_bidders_category?: NullableStringFieldUpdateOperationsInput | string | null
+    type_of_bidding?: NullableStringFieldUpdateOperationsInput | string | null
+    secured_unsecured?: NullableEnumisin_re_issuance_details_secured_unsecuredFieldUpdateOperationsInput | $Enums.isin_re_issuance_details_secured_unsecured | null
+    tenor?: NullableStringFieldUpdateOperationsInput | string | null
+    maturity_type?: NullableStringFieldUpdateOperationsInput | string | null
+    interest_payment_type?: NullableStringFieldUpdateOperationsInput | string | null
+    anchor_amount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    number_of_anchor_investors?: NullableIntFieldUpdateOperationsInput | number | null
+    total_qib_bidding?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    total_qib_amount_accepted?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    total_non_qib_bidding?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    total_non_qib_amount_accepted?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    cutoff_yield_price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    weighted_average_cutoff_yield_price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    issuance_done_through_bidding_process?: NullableStringFieldUpdateOperationsInput | string | null
+    updated_by?: NullableIntFieldUpdateOperationsInput | number | null
+    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type isin_recordsCreateInput = {
+    isin?: string | null
+    allotment_date?: Date | string | null
+    status?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string | null
+  }
+
+  export type isin_recordsUncheckedCreateInput = {
+    id?: number
+    isin?: string | null
+    allotment_date?: Date | string | null
+    status?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string | null
+  }
+
+  export type isin_recordsUpdateInput = {
+    isin?: NullableStringFieldUpdateOperationsInput | string | null
+    allotment_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type isin_recordsUncheckedUpdateInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    isin?: NullableStringFieldUpdateOperationsInput | string | null
+    allotment_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type isin_recordsCreateManyInput = {
+    id?: number
+    isin?: string | null
+    allotment_date?: Date | string | null
+    status?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string | null
+  }
+
+  export type isin_recordsUpdateManyMutationInput = {
+    isin?: NullableStringFieldUpdateOperationsInput | string | null
+    allotment_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type isin_recordsUncheckedUpdateManyInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    isin?: NullableStringFieldUpdateOperationsInput | string | null
+    allotment_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
   export type BigIntFilter<$PrismaModel = never> = {
     equals?: bigint | number | BigIntFieldRefInput<$PrismaModel>
     in?: bigint[] | number[]
@@ -85584,16 +89239,6 @@ export namespace Prisma {
     not?: NestedBigIntNullableFilter<$PrismaModel> | bigint | number | null
   }
 
-  export type Master_issuerListRelationFilter = {
-    every?: master_issuerWhereInput
-    some?: master_issuerWhereInput
-    none?: master_issuerWhereInput
-  }
-
-  export type master_issuerOrderByRelationAggregateInput = {
-    _count?: SortOrder
-  }
-
   export type issuer_detailsOrderByRelevanceInput = {
     fields: issuer_detailsOrderByRelevanceFieldEnum | issuer_detailsOrderByRelevanceFieldEnum[]
     sort: SortOrder
@@ -85827,40 +89472,6 @@ export namespace Prisma {
     _sum?: NestedFloatNullableFilter<$PrismaModel>
     _min?: NestedFloatNullableFilter<$PrismaModel>
     _max?: NestedFloatNullableFilter<$PrismaModel>
-  }
-
-  export type issuersOrderByRelevanceInput = {
-    fields: issuersOrderByRelevanceFieldEnum | issuersOrderByRelevanceFieldEnum[]
-    sort: SortOrder
-    search: string
-  }
-
-  export type issuersCountOrderByAggregateInput = {
-    id?: SortOrder
-    name?: SortOrder
-    some_metric?: SortOrder
-  }
-
-  export type issuersAvgOrderByAggregateInput = {
-    id?: SortOrder
-    some_metric?: SortOrder
-  }
-
-  export type issuersMaxOrderByAggregateInput = {
-    id?: SortOrder
-    name?: SortOrder
-    some_metric?: SortOrder
-  }
-
-  export type issuersMinOrderByAggregateInput = {
-    id?: SortOrder
-    name?: SortOrder
-    some_metric?: SortOrder
-  }
-
-  export type issuersSumOrderByAggregateInput = {
-    id?: SortOrder
-    some_metric?: SortOrder
   }
 
   export type job_batchesOrderByRelevanceInput = {
@@ -87216,11 +90827,6 @@ export namespace Prisma {
     is_deleted?: SortOrder
   }
 
-  export type Issuer_detailsScalarRelationFilter = {
-    is?: issuer_detailsWhereInput
-    isNot?: issuer_detailsWhereInput
-  }
-
   export type master_issuerOrderByRelevanceInput = {
     fields: master_issuerOrderByRelevanceFieldEnum | master_issuerOrderByRelevanceFieldEnum[]
     sort: SortOrder
@@ -87279,6 +90885,7 @@ export namespace Prisma {
     intratlkto?: SortOrder
     created_by?: SortOrder
     updated_by?: SortOrder
+    is_visible?: SortOrder
     is_active?: SortOrder
     is_deleted?: SortOrder
     is_updated?: SortOrder
@@ -87315,6 +90922,7 @@ export namespace Prisma {
     freq?: SortOrder
     created_by?: SortOrder
     updated_by?: SortOrder
+    is_visible?: SortOrder
     is_active?: SortOrder
     is_deleted?: SortOrder
     is_updated?: SortOrder
@@ -87372,6 +90980,7 @@ export namespace Prisma {
     intratlkto?: SortOrder
     created_by?: SortOrder
     updated_by?: SortOrder
+    is_visible?: SortOrder
     is_active?: SortOrder
     is_deleted?: SortOrder
     is_updated?: SortOrder
@@ -87431,6 +91040,7 @@ export namespace Prisma {
     intratlkto?: SortOrder
     created_by?: SortOrder
     updated_by?: SortOrder
+    is_visible?: SortOrder
     is_active?: SortOrder
     is_deleted?: SortOrder
     is_updated?: SortOrder
@@ -87467,6 +91077,7 @@ export namespace Prisma {
     freq?: SortOrder
     created_by?: SortOrder
     updated_by?: SortOrder
+    is_visible?: SortOrder
     is_active?: SortOrder
     is_deleted?: SortOrder
     is_updated?: SortOrder
@@ -89627,6 +93238,434 @@ export namespace Prisma {
     _max?: NestedEnumusers_user_typeNullableFilter<$PrismaModel>
   }
 
+  export type DecimalFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[]
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[]
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
+  }
+
+  export type DecimalNullableFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | null
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | null
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalNullableFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
+  }
+
+  export type isin_re_issuanceOrderByRelevanceInput = {
+    fields: isin_re_issuanceOrderByRelevanceFieldEnum | isin_re_issuanceOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type isin_re_issuanceCountOrderByAggregateInput = {
+    id?: SortOrder
+    isin_id?: SortOrder
+    isin?: SortOrder
+    issuer_master_id?: SortOrder
+    allotment_date?: SortOrder
+    issue_size?: SortOrder
+    nsdl_issue_size?: SortOrder
+    source?: SortOrder
+    face_value?: SortOrder
+    maturity_date?: SortOrder
+    business_sector?: SortOrder
+    security_name?: SortOrder
+    security_class?: SortOrder
+    mode_issue?: SortOrder
+    seniority?: SortOrder
+    tax_free?: SortOrder
+    secured_flag?: SortOrder
+    is_visible?: SortOrder
+    is_updated?: SortOrder
+    is_main?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type isin_re_issuanceAvgOrderByAggregateInput = {
+    id?: SortOrder
+    isin_id?: SortOrder
+    issuer_master_id?: SortOrder
+    issue_size?: SortOrder
+    nsdl_issue_size?: SortOrder
+    face_value?: SortOrder
+    business_sector?: SortOrder
+    mode_issue?: SortOrder
+    seniority?: SortOrder
+    tax_free?: SortOrder
+    secured_flag?: SortOrder
+    is_visible?: SortOrder
+    is_updated?: SortOrder
+    is_main?: SortOrder
+  }
+
+  export type isin_re_issuanceMaxOrderByAggregateInput = {
+    id?: SortOrder
+    isin_id?: SortOrder
+    isin?: SortOrder
+    issuer_master_id?: SortOrder
+    allotment_date?: SortOrder
+    issue_size?: SortOrder
+    nsdl_issue_size?: SortOrder
+    source?: SortOrder
+    face_value?: SortOrder
+    maturity_date?: SortOrder
+    business_sector?: SortOrder
+    security_name?: SortOrder
+    security_class?: SortOrder
+    mode_issue?: SortOrder
+    seniority?: SortOrder
+    tax_free?: SortOrder
+    secured_flag?: SortOrder
+    is_visible?: SortOrder
+    is_updated?: SortOrder
+    is_main?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type isin_re_issuanceMinOrderByAggregateInput = {
+    id?: SortOrder
+    isin_id?: SortOrder
+    isin?: SortOrder
+    issuer_master_id?: SortOrder
+    allotment_date?: SortOrder
+    issue_size?: SortOrder
+    nsdl_issue_size?: SortOrder
+    source?: SortOrder
+    face_value?: SortOrder
+    maturity_date?: SortOrder
+    business_sector?: SortOrder
+    security_name?: SortOrder
+    security_class?: SortOrder
+    mode_issue?: SortOrder
+    seniority?: SortOrder
+    tax_free?: SortOrder
+    secured_flag?: SortOrder
+    is_visible?: SortOrder
+    is_updated?: SortOrder
+    is_main?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type isin_re_issuanceSumOrderByAggregateInput = {
+    id?: SortOrder
+    isin_id?: SortOrder
+    issuer_master_id?: SortOrder
+    issue_size?: SortOrder
+    nsdl_issue_size?: SortOrder
+    face_value?: SortOrder
+    business_sector?: SortOrder
+    mode_issue?: SortOrder
+    seniority?: SortOrder
+    tax_free?: SortOrder
+    secured_flag?: SortOrder
+    is_visible?: SortOrder
+    is_updated?: SortOrder
+    is_main?: SortOrder
+  }
+
+  export type DecimalWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[]
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[]
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedDecimalFilter<$PrismaModel>
+    _sum?: NestedDecimalFilter<$PrismaModel>
+    _min?: NestedDecimalFilter<$PrismaModel>
+    _max?: NestedDecimalFilter<$PrismaModel>
+  }
+
+  export type DecimalNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | null
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | null
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalNullableWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedDecimalNullableFilter<$PrismaModel>
+    _sum?: NestedDecimalNullableFilter<$PrismaModel>
+    _min?: NestedDecimalNullableFilter<$PrismaModel>
+    _max?: NestedDecimalNullableFilter<$PrismaModel>
+  }
+
+  export type Enumisin_re_issuance_details_type_of_book_biddingNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.isin_re_issuance_details_type_of_book_bidding | Enumisin_re_issuance_details_type_of_book_biddingFieldRefInput<$PrismaModel> | null
+    in?: $Enums.isin_re_issuance_details_type_of_book_bidding[] | null
+    notIn?: $Enums.isin_re_issuance_details_type_of_book_bidding[] | null
+    not?: NestedEnumisin_re_issuance_details_type_of_book_biddingNullableFilter<$PrismaModel> | $Enums.isin_re_issuance_details_type_of_book_bidding | null
+  }
+
+  export type Enumisin_re_issuance_details_secured_unsecuredNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.isin_re_issuance_details_secured_unsecured | Enumisin_re_issuance_details_secured_unsecuredFieldRefInput<$PrismaModel> | null
+    in?: $Enums.isin_re_issuance_details_secured_unsecured[] | null
+    notIn?: $Enums.isin_re_issuance_details_secured_unsecured[] | null
+    not?: NestedEnumisin_re_issuance_details_secured_unsecuredNullableFilter<$PrismaModel> | $Enums.isin_re_issuance_details_secured_unsecured | null
+  }
+
+  export type isin_re_issuance_detailsOrderByRelevanceInput = {
+    fields: isin_re_issuance_detailsOrderByRelevanceFieldEnum | isin_re_issuance_detailsOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type isin_re_issuance_detailsCountOrderByAggregateInput = {
+    id?: SortOrder
+    re_issuance_id?: SortOrder
+    bidding_date?: SortOrder
+    issuer_name?: SortOrder
+    isin?: SortOrder
+    issue_description?: SortOrder
+    type_of_issuance?: SortOrder
+    allotment_date?: SortOrder
+    face_value?: SortOrder
+    credit_rating?: SortOrder
+    type_of_book_bidding?: SortOrder
+    price?: SortOrder
+    spread?: SortOrder
+    yield?: SortOrder
+    manner_of_allotment?: SortOrder
+    manner_of_settlement?: SortOrder
+    link_of_gid_ppm?: SortOrder
+    link_of_kid_term_sheet?: SortOrder
+    base_issue_size?: SortOrder
+    green_shoe_option?: SortOrder
+    amount_raised?: SortOrder
+    coupon?: SortOrder
+    coupon_frequency?: SortOrder
+    successful_bidders_category?: SortOrder
+    type_of_bidding?: SortOrder
+    secured_unsecured?: SortOrder
+    tenor?: SortOrder
+    maturity_type?: SortOrder
+    interest_payment_type?: SortOrder
+    anchor_amount?: SortOrder
+    number_of_anchor_investors?: SortOrder
+    total_qib_bidding?: SortOrder
+    total_qib_amount_accepted?: SortOrder
+    total_non_qib_bidding?: SortOrder
+    total_non_qib_amount_accepted?: SortOrder
+    cutoff_yield_price?: SortOrder
+    weighted_average_cutoff_yield_price?: SortOrder
+    issuance_done_through_bidding_process?: SortOrder
+    updated_by?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type isin_re_issuance_detailsAvgOrderByAggregateInput = {
+    id?: SortOrder
+    re_issuance_id?: SortOrder
+    face_value?: SortOrder
+    price?: SortOrder
+    spread?: SortOrder
+    yield?: SortOrder
+    base_issue_size?: SortOrder
+    green_shoe_option?: SortOrder
+    amount_raised?: SortOrder
+    coupon?: SortOrder
+    coupon_frequency?: SortOrder
+    anchor_amount?: SortOrder
+    number_of_anchor_investors?: SortOrder
+    total_qib_bidding?: SortOrder
+    total_qib_amount_accepted?: SortOrder
+    total_non_qib_bidding?: SortOrder
+    total_non_qib_amount_accepted?: SortOrder
+    cutoff_yield_price?: SortOrder
+    weighted_average_cutoff_yield_price?: SortOrder
+    updated_by?: SortOrder
+  }
+
+  export type isin_re_issuance_detailsMaxOrderByAggregateInput = {
+    id?: SortOrder
+    re_issuance_id?: SortOrder
+    bidding_date?: SortOrder
+    issuer_name?: SortOrder
+    isin?: SortOrder
+    issue_description?: SortOrder
+    type_of_issuance?: SortOrder
+    allotment_date?: SortOrder
+    face_value?: SortOrder
+    credit_rating?: SortOrder
+    type_of_book_bidding?: SortOrder
+    price?: SortOrder
+    spread?: SortOrder
+    yield?: SortOrder
+    manner_of_allotment?: SortOrder
+    manner_of_settlement?: SortOrder
+    link_of_gid_ppm?: SortOrder
+    link_of_kid_term_sheet?: SortOrder
+    base_issue_size?: SortOrder
+    green_shoe_option?: SortOrder
+    amount_raised?: SortOrder
+    coupon?: SortOrder
+    coupon_frequency?: SortOrder
+    successful_bidders_category?: SortOrder
+    type_of_bidding?: SortOrder
+    secured_unsecured?: SortOrder
+    tenor?: SortOrder
+    maturity_type?: SortOrder
+    interest_payment_type?: SortOrder
+    anchor_amount?: SortOrder
+    number_of_anchor_investors?: SortOrder
+    total_qib_bidding?: SortOrder
+    total_qib_amount_accepted?: SortOrder
+    total_non_qib_bidding?: SortOrder
+    total_non_qib_amount_accepted?: SortOrder
+    cutoff_yield_price?: SortOrder
+    weighted_average_cutoff_yield_price?: SortOrder
+    issuance_done_through_bidding_process?: SortOrder
+    updated_by?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type isin_re_issuance_detailsMinOrderByAggregateInput = {
+    id?: SortOrder
+    re_issuance_id?: SortOrder
+    bidding_date?: SortOrder
+    issuer_name?: SortOrder
+    isin?: SortOrder
+    issue_description?: SortOrder
+    type_of_issuance?: SortOrder
+    allotment_date?: SortOrder
+    face_value?: SortOrder
+    credit_rating?: SortOrder
+    type_of_book_bidding?: SortOrder
+    price?: SortOrder
+    spread?: SortOrder
+    yield?: SortOrder
+    manner_of_allotment?: SortOrder
+    manner_of_settlement?: SortOrder
+    link_of_gid_ppm?: SortOrder
+    link_of_kid_term_sheet?: SortOrder
+    base_issue_size?: SortOrder
+    green_shoe_option?: SortOrder
+    amount_raised?: SortOrder
+    coupon?: SortOrder
+    coupon_frequency?: SortOrder
+    successful_bidders_category?: SortOrder
+    type_of_bidding?: SortOrder
+    secured_unsecured?: SortOrder
+    tenor?: SortOrder
+    maturity_type?: SortOrder
+    interest_payment_type?: SortOrder
+    anchor_amount?: SortOrder
+    number_of_anchor_investors?: SortOrder
+    total_qib_bidding?: SortOrder
+    total_qib_amount_accepted?: SortOrder
+    total_non_qib_bidding?: SortOrder
+    total_non_qib_amount_accepted?: SortOrder
+    cutoff_yield_price?: SortOrder
+    weighted_average_cutoff_yield_price?: SortOrder
+    issuance_done_through_bidding_process?: SortOrder
+    updated_by?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type isin_re_issuance_detailsSumOrderByAggregateInput = {
+    id?: SortOrder
+    re_issuance_id?: SortOrder
+    face_value?: SortOrder
+    price?: SortOrder
+    spread?: SortOrder
+    yield?: SortOrder
+    base_issue_size?: SortOrder
+    green_shoe_option?: SortOrder
+    amount_raised?: SortOrder
+    coupon?: SortOrder
+    coupon_frequency?: SortOrder
+    anchor_amount?: SortOrder
+    number_of_anchor_investors?: SortOrder
+    total_qib_bidding?: SortOrder
+    total_qib_amount_accepted?: SortOrder
+    total_non_qib_bidding?: SortOrder
+    total_non_qib_amount_accepted?: SortOrder
+    cutoff_yield_price?: SortOrder
+    weighted_average_cutoff_yield_price?: SortOrder
+    updated_by?: SortOrder
+  }
+
+  export type Enumisin_re_issuance_details_type_of_book_biddingNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.isin_re_issuance_details_type_of_book_bidding | Enumisin_re_issuance_details_type_of_book_biddingFieldRefInput<$PrismaModel> | null
+    in?: $Enums.isin_re_issuance_details_type_of_book_bidding[] | null
+    notIn?: $Enums.isin_re_issuance_details_type_of_book_bidding[] | null
+    not?: NestedEnumisin_re_issuance_details_type_of_book_biddingNullableWithAggregatesFilter<$PrismaModel> | $Enums.isin_re_issuance_details_type_of_book_bidding | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumisin_re_issuance_details_type_of_book_biddingNullableFilter<$PrismaModel>
+    _max?: NestedEnumisin_re_issuance_details_type_of_book_biddingNullableFilter<$PrismaModel>
+  }
+
+  export type Enumisin_re_issuance_details_secured_unsecuredNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.isin_re_issuance_details_secured_unsecured | Enumisin_re_issuance_details_secured_unsecuredFieldRefInput<$PrismaModel> | null
+    in?: $Enums.isin_re_issuance_details_secured_unsecured[] | null
+    notIn?: $Enums.isin_re_issuance_details_secured_unsecured[] | null
+    not?: NestedEnumisin_re_issuance_details_secured_unsecuredNullableWithAggregatesFilter<$PrismaModel> | $Enums.isin_re_issuance_details_secured_unsecured | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumisin_re_issuance_details_secured_unsecuredNullableFilter<$PrismaModel>
+    _max?: NestedEnumisin_re_issuance_details_secured_unsecuredNullableFilter<$PrismaModel>
+  }
+
+  export type isin_recordsOrderByRelevanceInput = {
+    fields: isin_recordsOrderByRelevanceFieldEnum | isin_recordsOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type isin_recordsCountOrderByAggregateInput = {
+    id?: SortOrder
+    isin?: SortOrder
+    allotment_date?: SortOrder
+    status?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type isin_recordsAvgOrderByAggregateInput = {
+    id?: SortOrder
+  }
+
+  export type isin_recordsMaxOrderByAggregateInput = {
+    id?: SortOrder
+    isin?: SortOrder
+    allotment_date?: SortOrder
+    status?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type isin_recordsMinOrderByAggregateInput = {
+    id?: SortOrder
+    isin?: SortOrder
+    allotment_date?: SortOrder
+    status?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type isin_recordsSumOrderByAggregateInput = {
+    id?: SortOrder
+  }
+
   export type BigIntFieldUpdateOperationsInput = {
     set?: bigint | number
     increment?: bigint | number
@@ -89659,54 +93698,12 @@ export namespace Prisma {
     set?: Date | string
   }
 
-  export type master_issuerCreateNestedManyWithoutIssuer_detailsInput = {
-    create?: XOR<master_issuerCreateWithoutIssuer_detailsInput, master_issuerUncheckedCreateWithoutIssuer_detailsInput> | master_issuerCreateWithoutIssuer_detailsInput[] | master_issuerUncheckedCreateWithoutIssuer_detailsInput[]
-    connectOrCreate?: master_issuerCreateOrConnectWithoutIssuer_detailsInput | master_issuerCreateOrConnectWithoutIssuer_detailsInput[]
-    createMany?: master_issuerCreateManyIssuer_detailsInputEnvelope
-    connect?: master_issuerWhereUniqueInput | master_issuerWhereUniqueInput[]
-  }
-
-  export type master_issuerUncheckedCreateNestedManyWithoutIssuer_detailsInput = {
-    create?: XOR<master_issuerCreateWithoutIssuer_detailsInput, master_issuerUncheckedCreateWithoutIssuer_detailsInput> | master_issuerCreateWithoutIssuer_detailsInput[] | master_issuerUncheckedCreateWithoutIssuer_detailsInput[]
-    connectOrCreate?: master_issuerCreateOrConnectWithoutIssuer_detailsInput | master_issuerCreateOrConnectWithoutIssuer_detailsInput[]
-    createMany?: master_issuerCreateManyIssuer_detailsInputEnvelope
-    connect?: master_issuerWhereUniqueInput | master_issuerWhereUniqueInput[]
-  }
-
   export type NullableBigIntFieldUpdateOperationsInput = {
     set?: bigint | number | null
     increment?: bigint | number
     decrement?: bigint | number
     multiply?: bigint | number
     divide?: bigint | number
-  }
-
-  export type master_issuerUpdateManyWithoutIssuer_detailsNestedInput = {
-    create?: XOR<master_issuerCreateWithoutIssuer_detailsInput, master_issuerUncheckedCreateWithoutIssuer_detailsInput> | master_issuerCreateWithoutIssuer_detailsInput[] | master_issuerUncheckedCreateWithoutIssuer_detailsInput[]
-    connectOrCreate?: master_issuerCreateOrConnectWithoutIssuer_detailsInput | master_issuerCreateOrConnectWithoutIssuer_detailsInput[]
-    upsert?: master_issuerUpsertWithWhereUniqueWithoutIssuer_detailsInput | master_issuerUpsertWithWhereUniqueWithoutIssuer_detailsInput[]
-    createMany?: master_issuerCreateManyIssuer_detailsInputEnvelope
-    set?: master_issuerWhereUniqueInput | master_issuerWhereUniqueInput[]
-    disconnect?: master_issuerWhereUniqueInput | master_issuerWhereUniqueInput[]
-    delete?: master_issuerWhereUniqueInput | master_issuerWhereUniqueInput[]
-    connect?: master_issuerWhereUniqueInput | master_issuerWhereUniqueInput[]
-    update?: master_issuerUpdateWithWhereUniqueWithoutIssuer_detailsInput | master_issuerUpdateWithWhereUniqueWithoutIssuer_detailsInput[]
-    updateMany?: master_issuerUpdateManyWithWhereWithoutIssuer_detailsInput | master_issuerUpdateManyWithWhereWithoutIssuer_detailsInput[]
-    deleteMany?: master_issuerScalarWhereInput | master_issuerScalarWhereInput[]
-  }
-
-  export type master_issuerUncheckedUpdateManyWithoutIssuer_detailsNestedInput = {
-    create?: XOR<master_issuerCreateWithoutIssuer_detailsInput, master_issuerUncheckedCreateWithoutIssuer_detailsInput> | master_issuerCreateWithoutIssuer_detailsInput[] | master_issuerUncheckedCreateWithoutIssuer_detailsInput[]
-    connectOrCreate?: master_issuerCreateOrConnectWithoutIssuer_detailsInput | master_issuerCreateOrConnectWithoutIssuer_detailsInput[]
-    upsert?: master_issuerUpsertWithWhereUniqueWithoutIssuer_detailsInput | master_issuerUpsertWithWhereUniqueWithoutIssuer_detailsInput[]
-    createMany?: master_issuerCreateManyIssuer_detailsInputEnvelope
-    set?: master_issuerWhereUniqueInput | master_issuerWhereUniqueInput[]
-    disconnect?: master_issuerWhereUniqueInput | master_issuerWhereUniqueInput[]
-    delete?: master_issuerWhereUniqueInput | master_issuerWhereUniqueInput[]
-    connect?: master_issuerWhereUniqueInput | master_issuerWhereUniqueInput[]
-    update?: master_issuerUpdateWithWhereUniqueWithoutIssuer_detailsInput | master_issuerUpdateWithWhereUniqueWithoutIssuer_detailsInput[]
-    updateMany?: master_issuerUpdateManyWithWhereWithoutIssuer_detailsInput | master_issuerUpdateManyWithWhereWithoutIssuer_detailsInput[]
-    deleteMany?: master_issuerScalarWhereInput | master_issuerScalarWhereInput[]
   }
 
   export type NullableIntFieldUpdateOperationsInput = {
@@ -89729,22 +93726,32 @@ export namespace Prisma {
     set?: boolean
   }
 
-  export type issuer_detailsCreateNestedOneWithoutMaster_issuersInput = {
-    create?: XOR<issuer_detailsCreateWithoutMaster_issuersInput, issuer_detailsUncheckedCreateWithoutMaster_issuersInput>
-    connectOrCreate?: issuer_detailsCreateOrConnectWithoutMaster_issuersInput
-    connect?: issuer_detailsWhereUniqueInput
-  }
-
-  export type issuer_detailsUpdateOneRequiredWithoutMaster_issuersNestedInput = {
-    create?: XOR<issuer_detailsCreateWithoutMaster_issuersInput, issuer_detailsUncheckedCreateWithoutMaster_issuersInput>
-    connectOrCreate?: issuer_detailsCreateOrConnectWithoutMaster_issuersInput
-    upsert?: issuer_detailsUpsertWithoutMaster_issuersInput
-    connect?: issuer_detailsWhereUniqueInput
-    update?: XOR<XOR<issuer_detailsUpdateToOneWithWhereWithoutMaster_issuersInput, issuer_detailsUpdateWithoutMaster_issuersInput>, issuer_detailsUncheckedUpdateWithoutMaster_issuersInput>
-  }
-
   export type NullableEnumusers_user_typeFieldUpdateOperationsInput = {
     set?: $Enums.users_user_type | null
+  }
+
+  export type DecimalFieldUpdateOperationsInput = {
+    set?: Decimal | DecimalJsLike | number | string
+    increment?: Decimal | DecimalJsLike | number | string
+    decrement?: Decimal | DecimalJsLike | number | string
+    multiply?: Decimal | DecimalJsLike | number | string
+    divide?: Decimal | DecimalJsLike | number | string
+  }
+
+  export type NullableDecimalFieldUpdateOperationsInput = {
+    set?: Decimal | DecimalJsLike | number | string | null
+    increment?: Decimal | DecimalJsLike | number | string
+    decrement?: Decimal | DecimalJsLike | number | string
+    multiply?: Decimal | DecimalJsLike | number | string
+    divide?: Decimal | DecimalJsLike | number | string
+  }
+
+  export type NullableEnumisin_re_issuance_details_type_of_book_biddingFieldUpdateOperationsInput = {
+    set?: $Enums.isin_re_issuance_details_type_of_book_bidding | null
+  }
+
+  export type NullableEnumisin_re_issuance_details_secured_unsecuredFieldUpdateOperationsInput = {
+    set?: $Enums.isin_re_issuance_details_secured_unsecured | null
   }
 
   export type NestedBigIntFilter<$PrismaModel = never> = {
@@ -90039,508 +94046,92 @@ export namespace Prisma {
     _max?: NestedEnumusers_user_typeNullableFilter<$PrismaModel>
   }
 
-  export type master_issuerCreateWithoutIssuer_detailsInput = {
-    id?: bigint | number
-    isin?: string | null
-    security_class?: string | null
-    security_name?: string | null
-    series?: string | null
-    allotment_date?: Date | string | null
-    face_value?: number | null
-    maturity_date?: Date | string | null
-    convertible_flag?: string | null
-    option_flag?: string | null
-    tier_classification?: string | null
-    day_count?: number | null
-    seniority?: number | null
-    secured_flag?: number | null
-    compound_frequency?: string | null
-    call_desc?: string | null
-    put_desc?: string | null
-    rated_flag?: number | null
-    isin_desc?: string | null
-    convertible_type_a?: number | null
-    convertible_type_b?: number | null
-    convertible_details?: string | null
-    stipulation_details?: string | null
-    issue_size?: number | null
-    guaranteed_type?: number | null
-    guaranteed?: string | null
-    tax_free?: number | null
-    if_taxable?: string | null
-    mode_issue?: number | null
-    security_status?: number | null
-    allotment_qty?: number | null
-    stepupdwnbasis?: number | null
-    stepupdwndtls?: string | null
-    issuer_ownership_type?: number | null
-    nature_type?: number | null
-    business_sector?: number | null
-    perpetual_nature?: number | null
-    call_option?: number | null
-    put_option?: number | null
-    infra_category?: number | null
-    issue_price?: number | null
-    interest_type?: number | null
-    fintrpydte?: Date | string | null
-    freq?: number | null
-    freq_dis?: string | null
-    next_sch_date?: Date | string | null
-    intratupto?: string | null
-    intratlkto?: string | null
-    created_by?: bigint | number | null
-    updated_by?: bigint | number | null
-    is_active?: number
-    is_deleted?: number
-    is_updated?: number
-    created_at?: Date | string | null
-    updated_at?: Date | string | null
+  export type NestedDecimalFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[]
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[]
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
   }
 
-  export type master_issuerUncheckedCreateWithoutIssuer_detailsInput = {
-    id?: bigint | number
-    isin?: string | null
-    security_class?: string | null
-    security_name?: string | null
-    series?: string | null
-    allotment_date?: Date | string | null
-    face_value?: number | null
-    maturity_date?: Date | string | null
-    convertible_flag?: string | null
-    option_flag?: string | null
-    tier_classification?: string | null
-    day_count?: number | null
-    seniority?: number | null
-    secured_flag?: number | null
-    compound_frequency?: string | null
-    call_desc?: string | null
-    put_desc?: string | null
-    rated_flag?: number | null
-    isin_desc?: string | null
-    convertible_type_a?: number | null
-    convertible_type_b?: number | null
-    convertible_details?: string | null
-    stipulation_details?: string | null
-    issue_size?: number | null
-    guaranteed_type?: number | null
-    guaranteed?: string | null
-    tax_free?: number | null
-    if_taxable?: string | null
-    mode_issue?: number | null
-    security_status?: number | null
-    allotment_qty?: number | null
-    stepupdwnbasis?: number | null
-    stepupdwndtls?: string | null
-    issuer_ownership_type?: number | null
-    nature_type?: number | null
-    business_sector?: number | null
-    perpetual_nature?: number | null
-    call_option?: number | null
-    put_option?: number | null
-    infra_category?: number | null
-    issue_price?: number | null
-    interest_type?: number | null
-    fintrpydte?: Date | string | null
-    freq?: number | null
-    freq_dis?: string | null
-    next_sch_date?: Date | string | null
-    intratupto?: string | null
-    intratlkto?: string | null
-    created_by?: bigint | number | null
-    updated_by?: bigint | number | null
-    is_active?: number
-    is_deleted?: number
-    is_updated?: number
-    created_at?: Date | string | null
-    updated_at?: Date | string | null
+  export type NestedDecimalNullableFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | null
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | null
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalNullableFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
   }
 
-  export type master_issuerCreateOrConnectWithoutIssuer_detailsInput = {
-    where: master_issuerWhereUniqueInput
-    create: XOR<master_issuerCreateWithoutIssuer_detailsInput, master_issuerUncheckedCreateWithoutIssuer_detailsInput>
+  export type NestedDecimalWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[]
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[]
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedDecimalFilter<$PrismaModel>
+    _sum?: NestedDecimalFilter<$PrismaModel>
+    _min?: NestedDecimalFilter<$PrismaModel>
+    _max?: NestedDecimalFilter<$PrismaModel>
   }
 
-  export type master_issuerCreateManyIssuer_detailsInputEnvelope = {
-    data: master_issuerCreateManyIssuer_detailsInput | master_issuerCreateManyIssuer_detailsInput[]
-    skipDuplicates?: boolean
+  export type NestedDecimalNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | null
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | null
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalNullableWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedDecimalNullableFilter<$PrismaModel>
+    _sum?: NestedDecimalNullableFilter<$PrismaModel>
+    _min?: NestedDecimalNullableFilter<$PrismaModel>
+    _max?: NestedDecimalNullableFilter<$PrismaModel>
   }
 
-  export type master_issuerUpsertWithWhereUniqueWithoutIssuer_detailsInput = {
-    where: master_issuerWhereUniqueInput
-    update: XOR<master_issuerUpdateWithoutIssuer_detailsInput, master_issuerUncheckedUpdateWithoutIssuer_detailsInput>
-    create: XOR<master_issuerCreateWithoutIssuer_detailsInput, master_issuerUncheckedCreateWithoutIssuer_detailsInput>
+  export type NestedEnumisin_re_issuance_details_type_of_book_biddingNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.isin_re_issuance_details_type_of_book_bidding | Enumisin_re_issuance_details_type_of_book_biddingFieldRefInput<$PrismaModel> | null
+    in?: $Enums.isin_re_issuance_details_type_of_book_bidding[] | null
+    notIn?: $Enums.isin_re_issuance_details_type_of_book_bidding[] | null
+    not?: NestedEnumisin_re_issuance_details_type_of_book_biddingNullableFilter<$PrismaModel> | $Enums.isin_re_issuance_details_type_of_book_bidding | null
   }
 
-  export type master_issuerUpdateWithWhereUniqueWithoutIssuer_detailsInput = {
-    where: master_issuerWhereUniqueInput
-    data: XOR<master_issuerUpdateWithoutIssuer_detailsInput, master_issuerUncheckedUpdateWithoutIssuer_detailsInput>
+  export type NestedEnumisin_re_issuance_details_secured_unsecuredNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.isin_re_issuance_details_secured_unsecured | Enumisin_re_issuance_details_secured_unsecuredFieldRefInput<$PrismaModel> | null
+    in?: $Enums.isin_re_issuance_details_secured_unsecured[] | null
+    notIn?: $Enums.isin_re_issuance_details_secured_unsecured[] | null
+    not?: NestedEnumisin_re_issuance_details_secured_unsecuredNullableFilter<$PrismaModel> | $Enums.isin_re_issuance_details_secured_unsecured | null
   }
 
-  export type master_issuerUpdateManyWithWhereWithoutIssuer_detailsInput = {
-    where: master_issuerScalarWhereInput
-    data: XOR<master_issuerUpdateManyMutationInput, master_issuerUncheckedUpdateManyWithoutIssuer_detailsInput>
+  export type NestedEnumisin_re_issuance_details_type_of_book_biddingNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.isin_re_issuance_details_type_of_book_bidding | Enumisin_re_issuance_details_type_of_book_biddingFieldRefInput<$PrismaModel> | null
+    in?: $Enums.isin_re_issuance_details_type_of_book_bidding[] | null
+    notIn?: $Enums.isin_re_issuance_details_type_of_book_bidding[] | null
+    not?: NestedEnumisin_re_issuance_details_type_of_book_biddingNullableWithAggregatesFilter<$PrismaModel> | $Enums.isin_re_issuance_details_type_of_book_bidding | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumisin_re_issuance_details_type_of_book_biddingNullableFilter<$PrismaModel>
+    _max?: NestedEnumisin_re_issuance_details_type_of_book_biddingNullableFilter<$PrismaModel>
   }
 
-  export type master_issuerScalarWhereInput = {
-    AND?: master_issuerScalarWhereInput | master_issuerScalarWhereInput[]
-    OR?: master_issuerScalarWhereInput[]
-    NOT?: master_issuerScalarWhereInput | master_issuerScalarWhereInput[]
-    id?: BigIntFilter<"master_issuer"> | bigint | number
-    issuer_master_id?: BigIntFilter<"master_issuer"> | bigint | number
-    isin?: StringNullableFilter<"master_issuer"> | string | null
-    security_class?: StringNullableFilter<"master_issuer"> | string | null
-    security_name?: StringNullableFilter<"master_issuer"> | string | null
-    series?: StringNullableFilter<"master_issuer"> | string | null
-    allotment_date?: DateTimeNullableFilter<"master_issuer"> | Date | string | null
-    face_value?: FloatNullableFilter<"master_issuer"> | number | null
-    maturity_date?: DateTimeNullableFilter<"master_issuer"> | Date | string | null
-    convertible_flag?: StringNullableFilter<"master_issuer"> | string | null
-    option_flag?: StringNullableFilter<"master_issuer"> | string | null
-    tier_classification?: StringNullableFilter<"master_issuer"> | string | null
-    day_count?: IntNullableFilter<"master_issuer"> | number | null
-    seniority?: IntNullableFilter<"master_issuer"> | number | null
-    secured_flag?: IntNullableFilter<"master_issuer"> | number | null
-    compound_frequency?: StringNullableFilter<"master_issuer"> | string | null
-    call_desc?: StringNullableFilter<"master_issuer"> | string | null
-    put_desc?: StringNullableFilter<"master_issuer"> | string | null
-    rated_flag?: IntNullableFilter<"master_issuer"> | number | null
-    isin_desc?: StringNullableFilter<"master_issuer"> | string | null
-    convertible_type_a?: IntNullableFilter<"master_issuer"> | number | null
-    convertible_type_b?: IntNullableFilter<"master_issuer"> | number | null
-    convertible_details?: StringNullableFilter<"master_issuer"> | string | null
-    stipulation_details?: StringNullableFilter<"master_issuer"> | string | null
-    issue_size?: FloatNullableFilter<"master_issuer"> | number | null
-    guaranteed_type?: IntNullableFilter<"master_issuer"> | number | null
-    guaranteed?: StringNullableFilter<"master_issuer"> | string | null
-    tax_free?: FloatNullableFilter<"master_issuer"> | number | null
-    if_taxable?: StringNullableFilter<"master_issuer"> | string | null
-    mode_issue?: IntNullableFilter<"master_issuer"> | number | null
-    security_status?: IntNullableFilter<"master_issuer"> | number | null
-    allotment_qty?: FloatNullableFilter<"master_issuer"> | number | null
-    stepupdwnbasis?: IntNullableFilter<"master_issuer"> | number | null
-    stepupdwndtls?: StringNullableFilter<"master_issuer"> | string | null
-    issuer_ownership_type?: IntNullableFilter<"master_issuer"> | number | null
-    nature_type?: IntNullableFilter<"master_issuer"> | number | null
-    business_sector?: IntNullableFilter<"master_issuer"> | number | null
-    perpetual_nature?: IntNullableFilter<"master_issuer"> | number | null
-    call_option?: IntNullableFilter<"master_issuer"> | number | null
-    put_option?: IntNullableFilter<"master_issuer"> | number | null
-    infra_category?: IntNullableFilter<"master_issuer"> | number | null
-    issue_price?: FloatNullableFilter<"master_issuer"> | number | null
-    interest_type?: IntNullableFilter<"master_issuer"> | number | null
-    fintrpydte?: DateTimeNullableFilter<"master_issuer"> | Date | string | null
-    freq?: IntNullableFilter<"master_issuer"> | number | null
-    freq_dis?: StringNullableFilter<"master_issuer"> | string | null
-    next_sch_date?: DateTimeNullableFilter<"master_issuer"> | Date | string | null
-    intratupto?: StringNullableFilter<"master_issuer"> | string | null
-    intratlkto?: StringNullableFilter<"master_issuer"> | string | null
-    created_by?: BigIntNullableFilter<"master_issuer"> | bigint | number | null
-    updated_by?: BigIntNullableFilter<"master_issuer"> | bigint | number | null
-    is_active?: IntFilter<"master_issuer"> | number
-    is_deleted?: IntFilter<"master_issuer"> | number
-    is_updated?: IntFilter<"master_issuer"> | number
-    created_at?: DateTimeNullableFilter<"master_issuer"> | Date | string | null
-    updated_at?: DateTimeNullableFilter<"master_issuer"> | Date | string | null
-  }
-
-  export type issuer_detailsCreateWithoutMaster_issuersInput = {
-    id?: bigint | number
-    issuer_name?: string | null
-    issuer_former_name?: string | null
-    parent_id?: bigint | number
-    created_by?: bigint | number | null
-    updated_by?: bigint | number | null
-    is_active?: number
-    is_deleted?: number
-    created_at?: Date | string | null
-    updated_at?: Date | string | null
-  }
-
-  export type issuer_detailsUncheckedCreateWithoutMaster_issuersInput = {
-    id?: bigint | number
-    issuer_name?: string | null
-    issuer_former_name?: string | null
-    parent_id?: bigint | number
-    created_by?: bigint | number | null
-    updated_by?: bigint | number | null
-    is_active?: number
-    is_deleted?: number
-    created_at?: Date | string | null
-    updated_at?: Date | string | null
-  }
-
-  export type issuer_detailsCreateOrConnectWithoutMaster_issuersInput = {
-    where: issuer_detailsWhereUniqueInput
-    create: XOR<issuer_detailsCreateWithoutMaster_issuersInput, issuer_detailsUncheckedCreateWithoutMaster_issuersInput>
-  }
-
-  export type issuer_detailsUpsertWithoutMaster_issuersInput = {
-    update: XOR<issuer_detailsUpdateWithoutMaster_issuersInput, issuer_detailsUncheckedUpdateWithoutMaster_issuersInput>
-    create: XOR<issuer_detailsCreateWithoutMaster_issuersInput, issuer_detailsUncheckedCreateWithoutMaster_issuersInput>
-    where?: issuer_detailsWhereInput
-  }
-
-  export type issuer_detailsUpdateToOneWithWhereWithoutMaster_issuersInput = {
-    where?: issuer_detailsWhereInput
-    data: XOR<issuer_detailsUpdateWithoutMaster_issuersInput, issuer_detailsUncheckedUpdateWithoutMaster_issuersInput>
-  }
-
-  export type issuer_detailsUpdateWithoutMaster_issuersInput = {
-    id?: BigIntFieldUpdateOperationsInput | bigint | number
-    issuer_name?: NullableStringFieldUpdateOperationsInput | string | null
-    issuer_former_name?: NullableStringFieldUpdateOperationsInput | string | null
-    parent_id?: BigIntFieldUpdateOperationsInput | bigint | number
-    created_by?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
-    updated_by?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
-    is_active?: IntFieldUpdateOperationsInput | number
-    is_deleted?: IntFieldUpdateOperationsInput | number
-    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  }
-
-  export type issuer_detailsUncheckedUpdateWithoutMaster_issuersInput = {
-    id?: BigIntFieldUpdateOperationsInput | bigint | number
-    issuer_name?: NullableStringFieldUpdateOperationsInput | string | null
-    issuer_former_name?: NullableStringFieldUpdateOperationsInput | string | null
-    parent_id?: BigIntFieldUpdateOperationsInput | bigint | number
-    created_by?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
-    updated_by?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
-    is_active?: IntFieldUpdateOperationsInput | number
-    is_deleted?: IntFieldUpdateOperationsInput | number
-    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  }
-
-  export type master_issuerCreateManyIssuer_detailsInput = {
-    id?: bigint | number
-    isin?: string | null
-    security_class?: string | null
-    security_name?: string | null
-    series?: string | null
-    allotment_date?: Date | string | null
-    face_value?: number | null
-    maturity_date?: Date | string | null
-    convertible_flag?: string | null
-    option_flag?: string | null
-    tier_classification?: string | null
-    day_count?: number | null
-    seniority?: number | null
-    secured_flag?: number | null
-    compound_frequency?: string | null
-    call_desc?: string | null
-    put_desc?: string | null
-    rated_flag?: number | null
-    isin_desc?: string | null
-    convertible_type_a?: number | null
-    convertible_type_b?: number | null
-    convertible_details?: string | null
-    stipulation_details?: string | null
-    issue_size?: number | null
-    guaranteed_type?: number | null
-    guaranteed?: string | null
-    tax_free?: number | null
-    if_taxable?: string | null
-    mode_issue?: number | null
-    security_status?: number | null
-    allotment_qty?: number | null
-    stepupdwnbasis?: number | null
-    stepupdwndtls?: string | null
-    issuer_ownership_type?: number | null
-    nature_type?: number | null
-    business_sector?: number | null
-    perpetual_nature?: number | null
-    call_option?: number | null
-    put_option?: number | null
-    infra_category?: number | null
-    issue_price?: number | null
-    interest_type?: number | null
-    fintrpydte?: Date | string | null
-    freq?: number | null
-    freq_dis?: string | null
-    next_sch_date?: Date | string | null
-    intratupto?: string | null
-    intratlkto?: string | null
-    created_by?: bigint | number | null
-    updated_by?: bigint | number | null
-    is_active?: number
-    is_deleted?: number
-    is_updated?: number
-    created_at?: Date | string | null
-    updated_at?: Date | string | null
-  }
-
-  export type master_issuerUpdateWithoutIssuer_detailsInput = {
-    id?: BigIntFieldUpdateOperationsInput | bigint | number
-    isin?: NullableStringFieldUpdateOperationsInput | string | null
-    security_class?: NullableStringFieldUpdateOperationsInput | string | null
-    security_name?: NullableStringFieldUpdateOperationsInput | string | null
-    series?: NullableStringFieldUpdateOperationsInput | string | null
-    allotment_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    face_value?: NullableFloatFieldUpdateOperationsInput | number | null
-    maturity_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    convertible_flag?: NullableStringFieldUpdateOperationsInput | string | null
-    option_flag?: NullableStringFieldUpdateOperationsInput | string | null
-    tier_classification?: NullableStringFieldUpdateOperationsInput | string | null
-    day_count?: NullableIntFieldUpdateOperationsInput | number | null
-    seniority?: NullableIntFieldUpdateOperationsInput | number | null
-    secured_flag?: NullableIntFieldUpdateOperationsInput | number | null
-    compound_frequency?: NullableStringFieldUpdateOperationsInput | string | null
-    call_desc?: NullableStringFieldUpdateOperationsInput | string | null
-    put_desc?: NullableStringFieldUpdateOperationsInput | string | null
-    rated_flag?: NullableIntFieldUpdateOperationsInput | number | null
-    isin_desc?: NullableStringFieldUpdateOperationsInput | string | null
-    convertible_type_a?: NullableIntFieldUpdateOperationsInput | number | null
-    convertible_type_b?: NullableIntFieldUpdateOperationsInput | number | null
-    convertible_details?: NullableStringFieldUpdateOperationsInput | string | null
-    stipulation_details?: NullableStringFieldUpdateOperationsInput | string | null
-    issue_size?: NullableFloatFieldUpdateOperationsInput | number | null
-    guaranteed_type?: NullableIntFieldUpdateOperationsInput | number | null
-    guaranteed?: NullableStringFieldUpdateOperationsInput | string | null
-    tax_free?: NullableFloatFieldUpdateOperationsInput | number | null
-    if_taxable?: NullableStringFieldUpdateOperationsInput | string | null
-    mode_issue?: NullableIntFieldUpdateOperationsInput | number | null
-    security_status?: NullableIntFieldUpdateOperationsInput | number | null
-    allotment_qty?: NullableFloatFieldUpdateOperationsInput | number | null
-    stepupdwnbasis?: NullableIntFieldUpdateOperationsInput | number | null
-    stepupdwndtls?: NullableStringFieldUpdateOperationsInput | string | null
-    issuer_ownership_type?: NullableIntFieldUpdateOperationsInput | number | null
-    nature_type?: NullableIntFieldUpdateOperationsInput | number | null
-    business_sector?: NullableIntFieldUpdateOperationsInput | number | null
-    perpetual_nature?: NullableIntFieldUpdateOperationsInput | number | null
-    call_option?: NullableIntFieldUpdateOperationsInput | number | null
-    put_option?: NullableIntFieldUpdateOperationsInput | number | null
-    infra_category?: NullableIntFieldUpdateOperationsInput | number | null
-    issue_price?: NullableFloatFieldUpdateOperationsInput | number | null
-    interest_type?: NullableIntFieldUpdateOperationsInput | number | null
-    fintrpydte?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    freq?: NullableIntFieldUpdateOperationsInput | number | null
-    freq_dis?: NullableStringFieldUpdateOperationsInput | string | null
-    next_sch_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    intratupto?: NullableStringFieldUpdateOperationsInput | string | null
-    intratlkto?: NullableStringFieldUpdateOperationsInput | string | null
-    created_by?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
-    updated_by?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
-    is_active?: IntFieldUpdateOperationsInput | number
-    is_deleted?: IntFieldUpdateOperationsInput | number
-    is_updated?: IntFieldUpdateOperationsInput | number
-    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  }
-
-  export type master_issuerUncheckedUpdateWithoutIssuer_detailsInput = {
-    id?: BigIntFieldUpdateOperationsInput | bigint | number
-    isin?: NullableStringFieldUpdateOperationsInput | string | null
-    security_class?: NullableStringFieldUpdateOperationsInput | string | null
-    security_name?: NullableStringFieldUpdateOperationsInput | string | null
-    series?: NullableStringFieldUpdateOperationsInput | string | null
-    allotment_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    face_value?: NullableFloatFieldUpdateOperationsInput | number | null
-    maturity_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    convertible_flag?: NullableStringFieldUpdateOperationsInput | string | null
-    option_flag?: NullableStringFieldUpdateOperationsInput | string | null
-    tier_classification?: NullableStringFieldUpdateOperationsInput | string | null
-    day_count?: NullableIntFieldUpdateOperationsInput | number | null
-    seniority?: NullableIntFieldUpdateOperationsInput | number | null
-    secured_flag?: NullableIntFieldUpdateOperationsInput | number | null
-    compound_frequency?: NullableStringFieldUpdateOperationsInput | string | null
-    call_desc?: NullableStringFieldUpdateOperationsInput | string | null
-    put_desc?: NullableStringFieldUpdateOperationsInput | string | null
-    rated_flag?: NullableIntFieldUpdateOperationsInput | number | null
-    isin_desc?: NullableStringFieldUpdateOperationsInput | string | null
-    convertible_type_a?: NullableIntFieldUpdateOperationsInput | number | null
-    convertible_type_b?: NullableIntFieldUpdateOperationsInput | number | null
-    convertible_details?: NullableStringFieldUpdateOperationsInput | string | null
-    stipulation_details?: NullableStringFieldUpdateOperationsInput | string | null
-    issue_size?: NullableFloatFieldUpdateOperationsInput | number | null
-    guaranteed_type?: NullableIntFieldUpdateOperationsInput | number | null
-    guaranteed?: NullableStringFieldUpdateOperationsInput | string | null
-    tax_free?: NullableFloatFieldUpdateOperationsInput | number | null
-    if_taxable?: NullableStringFieldUpdateOperationsInput | string | null
-    mode_issue?: NullableIntFieldUpdateOperationsInput | number | null
-    security_status?: NullableIntFieldUpdateOperationsInput | number | null
-    allotment_qty?: NullableFloatFieldUpdateOperationsInput | number | null
-    stepupdwnbasis?: NullableIntFieldUpdateOperationsInput | number | null
-    stepupdwndtls?: NullableStringFieldUpdateOperationsInput | string | null
-    issuer_ownership_type?: NullableIntFieldUpdateOperationsInput | number | null
-    nature_type?: NullableIntFieldUpdateOperationsInput | number | null
-    business_sector?: NullableIntFieldUpdateOperationsInput | number | null
-    perpetual_nature?: NullableIntFieldUpdateOperationsInput | number | null
-    call_option?: NullableIntFieldUpdateOperationsInput | number | null
-    put_option?: NullableIntFieldUpdateOperationsInput | number | null
-    infra_category?: NullableIntFieldUpdateOperationsInput | number | null
-    issue_price?: NullableFloatFieldUpdateOperationsInput | number | null
-    interest_type?: NullableIntFieldUpdateOperationsInput | number | null
-    fintrpydte?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    freq?: NullableIntFieldUpdateOperationsInput | number | null
-    freq_dis?: NullableStringFieldUpdateOperationsInput | string | null
-    next_sch_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    intratupto?: NullableStringFieldUpdateOperationsInput | string | null
-    intratlkto?: NullableStringFieldUpdateOperationsInput | string | null
-    created_by?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
-    updated_by?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
-    is_active?: IntFieldUpdateOperationsInput | number
-    is_deleted?: IntFieldUpdateOperationsInput | number
-    is_updated?: IntFieldUpdateOperationsInput | number
-    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  }
-
-  export type master_issuerUncheckedUpdateManyWithoutIssuer_detailsInput = {
-    id?: BigIntFieldUpdateOperationsInput | bigint | number
-    isin?: NullableStringFieldUpdateOperationsInput | string | null
-    security_class?: NullableStringFieldUpdateOperationsInput | string | null
-    security_name?: NullableStringFieldUpdateOperationsInput | string | null
-    series?: NullableStringFieldUpdateOperationsInput | string | null
-    allotment_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    face_value?: NullableFloatFieldUpdateOperationsInput | number | null
-    maturity_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    convertible_flag?: NullableStringFieldUpdateOperationsInput | string | null
-    option_flag?: NullableStringFieldUpdateOperationsInput | string | null
-    tier_classification?: NullableStringFieldUpdateOperationsInput | string | null
-    day_count?: NullableIntFieldUpdateOperationsInput | number | null
-    seniority?: NullableIntFieldUpdateOperationsInput | number | null
-    secured_flag?: NullableIntFieldUpdateOperationsInput | number | null
-    compound_frequency?: NullableStringFieldUpdateOperationsInput | string | null
-    call_desc?: NullableStringFieldUpdateOperationsInput | string | null
-    put_desc?: NullableStringFieldUpdateOperationsInput | string | null
-    rated_flag?: NullableIntFieldUpdateOperationsInput | number | null
-    isin_desc?: NullableStringFieldUpdateOperationsInput | string | null
-    convertible_type_a?: NullableIntFieldUpdateOperationsInput | number | null
-    convertible_type_b?: NullableIntFieldUpdateOperationsInput | number | null
-    convertible_details?: NullableStringFieldUpdateOperationsInput | string | null
-    stipulation_details?: NullableStringFieldUpdateOperationsInput | string | null
-    issue_size?: NullableFloatFieldUpdateOperationsInput | number | null
-    guaranteed_type?: NullableIntFieldUpdateOperationsInput | number | null
-    guaranteed?: NullableStringFieldUpdateOperationsInput | string | null
-    tax_free?: NullableFloatFieldUpdateOperationsInput | number | null
-    if_taxable?: NullableStringFieldUpdateOperationsInput | string | null
-    mode_issue?: NullableIntFieldUpdateOperationsInput | number | null
-    security_status?: NullableIntFieldUpdateOperationsInput | number | null
-    allotment_qty?: NullableFloatFieldUpdateOperationsInput | number | null
-    stepupdwnbasis?: NullableIntFieldUpdateOperationsInput | number | null
-    stepupdwndtls?: NullableStringFieldUpdateOperationsInput | string | null
-    issuer_ownership_type?: NullableIntFieldUpdateOperationsInput | number | null
-    nature_type?: NullableIntFieldUpdateOperationsInput | number | null
-    business_sector?: NullableIntFieldUpdateOperationsInput | number | null
-    perpetual_nature?: NullableIntFieldUpdateOperationsInput | number | null
-    call_option?: NullableIntFieldUpdateOperationsInput | number | null
-    put_option?: NullableIntFieldUpdateOperationsInput | number | null
-    infra_category?: NullableIntFieldUpdateOperationsInput | number | null
-    issue_price?: NullableFloatFieldUpdateOperationsInput | number | null
-    interest_type?: NullableIntFieldUpdateOperationsInput | number | null
-    fintrpydte?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    freq?: NullableIntFieldUpdateOperationsInput | number | null
-    freq_dis?: NullableStringFieldUpdateOperationsInput | string | null
-    next_sch_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    intratupto?: NullableStringFieldUpdateOperationsInput | string | null
-    intratlkto?: NullableStringFieldUpdateOperationsInput | string | null
-    created_by?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
-    updated_by?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
-    is_active?: IntFieldUpdateOperationsInput | number
-    is_deleted?: IntFieldUpdateOperationsInput | number
-    is_updated?: IntFieldUpdateOperationsInput | number
-    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  export type NestedEnumisin_re_issuance_details_secured_unsecuredNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.isin_re_issuance_details_secured_unsecured | Enumisin_re_issuance_details_secured_unsecuredFieldRefInput<$PrismaModel> | null
+    in?: $Enums.isin_re_issuance_details_secured_unsecured[] | null
+    notIn?: $Enums.isin_re_issuance_details_secured_unsecured[] | null
+    not?: NestedEnumisin_re_issuance_details_secured_unsecuredNullableWithAggregatesFilter<$PrismaModel> | $Enums.isin_re_issuance_details_secured_unsecured | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumisin_re_issuance_details_secured_unsecuredNullableFilter<$PrismaModel>
+    _max?: NestedEnumisin_re_issuance_details_secured_unsecuredNullableFilter<$PrismaModel>
   }
 
 
