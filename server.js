@@ -10,6 +10,8 @@ app.use(cors({
     'http://localhost:3000',
     'https://india-league-tables.vercel.app',
     'https://*.vercel.app',// Allow all subdomains of vercel.app
+    'https://uat-indialeaguestables.debtcircle.in',
+    'https://*.debtcircle.in',
     '*'
   ],
   credentials: true
