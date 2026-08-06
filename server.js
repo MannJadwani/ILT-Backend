@@ -2796,7 +2796,7 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
       SELECT SUM(m.issue_size) as aggregate 
       FROM isin_re_issuance m
       WHERE m.id IN (
-        SELECT DISTINCT isin_re_issuance.isin_id
+        SELECT isin_re_issuance.isin_id
         FROM isin_re_issuance
         ${baseJoins}
         WHERE ${dateConditions} ${filterClause}
@@ -2804,7 +2804,7 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
     `;
 
     const totalIssuesCountQuery = `
-      SELECT COUNT(DISTINCT isin_re_issuance.isin_id) as aggregate
+      SELECT COUNT(isin_re_issuance.isin_id) as aggregate
       FROM isin_re_issuance
       ${baseJoins}
       WHERE ${dateConditions} ${filterClause}
@@ -2838,8 +2838,8 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
     const rankByCount = issueType === 'count';
 
     const rankOrder = rankByCount
-      ? `COUNT(DISTINCT mi.isin) DESC, ROUND(SUM(mi.issue_size) / 10000000, 2) DESC`
-      : `ROUND(SUM(mi.issue_size) / 10000000, 2) DESC, COUNT(DISTINCT mi.isin) DESC`;
+      ? `COUNT(mi.isin) DESC, ROUND(SUM(mi.issue_size) / 10000000, 2) DESC`
+      : `ROUND(SUM(mi.issue_size) / 10000000, 2) DESC, COUNT(mi.isin) DESC`;
 
     const shareColumn = rankByCount ? 'no_issues' : 'issue_size';
     const cyDivisor = rankByCount ? cyCountDivisor : cySizeDivisor;
@@ -2852,11 +2852,11 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
         SELECT
           issuer_details.id,
           issuer_details.issuer_name,
-          COUNT(DISTINCT mi.isin) as no_issues,
+          COUNT(mi.isin) as no_issues,
           ROUND(SUM(mi.issue_size) / 10000000, 2) as issue_size,
           RANK() OVER ( ORDER BY ${rankOrder} ) as arr_rank
         FROM (
-          SELECT DISTINCT isin_re_issuance.isin_id, isin_re_issuance.issuer_master_id, isin_re_issuance.isin, isin_re_issuance.issue_size
+          SELECT isin_re_issuance.isin_id, isin_re_issuance.issuer_master_id, isin_re_issuance.isin, isin_re_issuance.issue_size
           FROM isin_re_issuance
           ${baseJoins}
           WHERE ${dateConditions} ${filterClause}
@@ -2870,11 +2870,11 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
         SELECT
           issuer_details.id,
           issuer_details.issuer_name,
-          COUNT(DISTINCT mi.isin) as no_issues,
+          COUNT(mi.isin) as no_issues,
           ROUND(SUM(mi.issue_size) / 10000000, 2) as issue_size,
           RANK() OVER ( ORDER BY ${rankOrder} ) as arr_rank
         FROM (
-          SELECT DISTINCT isin_re_issuance.isin_id, isin_re_issuance.issuer_master_id, isin_re_issuance.isin, isin_re_issuance.issue_size
+          SELECT isin_re_issuance.isin_id, isin_re_issuance.issuer_master_id, isin_re_issuance.isin, isin_re_issuance.issue_size
           FROM isin_re_issuance
           ${baseJoins}
           WHERE ${dateConditions} ${filterClause}
@@ -3113,9 +3113,9 @@ app.post('/issuers_page_top_sectors_data', async (req, res) => {
           mi.business_sector,
           MAX(mbs.description) AS sector_name,
           ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
-          COUNT(DISTINCT mi.isin) AS issue_no
+          COUNT(mi.isin) AS issue_no
         FROM (
-          SELECT DISTINCT isin_re_issuance.isin_id, isin_re_issuance.business_sector, isin_re_issuance.isin, isin_re_issuance.issue_size
+          SELECT isin_re_issuance.isin_id, isin_re_issuance.business_sector, isin_re_issuance.isin, isin_re_issuance.issue_size
           FROM isin_re_issuance
           ${baseJoins}
           WHERE isin_re_issuance.allotment_date BETWEEN ? AND ? AND (isin_re_issuance.is_visible = 1) ${filterClause}
@@ -3130,9 +3130,9 @@ app.post('/issuers_page_top_sectors_data', async (req, res) => {
           mi.business_sector,
           MAX(mbs.description) AS sector_name,
           ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
-          COUNT(DISTINCT mi.isin) AS issue_no
+          COUNT(mi.isin) AS issue_no
         FROM (
-          SELECT DISTINCT isin_re_issuance.isin_id, isin_re_issuance.business_sector, isin_re_issuance.isin, isin_re_issuance.issue_size
+          SELECT isin_re_issuance.isin_id, isin_re_issuance.business_sector, isin_re_issuance.isin, isin_re_issuance.issue_size
           FROM isin_re_issuance
           ${baseJoins}
           WHERE isin_re_issuance.allotment_date BETWEEN ? AND ? AND (isin_re_issuance.is_visible = 1) ${filterClause}
@@ -3333,9 +3333,9 @@ app.post('/issuers_page_outstanding_data', async (req, res) => {
         MONTH(mi.allotment_date) AS month,
         MONTHNAME(mi.allotment_date) AS label,
         ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
-        COUNT(DISTINCT mi.isin) AS isin_count
+        COUNT(mi.isin) AS isin_count
       FROM (
-        SELECT DISTINCT isin_re_issuance.isin_id, isin_re_issuance.allotment_date, isin_re_issuance.isin, isin_re_issuance.issue_size
+        SELECT isin_re_issuance.isin_id, isin_re_issuance.allotment_date, isin_re_issuance.isin, isin_re_issuance.issue_size
         FROM isin_re_issuance
         ${baseJoins}
         WHERE isin_re_issuance.allotment_date BETWEEN ? AND ? AND (isin_re_issuance.is_visible = 1) ${filterClause}
@@ -3350,9 +3350,9 @@ app.post('/issuers_page_outstanding_data', async (req, res) => {
         MONTH(mi.maturity_date) AS month,
         MONTHNAME(mi.maturity_date) AS label,
         ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
-        COUNT(DISTINCT mi.isin) AS isin_count
+        COUNT(mi.isin) AS isin_count
       FROM (
-        SELECT DISTINCT isin_re_issuance.isin_id, isin_re_issuance.maturity_date, isin_re_issuance.isin, isin_re_issuance.issue_size
+        SELECT isin_re_issuance.isin_id, isin_re_issuance.maturity_date, isin_re_issuance.isin, isin_re_issuance.issue_size
         FROM isin_re_issuance
         ${baseJoins}
         WHERE isin_re_issuance.maturity_date BETWEEN ? AND ? AND (isin_re_issuance.is_visible = 1) ${filterClause}
@@ -3396,7 +3396,7 @@ app.post('/issuers_page_outstanding_data', async (req, res) => {
       const [result] = await prisma.$queryRawUnsafe(`
         SELECT ROUND(SUM(mi.issue_size) / 10000000, 2) AS aggregate
         FROM (
-          SELECT DISTINCT isin_re_issuance.isin_id, isin_re_issuance.issue_size
+          SELECT isin_re_issuance.isin_id, isin_re_issuance.issue_size
           FROM isin_re_issuance
           ${baseJoins}
           WHERE isin_re_issuance.allotment_date < ?
@@ -3455,7 +3455,7 @@ app.get('/issuers_page_current_year_debt_redemption_data', async (req, res) => {
         MONTHNAME(maturity_date) AS label,
         YEAR(maturity_date) AS year,
         ROUND(SUM(issue_size) / 10000000, 2) AS issue_size,
-        COUNT(DISTINCT isin) AS isin_count
+        COUNT(isin) AS isin_count
       FROM isin_re_issuance
       WHERE maturity_date BETWEEN ? AND ? AND (isin_re_issuance.is_visible = 1)
       GROUP BY YEAR(maturity_date), MONTH(maturity_date), MONTHNAME(maturity_date)
@@ -3481,7 +3481,7 @@ app.get('/issuers_page_next_year_redemption_data', async (req, res) => {
         MONTHNAME(maturity_date) AS label,
         YEAR(maturity_date) AS year,
         ROUND(SUM(issue_size) / 10000000, 2) AS issue_size,
-        COUNT(DISTINCT isin) AS isin_count
+        COUNT(isin) AS isin_count
       FROM isin_re_issuance
       WHERE maturity_date BETWEEN ? AND ? AND (isin_re_issuance.is_visible = 1)
       GROUP BY YEAR(maturity_date), MONTH(maturity_date), MONTHNAME(maturity_date)
@@ -3634,7 +3634,7 @@ app.post('/issuers_page_agency_rating_data', async (req, res) => {
 
     // ─── FIX: Calculate filtered total, not unfiltered total ───
     const totalQuery = `
-      SELECT COUNT(DISTINCT mir.id) as aggregate 
+      SELECT COUNT(mir.id) as aggregate 
       FROM master_issuer_rating mir
       INNER JOIN master_agency ma ON ma.id = mir.agency_id
       INNER JOIN isin_re_issuance i ON i.id = mir.issuer_id
@@ -3699,7 +3699,7 @@ app.post('/issuers_page_agency_rating_data', async (req, res) => {
       mainQuery = `
         SELECT 
           ma.short_name as label, 
-          COUNT(DISTINCT mir.id) as rating_no,
+          COUNT(mir.id) as rating_no,
           mir.rating 
         FROM master_agency ma
         INNER JOIN master_issuer_rating mir ON mir.agency_id = ma.id 
@@ -3714,7 +3714,7 @@ app.post('/issuers_page_agency_rating_data', async (req, res) => {
       mainQuery = `
         SELECT 
           ma.short_name as label, 
-          COUNT(DISTINCT mir.id) as rating_no,
+          COUNT(mir.id) as rating_no,
           ma.id as agency_id
         FROM master_agency ma
         INNER JOIN master_issuer_rating mir ON mir.agency_id = ma.id 
@@ -3949,7 +3949,7 @@ app.post('/issuePage_detailed_data', async (req, res) => {
 
     // ─── FIX: Use DISTINCT in data query to prevent row multiplication from joins ───
     const dataQuery = `
-      SELECT DISTINCT
+      SELECT
         isin_re_issuance.isin_id,
         isin_re_issuance.isin,
         isin_re_issuance.security_name,
@@ -3982,7 +3982,7 @@ app.post('/issuePage_detailed_data', async (req, res) => {
 
     // ─── Count query using same joins ───
     const countQuery = `
-      SELECT COUNT(DISTINCT isin_re_issuance.isin_id) as total
+      SELECT COUNT(isin_re_issuance.isin_id) as total
       FROM isin_re_issuance
       ${baseJoins}
       ${whereClause}
@@ -4225,7 +4225,7 @@ app.post('/debt_redemption_specific_month_data', async (req, res) => {
 
     // ── COUNT QUERY (simplified) ──
     const countQuery = `
-      SELECT COUNT(DISTINCT i.isin) AS aggregate
+      SELECT COUNT(i.isin) AS aggregate
       FROM isin_re_issuance AS i
       WHERE i.maturity_date BETWEEN ? AND ?
         AND i.is_visible = 1
@@ -4450,7 +4450,7 @@ app.post('/issuer_page_monthly_summary_data', async (req, res) => {
       SELECT
         MONTH(fi.allotment_date) AS issue_month_no,
         MONTHNAME(fi.allotment_date) AS issue_month,
-        COUNT(DISTINCT fi.isin) AS no_of_issue,
+        COUNT(fi.isin) AS no_of_issue,
         IF(
           SUM(fi.issue_size) > 0,
           ROUND(SUM(fi.issue_size) / 10000000, 2),
@@ -4458,7 +4458,7 @@ app.post('/issuer_page_monthly_summary_data', async (req, res) => {
         ) AS issue_size,
         SUM(fi.issue_size) AS actual_issue_size
       FROM (
-        SELECT DISTINCT
+        SELECT
           mi.isin_id,
           mi.isin,
           mi.issue_size,
