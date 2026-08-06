@@ -3400,9 +3400,9 @@ app.post('/issuers_page_outstanding_data', async (req, res) => {
           FROM isin_re_issuance
           ${baseJoins}
           WHERE isin_re_issuance.allotment_date < ?
-            AND isin_re_issuance.maturity_date > ? 
-            AND isin_re_issuance.is_visible = 1
-            AND isin_re_issuance.security_status = 1${filterClause}
+          AND isin_re_issuance.maturity_date > ?
+          AND isin_re_issuance.is_visible = 1
+          ${filterClause}
         ) AS mi
       `, end, end, ...filterParams);
 
@@ -5051,7 +5051,6 @@ app.post('/issuePage_specific_isin_detailed_data', async (req, res) => {
         isin_re_issuance.updated_at,
         master_interest_type.description AS interest_type,
         master_perpetual_nature_indicator.description AS perpetual_nature,
-        master_security_status.description AS security_status,
         master_guaranteed_type.description AS guaranteed_type,
         master_convertible_type_a.description AS convertible_type_a, 
         master_convertible_type_b.description AS convertible_type_b,
@@ -5102,8 +5101,6 @@ app.post('/issuePage_specific_isin_detailed_data', async (req, res) => {
         ON master_perpetual_nature_indicator.code = isin_re_issuance.perpetual_nature
       LEFT JOIN master_interest_type 
         ON master_interest_type.code = isin_re_issuance.interest_type
-      LEFT JOIN master_security_status 
-        ON master_security_status.code = isin_re_issuance.security_status
       LEFT JOIN master_security_type 
         ON master_security_type.code = isin_re_issuance.security_class
       LEFT JOIN master_mode_issue
