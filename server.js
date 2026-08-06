@@ -1602,7 +1602,7 @@ app.post('/dashboard_agency_rating_data', async (req, res) => {
       INNER JOIN master_issuer_rating ON master_issuer_rating.agency_id = master_agency.id
       LEFT JOIN isin_re_issuance as i ON i.id = master_issuer_rating.issuer_id
       ${joinClause}
-      WHERE i.allotment_date BETWEEN '${startDate}' AND '${endDate}' AND (is_visible = 1)
+      WHERE i.allotment_date BETWEEN '${startDate}' AND '${endDate}' AND (i.is_visible = 1)
       GROUP BY master_agency.short_name
     `;
 
@@ -1655,7 +1655,7 @@ app.post('/dashboard_monthly_comparison_data', async (req, res) => {
         COUNT(isin_re_issuance.isin) AS issue_count
       FROM isin_re_issuance
       JOIN all_months as a ON a.month_no = MONTH(isin_re_issuance.allotment_date)
-      WHERE isin_re_issuance.allotment_date BETWEEN '${formatDate(currentStartDate)}' AND '${formatDate(currentEndDate)}' AND (is_visible = 1)
+      WHERE isin_re_issuance.allotment_date BETWEEN '${formatDate(currentStartDate)}' AND '${formatDate(currentEndDate)}' AND (isin_re_issuance.is_visible = 1)
       GROUP BY allotment_month, a.month_name
       ORDER BY allotment_month ASC
     `;
@@ -1668,7 +1668,7 @@ app.post('/dashboard_monthly_comparison_data', async (req, res) => {
         COUNT(isin_re_issuance.isin) AS issue_count
       FROM isin_re_issuance
       JOIN all_months as a ON a.month_no = MONTH(isin_re_issuance.allotment_date)
-      WHERE isin_re_issuance.allotment_date BETWEEN '${formatDate(previousStartDate)}' AND '${formatDate(previousEndDate)}' AND (is_visible = 1)
+      WHERE isin_re_issuance.allotment_date BETWEEN '${formatDate(previousStartDate)}' AND '${formatDate(previousEndDate)}' AND (isin_re_issuance.is_visible = 1)
       GROUP BY allotment_month, a.month_name
       ORDER BY allotment_month ASC
     `;
@@ -1828,7 +1828,7 @@ app.post('/dashboard_specific_entity_data', async (req, res) => {
     COUNT(isin_re_issuance.isin) AS issue_count
   FROM isin_re_issuance
   JOIN all_months as a ON a.month_no = MONTH(isin_re_issuance.allotment_date)
-  WHERE isin_re_issuance.allotment_date BETWEEN '${formatDate(currentStartDate)}' AND '${formatDate(currentEndDate)}' AND (is_visible = 1)
+  WHERE isin_re_issuance.allotment_date BETWEEN '${formatDate(currentStartDate)}' AND '${formatDate(currentEndDate)}' AND (isin_re_issuance.is_visible = 1)
   AND issuer_master_id = ${id}
   GROUP BY allotment_month, a.month_name
   ORDER BY allotment_month ASC
@@ -1841,7 +1841,7 @@ app.post('/dashboard_specific_entity_data', async (req, res) => {
     COUNT(isin_re_issuance.isin) AS issue_count
   FROM isin_re_issuance
   JOIN all_months as a ON a.month_no = MONTH(isin_re_issuance.allotment_date)
-  WHERE isin_re_issuance.allotment_date BETWEEN '${formatDate(previousStartDate)}' AND '${formatDate(previousEndDate)}' AND (is_visible = 1)
+  WHERE isin_re_issuance.allotment_date BETWEEN '${formatDate(previousStartDate)}' AND '${formatDate(previousEndDate)}' AND (isin_re_issuance.is_visible = 1)
   AND issuer_master_id = ${id}
   GROUP BY allotment_month, a.month_name
   ORDER BY allotment_month ASC
@@ -1874,7 +1874,7 @@ app.post('/dashboard_specific_entity_data', async (req, res) => {
       left join master_credit_rating_watch as w on w.code = master_issuer_rating.watch 
       left join isin_re_issuance as i on i.id = master_issuer_rating.issuer_id 
       where issuer_master_id = ${id} 
-      and i.allotment_date between '${startDate}' AND '${endDate}' AND (is_visible = 1)
+      and i.allotment_date between '${startDate}' AND '${endDate}' AND (i.is_visible = 1)
       and FIND_IN_SET(i.id,master_issuer_rating.issuer_id) 
       order by master_issuer_rating.rating_date 
       asc
@@ -1892,7 +1892,7 @@ JOIN all_months AS a
     ON a.month_no = MONTH(mi.allotment_date)
 JOIN issuer_arranger AS ia 
     ON ia.issuer_id = mi.isin_id
-WHERE mi.allotment_date BETWEEN '${formatDate(currentStartDate)}' AND '${formatDate(currentEndDate)}' AND (is_visible = 1)
+WHERE mi.allotment_date BETWEEN '${formatDate(currentStartDate)}' AND '${formatDate(currentEndDate)}' AND (mi.is_visible = 1)
   AND ia.arranger_id = ${id}
 GROUP BY allotment_month, a.month_name
 ORDER BY allotment_month ASC;
@@ -1909,7 +1909,7 @@ JOIN all_months AS a
     ON a.month_no = MONTH(mi.allotment_date)
 JOIN issuer_arranger AS ia 
     ON ia.issuer_id = mi.isin_id
-WHERE mi.allotment_date BETWEEN '${formatDate(previousStartDate)}' AND '${formatDate(previousEndDate)}' AND (is_visible = 1)
+WHERE mi.allotment_date BETWEEN '${formatDate(previousStartDate)}' AND '${formatDate(previousEndDate)}' AND (mi.is_visible = 1)
   AND ia.arranger_id = ${id}
   GROUP BY allotment_month, a.month_name
   ORDER BY allotment_month ASC;
@@ -1928,7 +1928,7 @@ INNER JOIN master_business_sector AS b
     ON b.code = mi.business_sector
 INNER JOIN issuer_arranger AS ia
     ON ia.issuer_id = mi.isin_id
-WHERE mi.allotment_date BETWEEN '${startDate}' AND '${endDate}' AND (is_visible = 1)
+WHERE mi.allotment_date BETWEEN '${startDate}' AND '${endDate}' AND (mi.is_visible = 1)
   AND mi.business_sector IS NOT NULL
   AND ia.arranger_id = ${id}
 GROUP BY mi.business_sector
@@ -1960,7 +1960,7 @@ LEFT JOIN isin_re_issuance AS i
 INNER JOIN issuer_arranger 
     ON issuer_arranger.issuer_id = i.id
 WHERE 
-    i.allotment_date BETWEEN '${startDate}' AND '${endDate}' AND (is_visible = 1)
+    i.allotment_date BETWEEN '${startDate}' AND '${endDate}' AND (i.is_visible = 1)
     AND issuer_arranger.arranger_id = ${id}
 GROUP BY 
     master_issuer_rating.agency_id;
@@ -1981,7 +1981,7 @@ JOIN all_months AS a
     ON a.month_no = MONTH(mi.allotment_date)
 JOIN issuer_trustee AS it
     ON it.issuer_id = mi.isin_id
-WHERE mi.allotment_date BETWEEN '${formatDate(currentStartDate)}' AND '${formatDate(currentEndDate)}' AND (is_visible = 1)
+WHERE mi.allotment_date BETWEEN '${formatDate(currentStartDate)}' AND '${formatDate(currentEndDate)}' AND (mi.is_visible = 1)
   AND it.trustee_id = ${id}
 GROUP BY allotment_month, a.month_name
 ORDER BY allotment_month ASC;
@@ -1998,7 +1998,7 @@ JOIN all_months AS a
     ON a.month_no = MONTH(mi.allotment_date)
 JOIN issuer_trustee AS it
     ON it.issuer_id = mi.isin_id
-WHERE mi.allotment_date BETWEEN '${formatDate(previousStartDate)}' AND '${formatDate(previousEndDate)}' AND (is_visible = 1)
+WHERE mi.allotment_date BETWEEN '${formatDate(previousStartDate)}' AND '${formatDate(previousEndDate)}' AND (mi.is_visible = 1)
   AND it.trustee_id = ${id}
 GROUP BY allotment_month, a.month_name
 ORDER BY allotment_month ASC;
@@ -2018,7 +2018,7 @@ INNER JOIN master_business_sector AS b
     ON b.code = mi.business_sector
 INNER JOIN issuer_trustee AS it
     ON it.issuer_id = mi.isin_id
-WHERE mi.allotment_date BETWEEN '${startDate}' AND '${endDate}' AND (is_visible = 1)
+WHERE mi.allotment_date BETWEEN '${startDate}' AND '${endDate}' AND (mi.is_visible = 1)
   AND mi.business_sector IS NOT NULL
   AND it.trustee_id = ${id}
 GROUP BY mi.business_sector, b.description
@@ -2050,7 +2050,7 @@ LEFT JOIN isin_re_issuance AS i
 INNER JOIN issuer_trustee 
     ON issuer_trustee.issuer_id = i.id
 WHERE 
-    i.allotment_date BETWEEN '${startDate}' AND '${endDate}' AND (is_visible = 1)
+    i.allotment_date BETWEEN '${startDate}' AND '${endDate}' AND (i.is_visible = 1)
     AND issuer_trustee.trustee_id = ${id}
 GROUP BY 
     master_issuer_rating.agency_id;
@@ -2070,7 +2070,7 @@ JOIN all_months AS a
     ON a.month_no = MONTH(mi.allotment_date)
 JOIN issuer_registrar AS ir 
     ON ir.issuer_id = mi.isin_id
-WHERE mi.allotment_date BETWEEN '${formatDate(currentStartDate)}' AND '${formatDate(currentEndDate)}' AND (is_visible = 1)
+WHERE mi.allotment_date BETWEEN '${formatDate(currentStartDate)}' AND '${formatDate(currentEndDate)}' AND (mi.is_visible = 1)
   AND ir.registrar_id = ${id}
 GROUP BY allotment_month, a.month_name
 ORDER BY allotment_month ASC;
@@ -2087,7 +2087,7 @@ JOIN all_months AS a
     ON a.month_no = MONTH(mi.allotment_date)
 JOIN issuer_registrar AS ir 
     ON ir.issuer_id = mi.isin_id
-WHERE mi.allotment_date BETWEEN '${formatDate(previousStartDate)}' AND '${formatDate(previousEndDate)}' AND (is_visible = 1)
+WHERE mi.allotment_date BETWEEN '${formatDate(previousStartDate)}' AND '${formatDate(previousEndDate)}' AND (mi.is_visible = 1)
   AND ir.registrar_id = ${id}
 GROUP BY allotment_month, a.month_name
 ORDER BY allotment_month ASC;
@@ -2107,7 +2107,7 @@ INNER JOIN master_business_sector AS b
     ON b.code = mi.business_sector
 INNER JOIN issuer_registrar AS ir
     ON ir.issuer_id = mi.isin_id
-WHERE mi.allotment_date BETWEEN '${startDate}' AND '${endDate}' AND (is_visible = 1)
+WHERE mi.allotment_date BETWEEN '${startDate}' AND '${endDate}' AND (mi.is_visible = 1)
   AND mi.business_sector IS NOT NULL
   AND ir.registrar_id = ${id}
 GROUP BY mi.business_sector, b.description
@@ -2139,7 +2139,7 @@ LEFT JOIN isin_re_issuance AS i
 INNER JOIN issuer_registrar 
     ON issuer_registrar.issuer_id = i.id
 WHERE 
-    i.allotment_date BETWEEN '${startDate}' AND '${endDate}' AND (is_visible = 1)
+    i.allotment_date BETWEEN '${startDate}' AND '${endDate}' AND (i.is_visible = 1)
     AND issuer_registrar.registrar_id = ${id}
 GROUP BY 
     master_issuer_rating.agency_id;
@@ -2160,7 +2160,7 @@ JOIN all_months AS a
     ON a.month_no = MONTH(mi.allotment_date)
 JOIN master_issuer_rating AS mir
     ON mir.issuer_id = mi.isin_id
-WHERE mi.allotment_date BETWEEN '${formatDate(currentStartDate)}' AND '${formatDate(currentEndDate)}' AND (is_visible = 1)
+WHERE mi.allotment_date BETWEEN '${formatDate(currentStartDate)}' AND '${formatDate(currentEndDate)}' AND (mi.is_visible = 1)
   AND mir.agency_id = ${id}
 GROUP BY allotment_month, a.month_name
 ORDER BY allotment_month ASC;
@@ -2177,7 +2177,7 @@ JOIN all_months AS a
     ON a.month_no = MONTH(mi.allotment_date)
 JOIN master_issuer_rating AS mir
     ON mir.issuer_id = mi.isin_id
-WHERE mi.allotment_date BETWEEN '${formatDate(previousStartDate)}' AND '${formatDate(previousEndDate)}' AND (is_visible = 1)
+WHERE mi.allotment_date BETWEEN '${formatDate(previousStartDate)}' AND '${formatDate(previousEndDate)}' AND (mi.is_visible = 1)
   AND mir.agency_id = ${id}
 GROUP BY allotment_month, a.month_name
 ORDER BY allotment_month ASC;
@@ -2198,7 +2198,7 @@ INNER JOIN master_business_sector AS b
     ON b.code = mi.business_sector
 INNER JOIN master_issuer_rating AS mir
     ON mir.issuer_id = mi.isin_id
-WHERE mi.allotment_date BETWEEN '${startDate}' AND '${endDate}' AND (is_visible = 1)
+WHERE mi.allotment_date BETWEEN '${startDate}' AND '${endDate}' AND (mi.is_visible = 1)
   AND mi.business_sector IS NOT NULL
   AND mir.agency_id = ${id}
 GROUP BY mi.business_sector, b.description
@@ -2228,7 +2228,7 @@ INNER JOIN master_issuer_rating
 LEFT JOIN isin_re_issuance AS i
     ON i.id = master_issuer_rating.issuer_id
 WHERE 
-    i.allotment_date BETWEEN '${startDate}' AND '${endDate}' AND (is_visible = 1)
+    i.allotment_date BETWEEN '${startDate}' AND '${endDate}' AND (i.is_visible = 1)
     AND master_issuer_rating.agency_id = ${id}
 GROUP BY 
     master_issuer_rating.rating;
@@ -2245,7 +2245,7 @@ GROUP BY
     COUNT(isin_re_issuance.isin) AS issue_count
   FROM isin_re_issuance
   JOIN all_months as a ON a.month_no = MONTH(isin_re_issuance.allotment_date)
-  WHERE isin_re_issuance.allotment_date BETWEEN '${formatDate(currentStartDate)}' AND '${formatDate(currentEndDate)}' AND (is_visible = 1)
+  WHERE isin_re_issuance.allotment_date BETWEEN '${formatDate(currentStartDate)}' AND '${formatDate(currentEndDate)}' AND (isin_re_issuance.is_visible = 1)
   AND issuer_master_id = ${id}
   GROUP BY allotment_month, a.month_name
   ORDER BY allotment_month ASC
@@ -2258,7 +2258,7 @@ GROUP BY
     COUNT(isin_re_issuance.isin) AS issue_count
   FROM isin_re_issuance
   JOIN all_months as a ON a.month_no = MONTH(isin_re_issuance.allotment_date)
-  WHERE isin_re_issuance.allotment_date BETWEEN '${formatDate(previousStartDate)}' AND '${formatDate(previousEndDate)}' AND (is_visible = 1)
+  WHERE isin_re_issuance.allotment_date BETWEEN '${formatDate(previousStartDate)}' AND '${formatDate(previousEndDate)}' AND (isin_re_issuance.is_visible = 1)
   AND issuer_master_id = ${id}
   GROUP BY allotment_month, a.month_name
   ORDER BY allotment_month ASC
@@ -2291,7 +2291,7 @@ GROUP BY
       left join master_credit_rating_watch as w on w.code = master_issuer_rating.watch 
       left join isin_re_issuance as i on i.id = master_issuer_rating.issuer_id 
       where issuer_master_id = ${id} 
-      and i.allotment_date between '${startDate}' AND '${endDate}' AND (is_visible = 1)
+      and i.allotment_date between '${startDate}' AND '${endDate}' AND (i.is_visible = 1)
       and FIND_IN_SET(i.id,master_issuer_rating.issuer_id) 
       order by master_issuer_rating.rating_date 
       asc
@@ -2661,7 +2661,7 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
     const filterParams = [];
 
     // Date range is always first two params for each period
-    const dateConditions = `isin_re_issuance.allotment_date BETWEEN ? AND ? AND (is_visible = 1)`;
+    const dateConditions = `isin_re_issuance.allotment_date BETWEEN ? AND ? AND (isin_re_issuance.is_visible = 1)`;
 
     if (issuerName) {
       const inClause = buildInClause('issuer_details.issuer_name', issuerName, true);
@@ -3118,7 +3118,7 @@ app.post('/issuers_page_top_sectors_data', async (req, res) => {
           SELECT DISTINCT isin_re_issuance.isin_id, isin_re_issuance.business_sector, isin_re_issuance.isin, isin_re_issuance.issue_size
           FROM isin_re_issuance
           ${baseJoins}
-          WHERE isin_re_issuance.allotment_date BETWEEN ? AND ? AND (is_visible = 1) ${filterClause}
+          WHERE isin_re_issuance.allotment_date BETWEEN ? AND ? AND (isin_re_issuance.is_visible = 1) ${filterClause}
         ) AS mi
         JOIN master_business_sector mbs ON mi.business_sector = mbs.code
         GROUP BY mi.business_sector
@@ -3135,7 +3135,7 @@ app.post('/issuers_page_top_sectors_data', async (req, res) => {
           SELECT DISTINCT isin_re_issuance.isin_id, isin_re_issuance.business_sector, isin_re_issuance.isin, isin_re_issuance.issue_size
           FROM isin_re_issuance
           ${baseJoins}
-          WHERE isin_re_issuance.allotment_date BETWEEN ? AND ? AND (is_visible = 1) ${filterClause}
+          WHERE isin_re_issuance.allotment_date BETWEEN ? AND ? AND (isin_re_issuance.is_visible = 1) ${filterClause}
         ) AS mi
         JOIN master_business_sector mbs ON mi.business_sector = mbs.code
         GROUP BY mi.business_sector
@@ -3338,7 +3338,7 @@ app.post('/issuers_page_outstanding_data', async (req, res) => {
         SELECT DISTINCT isin_re_issuance.isin_id, isin_re_issuance.allotment_date, isin_re_issuance.isin, isin_re_issuance.issue_size
         FROM isin_re_issuance
         ${baseJoins}
-        WHERE isin_re_issuance.allotment_date BETWEEN ? AND ? AND (is_visible = 1) ${filterClause}
+        WHERE isin_re_issuance.allotment_date BETWEEN ? AND ? AND (isin_re_issuance.is_visible = 1) ${filterClause}
       ) AS mi
       GROUP BY month, label
       ORDER BY month ASC
@@ -3355,7 +3355,7 @@ app.post('/issuers_page_outstanding_data', async (req, res) => {
         SELECT DISTINCT isin_re_issuance.isin_id, isin_re_issuance.maturity_date, isin_re_issuance.isin, isin_re_issuance.issue_size
         FROM isin_re_issuance
         ${baseJoins}
-        WHERE isin_re_issuance.maturity_date BETWEEN ? AND ? AND (is_visible = 1) ${filterClause}
+        WHERE isin_re_issuance.maturity_date BETWEEN ? AND ? AND (isin_re_issuance.is_visible = 1) ${filterClause}
       ) AS mi
       GROUP BY month, label
       ORDER BY month ASC
@@ -3457,7 +3457,7 @@ app.get('/issuers_page_current_year_debt_redemption_data', async (req, res) => {
         ROUND(SUM(issue_size) / 10000000, 2) AS issue_size,
         COUNT(DISTINCT isin) AS isin_count
       FROM isin_re_issuance
-      WHERE maturity_date BETWEEN ? AND ? AND (is_visible = 1)
+      WHERE maturity_date BETWEEN ? AND ? AND (isin_re_issuance.is_visible = 1)
       GROUP BY YEAR(maturity_date), MONTH(maturity_date), MONTHNAME(maturity_date)
       ORDER BY YEAR(maturity_date) ASC, MONTH(maturity_date) ASC
     `, startStr, endStr);
@@ -3483,7 +3483,7 @@ app.get('/issuers_page_next_year_redemption_data', async (req, res) => {
         ROUND(SUM(issue_size) / 10000000, 2) AS issue_size,
         COUNT(DISTINCT isin) AS isin_count
       FROM isin_re_issuance
-      WHERE maturity_date BETWEEN ? AND ? AND (is_visible = 1)
+      WHERE maturity_date BETWEEN ? AND ? AND (isin_re_issuance.is_visible = 1)
       GROUP BY YEAR(maturity_date), MONTH(maturity_date), MONTHNAME(maturity_date)
       ORDER BY YEAR(maturity_date) ASC, MONTH(maturity_date) ASC
     `, start, end);
@@ -3570,7 +3570,7 @@ app.post('/issuers_page_agency_rating_data', async (req, res) => {
     const conditions = [];
     const params = [];
 
-    conditions.push(`i.allotment_date BETWEEN ? AND ?  AND (is_visible = 1)`);
+    conditions.push(`i.allotment_date BETWEEN ? AND ?  AND (i.is_visible = 1)`);
     params.push(cyStart, cyEnd);
 
     if (issuerName) {
@@ -8857,7 +8857,7 @@ app.post('/trustees_page_credit_rating_data', async (req, res) => {
       JOIN isin_re_issuance i ON i.id = master_issuer_rating.issuer_id
       JOIN master_agency ON master_agency.id = master_issuer_rating.agency_id
       JOIN issuer_trustee ON issuer_trustee.issuer_id = i.id
-      WHERE i.allotment_date BETWEEN ? AND ? AND (is_visible = 1)
+      WHERE i.allotment_date BETWEEN ? AND ? AND (i.is_visible = 1)
       ${filterSql}
     `, cyStart, cyEnd, ...filterParams);
 
@@ -8889,7 +8889,7 @@ app.post('/trustees_page_credit_rating_data', async (req, res) => {
         ON i.id = master_issuer_rating.issuer_id
       INNER JOIN issuer_trustee
         ON issuer_trustee.issuer_id = i.id
-      WHERE i.allotment_date BETWEEN ? AND ? AND (is_visible = 1)
+      WHERE i.allotment_date BETWEEN ? AND ? AND (i.is_visible = 1)
       ${filterSql}
       GROUP BY 
       master_issuer_rating.rating;
