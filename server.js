@@ -3629,7 +3629,7 @@ app.post('/issuers_page_agency_rating_data', async (req, res) => {
 
     // ─── FIX: Calculate filtered total, not unfiltered total ───
     const totalQuery = `
-      SELECT COUNT(DISTINCT mir.id) as aggregate 
+      SELECT COUNT(mir.id) as aggregate 
       FROM master_issuer_rating mir
       INNER JOIN master_agency ma ON ma.id = mir.agency_id
       INNER JOIN isin_re_issuance i ON i.id = mir.issuer_id
@@ -3694,7 +3694,7 @@ app.post('/issuers_page_agency_rating_data', async (req, res) => {
       mainQuery = `
         SELECT 
           ma.short_name as label, 
-          COUNT(DISTINCT mir.id) as rating_no,
+          COUNT(mir.id) as rating_no,
           mir.rating 
         FROM master_agency ma
         INNER JOIN master_issuer_rating mir ON mir.agency_id = ma.id 
@@ -3709,7 +3709,7 @@ app.post('/issuers_page_agency_rating_data', async (req, res) => {
       mainQuery = `
         SELECT 
           ma.short_name as label, 
-          COUNT(DISTINCT mir.id) as rating_no,
+          COUNT(mir.id) as rating_no,
           ma.id as agency_id
         FROM master_agency ma
         INNER JOIN master_issuer_rating mir ON mir.agency_id = ma.id 
