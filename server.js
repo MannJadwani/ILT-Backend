@@ -2846,7 +2846,7 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
         SELECT
           issuer_details.id,
           issuer_details.issuer_name,
-          COUNT(DISTINCT mi.isin) as no_issues,
+          COUNT(mi.isin) as no_issues,
           ROUND(SUM(mi.issue_size) / 10000000, 2) as issue_size,
           RANK() OVER ( ORDER BY ${rankOrder} ) as arr_rank
         FROM (
@@ -2864,7 +2864,7 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
         SELECT
           issuer_details.id,
           issuer_details.issuer_name,
-          COUNT(DISTINCT mi.isin) as no_issues,
+          COUNT(mi.isin) as no_issues,
           ROUND(SUM(mi.issue_size) / 10000000, 2) as issue_size,
           RANK() OVER ( ORDER BY ${rankOrder} ) as arr_rank
         FROM (
