@@ -3396,6 +3396,7 @@ app.post('/issuers_page_outstanding_data', async (req, res) => {
           WHERE isin_re_issuance.allotment_date < ?
           AND isin_re_issuance.maturity_date > ?
           AND isin_re_issuance.is_visible = 1
+          AND master_issuer.security_status = 1
           ${filterClause}
         ) AS mi
       `, end, end, ...filterParams);
