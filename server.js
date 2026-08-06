@@ -2795,7 +2795,7 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
     const totalIssueSizeQuery = `
       SELECT SUM(isin_re_issuance.issue_size) as aggregate 
       FROM isin_re_issuance
-      WHERE ${dateConditions}
+        WHERE ${dateConditions}
     `;
 
     const totalIssuesCountQuery = `
@@ -2832,8 +2832,8 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
     const rankByCount = issueType === 'count';
 
     const rankOrder = rankByCount
-      ? `COUNT(mi.isin) DESC, ROUND(SUM(mi.issue_size) / 10000000, 2) DESC`
-      : `ROUND(SUM(mi.issue_size) / 10000000, 2) DESC, COUNT(mi.isin) DESC`;
+      ? `COUNT(DISTINCT mi.isin) DESC, ROUND(SUM(mi.issue_size) / 10000000, 2) DESC`
+      : `ROUND(SUM(mi.issue_size) / 10000000, 2) DESC, COUNT(DISTINCT mi.isin) DESC`;
 
     const shareColumn = rankByCount ? 'no_issues' : 'issue_size';
     const cyDivisor = rankByCount ? cyCountDivisor : cySizeDivisor;
@@ -2846,11 +2846,11 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
         SELECT
           issuer_details.id,
           issuer_details.issuer_name,
-          COUNT(mi.isin) as no_issues,
+          COUNT(DISTINCT mi.isin) as no_issues,
           ROUND(SUM(mi.issue_size) / 10000000, 2) as issue_size,
           RANK() OVER ( ORDER BY ${rankOrder} ) as arr_rank
         FROM (
-          SELECT isin_re_issuance.isin_id, isin_re_issuance.issuer_master_id, isin_re_issuance.isin, isin_re_issuance.issue_size
+          SELECT DISTINCT isin_re_issuance.isin_id, isin_re_issuance.issuer_master_id, isin_re_issuance.isin, isin_re_issuance.issue_size
           FROM isin_re_issuance
           ${baseJoins}
           WHERE ${dateConditions} ${filterClause}
@@ -2864,11 +2864,11 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
         SELECT
           issuer_details.id,
           issuer_details.issuer_name,
-          COUNT(mi.isin) as no_issues,
+          COUNT(DISTINCT mi.isin) as no_issues,
           ROUND(SUM(mi.issue_size) / 10000000, 2) as issue_size,
           RANK() OVER ( ORDER BY ${rankOrder} ) as arr_rank
         FROM (
-          SELECT isin_re_issuance.isin_id, isin_re_issuance.issuer_master_id, isin_re_issuance.isin, isin_re_issuance.issue_size
+          SELECT DISTINCT isin_re_issuance.isin_id, isin_re_issuance.issuer_master_id, isin_re_issuance.isin, isin_re_issuance.issue_size
           FROM isin_re_issuance
           ${baseJoins}
           WHERE ${dateConditions} ${filterClause}
