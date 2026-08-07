@@ -6784,7 +6784,7 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
       LEFT JOIN master_seniority_tier_classification mstc ON mstc.code = mi.seniority
       LEFT JOIN master_secured_flag msf ON msf.code = mi.secured_flag
       ${whereClause}
-      GROUP BY mi.isin_id, mi.isin
+      GROUP BY mi.id, mi.isin_id, mi.isin
       ORDER BY ANY_VALUE(mi.allotment_date) ASC
       LIMIT ? OFFSET ?
     `;
@@ -6793,7 +6793,7 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
     // Count query
     // ---------------------
     const countQuery = `
-      SELECT COUNT(DISTINCT mi.isin_id) AS total
+      SELECT COUNT(mi.isin_id) AS total
       FROM isin_re_issuance mi
       ${whereClause}
     `;
