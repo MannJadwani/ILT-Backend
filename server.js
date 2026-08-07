@@ -7922,12 +7922,13 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
       const conditions = [];
       const params = [];
 
+      // FIX: Use .isin_id instead of .id — issuer_id in related tables refers to isin_id
       if (rating) {
         const inClause = buildInClause('mir2.rating', rating);
         if (inClause) {
           conditions.push(`EXISTS (
             SELECT 1 FROM master_issuer_rating mir2
-            WHERE mir2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+            WHERE mir2.issuer_id = ${tableAlias}.isin_id AND ${inClause.clause}
           )`);
           params.push(...inClause.params);
         }
@@ -7939,7 +7940,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
           conditions.push(`EXISTS (
             SELECT 1 FROM master_issuer_rating mir2
             JOIN master_agency ma2 ON ma2.id = mir2.agency_id
-            WHERE mir2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+            WHERE mir2.issuer_id = ${tableAlias}.isin_id AND ${inClause.clause}
           )`);
           params.push(...inClause.params);
         }
@@ -7951,7 +7952,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
           conditions.push(`EXISTS (
             SELECT 1 FROM issuer_registrar ir2
             JOIN master_registrar mr2 ON mr2.id = ir2.registrar_id
-            WHERE ir2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+            WHERE ir2.issuer_id = ${tableAlias}.isin_id AND ${inClause.clause}
           )`);
           params.push(...inClause.params);
         }
@@ -8001,7 +8002,6 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
         }
       }
 
-      // ─── FIX: nature_type lives on master_issuer, not isin_re_issuance ───
       if (nature) {
         const inClause = buildInClause('mitn2.description', nature);
         if (inClause) {
@@ -8014,7 +8014,6 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
         }
       }
 
-      // ─── FIX: issuer_ownership_type lives on master_issuer, not isin_re_issuance ───
       if (ownershipType) {
         const inClause = buildInClause('miot2.description', ownershipType);
         if (inClause) {
@@ -8041,7 +8040,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
           conditions.push(`EXISTS (
             SELECT 1 FROM master_issuer_stock_exchange mise2
             JOIN master_listing_status mls2 ON mls2.code = mise2.listing_status
-            WHERE mise2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+            WHERE mise2.issuer_id = ${tableAlias}.isin_id AND ${inClause.clause}
           )`);
           params.push(...inClause.params);
         }
@@ -8147,8 +8146,9 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
       ${filterSql}
     `, pyStart, pyEnd, ...trusteeExistsParams, ...filterParams);
 
+    // FIX: COUNT(DISTINCT mi.id) instead of COUNT(mi.issuer_master_id, mi.allotment_date)
     const totalIssuesCountCurrYearRaw = await prisma.$queryRawUnsafe(`
-      SELECT COUNT( mi.issuer_master_id, mi.allotment_date) AS aggregate
+      SELECT COUNT( mi.isin_id) AS aggregate
       FROM isin_re_issuance mi
       JOIN issuer_trustee it
         ON it.issuer_id = mi.isin_id
@@ -8158,7 +8158,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
     `, cyStart, cyEnd, ...trusteeExistsParams, ...filterParams);
 
     const totalIssuesCountPrevYearRaw = await prisma.$queryRawUnsafe(`
-      SELECT COUNT(mi.issuer_master_id, mi.allotment_date) AS aggregate
+      SELECT COUNT( mi.isin_id) AS aggregate
       FROM isin_re_issuance mi
       JOIN issuer_trustee it
         ON it.issuer_id = mi.isin_id
@@ -8210,10 +8210,10 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
         SELECT
           mt.id,
           mt.short_name AS trustee_name,
-          COUNT(mi.issuer_master_id, mi.allotment_date) AS no_issues,
+          COUNT( mi.isin_id) AS no_issues,
           ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
           RANK() OVER (
-            ORDER BY SUM(mi.issue_size) DESC, COUNT(mi.issuer_master_id, mi.allotment_date) DESC
+            ORDER BY COUNT( mi.isin_id) DESC, SUM(mi.issue_size) DESC
           ) AS arr_rank
         FROM isin_re_issuance mi
         JOIN issuer_trustee it ON it.issuer_id = mi.isin_id
@@ -8228,10 +8228,10 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
       LEFT JOIN (
         SELECT
           mt.id,
-          COUNT(mi.issuer_master_id, mi.allotment_date) AS no_issues,
+          COUNT( mi.isin_id) AS no_issues,
           ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
           RANK() OVER (
-            ORDER BY SUM(mi.issue_size) DESC, COUNT(mi.issuer_master_id, mi.allotment_date) DESC
+            ORDER BY COUNT( mi.isin_id) DESC, SUM(mi.issue_size) DESC
           ) AS arr_rank
         FROM isin_re_issuance mi
         JOIN issuer_trustee it ON it.issuer_id = mi.isin_id
@@ -8268,10 +8268,10 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
         SELECT
           mt.id,
           mt.short_name AS trustee_name,
-          COUNT(mi.issuer_master_id, mi.allotment_date) AS no_issues,
+          COUNT( mi.isin_id) AS no_issues,
           ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
           RANK() OVER (
-            ORDER BY SUM(mi.issue_size) DESC, COUNT(mi.issuer_master_id, mi.allotment_date) DESC
+            ORDER BY SUM(mi.issue_size) DESC, COUNT( mi.isin_id) DESC
           ) AS arr_rank
         FROM isin_re_issuance mi
         JOIN issuer_trustee it ON it.issuer_id = mi.isin_id
@@ -8286,10 +8286,10 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
       LEFT JOIN (
         SELECT
           mt.id,
-          COUNT(mi.issuer_master_id, mi.allotment_date) AS no_issues,
+          COUNT( mi.isin_id) AS no_issues,
           ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
           RANK() OVER (
-            ORDER BY SUM(mi.issue_size) DESC, COUNT(mi.issuer_master_id, mi.allotment_date) DESC
+            ORDER BY SUM(mi.issue_size) DESC, COUNT( mi.isin_id) DESC
           ) AS arr_rank
         FROM isin_re_issuance mi
         JOIN issuer_trustee it ON it.issuer_id = mi.isin_id
@@ -8310,7 +8310,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
 
     /*----total count for table pagination ---*/
     const totalCountResult = await prisma.$queryRawUnsafe(`
-      SELECT COUNT(mt.id) AS total
+      SELECT COUNT( mt.isin_id) AS total
       FROM isin_re_issuance mi
       JOIN issuer_trustee it ON it.issuer_id = mi.isin_id
       JOIN master_trustee mt ON mt.id = it.trustee_id
@@ -8327,7 +8327,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
 
     const sectorValueSelect =
       issueType === 'count'
-        ? 'COUNT(mi.issuer_master_id, mi.allotment_date)'
+        ? 'COUNT( mi.isin_id)'
         : 'ROUND(SUM(mi.issue_size) / 10000000, 2)';
 
     const rankedTrusteesSubQuery =
@@ -8337,7 +8337,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
         mt.id AS trustee_id,
         mt.short_name AS trustee_name,
         RANK() OVER (
-          ORDER BY COUNT(mi.issuer_master_id, mi.allotment_date) DESC, SUM(mi.issue_size) DESC
+          ORDER BY COUNT( mi.isin_id) DESC, SUM(mi.issue_size) DESC
         ) AS arr_rank
       FROM isin_re_issuance mi
       JOIN issuer_trustee it ON it.issuer_id = mi.isin_id
@@ -8353,7 +8353,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
         mt.id AS trustee_id,
         mt.short_name AS trustee_name,
         RANK() OVER (
-          ORDER BY SUM(mi.issue_size) DESC, COUNT(mi.issuer_master_id, mi.allotment_date) DESC
+          ORDER BY SUM(mi.issue_size) DESC, COUNT( mi.isin_id) DESC
         ) AS arr_rank
       FROM isin_re_issuance mi
       JOIN issuer_trustee it ON it.issuer_id = mi.isin_id
