@@ -4929,8 +4929,6 @@ app.post('/issuer_page_monthly_detailed_data', async (req, res) => {
         couponRate: item?.coupon_rate !== null && item?.coupon_rate !== undefined ? item.coupon_rate : '-',
         issueSize: item?.issue_size ?? null,
         faceValue: item?.face_value ?? null,
-        nsdlIssueSize: item?.nsdl_issue_size ?? null,
-        source: item?.source ?? '-',
         rating: item?.rating ?? '-',
         creditRatingAgency: item?.agency_name ?? '-',
         debentureTrustee: item?.debenture_trustee_name ?? '-',
