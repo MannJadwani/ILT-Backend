@@ -9511,7 +9511,7 @@ app.post('/trustee_page_monthly_detailed_data', async (req, res) => {
     }
 
     // =========================
-    // HELPER: Build multi-value IN clause (from Arrangers API reference)
+    // HELPER: Build multi-value IN clause
     // =========================
     const buildInClause = (field, values, useLike = false) => {
       if (!values || (Array.isArray(values) && values.length === 0)) return null;
@@ -9725,183 +9725,75 @@ app.post('/trustee_page_monthly_detailed_data', async (req, res) => {
       : '';
 
     // =========================
-    // DATA QUERY (no Cartesian product)
+    // DATA QUERY — scalar subqueries for 1:N relationships
     // =========================
     const dataQuery = `
       SELECT
-          MAX(i.isin_id) AS issuerId,
-          i.isin,
-          MAX(id.issuer_name) AS issuer_name,
-          MAX(i.allotment_date) AS allotment_date,
-          MAX(icd.coupon_rate) AS coupon_rate,
-          MAX(mt.short_name) AS debenture_trustee_name,
-          MAX(mr.short_name) AS registrar_detail,
-          MAX(i.maturity_date) AS maturity_date,
-          GROUP_CONCAT(DISTINCT mir.rating) AS rating,
-          GROUP_CONCAT(DISTINCT mag.short_name) AS agency_name,
-          GROUP_CONCAT(DISTINCT CONCAT(mag.short_name, ': ', mir.rating)) AS rating_info,
-          GROUP_CONCAT(DISTINCT ma.short_name) AS arranger_name,
-          MAX(i.security_name) AS security_name,
-          MAX(s.description) AS security_type,
-          MAX(mi.description) AS mode_issue,
-          MAX(i.issue_size) AS issue_size,
-          MAX(i.face_value) AS face_value,
-          MAX(mstc.description) AS seniority,
-          MAX(tf.description) AS tax_free,
-          MAX(msf.description) AS secured_flag,
-
-          (
-              SELECT description
-              FROM master_issuer_stock_exchange mise
-              LEFT JOIN master_listing_status mls
-                  ON mls.code = mise.listing_status
-              WHERE mise.issuer_id = MAX(i.isin_id)
-              ORDER BY mise.listing_status
-              LIMIT 1
-          ) AS listing_status,
-
-          MAX(i.issuer_master_id) AS issuer_master_id,
-          it.trustee_id
-
+        i.isin_id AS issuerId,
+        i.isin,
+        ANY_VALUE(id.issuer_name) AS issuer_name,
+        ANY_VALUE(i.allotment_date) AS allotment_date,
+        (SELECT coupon_rate FROM issuer_coupon_details WHERE issuer_id = i.isin_id LIMIT 1) AS coupon_rate,
+        mt.short_name AS debenture_trustee_name,
+        (SELECT mr.short_name FROM issuer_registrar ir JOIN master_registrar mr ON mr.id = ir.registrar_id WHERE ir.issuer_id = i.isin_id LIMIT 1) AS registrar_detail,
+        ANY_VALUE(i.maturity_date) AS maturity_date,
+        (SELECT GROUP_CONCAT(DISTINCT mir.rating) FROM master_issuer_rating mir WHERE mir.issuer_id = i.isin_id) AS rating,
+        (SELECT GROUP_CONCAT(DISTINCT mag.short_name) FROM master_issuer_rating mir JOIN master_agency mag ON mag.id = mir.agency_id WHERE mir.issuer_id = i.isin_id) AS agency_name,
+        (SELECT GROUP_CONCAT(DISTINCT CONCAT(mag.short_name, ': ', mir.rating)) FROM master_issuer_rating mir JOIN master_agency mag ON mag.id = mir.agency_id WHERE mir.issuer_id = i.isin_id) AS rating_info,
+        (SELECT GROUP_CONCAT(DISTINCT ma.short_name) FROM issuer_arranger ia JOIN master_arranger ma ON ma.id = ia.arranger_id WHERE ia.issuer_id = i.isin_id) AS arranger_name,
+        ANY_VALUE(i.security_name) AS security_name,
+        ANY_VALUE(s.description) AS security_type,
+        ANY_VALUE(mi.description) AS mode_issue,
+        ANY_VALUE(i.issue_size) AS issue_size,
+        ANY_VALUE(i.face_value) AS face_value,
+        ANY_VALUE(mstc.description) AS seniority,
+        ANY_VALUE(tf.description) AS tax_free,
+        ANY_VALUE(msf.description) AS secured_flag,
+        (SELECT description FROM master_issuer_stock_exchange mise LEFT JOIN master_listing_status mls ON mls.code = mise.listing_status WHERE mise.issuer_id = i.isin_id ORDER BY mise.listing_status LIMIT 1) AS listing_status,
+        ANY_VALUE(i.issuer_master_id) AS issuer_master_id,
+        it.trustee_id
       FROM isin_re_issuance i
-
-      INNER JOIN issuer_trustee it
-          ON i.isin_id = it.issuer_id
-
-      INNER JOIN master_trustee mt
-          ON mt.id = it.trustee_id
-
-      LEFT JOIN issuer_details id
-          ON id.id = i.issuer_master_id
-
-      LEFT JOIN issuer_coupon_details icd
-          ON icd.issuer_id = i.isin_id
-
-      LEFT JOIN master_security_type s
-          ON s.code = i.security_class
-
-      LEFT JOIN master_mode_issue mi
-          ON mi.code = i.mode_issue
-
-      LEFT JOIN master_seniority_tier_classification mstc
-          ON mstc.code = i.seniority
-
-      LEFT JOIN master_tax_free tf
-          ON tf.code = i.tax_free
-
-      LEFT JOIN master_secured_flag msf
-          ON msf.code = i.secured_flag
-
-      LEFT JOIN issuer_arranger ia
-          ON ia.issuer_id = i.isin_id
-
-      LEFT JOIN master_arranger ma
-          ON ma.id = ia.arranger_id
-
-      LEFT JOIN issuer_registrar ir
-          ON ir.issuer_id = i.isin_id
-
-      LEFT JOIN master_registrar mr
-          ON mr.id = ir.registrar_id
-
-      LEFT JOIN master_issuer_rating mir
-          ON mir.issuer_id = i.isin_id
-
-      LEFT JOIN master_agency mag
-          ON mag.id = mir.agency_id
-
+      INNER JOIN issuer_trustee it ON i.isin_id = it.issuer_id
+      INNER JOIN master_trustee mt ON mt.id = it.trustee_id
+      LEFT JOIN issuer_details id ON id.id = i.issuer_master_id
+      LEFT JOIN master_security_type s ON s.code = i.security_class
+      LEFT JOIN master_mode_issue mi ON mi.code = i.mode_issue
+      LEFT JOIN master_seniority_tier_classification mstc ON mstc.code = i.seniority
+      LEFT JOIN master_tax_free tf ON tf.code = i.tax_free
+      LEFT JOIN master_secured_flag msf ON msf.code = i.secured_flag
       ${whereClause}
-
-      GROUP BY
-          it.trustee_id,
-          i.isin
-
-      ORDER BY
-          MAX(id.issuer_name)
-
+      GROUP BY i.isin_id, it.trustee_id, mt.short_name, i.isin
+      ORDER BY ANY_VALUE(id.issuer_name)
       LIMIT ? OFFSET ?
     `;
 
     // =========================
-    // COUNT QUERY
+    // COUNT QUERY — simplified, no 1:N joins
     // =========================
     const countQuery = `
       SELECT COUNT(*) AS total
       FROM (
-          SELECT
-              MAX(i.isin_id) AS issuerId,
-              i.isin
-
-          FROM isin_re_issuance i
-
-          INNER JOIN issuer_trustee it
-              ON i.isin_id = it.issuer_id
-
-          INNER JOIN master_trustee mt
-              ON mt.id = it.trustee_id
-
-          LEFT JOIN issuer_details id
-              ON i.issuer_master_id = id.id
-
-          LEFT JOIN issuer_coupon_details icd
-              ON i.isin_id = icd.issuer_id
-
-          LEFT JOIN master_security_type s
-              ON i.security_class = s.code
-
-          LEFT JOIN master_mode_issue mi
-              ON i.mode_issue = mi.code
-
-          LEFT JOIN master_seniority_tier_classification mstc
-              ON mstc.code = i.seniority
-
-          LEFT JOIN master_tax_free tf
-              ON tf.code = i.tax_free
-
-          LEFT JOIN master_secured_flag msf
-              ON msf.code = i.secured_flag
-
-          LEFT JOIN issuer_arranger ia
-              ON i.isin_id = ia.issuer_id
-
-          LEFT JOIN master_arranger ma
-              ON ia.arranger_id = ma.id
-
-          LEFT JOIN issuer_registrar ir
-              ON i.isin_id = ir.issuer_id
-
-          LEFT JOIN master_registrar mr
-              ON ir.registrar_id = mr.id
-
-          LEFT JOIN master_issuer_rating mir
-              ON i.isin_id = mir.issuer_id
-
-          LEFT JOIN master_agency mag
-              ON mag.id = mir.agency_id
-
-          ${whereClause}
-
-          GROUP BY
-              it.trustee_id,
-              i.isin
-
-      ) aggregate_table;
+        SELECT i.isin_id, it.trustee_id
+        FROM isin_re_issuance i
+        INNER JOIN issuer_trustee it ON i.isin_id = it.issuer_id
+        INNER JOIN master_trustee mt ON mt.id = it.trustee_id
+        LEFT JOIN issuer_details id ON id.id = i.issuer_master_id
+        LEFT JOIN master_security_type s ON s.code = i.security_class
+        LEFT JOIN master_mode_issue mi ON mi.code = i.mode_issue
+        LEFT JOIN master_seniority_tier_classification mstc ON mstc.code = i.seniority
+        LEFT JOIN master_tax_free tf ON tf.code = i.tax_free
+        LEFT JOIN master_secured_flag msf ON msf.code = i.secured_flag
+        ${whereClause}
+        GROUP BY i.isin_id, it.trustee_id, mt.short_name, i.isin
+      ) AS aggregate_table
     `;
 
     // =========================
     // EXECUTE QUERIES
     // =========================
     const [result, countResult] = await Promise.all([
-      prisma.$queryRawUnsafe(
-        dataQuery,
-        ...params,
-        safeLimit,
-        safeOffset
-      ),
-      prisma.$queryRawUnsafe(
-        countQuery,
-        ...params
-      )
+      prisma.$queryRawUnsafe(dataQuery, ...params, safeLimit, safeOffset),
+      prisma.$queryRawUnsafe(countQuery, ...params)
     ]);
 
     // =========================
@@ -9914,15 +9806,11 @@ app.post('/trustee_page_monthly_detailed_data', async (req, res) => {
     // =========================
     const finalResult = result?.map((item) => {
       const allotmentDate = item?.allotment_date
-        ? new Date(item.allotment_date)
-          .toISOString()
-          .split('T')[0]
+        ? new Date(item.allotment_date).toISOString().split('T')[0]
         : '-';
 
       const maturityDate = item?.maturity_date
-        ? new Date(item.maturity_date)
-          .toISOString()
-          .split('T')[0]
+        ? new Date(item.maturity_date).toISOString().split('T')[0]
         : '-';
 
       return {
@@ -9966,11 +9854,7 @@ app.post('/trustee_page_monthly_detailed_data', async (req, res) => {
     });
 
   } catch (error) {
-    console.error(
-      'trustee_page monthly_detailed_data Error:',
-      error
-    );
-
+    console.error('trustee_page monthly_detailed_data Error:', error);
     return res.status(500).json({
       success: false,
       error: 'Failed to fetch trustee monthly detailed data',
