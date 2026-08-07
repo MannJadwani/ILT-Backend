@@ -4445,7 +4445,7 @@ app.post('/issuer_page_monthly_summary_data', async (req, res) => {
       SELECT
         MONTH(fi.allotment_date) AS issue_month_no,
         MONTHNAME(fi.allotment_date) AS issue_month,
-        COUNT(DISTINCT fi.isin) AS no_of_issue,
+        COUNT(fi.isin) AS no_of_issue,
         IF(
           SUM(fi.issue_size) > 0,
           ROUND(SUM(fi.issue_size) / 10000000, 2),
