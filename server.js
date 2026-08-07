@@ -9961,110 +9961,84 @@ app.post('/trustee_top_participants_details', async (req, res) => {
     const searchPattern = searchTerm ? `%${searchTerm}%` : null;
 
     // =========================
-    // DATA QUERY (no Cartesian product, fully parameterized)
+    // BASE QUERY (shared between data and count)
     // =========================
 
-    const dataQuery = `
-      SELECT *
-      FROM (
-          SELECT
-              i.isin_id AS issuerId,
-              i.isin,
-              id.issuer_name,
-              i.allotment_date,
-              i.maturity_date,
-              i.security_name,
-              i.issue_size,
-              i.face_value,
-              i.issuer_master_id,
+    const baseQuery = `
+      SELECT
+        i.id,
+        i.isin_id AS issuerId,
+        i.isin,
+        id.issuer_name,
+        i.allotment_date,
+        i.maturity_date,
+        i.security_name,
+        i.issue_size,
+        i.face_value,
+        i.issuer_master_id,
+        (
+          SELECT GROUP_CONCAT(DISTINCT icd.coupon_rate SEPARATOR ', ')
+          FROM issuer_coupon_details icd
+          WHERE icd.issuer_id = i.isin_id
+        ) AS coupon_rate,
+        mt.short_name AS debenture_trustee_name,
+        (
+          SELECT GROUP_CONCAT(DISTINCT mr.registrar_name SEPARATOR ', ')
+          FROM issuer_registrar ir
+          JOIN master_registrar mr ON mr.id = ir.registrar_id
+          WHERE ir.issuer_id = i.isin_id
+        ) AS registrar_detail,
+        (
+          SELECT GROUP_CONCAT(DISTINCT mir.rating SEPARATOR ', ')
+          FROM master_issuer_rating mir
+          WHERE mir.issuer_id = i.isin_id
+        ) AS rating,
+        (
+          SELECT GROUP_CONCAT(DISTINCT ma.short_name SEPARATOR ', ')
+          FROM issuer_arranger ia
+          JOIN master_arranger ma ON ma.id = ia.arranger_id
+          WHERE ia.issuer_id = i.isin_id
+        ) AS arranger_name,
+        s.description AS security_type,
+        mi.description AS mode_issue,
+        (
+          SELECT GROUP_CONCAT(DISTINCT mag.short_name SEPARATOR ', ')
+          FROM master_issuer_rating mir
+          JOIN master_agency mag ON mag.id = mir.agency_id
+          WHERE mir.issuer_id = i.isin_id
+        ) AS agency_name,
+        mstc.description AS seniority,
+        tf.description AS tax_free,
+        msf.description AS secured_flag,
+        (
+          SELECT mls.description
+          FROM master_issuer_stock_exchange mise
+          LEFT JOIN master_listing_status mls ON mls.code = mise.listing_status
+          WHERE mise.issuer_id = i.isin_id
+          ORDER BY mise.listing_status
+          LIMIT 1
+        ) AS listing_status
+      FROM isin_re_issuance i
+      INNER JOIN issuer_trustee it ON i.isin_id = it.issuer_id
+      INNER JOIN master_trustee mt ON it.trustee_id = mt.id
+      LEFT JOIN issuer_details id ON i.issuer_master_id = id.id
+      LEFT JOIN master_security_type s ON i.security_class = s.code
+      LEFT JOIN master_mode_issue mi ON i.mode_issue = mi.code
+      LEFT JOIN master_seniority_tier_classification mstc ON mstc.code = i.seniority
+      LEFT JOIN master_tax_free tf ON tf.code = i.tax_free
+      LEFT JOIN master_secured_flag msf ON msf.code = i.secured_flag
+      WHERE it.trustee_id = ? AND i.allotment_date BETWEEN ? AND ? AND (i.is_visible = 1)
+    `;
 
-              (
-                  SELECT GROUP_CONCAT(DISTINCT icd.coupon_rate SEPARATOR ', ')
-                  FROM issuer_coupon_details icd
-                  WHERE icd.issuer_id = i.isin_id
-              ) AS coupon_rate,
+    // =========================
+    // DATA QUERY
+    // =========================
 
-              mt.short_name AS debenture_trustee_name,
+    let dataQuery = `SELECT * FROM (${baseQuery}) x WHERE 1=1`;
+    const dataParams = [parsedTrusteeId, sqlStartDate, sqlEndDate];
 
-              (
-                  SELECT GROUP_CONCAT(DISTINCT mr.registrar_name SEPARATOR ', ')
-                  FROM issuer_registrar ir
-                  JOIN master_registrar mr ON mr.id = ir.registrar_id
-                  WHERE ir.issuer_id = i.isin_id
-              ) AS registrar_detail,
-
-              (
-                  SELECT GROUP_CONCAT(DISTINCT mir.rating SEPARATOR ', ')
-                  FROM master_issuer_rating mir
-                  WHERE mir.issuer_id = i.isin_id
-              ) AS rating,
-
-              (
-                  SELECT GROUP_CONCAT(DISTINCT ma.short_name SEPARATOR ', ')
-                  FROM issuer_arranger ia
-                  JOIN master_arranger ma ON ma.id = ia.arranger_id
-                  WHERE ia.issuer_id = i.isin_id
-              ) AS arranger_name,
-
-              s.description AS security_type,
-
-              mi.description AS mode_issue,
-
-              (
-                  SELECT GROUP_CONCAT(DISTINCT mag.short_name SEPARATOR ', ')
-                  FROM master_issuer_rating mir
-                  JOIN master_agency mag ON mag.id = mir.agency_id
-                  WHERE mir.issuer_id = i.isin_id
-              ) AS agency_name,
-
-              mstc.description AS seniority,
-
-              tf.description AS tax_free,
-
-              msf.description AS secured_flag,
-
-              (
-                  SELECT mls.description
-                  FROM master_issuer_stock_exchange mise
-                  LEFT JOIN master_listing_status mls
-                      ON mls.code = mise.listing_status
-                  WHERE mise.issuer_id = i.isin_id
-                  ORDER BY mise.listing_status
-                  LIMIT 1
-              ) AS listing_status
-
-          FROM isin_re_issuance i
-
-          INNER JOIN issuer_trustee it
-              ON i.isin_id = it.issuer_id
-
-          INNER JOIN master_trustee mt
-              ON it.trustee_id = mt.id
-
-          LEFT JOIN issuer_details id
-              ON i.issuer_master_id = id.id
-
-          LEFT JOIN master_security_type s
-              ON i.security_class = s.code
-
-          LEFT JOIN master_mode_issue mi
-              ON i.mode_issue = mi.code
-
-          LEFT JOIN master_seniority_tier_classification mstc
-              ON mstc.code = i.seniority
-
-          LEFT JOIN master_tax_free tf
-              ON tf.code = i.tax_free
-
-          LEFT JOIN master_secured_flag msf
-              ON msf.code = i.secured_flag
-
-          WHERE
-              it.trustee_id = ?
-              AND i.allotment_date BETWEEN ? AND ? AND (i.is_visible = 1)
-      ) x
-      WHERE 1=1
-      ${searchPattern ? `
+    if (searchPattern) {
+      dataQuery += `
         AND (
           issuer_name LIKE ?
           OR isin LIKE ?
@@ -10084,18 +10058,7 @@ app.post('/trustee_top_participants_details', async (req, res) => {
           OR secured_flag LIKE ?
           OR listing_status LIKE ?
         )
-      ` : ''}
-      ORDER BY ${orderBy} ${orderDirection}
-      LIMIT ? OFFSET ?
-    `;
-
-    const dataParams = [
-      parsedTrusteeId,
-      sqlStartDate,
-      sqlEndDate,
-    ];
-
-    if (searchPattern) {
+      `;
       dataParams.push(
         searchPattern, searchPattern, searchPattern, searchPattern,
         searchPattern, searchPattern, searchPattern, searchPattern,
@@ -10105,127 +10068,38 @@ app.post('/trustee_top_participants_details', async (req, res) => {
       );
     }
 
+    dataQuery += ` ORDER BY ${orderBy} ${orderDirection} LIMIT ? OFFSET ?`;
     dataParams.push(parsedLimit, parsedOffset);
 
     // =========================
     // COUNT QUERY
     // =========================
 
-    // =========================
-    // COUNT QUERY (Corrected)
-    // =========================
-
-    const countQuery = `
-      SELECT COUNT(DISTINCT x.issuer_master_id, x.allotment_date) AS total
-      FROM (
-          SELECT
-              i.isin_id,
-              i.issuer_master_id,
-              i.allotment_date,
-              id.issuer_name,
-              i.isin,
-              mt.short_name AS debenture_trustee_name,
-              i.security_name,
-              s.description AS security_type,
-              mi.description AS mode_issue,
-              i.issue_size,
-              i.face_value,
-              mstc.description AS seniority,
-              tf.description AS tax_free,
-              msf.description AS secured_flag,
-              (
-                  SELECT mls.description
-                  FROM master_issuer_stock_exchange mise
-                  LEFT JOIN master_listing_status mls
-                      ON mls.code = mise.listing_status
-                  WHERE mise.issuer_id = i.isin_id
-                  ORDER BY mise.listing_status
-                  LIMIT 1
-              ) AS listing_status
-          FROM isin_re_issuance i
-
-          INNER JOIN issuer_trustee it
-              ON i.isin_id = it.issuer_id
-
-          INNER JOIN master_trustee mt
-              ON it.trustee_id = mt.id
-
-          LEFT JOIN issuer_details id
-              ON i.issuer_master_id = id.id
-
-          LEFT JOIN master_security_type s
-              ON i.security_class = s.code
-
-          LEFT JOIN master_mode_issue mi
-              ON i.mode_issue = mi.code
-
-          LEFT JOIN master_seniority_tier_classification mstc
-              ON mstc.code = i.seniority
-
-          LEFT JOIN master_tax_free tf
-              ON tf.code = i.tax_free
-
-          LEFT JOIN master_secured_flag msf
-              ON msf.code = i.secured_flag
-
-          WHERE
-              it.trustee_id = ?
-              AND i.allotment_date BETWEEN ? AND ? AND (i.is_visible = 1)
-      ) x
-      WHERE 1=1
-      ${searchPattern ? `
-        AND (
-          x.issuer_name LIKE ?
-          OR x.isin LIKE ?
-          OR (
-            SELECT GROUP_CONCAT(DISTINCT icd.coupon_rate SEPARATOR ', ')
-            FROM issuer_coupon_details icd
-            WHERE icd.issuer_id = x.id
-          ) LIKE ?
-          OR x.debenture_trustee_name LIKE ?
-          OR (
-            SELECT GROUP_CONCAT(DISTINCT mr.registrar_name SEPARATOR ', ')
-            FROM issuer_registrar ir
-            JOIN master_registrar mr ON mr.id = ir.registrar_id
-            WHERE ir.issuer_id = x.id
-          ) LIKE ?
-          OR (
-            SELECT GROUP_CONCAT(DISTINCT mir.rating SEPARATOR ', ')
-            FROM master_issuer_rating mir
-            WHERE mir.issuer_id = x.id
-          ) LIKE ?
-          OR (
-            SELECT GROUP_CONCAT(DISTINCT ma.short_name SEPARATOR ', ')
-            FROM issuer_arranger ia
-            JOIN master_arranger ma ON ma.id = ia.arranger_id
-            WHERE ia.issuer_id = x.id
-          ) LIKE ?
-          OR x.security_name LIKE ?
-          OR x.security_type LIKE ?
-          OR x.mode_issue LIKE ?
-          OR CAST(x.issue_size AS CHAR) LIKE ?
-          OR CAST(x.face_value AS CHAR) LIKE ?
-          OR (
-            SELECT GROUP_CONCAT(DISTINCT mag.short_name SEPARATOR ', ')
-            FROM master_issuer_rating mir
-            JOIN master_agency mag ON mag.id = mir.agency_id
-            WHERE mir.issuer_id = x.id
-          ) LIKE ?
-          OR x.seniority LIKE ?
-          OR x.tax_free LIKE ?
-          OR x.secured_flag LIKE ?
-          OR x.listing_status LIKE ?
-        )
-      ` : ''}
-    `;
-
-    const countParams = [
-      parsedTrusteeId,
-      sqlStartDate,
-      sqlEndDate,
-    ];
+    let countQuery = `SELECT COUNT(*) AS total FROM (${baseQuery}) x WHERE 1=1`;
+    const countParams = [parsedTrusteeId, sqlStartDate, sqlEndDate];
 
     if (searchPattern) {
+      countQuery += `
+        AND (
+          issuer_name LIKE ?
+          OR isin LIKE ?
+          OR coupon_rate LIKE ?
+          OR debenture_trustee_name LIKE ?
+          OR registrar_detail LIKE ?
+          OR rating LIKE ?
+          OR arranger_name LIKE ?
+          OR security_name LIKE ?
+          OR security_type LIKE ?
+          OR mode_issue LIKE ?
+          OR CAST(issue_size AS CHAR) LIKE ?
+          OR CAST(face_value AS CHAR) LIKE ?
+          OR agency_name LIKE ?
+          OR seniority LIKE ?
+          OR tax_free LIKE ?
+          OR secured_flag LIKE ?
+          OR listing_status LIKE ?
+        )
+      `;
       countParams.push(
         searchPattern, searchPattern, searchPattern, searchPattern,
         searchPattern, searchPattern, searchPattern, searchPattern,
