@@ -4465,7 +4465,6 @@ app.post('/issuer_page_monthly_summary_data', async (req, res) => {
     const query = `
       SELECT
         MONTH(mi.allotment_date) AS issue_month_no,
-        MONTHNAME(mi.allotment_date) AS issue_month,
         COUNT(mi.isin)           AS no_of_issue,
         IF(
           SUM(mi.issue_size) > 0,
