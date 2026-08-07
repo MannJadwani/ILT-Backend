@@ -3944,7 +3944,7 @@ app.post('/issuePage_detailed_data', async (req, res) => {
         mi.face_value,
         mi.allotment_date,
         mi.maturity_date,
-        COALESCE(id.issuer_name, m.issuer_name) AS issuer_name,
+        COALESCE(id.issuer_name, id.issuer_name) AS issuer_name,
         mbs.description                    AS sector,
         mint.description                   AS nature,
         miot.description                   AS ownership_type,
