@@ -4810,7 +4810,7 @@ app.post('/issuer_page_monthly_detailed_data', async (req, res) => {
       ? `WHERE ${conditions.join(' AND ')}`
       : '';
 
-    // ─── Base joins: match old query exactly (1:N tables LEFT JOINed) ───
+    // ─── Base joins: match old query exactly ───
     const baseJoins = `
       LEFT JOIN issuer_details AS id
         ON i.issuer_master_id = id.id
@@ -4845,46 +4845,46 @@ app.post('/issuer_page_monthly_detailed_data', async (req, res) => {
     `;
 
     // =========================
-    // DATA QUERY — matches old query structure
+    // DATA QUERY — ANY_VALUE() for non-aggregated columns
     // =========================
 
     const dataQuery = `
       SELECT
-        i.isin_id AS issuerId,
+        ANY_VALUE(i.isin_id) AS issuerId,
         i.isin,
-        id.issuer_name,
-        i.allotment_date,
-        icd.coupon_rate,
-        mt.short_name AS debenture_trustee_name,
-        mr.short_name AS registrar_detail,
-        i.maturity_date,
+        ANY_VALUE(id.issuer_name) AS issuer_name,
+        ANY_VALUE(i.allotment_date) AS allotment_date,
+        ANY_VALUE(icd.coupon_rate) AS coupon_rate,
+        ANY_VALUE(mt.short_name) AS debenture_trustee_name,
+        ANY_VALUE(mr.short_name) AS registrar_detail,
+        ANY_VALUE(i.maturity_date) AS maturity_date,
         GROUP_CONCAT(mir.rating) AS rating,
-        ma.short_name AS arranger_name,
-        i.security_name,
-        s.description AS security_type,
-        mi.description AS mode_issue,
-        i.issue_size,
-        i.face_value,
+        ANY_VALUE(ma.short_name) AS arranger_name,
+        ANY_VALUE(i.security_name) AS security_name,
+        ANY_VALUE(s.description) AS security_type,
+        ANY_VALUE(mi.description) AS mode_issue,
+        ANY_VALUE(i.issue_size) AS issue_size,
+        ANY_VALUE(i.face_value) AS face_value,
         GROUP_CONCAT(mag.short_name) AS agency_name,
-        mstc.description AS seniority,
-        tf.description AS tax_free,
-        msf.description AS secured_flag,
+        ANY_VALUE(mstc.description) AS seniority,
+        ANY_VALUE(tf.description) AS tax_free,
+        ANY_VALUE(msf.description) AS secured_flag,
         (SELECT description 
          FROM master_issuer_stock_exchange AS mise
          LEFT JOIN master_listing_status AS mls ON mls.code = mise.listing_status
          WHERE mise.issuer_id = i.isin_id
          ORDER BY mise.listing_status LIMIT 1) AS listing_status,
-        i.issuer_master_id
+        ANY_VALUE(i.issuer_master_id) AS issuer_master_id
       FROM isin_re_issuance AS i
       ${baseJoins}
       ${whereClause}
       GROUP BY i.isin
-      ORDER BY id.issuer_name ASC
+      ORDER BY ANY_VALUE(id.issuer_name) ASC
       LIMIT ? OFFSET ?
     `;
 
     // =========================
-    // COUNT QUERY — wraps data query like old query
+    // COUNT QUERY — wraps grouped data like old query
     // =========================
 
     const countQuery = `
@@ -4929,6 +4929,8 @@ app.post('/issuer_page_monthly_detailed_data', async (req, res) => {
         couponRate: item?.coupon_rate !== null && item?.coupon_rate !== undefined ? item.coupon_rate : '-',
         issueSize: item?.issue_size ?? null,
         faceValue: item?.face_value ?? null,
+        nsdlIssueSize: item?.nsdl_issue_size ?? null,
+        source: item?.source ?? '-',
         rating: item?.rating ?? '-',
         creditRatingAgency: item?.agency_name ?? '-',
         debentureTrustee: item?.debenture_trustee_name ?? '-',
