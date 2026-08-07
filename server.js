@@ -8704,10 +8704,10 @@ app.post('/trustees_page_credit_rating_data', async (req, res) => {
       SELECT
         MAX(master_agency.short_name) AS label,
         ROUND(
-          (COUNT(DISTINCT master_issuer_rating.id) / ${safeTotalRatingNo}) * 100,
+          (COUNT( master_issuer_rating.id) / ${safeTotalRatingNo}) * 100,
           2
         ) AS percentage,
-        COUNT(DISTINCT master_issuer_rating.id) AS rating_no,
+        COUNT( master_issuer_rating.id) AS rating_no,
         CONCAT(
           '#',
           SUBSTRING(
