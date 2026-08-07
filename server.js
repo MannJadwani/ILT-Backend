@@ -4320,16 +4320,16 @@ app.post('/issuer_page_monthly_summary_data', async (req, res) => {
     };
 
     // ── Multi-select filters (arrays) ──
-    const ownershipType = toArray(req.body.ownershipType);
-    const sector = toArray(req.body.sector);
-    const nature = toArray(req.body.nature);
-    const securityType = toArray(req.body.securityType);
+    const ownershipType      = toArray(req.body.ownershipType);
+    const sector             = toArray(req.body.sector);
+    const nature             = toArray(req.body.nature);
+    const securityType       = toArray(req.body.securityType);
     const creditRatingAgency = toArray(req.body.creditRatingAgency);
-    const modeOfIssue = toArray(req.body.modeOfIssue);
-    const seniority = toArray(req.body.seniority);
-    const listingStatus = toArray(req.body.listingStatus);
-    const securedFlag = toArray(req.body.securedFlag);
-    const rating = toArray(req.body.rating);
+    const modeOfIssue        = toArray(req.body.modeOfIssue);
+    const seniority          = toArray(req.body.seniority);
+    const listingStatus      = toArray(req.body.listingStatus);
+    const securedFlag        = toArray(req.body.securedFlag);
+    const rating             = toArray(req.body.rating);
 
     // ─── Validate dates ───
     if (!startDate || !endDate) {
@@ -4337,7 +4337,7 @@ app.post('/issuer_page_monthly_summary_data', async (req, res) => {
     }
 
     const currentStartDate = new Date(startDate);
-    const currentEndDate = new Date(endDate);
+    const currentEndDate   = new Date(endDate);
 
     if (isNaN(currentStartDate.getTime()) || isNaN(currentEndDate.getTime())) {
       return res.status(400).json({ error: 'Invalid date format' });
@@ -4347,7 +4347,7 @@ app.post('/issuer_page_monthly_summary_data', async (req, res) => {
       return res.status(400).json({ error: 'startDate must be before endDate' });
     }
 
-    // ─── FIX: Full day coverage — start at 00:00:00, end at 23:59:59 ───
+    // ─── Full day coverage — start at 00:00:00, end at 23:59:59 ───
     const cyStart = formatDateForSQL(new Date(Date.UTC(
       currentStartDate.getUTCFullYear(),
       currentStartDate.getUTCMonth(),
@@ -4366,71 +4366,90 @@ app.post('/issuer_page_monthly_summary_data', async (req, res) => {
 
     /* ---------------------------------
        BUILD DYNAMIC CONDITIONS
+       - Direct WHERE for 1:1 lookups (no row multiplication)
+       - EXISTS subqueries for 1:N lookups (prevents cartesian products)
     --------------------------------- */
     const conditions = [];
-    const params = [];
+    const params     = [];
 
-    conditions.push(`mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)`);
+    // Base filters
+    conditions.push(`mi.allotment_date BETWEEN ? AND ?`);
     params.push(cyStart, cyEnd);
 
-    if (rating.length > 0) {
-      const placeholders = rating.map(() => '?').join(', ');
-      conditions.push(`mir.rating IN (${placeholders})`);
-      params.push(...rating);
-    }
+    conditions.push(`mi.is_visible = 1`);
 
+    // ── 1:1 lookup filters (safe to JOIN directly) ──
     if (ownershipType.length > 0) {
-      const placeholders = ownershipType.map(() => '?').join(', ');
-      conditions.push(`miot.description IN (${placeholders})`);
+      const ph = ownershipType.map(() => '?').join(', ');
+      conditions.push(`miot.description IN (${ph})`);
       params.push(...ownershipType);
     }
 
     if (sector.length > 0) {
-      const placeholders = sector.map(() => '?').join(', ');
-      conditions.push(`mbs.description IN (${placeholders})`);
+      const ph = sector.map(() => '?').join(', ');
+      conditions.push(`mbs.description IN (${ph})`);
       params.push(...sector);
     }
 
     if (nature.length > 0) {
-      const placeholders = nature.map(() => '?').join(', ');
-      conditions.push(`mint.description IN (${placeholders})`);
+      const ph = nature.map(() => '?').join(', ');
+      conditions.push(`mint.description IN (${ph})`);
       params.push(...nature);
     }
 
     if (securityType.length > 0) {
-      const placeholders = securityType.map(() => '?').join(', ');
-      conditions.push(`mst.description IN (${placeholders})`);
+      const ph = securityType.map(() => '?').join(', ');
+      conditions.push(`mst.description IN (${ph})`);
       params.push(...securityType);
     }
 
-    if (creditRatingAgency.length > 0) {
-      const placeholders = creditRatingAgency.map(() => '?').join(', ');
-      conditions.push(`ma.short_name IN (${placeholders})`);
-      params.push(...creditRatingAgency);
-    }
-
     if (modeOfIssue.length > 0) {
-      const placeholders = modeOfIssue.map(() => '?').join(', ');
-      conditions.push(`mmi.description IN (${placeholders})`);
+      const ph = modeOfIssue.map(() => '?').join(', ');
+      conditions.push(`mmi.description IN (${ph})`);
       params.push(...modeOfIssue);
     }
 
     if (seniority.length > 0) {
-      const placeholders = seniority.map(() => '?').join(', ');
-      conditions.push(`mstc.description IN (${placeholders})`);
+      const ph = seniority.map(() => '?').join(', ');
+      conditions.push(`mstc.description IN (${ph})`);
       params.push(...seniority);
     }
 
-    if (listingStatus.length > 0) {
-      const placeholders = listingStatus.map(() => '?').join(', ');
-      conditions.push(`mls.description IN (${placeholders})`);
-      params.push(...listingStatus);
+    if (securedFlag.length > 0) {
+      const ph = securedFlag.map(() => '?').join(', ');
+      conditions.push(`msf.description IN (${ph})`);
+      params.push(...securedFlag);
     }
 
-    if (securedFlag.length > 0) {
-      const placeholders = securedFlag.map(() => '?').join(', ');
-      conditions.push(`msf.description IN (${placeholders})`);
-      params.push(...securedFlag);
+    // ── 1:N relationship filters (EXISTS = no DISTINCT needed) ──
+    if (rating.length > 0) {
+      const ph = rating.map(() => '?').join(', ');
+      conditions.push(`EXISTS (
+        SELECT 1 FROM master_issuer_rating mir
+        JOIN master_agency ma ON ma.id = mir.agency_id AND ma.parent_id = 0
+        WHERE mir.issuer_id = mi.isin_id AND mir.rating IN (${ph})
+      )`);
+      params.push(...rating);
+    }
+
+    if (creditRatingAgency.length > 0) {
+      const ph = creditRatingAgency.map(() => '?').join(', ');
+      conditions.push(`EXISTS (
+        SELECT 1 FROM master_issuer_rating mir
+        JOIN master_agency ma ON ma.id = mir.agency_id AND ma.parent_id = 0
+        WHERE mir.issuer_id = mi.isin_id AND ma.short_name IN (${ph})
+      )`);
+      params.push(...creditRatingAgency);
+    }
+
+    if (listingStatus.length > 0) {
+      const ph = listingStatus.map(() => '?').join(', ');
+      conditions.push(`EXISTS (
+        SELECT 1 FROM master_issuer_stock_exchange mise
+        JOIN master_listing_status mls ON mls.code = mise.listing_status
+        WHERE mise.issuer_id = mi.isin_id AND mls.description IN (${ph})
+      )`);
+      params.push(...listingStatus);
     }
 
     const whereClause = conditions.length
@@ -4439,65 +4458,50 @@ app.post('/issuer_page_monthly_summary_data', async (req, res) => {
 
     /* ---------------------------------
        MAIN QUERY
-       FIXED VERSION
+       - No DISTINCT (EXISTS handles dedup logic)
+       - No MONTHNAME (month names come from JS)
+       - Direct aggregation on base table
     --------------------------------- */
     const query = `
       SELECT
-        MONTH(fi.allotment_date) AS issue_month_no,
-        MONTHNAME(fi.allotment_date) AS issue_month,
-        COUNT(fi.isin) AS no_of_issue,
+        MONTH(mi.allotment_date) AS issue_month_no,
+        MONTHNAME(mi.allotment_date) AS issue_month,
+        COUNT(mi.isin)           AS no_of_issue,
         IF(
-          SUM(fi.issue_size) > 0,
-          ROUND(SUM(fi.issue_size) / 10000000, 2),
+          SUM(mi.issue_size) > 0,
+          ROUND(SUM(mi.issue_size) / 10000000, 2),
           0
-        ) AS issue_size,
-        SUM(fi.issue_size) AS actual_issue_size
-      FROM (
-        SELECT DISTINCT
-          mi.isin_id,
-          mi.isin,
-          mi.issue_size,
-          mi.allotment_date
-        FROM isin_re_issuance mi
-        LEFT JOIN issuer_details
-          ON issuer_details.id = mi.issuer_master_id
-        LEFT JOIN master_issuer 
-          ON master_issuer.id = mi.isin_id
-        LEFT JOIN master_issuer_ownership_type miot
-          ON miot.code = master_issuer.issuer_ownership_type
-        LEFT JOIN master_business_sector mbs
-          ON mbs.code = mi.business_sector
-        LEFT JOIN master_issuer_type_nature mint
-          ON mint.code = master_issuer.nature_type
-        LEFT JOIN master_security_type mst
-          ON mst.code = mi.security_class
-        LEFT JOIN master_issuer_rating mir
-          ON mir.issuer_id = mi.isin_id
-        LEFT JOIN master_agency ma
-          ON ma.id = mir.agency_id
-          AND ma.parent_id = 0
-        LEFT JOIN master_mode_issue mmi
-          ON mmi.code = mi.mode_issue
-        LEFT JOIN master_seniority_tier_classification mstc
-          ON mstc.code = mi.seniority
-        LEFT JOIN master_issuer_stock_exchange mise
-          ON mise.issuer_id = mi.isin_id
-        LEFT JOIN master_listing_status mls
-          ON mls.code = mise.listing_status
-        LEFT JOIN master_secured_flag msf
-          ON msf.code = mi.secured_flag
-        ${whereClause}
-      ) AS fi
+        )                        AS issue_size,
+        SUM(mi.issue_size)       AS actual_issue_size
+      FROM isin_re_issuance mi
+      LEFT JOIN issuer_details
+        ON issuer_details.id = mi.issuer_master_id
+      LEFT JOIN master_issuer
+        ON master_issuer.id = mi.isin_id
+      LEFT JOIN master_issuer_ownership_type miot
+        ON miot.code = master_issuer.issuer_ownership_type
+      LEFT JOIN master_business_sector mbs
+        ON mbs.code = mi.business_sector
+      LEFT JOIN master_issuer_type_nature mint
+        ON mint.code = master_issuer.nature_type
+      LEFT JOIN master_security_type mst
+        ON mst.code = mi.security_class
+      LEFT JOIN master_mode_issue mmi
+        ON mmi.code = mi.mode_issue
+      LEFT JOIN master_seniority_tier_classification mstc
+        ON mstc.code = mi.seniority
+      LEFT JOIN master_secured_flag msf
+        ON msf.code = mi.secured_flag
+      ${whereClause}
       GROUP BY
-        MONTH(fi.allotment_date),
-        MONTHNAME(fi.allotment_date)
+        MONTH(mi.allotment_date)
       ORDER BY
-        MONTH(fi.allotment_date) ASC
+        MONTH(mi.allotment_date) ASC
     `;
 
     const result = await prisma.$queryRawUnsafe(query, ...params);
 
-    // ─── FIX: Merge SQL results with expected month list (includes empty months) ───
+    // ─── Merge SQL results with expected month list (includes empty months) ───
     const resultMap = new Map();
     for (const row of result) {
       resultMap.set(Number(row.issue_month_no), row);
@@ -4506,10 +4510,10 @@ app.post('/issuer_page_monthly_summary_data', async (req, res) => {
     const finalResult = expectedMonths.map((month) => {
       const data = resultMap.get(month.monthNo);
       return {
-        issueMonthNo: month.monthNo,
-        issueMonth: month.monthName,
-        noOfIssue: data ? Number(data.no_of_issue ?? 0) : 0,
-        issueSize: data ? Number(data.issue_size ?? 0) : 0,
+        issueMonthNo:    month.monthNo,
+        issueMonth:      month.monthName,   // ← reliable JS-generated name
+        noOfIssue:       data ? Number(data.no_of_issue ?? 0) : 0,
+        issueSize:       data ? Number(data.issue_size ?? 0) : 0,
         actualIssueSize: data ? Number(data.actual_issue_size ?? 0) : 0
       };
     });
