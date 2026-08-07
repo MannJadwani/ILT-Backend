@@ -7083,7 +7083,7 @@ app.post('/arranger_page_monthly_summary_data', async (req, res) => {
       SELECT
         MONTH(mi.allotment_date)     AS issue_month_no,
         MONTHNAME(mi.allotment_date) AS issue_month,
-        COUNT(DISTINCT CONCAT(mi.isin_id, '-', ia.arranger_id)) AS no_of_issue,
+        COUNT(CONCAT(mi.isin_id, '-', ia.arranger_id)) AS no_of_issue,
         IF(
           SUM(mi.issue_size) > 0,
           ROUND(SUM(mi.issue_size) / 10000000, 2),
