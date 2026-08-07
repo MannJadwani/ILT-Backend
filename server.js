@@ -4845,12 +4845,12 @@ app.post('/issuer_page_monthly_detailed_data', async (req, res) => {
     `;
 
     // =========================
-    // DATA QUERY — ANY_VALUE() for non-aggregated columns
+    // DATA QUERY
     // =========================
 
     const dataQuery = `
       SELECT
-        ANY_VALUE(i.isin_id) AS issuerId,
+        i.isin_id AS issuerId,
         i.isin,
         ANY_VALUE(id.issuer_name) AS issuer_name,
         ANY_VALUE(i.allotment_date) AS allotment_date,
@@ -4878,13 +4878,13 @@ app.post('/issuer_page_monthly_detailed_data', async (req, res) => {
       FROM isin_re_issuance AS i
       ${baseJoins}
       ${whereClause}
-      GROUP BY i.isin
+      GROUP BY i.isin_id, i.isin
       ORDER BY ANY_VALUE(id.issuer_name) ASC
       LIMIT ? OFFSET ?
     `;
 
     // =========================
-    // COUNT QUERY — wraps grouped data like old query
+    // COUNT QUERY
     // =========================
 
     const countQuery = `
@@ -4894,7 +4894,7 @@ app.post('/issuer_page_monthly_detailed_data', async (req, res) => {
         FROM isin_re_issuance AS i
         ${baseJoins}
         ${whereClause}
-        GROUP BY i.isin
+        GROUP BY i.isin_id, i.isin
       ) AS aggregate_table
     `;
 
