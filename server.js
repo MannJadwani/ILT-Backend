@@ -7651,116 +7651,65 @@ app.post('/arranger_top_participants_details', async (req, res) => {
     const searchPattern = safeSearchQuery ? `%${escapeLike(safeSearchQuery)}%` : null;
 
     /* ---------------------------------
-       BASE QUERY (shared between data and count)
+       BASE QUERY — matches old query structure
+       - Simple GROUP BY i.id (PK) prevents row splitting from 1:N joins
+       - ANY_VALUE() for only_full_group_by safety
     --------------------------------- */
-
-    // Fix: Removed all_months JOIN (was causing duplicate rows)
-    // Fix: All filters use parameter binding
-    // Fix: All one-to-many relationships aggregated properly
     const baseQuery = `
       SELECT
-          i.isin_id AS issuerId,
-          i.isin,
-          id.issuer_name,
-          i.allotment_date,
-          icd.coupon_rate,
-          mt.short_name AS debenture_trustee_name,
-          mr.short_name AS registrar_detail,
-          i.maturity_date,
-          GROUP_CONCAT(DISTINCT mir.rating ORDER BY mir.rating ASC SEPARATOR ', ') AS rating,
-          ma.short_name AS arranger_name,
-          i.security_name,
-          s.description AS security_type,
-          mi.description AS mode_issue,
-          i.issue_size,
-          i.face_value,
-          GROUP_CONCAT(DISTINCT mag.short_name ORDER BY mag.short_name ASC SEPARATOR ', ') AS agency_name,
-          mstc.description AS seniority,
-          tf.description AS tax_free,
-          msf.description AS secured_flag,
-          (
-              SELECT mls.description
-              FROM master_issuer_stock_exchange AS mise
-              INNER JOIN master_listing_status AS mls
-                  ON mls.code = mise.listing_status
-              WHERE mise.issuer_id = i.isin_id
-              ORDER BY mise.listing_status ASC, mise.id ASC
-              LIMIT 1
-          ) AS listing_status,
-          i.issuer_master_id
-
-      FROM isin_re_issuance i
-
-      LEFT JOIN issuer_details id
-          ON i.issuer_master_id = id.id
-
-      LEFT JOIN master_security_type s
-          ON i.security_class = s.code
-
-      LEFT JOIN master_mode_issue mi
-          ON i.mode_issue = mi.code
-
-      LEFT JOIN issuer_coupon_details icd
-          ON i.isin_id = icd.issuer_id
-
-      LEFT JOIN master_seniority_tier_classification mstc
-          ON mstc.code = i.seniority
-
-      LEFT JOIN master_tax_free tf
-          ON tf.code = i.tax_free
-
-      LEFT JOIN master_secured_flag msf
-          ON msf.code = i.secured_flag
-
-      LEFT JOIN issuer_trustee it
-          ON i.isin_id = it.issuer_id
-      LEFT JOIN master_trustee mt
-          ON it.trustee_id = mt.id
-
-      LEFT JOIN issuer_registrar ir1
-          ON i.isin_id = ir1.issuer_id
-      LEFT JOIN master_registrar mr
-          ON ir1.registrar_id = mr.id
-
-      LEFT JOIN master_issuer_rating mir
-          ON i.isin_id = mir.issuer_id
-      LEFT JOIN master_agency mag
-          ON mag.id = mir.agency_id
-
-      INNER JOIN issuer_arranger ia
-          ON i.isin_id = ia.issuer_id
-      INNER JOIN master_arranger ma
-          ON ia.arranger_id = ma.id
-
-      WHERE ia.arranger_id = ?
-        AND i.allotment_date BETWEEN ? AND ? 
-        AND i.is_visible = 1
-
-      GROUP BY
-          i.isin_id,
-          i.isin,
-          id.issuer_name,
-          i.allotment_date,
-          icd.coupon_rate,
-          mt.short_name,
-          mr.short_name,
-          i.maturity_date,
-          ma.short_name,
-          i.security_name,
-          s.description,
-          mi.description,
-          i.issue_size,
-          i.face_value,
-          mstc.description,
-          tf.description,
-          msf.description,
-          i.issuer_master_id
+        i.isin_id AS issuerId,
+        i.isin,
+        ANY_VALUE(id.issuer_name) AS issuer_name,
+        ANY_VALUE(i.allotment_date) AS allotment_date,
+        ANY_VALUE(icd.coupon_rate) AS coupon_rate,
+        ANY_VALUE(mt.short_name) AS debenture_trustee_name,
+        ANY_VALUE(mr.short_name) AS registrar_detail,
+        ANY_VALUE(i.maturity_date) AS maturity_date,
+        GROUP_CONCAT(mir.rating) AS rating,
+        ANY_VALUE(ma.short_name) AS arranger_name,
+        ANY_VALUE(i.security_name) AS security_name,
+        ANY_VALUE(s.description) AS security_type,
+        ANY_VALUE(mi.description) AS mode_issue,
+        ANY_VALUE(i.nsdl_issue_size) AS nsdl_issue_size,
+        ANY_VALUE(i.source) AS source,
+        ANY_VALUE(i.issue_size) AS issue_size,
+        ANY_VALUE(i.face_value) AS face_value,
+        GROUP_CONCAT(mag.short_name) AS agency_name,
+        ANY_VALUE(mstc.description) AS seniority,
+        ANY_VALUE(tf.description) AS tax_free,
+        ANY_VALUE(msf.description) AS secured_flag,
+        (SELECT description 
+         FROM master_issuer_stock_exchange AS mise
+         LEFT JOIN master_listing_status AS mls ON mls.code = mise.listing_status
+         WHERE mise.issuer_id = i.isin_id
+         ORDER BY mise.listing_status LIMIT 1) AS listing_status,
+        ANY_VALUE(i.issuer_master_id) AS issuer_master_id
+      FROM all_months
+      INNER JOIN isin_re_issuance AS i ON all_months.month_no = MONTH(i.allotment_date)
+      LEFT JOIN issuer_details AS id ON i.issuer_master_id = id.id
+      LEFT JOIN master_security_type AS s ON i.security_class = s.code
+      LEFT JOIN master_mode_issue AS mi ON i.mode_issue = mi.code
+      LEFT JOIN issuer_coupon_details AS icd ON i.isin_id = icd.issuer_id
+      LEFT JOIN master_seniority_tier_classification AS mstc ON mstc.code = i.seniority
+      LEFT JOIN master_tax_free AS tf ON tf.code = i.tax_free
+      LEFT JOIN master_secured_flag AS msf ON msf.code = i.secured_flag
+      LEFT JOIN issuer_trustee AS it ON i.isin_id = it.issuer_id
+      LEFT JOIN master_trustee AS mt ON it.trustee_id = mt.id
+      LEFT JOIN issuer_registrar AS ir1 ON i.isin_id = ir1.issuer_id
+      LEFT JOIN master_registrar AS mr ON ir1.registrar_id = mr.id
+      LEFT JOIN master_issuer_rating AS mir ON i.isin_id = mir.issuer_id
+      LEFT JOIN master_agency AS mag ON mag.id = mir.agency_id
+      INNER JOIN issuer_arranger AS ia ON i.isin_id = ia.issuer_id
+      INNER JOIN master_arranger AS ma ON ia.arranger_id = ma.id
+      WHERE i.is_visible = 1
+        AND ia.arranger_id = ?
+        AND i.allotment_date BETWEEN ? AND ?
+      GROUP BY ia.arranger_id, i.isin, i.id
     `;
 
     /* ---------------------------------
        DATA QUERY
     --------------------------------- */
-
     let dataQuery = baseQuery;
     const dataParams = [safeArrangerId, `${startDate} 00:00:00`, `${endDate} 23:59:59`];
 
@@ -7788,7 +7737,6 @@ app.post('/arranger_top_participants_details', async (req, res) => {
           OR listing_status LIKE ?
         )
       `;
-      // Add search pattern for each LIKE clause
       dataParams.push(
         searchPattern, searchPattern, searchPattern, searchPattern,
         searchPattern, searchPattern, searchPattern, searchPattern,
@@ -7804,8 +7752,6 @@ app.post('/arranger_top_participants_details', async (req, res) => {
     /* ---------------------------------
        COUNT QUERY
     --------------------------------- */
-
-    // Fix: Simplified count query using the same base
     let countQuery = `SELECT COUNT(*) AS total FROM (${baseQuery}) x`;
     const countParams = [safeArrangerId, `${startDate} 00:00:00`, `${endDate} 23:59:59`];
 
@@ -7844,7 +7790,6 @@ app.post('/arranger_top_participants_details', async (req, res) => {
     /* ---------------------------------
        EXECUTE QUERIES
     --------------------------------- */
-
     const [data, totalCount] = await Promise.all([
       prisma.$queryRawUnsafe(dataQuery, ...dataParams),
       prisma.$queryRawUnsafe(countQuery, ...countParams),
@@ -7853,7 +7798,6 @@ app.post('/arranger_top_participants_details', async (req, res) => {
     /* ---------------------------------
        FORMAT RESPONSE
     --------------------------------- */
-
     const formattedData = data?.map((item) => ({
       issuerId: item?.issuerId ?? '-',
       isin: item?.isin ?? '-',
@@ -7872,6 +7816,8 @@ app.post('/arranger_top_participants_details', async (req, res) => {
       securityName: item?.security_name ?? '-',
       securityType: item?.security_type ?? '-',
       modeIssue: item?.mode_issue ?? '-',
+      nsdlIssueSize: item?.nsdl_issue_size ?? null,
+      source: item?.source ?? '-',
       issueSize: item?.issue_size ?? null,
       faceValue: item?.face_value ?? null,
       agencyName: item?.agency_name ?? '-',
