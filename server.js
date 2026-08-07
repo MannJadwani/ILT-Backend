@@ -8310,7 +8310,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
 
     /*----total count for table pagination ---*/
     const totalCountResult = await prisma.$queryRawUnsafe(`
-      SELECT COUNT( mt.isin_id) AS total
+      SELECT COUNT( mt.id) AS total
       FROM isin_re_issuance mi
       JOIN issuer_trustee it ON it.issuer_id = mi.isin_id
       JOIN master_trustee mt ON mt.id = it.trustee_id
