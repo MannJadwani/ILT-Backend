@@ -7498,7 +7498,7 @@ app.post('/arrangers_page_monthly_detailed_data', async (req, res) => {
     // COUNT QUERY — no 1:N joins, accurate count
     // =========================
     const countQuery = `
-      SELECT COUNT(DISTINCT CONCAT(i.isin_id, '-', ia.arranger_id)) AS total
+      SELECT COUNT(CONCAT(i.isin_id, '-', ia.arranger_id)) AS total
       FROM isin_re_issuance AS i
       INNER JOIN issuer_arranger AS ia ON i.isin_id = ia.issuer_id
       INNER JOIN master_arranger AS ma ON ia.arranger_id = ma.id
