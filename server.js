@@ -862,28 +862,28 @@ app.post('/admin-arrangers', async (req, res) => {
 
     // Fetch paginated data
     const arrangers = await prisma.$queryRawUnsafe(`
-            SELECT 
-                master_arranger.id, 
-                master_arranger.arranger_name, 
-                master_contact.contact_person, 
-                master_contact.contact_no, 
-                master_contact.email_id, 
-                master_arranger.smt_status, 
-                master_arranger.is_active, 
-                master_arranger.website 
-            FROM 
-                master_arranger 
-            LEFT JOIN 
-                master_contact 
-                ON master_contact.master_id = master_arranger.id 
-                AND master_contact.type = 1 
-            WHERE 
-                master_arranger.parent_id = 0 
-            GROUP BY 
-                master_arranger.id 
-            ORDER BY 
-                master_arranger.arranger_name ASC
-            LIMIT ${take} OFFSET ${skip}
+          SELECT 
+              master_arranger.id, 
+              master_arranger.arranger_name, 
+              MAX(master_contact.contact_person) AS contact_person, 
+              MAX(master_contact.contact_no) AS contact_no, 
+              MAX(master_contact.email_id) AS email_id, 
+              master_arranger.smt_status, 
+              master_arranger.is_active, 
+              master_arranger.website 
+          FROM master_arranger 
+          LEFT JOIN master_contact 
+              ON master_contact.master_id = master_arranger.id 
+              AND master_contact.type = 1 
+          WHERE master_arranger.parent_id = 0 
+          GROUP BY 
+              master_arranger.id,
+              master_arranger.arranger_name,
+              master_arranger.smt_status,
+              master_arranger.is_active,
+              master_arranger.website
+          ORDER BY master_arranger.arranger_name ASC
+          LIMIT ${take} OFFSET ${skip}
         `);
 
     // Fetch total count for pagination metadata
