@@ -10332,7 +10332,7 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
     `, sqlPreviousStart, sqlPreviousEnd, ...filterParams);
 
     const totalIssuesCountCurrYearResult = await prisma.$queryRawUnsafe(`
-        SELECT COUNT(DISTINCT mi.isin) AS aggregate
+        SELECT COUNT( mi.isin) AS aggregate
         FROM isin_re_issuance mi
         JOIN master_issuer_rating mir
             ON mir.issuer_id = mi.isin_id
@@ -10344,7 +10344,7 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
     `, sqlCurrentStart, sqlCurrentEnd, ...filterParams);
 
     const totalIssuesCountPrevYearResult = await prisma.$queryRawUnsafe(`
-        SELECT COUNT(DISTINCT mi.isin) AS aggregate
+        SELECT COUNT(mi.isin) AS aggregate
         FROM isin_re_issuance mi
         JOIN master_issuer_rating mir
             ON mir.issuer_id = mi.isin_id
@@ -10397,7 +10397,7 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
         SELECT
           ma.id,
           ma.short_name AS agency_name,
-          COUNT(DISTINCT mi.isin) AS no_issues,
+          COUNT(mi.isin) AS no_issues,
           ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
           RANK() OVER (
                 ORDER BY
@@ -10417,7 +10417,7 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
       LEFT JOIN (
         SELECT
           ma.id,
-          COUNT(DISTINCT mi.isin) AS no_issues,
+          COUNT(mi.isin) AS no_issues,
           ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
           RANK() OVER (
               ORDER BY
@@ -10459,7 +10459,7 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
         SELECT
           ma.id,
           ma.short_name AS agency_name,
-          COUNT(DISTINCT mi.isin) AS no_issues,
+          COUNT(mi.isin) AS no_issues,
           ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
           RANK() OVER (
               ORDER BY
@@ -10478,7 +10478,7 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
       LEFT JOIN (
         SELECT
           ma.id,
-          COUNT(DISTINCT mi.isin) AS no_issues,
+          COUNT(mi.isin) AS no_issues,
           ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
           RANK() OVER (
               ORDER BY
@@ -10504,7 +10504,7 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
     /* ---------------- TOTAL COUNT ---------------- */
 
     const totalCountResult = await prisma.$queryRawUnsafe(`
-      SELECT COUNT(*) AS total
+      SELECT COUNT(mi.isin) AS total
       FROM isin_re_issuance mi
       JOIN master_issuer_rating mir ON mir.issuer_id = mi.isin_id
       JOIN master_agency ma ON ma.id = mir.agency_id
@@ -10518,7 +10518,7 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
 
     const sectorValueSelect =
       issueType === 'count'
-        ? 'COUNT(DISTINCT mi.isin)'
+        ? 'COUNT(mi.isin)'
         : 'ROUND(SUM(mi.issue_size) / 10000000, 2)';
 
     const rankedAgenciesSubQuery =
@@ -10528,7 +10528,7 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
         ma.id AS agency_id,
         ma.short_name AS agency_name,
         RANK() OVER (
-          ORDER BY COUNT(DISTINCT mi.isin) DESC, SUM(mi.issue_size) DESC
+          ORDER BY COUNT(mi.isin) DESC, SUM(mi.issue_size) DESC
         ) AS arr_rank
       FROM isin_re_issuance mi
       JOIN master_issuer_rating mir ON mir.issuer_id = mi.isin_id
@@ -10544,7 +10544,7 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
         ma.id AS agency_id,
         ma.short_name AS agency_name,
         RANK() OVER (
-          ORDER BY SUM(mi.issue_size) DESC, COUNT(DISTINCT mi.isin) DESC
+          ORDER BY SUM(mi.issue_size) DESC, COUNT(mi.isin) DESC
         ) AS arr_rank
       FROM isin_re_issuance mi
       JOIN master_issuer_rating mir ON mir.issuer_id = mi.isin_id
