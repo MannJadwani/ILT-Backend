@@ -10883,38 +10883,30 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
     };
 
     // ── Multi-select filters (arrays) ──
-    const rating = toArray(req.body.rating);
-    const seniority = toArray(req.body.seniority);
-    const securedFlag = toArray(req.body.securedFlag);
-    const sector = toArray(req.body.sector);
-    const trustee = toArray(req.body.trustee);
-    const nature = toArray(req.body.nature);
-    const ownershipType = toArray(req.body.ownershipType);
+    const rating             = toArray(req.body.rating);
+    const seniority          = toArray(req.body.seniority);
+    const securedFlag        = toArray(req.body.securedFlag);
+    const sector             = toArray(req.body.sector);
+    const nature             = toArray(req.body.nature);
+    const ownershipType      = toArray(req.body.ownershipType);
     const creditRatingAgency = toArray(req.body.creditRatingAgency);
-    const listingStatus = toArray(req.body.listingStatus);
-    const securityType = toArray(req.body.securityType);
-    const modeOfIssue = toArray(req.body.modeOfIssue);
+    const listingStatus      = toArray(req.body.listingStatus);
+    const securityType       = toArray(req.body.securityType);
+    const modeOfIssue        = toArray(req.body.modeOfIssue);
 
     // ── Single-select filters (strings) ──
     const issuerName = req.body.issuerName || "";
-    const isin = req.body.isin || "";
-    const arranger = req.body.arranger || "";
-    const registrar = req.body.registrar || "";
+    const isin       = req.body.isin || "";
+    const arranger   = req.body.arranger || "";
+    const registrar  = req.body.registrar || "";
 
-    // ── INPUT VALIDATION ──
-    const parsedLimit = parseInt(limit, 10);
-    const parsedOffset = parseInt(offset, 10);
-
-    if (isNaN(parsedLimit) || parsedLimit < 0) {
-      return res.status(400).json({ error: 'limit must be a non-negative integer' });
-    }
-    if (isNaN(parsedOffset) || parsedOffset < 0) {
-      return res.status(400).json({ error: 'offset must be a non-negative integer' });
+    // ─── Validate dates ───
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: 'startDate and endDate are required' });
     }
 
-    // Validate dates
     const currentStartDate = new Date(startDate);
-    const currentEndDate = new Date(endDate);
+    const currentEndDate   = new Date(endDate);
 
     if (isNaN(currentStartDate.getTime()) || isNaN(currentEndDate.getTime())) {
       return res.status(400).json({ error: 'Invalid date format' });
@@ -10938,352 +10930,351 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
       23, 59, 59
     )));
 
-    // ── Dynamic WHERE conditions ──
-    const conditions = [];
-    const params = [];
+    // Fix: Validate and sanitize limit/offset
+    const safeLimit  = Math.max(1, Math.min(1000, parseInt(limit, 10) || 25));
+    const safeOffset = Math.max(0, parseInt(offset, 10) || 0);
 
-    // Base conditions
-    conditions.push(`isin_re_issuance.allotment_date BETWEEN ? AND ? AND (isin_re_issuance.is_visible = 1)`);
+    // ─────────────────────
+    // Dynamic WHERE conditions
+    // ─────────────────────
+    const conditions = [];
+    const params     = [];
+
+    conditions.push(`mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)`);
     params.push(cyStart, cyEnd);
 
+    // Ensure the ISIN has at least one rating (agency page specific)
     conditions.push(`
       EXISTS (
         SELECT 1
         FROM master_issuer_rating mir
-        WHERE mir.issuer_id = isin_re_issuance.isin_id
+        WHERE mir.issuer_id = mi.isin_id
       )
     `);
 
-    // ── Filters (using EXISTS with IN for multi-select) ──
+    // Combined search for issuerName and isin
+    if (search && search.trim() !== '') {
+      conditions.push(`(
+        id.issuer_name LIKE ? 
+        OR mi.isin LIKE ?
+      )`);
+      const searchParam = `%${search}%`;
+      params.push(searchParam, searchParam);
+    }
 
     // Issuer Name (single-select, LIKE filter)
     if (issuerName) {
-      conditions.push(`issuer_details.issuer_name LIKE ?`);
+      conditions.push(`id.issuer_name LIKE ?`);
       params.push(`%${issuerName}%`);
-    }
-
-    // Rating (multi-select)
-    if (rating.length > 0) {
-      const placeholders = rating.map(() => '?').join(', ');
-      conditions.push(`EXISTS (SELECT 1 FROM master_issuer_rating mir WHERE mir.issuer_id = isin_re_issuance.isin_id AND mir.rating IN (${placeholders}))`);
-      params.push(...rating);
-    }
-
-    // Listing Status (multi-select)
-    if (listingStatus.length > 0) {
-      const placeholders = listingStatus.map(() => '?').join(', ');
-      conditions.push(`EXISTS (
-        SELECT 1
-        FROM master_issuer_stock_exchange mise
-        LEFT JOIN master_listing_status mls ON mls.code = mise.listing_status
-        WHERE mise.issuer_id = isin_re_issuance.isin_id AND mls.description IN (${placeholders})
-      )`);
-      params.push(...listingStatus);
-    }
-
-    // Seniority (multi-select)
-    if (seniority.length > 0) {
-      const placeholders = seniority.map(() => '?').join(', ');
-      conditions.push(`EXISTS (SELECT 1 FROM master_seniority_tier_classification mstc WHERE mstc.code = isin_re_issuance.seniority AND mstc.description IN (${placeholders}))`);
-      params.push(...seniority);
-    }
-
-    // Secured Flag (multi-select)
-    if (securedFlag.length > 0) {
-      const placeholders = securedFlag.map(() => '?').join(', ');
-      conditions.push(`EXISTS (SELECT 1 FROM master_secured_flag msf WHERE msf.code = isin_re_issuance.secured_flag AND msf.description IN (${placeholders}))`);
-      params.push(...securedFlag);
-    }
-
-    // Sector (multi-select)
-    if (sector.length > 0) {
-      const placeholders = sector.map(() => '?').join(', ');
-      conditions.push(`EXISTS (SELECT 1 FROM master_business_sector mbs WHERE mbs.code = isin_re_issuance.business_sector AND mbs.description IN (${placeholders}))`);
-      params.push(...sector);
-    }
-
-    // Trustee (multi-select)
-    if (trustee.length > 0) {
-      const placeholders = trustee.map(() => '?').join(', ');
-      conditions.push(`EXISTS (SELECT 1 FROM issuer_trustee it JOIN master_trustee mt ON mt.id = it.trustee_id WHERE it.issuer_id = isin_re_issuance.isin_id AND mt.short_name IN (${placeholders}))`);
-      params.push(...trustee);
-    }
-
-    // ─── FIX: nature_type lives on master_issuer, not isin_re_issuance ───
-    if (nature.length > 0) {
-      const placeholders = nature.map(() => '?').join(', ');
-      conditions.push(`EXISTS (
-        SELECT 1 FROM master_issuer mi2
-        JOIN master_issuer_type_nature mitn ON mitn.code = mi2.nature_type
-        WHERE mi2.id = isin_re_issuance.isin_id AND mitn.description IN (${placeholders})
-      )`);
-      params.push(...nature);
-    }
-
-    // ─── FIX: issuer_ownership_type lives on master_issuer, not isin_re_issuance ───
-    if (ownershipType.length > 0) {
-      const placeholders = ownershipType.map(() => '?').join(', ');
-      conditions.push(`EXISTS (
-        SELECT 1 FROM master_issuer mi2
-        JOIN master_issuer_ownership_type miot ON miot.code = mi2.issuer_ownership_type
-        WHERE mi2.id = isin_re_issuance.isin_id AND miot.description IN (${placeholders})
-      )`);
-      params.push(...ownershipType);
-    }
-
-    // Credit Rating Agency (multi-select)
-    if (creditRatingAgency.length > 0) {
-      const placeholders = creditRatingAgency.map(() => '?').join(', ');
-      conditions.push(`EXISTS (SELECT 1 FROM master_issuer_rating mir2 JOIN master_agency ma2 ON ma2.id = mir2.agency_id WHERE mir2.issuer_id = isin_re_issuance.isin_id AND ma2.short_name IN (${placeholders}))`);
-      params.push(...creditRatingAgency);
-    }
-
-    // Security Type (multi-select)
-    if (securityType.length > 0) {
-      const placeholders = securityType.map(() => '?').join(', ');
-      conditions.push(`EXISTS (SELECT 1 FROM master_security_type mst WHERE mst.code = isin_re_issuance.security_class AND mst.description IN (${placeholders}))`);
-      params.push(...securityType);
-    }
-
-    // Mode Of Issue (multi-select)
-    if (modeOfIssue.length > 0) {
-      const placeholders = modeOfIssue.map(() => '?').join(', ');
-      conditions.push(`EXISTS (SELECT 1 FROM master_mode_issue mmi WHERE mmi.code = isin_re_issuance.mode_issue AND mmi.description IN (${placeholders}))`);
-      params.push(...modeOfIssue);
     }
 
     // ISIN (single-select, LIKE filter)
     if (isin) {
-      conditions.push(`isin_re_issuance.isin LIKE ?`);
+      conditions.push(`mi.isin LIKE ?`);
       params.push(`%${isin}%`);
     }
 
-    // Search (single-select, LIKE filter on issuer_name or isin)
-    if (search) {
-      conditions.push(`(issuer_details.issuer_name LIKE ? OR isin_re_issuance.isin LIKE ?)`);
-      params.push(`%${search}%`, `%${search}%`);
+    // Rating (multi-select, 1:N)
+    if (rating.length > 0) {
+      const placeholders = rating.map(() => '?').join(', ');
+      conditions.push(`EXISTS (
+        SELECT 1 FROM master_issuer_rating mir 
+        WHERE mir.issuer_id = mi.isin_id AND mir.rating IN (${placeholders})
+      )`);
+      params.push(...rating);
     }
 
-    // Arranger (single-select, LIKE filter)
+    // Listing Status (multi-select, 1:N)
+    if (listingStatus.length > 0) {
+      const placeholders = listingStatus.map(() => '?').join(', ');
+      conditions.push(`EXISTS (
+        SELECT 1 FROM master_issuer_stock_exchange mise 
+        LEFT JOIN master_listing_status mls ON mls.code = mise.listing_status 
+        WHERE mise.issuer_id = mi.isin_id AND mls.description IN (${placeholders})
+      )`);
+      params.push(...listingStatus);
+    }
+
+    // Seniority (multi-select, 1:1 via join)
+    if (seniority.length > 0) {
+      const placeholders = seniority.map(() => '?').join(', ');
+      conditions.push(`mstc.description IN (${placeholders})`);
+      params.push(...seniority);
+    }
+
+    // Secured Flag (multi-select, 1:1 via join)
+    if (securedFlag.length > 0) {
+      const placeholders = securedFlag.map(() => '?').join(', ');
+      conditions.push(`msf.description IN (${placeholders})`);
+      params.push(...securedFlag);
+    }
+
+    // Sector (multi-select, 1:1 via join)
+    if (sector.length > 0) {
+      const placeholders = sector.map(() => '?').join(', ');
+      conditions.push(`mbs.description IN (${placeholders})`);
+      params.push(...sector);
+    }
+
+    // Nature (multi-select, 1:1 via join)
+    if (nature.length > 0) {
+      const placeholders = nature.map(() => '?').join(', ');
+      conditions.push(`mint.description IN (${placeholders})`);
+      params.push(...nature);
+    }
+
+    // Ownership Type (multi-select, 1:1 via join)
+    if (ownershipType.length > 0) {
+      const placeholders = ownershipType.map(() => '?').join(', ');
+      conditions.push(`miot.description IN (${placeholders})`);
+      params.push(...ownershipType);
+    }
+
+    // Credit Rating Agency (multi-select, 1:N)
+    if (creditRatingAgency.length > 0) {
+      const placeholders = creditRatingAgency.map(() => '?').join(', ');
+      conditions.push(`EXISTS (
+        SELECT 1 FROM master_issuer_rating mir2 
+        JOIN master_agency ma2 ON ma2.id = mir2.agency_id 
+        WHERE mir2.issuer_id = mi.isin_id AND ma2.short_name IN (${placeholders})
+      )`);
+      params.push(...creditRatingAgency);
+    }
+
+    // Security Type (multi-select, 1:1 via join)
+    if (securityType.length > 0) {
+      const placeholders = securityType.map(() => '?').join(', ');
+      conditions.push(`mst.description IN (${placeholders})`);
+      params.push(...securityType);
+    }
+
+    // Mode Of Issue (multi-select, 1:1 via join)
+    if (modeOfIssue.length > 0) {
+      const placeholders = modeOfIssue.map(() => '?').join(', ');
+      conditions.push(`mmi.description IN (${placeholders})`);
+      params.push(...modeOfIssue);
+    }
+
+    // Arranger (single-select, LIKE, 1:N)
     if (arranger) {
-      conditions.push(`EXISTS (SELECT 1 FROM issuer_arranger ia JOIN master_arranger ma ON ma.id = ia.arranger_id WHERE ia.issuer_id = isin_re_issuance.isin_id AND ma.short_name LIKE ?)`);
+      conditions.push(`EXISTS (
+        SELECT 1 FROM issuer_arranger ia 
+        JOIN master_arranger ma ON ma.id = ia.arranger_id 
+        WHERE ia.issuer_id = mi.isin_id AND ma.short_name LIKE ?
+      )`);
       params.push(`%${arranger}%`);
     }
 
-    // Registrar (single-select, LIKE filter)
+    // Registrar (single-select, LIKE, 1:N)
     if (registrar) {
-      conditions.push(`EXISTS (SELECT 1 FROM issuer_registrar ir JOIN master_registrar mr ON mr.id = ir.registrar_id WHERE ir.issuer_id = isin_re_issuance.isin_id AND mr.registrar_name LIKE ?)`);
+      conditions.push(`EXISTS (
+        SELECT 1 FROM issuer_registrar ir 
+        JOIN master_registrar mr ON mr.id = ir.registrar_id 
+        WHERE ir.issuer_id = mi.isin_id AND mr.registrar_name LIKE ?
+      )`);
       params.push(`%${registrar}%`);
     }
 
-    // ── WHERE clause ──
-    const whereClause =
-      conditions.length > 0
-        ? `WHERE ${conditions.join(' AND ')}`
-        : '';
+    const whereClause = conditions.length > 0
+      ? `WHERE ${conditions.join(' AND ')}`
+      : '';
 
-    // ── Main data query (no Cartesian product) ──
+    // ─────────────────────
+    // Main data query — no 1:N joins, only 1:1 lookups + scalar subqueries
+    // ─────────────────────
     const dataQuery = `
       SELECT
-        isin_re_issuance.isin_id,
-        isin_re_issuance.isin,
-        isin_re_issuance.security_name,
-        isin_re_issuance.issue_size,
-        isin_re_issuance.face_value,
-        isin_re_issuance.allotment_date,
-        isin_re_issuance.maturity_date,
+        mi.isin_id,
+        mi.isin,
+        mi.security_name,
+        mi.issue_size,
+        mi.face_value,
+        mi.allotment_date,
+        mi.maturity_date,
 
-        issuer_details.issuer_name AS issuer_name,
+        id.issuer_name AS issuer_name,
+        miot.description AS ownership_type,
+        mint.description AS nature,
+        mbs.description AS sector,
+        mst.description AS security_type,
+        mmi.description AS mode_of_issue,
+        mstc.description AS Seniority,
+        mtf.description AS tax_free,
+        msf.description AS secured_flag,
 
-        master_issuer_ownership_type.description AS ownership_type,
-
-        master_issuer_type_nature.description AS nature,
-
-        master_business_sector.description AS sector,
-
-        master_security_type.description AS security_type,
-
-        master_mode_issue.description AS mode_of_issue,
-
-        master_seniority_tier_classification.description AS Seniority,
-
-        master_tax_free.description AS tax_free,
-
-        master_secured_flag.description AS secured_flag,
-
+        -- 1:N relationships via scalar subqueries (prevents row multiplication)
         (
           SELECT GROUP_CONCAT(DISTINCT mt.short_name SEPARATOR ', ')
           FROM issuer_trustee it
           JOIN master_trustee mt ON mt.id = it.trustee_id
-          WHERE it.issuer_id = isin_re_issuance.isin_id
+          WHERE it.issuer_id = mi.isin_id
         ) AS debenture_trustee,
 
         (
           SELECT GROUP_CONCAT(DISTINCT ma.short_name SEPARATOR ', ')
           FROM issuer_arranger ia
           JOIN master_arranger ma ON ma.id = ia.arranger_id
-          WHERE ia.issuer_id = isin_re_issuance.isin_id
+          WHERE ia.issuer_id = mi.isin_id
         ) AS Arranger,
 
         (
           SELECT GROUP_CONCAT(DISTINCT mr.registrar_name SEPARATOR ', ')
           FROM issuer_registrar ir
           JOIN master_registrar mr ON mr.id = ir.registrar_id
-          WHERE ir.issuer_id = isin_re_issuance.isin_id
+          WHERE ir.issuer_id = mi.isin_id
         ) AS Registrar,
 
         (
           SELECT GROUP_CONCAT(DISTINCT CONCAT(mag.short_name, ': ', mir.rating) SEPARATOR '; ')
           FROM master_issuer_rating mir
           JOIN master_agency mag ON mag.id = mir.agency_id
-          WHERE mir.issuer_id = isin_re_issuance.isin_id
+          WHERE mir.issuer_id = mi.isin_id
         ) AS credit_rating_info,
 
         (
           SELECT GROUP_CONCAT(DISTINCT mir.rating SEPARATOR ', ')
           FROM master_issuer_rating mir
-          WHERE mir.issuer_id = isin_re_issuance.isin_id
+          WHERE mir.issuer_id = mi.isin_id
         ) AS credit_rating,
 
         (
           SELECT GROUP_CONCAT(DISTINCT mag.short_name SEPARATOR ', ')
           FROM master_issuer_rating mir
           JOIN master_agency mag ON mag.id = mir.agency_id
-          WHERE mir.issuer_id = isin_re_issuance.isin_id
+          WHERE mir.issuer_id = mi.isin_id
         ) AS credit_rating_agency,
 
         (
           SELECT mls.description
-          FROM master_issuer_stock_exchange AS mise
-          LEFT JOIN master_listing_status AS mls
-            ON mls.code = mise.listing_status
-          WHERE mise.issuer_id = isin_re_issuance.isin_id
+          FROM master_issuer_stock_exchange mise
+          LEFT JOIN master_listing_status mls ON mls.code = mise.listing_status
+          WHERE mise.issuer_id = mi.isin_id
             AND mise.listing_status IS NOT NULL
-          ORDER BY mise.listing_status
+          ORDER BY mise.id
           LIMIT 1
         ) AS listing_status,
 
         (
           SELECT mise.listing_status
-          FROM master_issuer_stock_exchange AS mise
-          WHERE mise.issuer_id = isin_re_issuance.isin_id
+          FROM master_issuer_stock_exchange mise
+          WHERE mise.issuer_id = mi.isin_id
             AND mise.listing_status IS NOT NULL
-          ORDER BY mise.listing_status
+          ORDER BY mise.id
           LIMIT 1
         ) AS listing_status_code,
 
         (
           SELECT icd.coupon_rate
           FROM issuer_coupon_details icd
-          WHERE icd.issuer_id = isin_re_issuance.isin_id
+          WHERE icd.issuer_id = mi.isin_id
           ORDER BY icd.id
           LIMIT 1
         ) AS coupon_rate
 
-      FROM isin_re_issuance
+      FROM isin_re_issuance mi
 
-      LEFT JOIN issuer_details
-        ON issuer_details.id = isin_re_issuance.issuer_master_id
+      LEFT JOIN issuer_details id
+        ON id.id = mi.issuer_master_id
 
-      LEFT JOIN master_issuer 
-        ON master_issuer.id = isin_re_issuance.isin_id
+      LEFT JOIN master_issuer m
+        ON m.id = mi.isin_id
 
-      LEFT JOIN master_issuer_ownership_type
-        ON master_issuer_ownership_type.code = master_issuer.issuer_ownership_type
+      LEFT JOIN master_issuer_ownership_type miot
+        ON miot.code = m.issuer_ownership_type
 
+      LEFT JOIN master_issuer_type_nature mint
+        ON mint.code = m.nature_type
 
-      LEFT JOIN master_issuer_type_nature
-        ON master_issuer_type_nature.code = master_issuer.nature_type
+      LEFT JOIN master_business_sector mbs
+        ON mbs.code = mi.business_sector
 
-      LEFT JOIN master_business_sector
-        ON master_business_sector.code = isin_re_issuance.business_sector
+      LEFT JOIN master_mode_issue mmi
+        ON mmi.code = mi.mode_issue
 
-      LEFT JOIN master_mode_issue
-        ON master_mode_issue.code = isin_re_issuance.mode_issue
+      LEFT JOIN master_security_type mst
+        ON mst.code = mi.security_class
 
-      LEFT JOIN master_security_type
-        ON master_security_type.code = isin_re_issuance.security_class
+      LEFT JOIN master_seniority_tier_classification mstc
+        ON mstc.code = mi.seniority
 
-      LEFT JOIN master_seniority_tier_classification
-        ON master_seniority_tier_classification.code = isin_re_issuance.seniority
+      LEFT JOIN master_tax_free mtf
+        ON mtf.code = mi.tax_free
 
-      LEFT JOIN master_tax_free
-        ON master_tax_free.code = isin_re_issuance.tax_free
-
-      LEFT JOIN master_secured_flag
-        ON master_secured_flag.code = isin_re_issuance.secured_flag
+      LEFT JOIN master_secured_flag msf
+        ON msf.code = mi.secured_flag
 
       ${whereClause}
 
-      ORDER BY isin_re_issuance.allotment_date ASC
+      ORDER BY mi.allotment_date ASC
 
       LIMIT ? OFFSET ?
     `;
 
-    // ── Count query ──
+    // ─────────────────────
+    // Count query — same joins and filters, no row multiplication
+    // ─────────────────────
     const countQuery = `
-      SELECT COUNT(*) AS total
-      FROM isin_re_issuance
+      SELECT COUNT(mi.isin_id) AS total
+      FROM isin_re_issuance mi
 
-      LEFT JOIN issuer_details
-        ON issuer_details.id = isin_re_issuance.issuer_master_id
+      LEFT JOIN issuer_details id
+        ON id.id = mi.issuer_master_id
 
-      LEFT JOIN master_issuer 
-        ON master_issuer.id = isin_re_issuance.isin_id
+      LEFT JOIN master_issuer m
+        ON m.id = mi.isin_id
 
-      LEFT JOIN master_issuer_ownership_type
-        ON master_issuer_ownership_type.code = master_issuer.issuer_ownership_type
+      LEFT JOIN master_issuer_ownership_type miot
+        ON miot.code = m.issuer_ownership_type
 
+      LEFT JOIN master_issuer_type_nature mint
+        ON mint.code = m.nature_type
 
-      LEFT JOIN master_issuer_type_nature
-        ON master_issuer_type_nature.code = master_issuer.nature_type
+      LEFT JOIN master_business_sector mbs
+        ON mbs.code = mi.business_sector
 
-      LEFT JOIN master_business_sector
-        ON master_business_sector.code = isin_re_issuance.business_sector
+      LEFT JOIN master_mode_issue mmi
+        ON mmi.code = mi.mode_issue
 
-      LEFT JOIN master_mode_issue
-        ON master_mode_issue.code = isin_re_issuance.mode_issue
+      LEFT JOIN master_security_type mst
+        ON mst.code = mi.security_class
 
-      LEFT JOIN master_security_type
-        ON master_security_type.code = isin_re_issuance.security_class
+      LEFT JOIN master_seniority_tier_classification mstc
+        ON mstc.code = mi.seniority
 
-      LEFT JOIN master_seniority_tier_classification
-        ON master_seniority_tier_classification.code = isin_re_issuance.seniority
+      LEFT JOIN master_tax_free mtf
+        ON mtf.code = mi.tax_free
 
-      LEFT JOIN master_tax_free
-        ON master_tax_free.code = isin_re_issuance.tax_free
-
-      LEFT JOIN master_secured_flag
-        ON master_secured_flag.code = isin_re_issuance.secured_flag
+      LEFT JOIN master_secured_flag msf
+        ON msf.code = mi.secured_flag
 
       ${whereClause}
     `;
 
-    // ── Execute queries ──
+    // ─────────────────────
+    // Execute queries
+    // ─────────────────────
     const [result, countResult] = await Promise.all([
-      prisma.$queryRawUnsafe(dataQuery, ...params, parsedLimit, parsedOffset),
+      prisma.$queryRawUnsafe(dataQuery, ...params, safeLimit, safeOffset),
       prisma.$queryRawUnsafe(countQuery, ...params)
     ]);
 
     const total = Number(countResult?.[0]?.total) || 0;
 
-    // ── Final formatting ──
+    // ─────────────────────
+    // Final formatting
+    // ─────────────────────
     const finalResult = result?.map((item) => {
-
       const allotment = item?.allotment_date
-        ? new Date(item?.allotment_date)
-          .toISOString()
-          .split('T')[0]
+        ? new Date(item?.allotment_date).toISOString().split('T')[0]
         : null;
 
       const maturity = item?.maturity_date
-        ? new Date(item?.maturity_date)
-          .toISOString()
-          .split('T')[0]
+        ? new Date(item?.maturity_date).toISOString().split('T')[0]
         : null;
 
       return {
-        id: item?.id || '-',
+        // FIX: Query selects isin_id, not id
+        id: item?.isin_id || '-',
         issuerName: item?.issuer_name || '-',
         isin: item?.isin || '-',
         securityName: item?.security_name || '-',
@@ -11291,17 +11282,12 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
         modeOfIssue: item?.mode_of_issue || '-',
         issueSize: item?.issue_size ?? null,
         faceValue: item?.face_value ?? null,
-        allotmentDate:
-          item?.allotment_date ? allotment : '-',
-        maturityDate:
-          item?.maturity_date ? maturity : '-',
+        allotmentDate: item?.allotment_date ? allotment : '-',
+        maturityDate: item?.maturity_date ? maturity : '-',
         couponRate: item?.coupon_rate ?? '-',
-        creditRatingAgency:
-          item?.credit_rating_agency || '-',
-        creditRating:
-          item?.credit_rating || '-',
-        debentureTrustee:
-          item?.debenture_trustee || '-',
+        creditRatingAgency: item?.credit_rating_agency || '-',
+        creditRating: item?.credit_rating || '-',
+        debentureTrustee: item?.debenture_trustee || '-',
         registrar: item?.Registrar || '-',
         arranger: item?.Arranger || '-',
         seniority: item?.Seniority || '-',
@@ -11309,30 +11295,27 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
         securedFlag: item?.secured_flag || '-',
         listingStatus: item?.listing_status || '-',
         nature: item?.nature || '-',
-        ownershipType:
-          item?.ownership_type || '-',
+        ownershipType: item?.ownership_type || '-',
         sector: item?.sector || '-',
       };
     });
 
-    // ── Response ──
+    // ─────────────────────
+    // Response
+    // ─────────────────────
     res.status(200).json({
       success: true,
       data: finalResult,
-
       pagination: {
         total: total,
-        limit: parsedLimit,
-        offset: parsedOffset,
-
-        hasMore:
-          (parsedOffset + parsedLimit) < total
+        limit: safeLimit,
+        offset: safeOffset,
+        hasMore: (safeOffset + safeLimit) < total
       }
     });
 
   } catch (error) {
     console.error('Error in agencyPage_detailed_data:', error);
-
     res.status(500).json({
       error: 'Failed to fetch detailed agencyPage data',
       message: error.message
