@@ -12485,7 +12485,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
     );
 
     const totalIssuesCountCurrYearPromise = prisma.$queryRawUnsafe(`
-      SELECT COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS aggregate
+      SELECT COUNT(DISTINCT ir.registrar_id, mi.allotment_date, mi.issuer_master_id) AS aggregate
       FROM isin_re_issuance mi
       JOIN issuer_registrar ir
         ON ir.issuer_id = mi.isin_id
@@ -12502,7 +12502,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
     );
 
     const totalIssuesCountPrevYearPromise = prisma.$queryRawUnsafe(`
-      SELECT COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS aggregate
+      SELECT COUNT(DISTINCT ir.registrar_id, mi.allotment_date, mi.issuer_master_id) AS aggregate
       FROM isin_re_issuance mi
       JOIN issuer_registrar ir
         ON ir.issuer_id = mi.isin_id
@@ -12580,10 +12580,10 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
         SELECT
           mr.id,
           mr.short_name AS registrar_name,
-          COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS no_issues,
+          COUNT(DISTINCT ir.registrar_id, mi.allotment_date, mi.issuer_master_id) AS no_issues,
           ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
           RANK() OVER (
-            ORDER BY SUM(mi.issue_size)DESC, COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC
+            ORDER BY SUM(mi.issue_size)DESC, COUNT(DISTINCT ir.registrar_id, mi.allotment_date, mi.issuer_master_id) DESC
           ) AS arr_rank
         FROM isin_re_issuance mi
         JOIN issuer_registrar ir ON ir.issuer_id = mi.isin_id
@@ -12598,10 +12598,10 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
       LEFT JOIN (
         SELECT
           mr.id,
-          COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS no_issues,
+          COUNT(DISTINCT ir.registrar_id, mi.allotment_date, mi.issuer_master_id) AS no_issues,
           ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
           RANK() OVER (
-            ORDER BY SUM(mi.issue_size)DESC, COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC
+            ORDER BY SUM(mi.issue_size)DESC, COUNT(DISTINCT ir.registrar_id, mi.allotment_date, mi.issuer_master_id) DESC
           ) AS arr_rank
         FROM isin_re_issuance mi
         JOIN issuer_registrar ir ON ir.issuer_id = mi.isin_id
@@ -12637,10 +12637,10 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
         SELECT
           mr.id,
           mr.short_name AS registrar_name,
-          COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS no_issues,
+          COUNT(DISTINCT ir.registrar_id, mi.allotment_date, mi.issuer_master_id) AS no_issues,
           ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
           RANK() OVER (
-            ORDER BY SUM(mi.issue_size)DESC, COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC
+            ORDER BY SUM(mi.issue_size)DESC, COUNT(DISTINCT ir.registrar_id, mi.allotment_date, mi.issuer_master_id) DESC
           ) AS arr_rank
         FROM isin_re_issuance mi
         JOIN issuer_registrar ir ON ir.issuer_id = mi.isin_id
@@ -12655,10 +12655,10 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
       LEFT JOIN (
         SELECT
           mr.id,
-          COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS no_issues,
+          COUNT(DISTINCT ir.registrar_id, mi.allotment_date, mi.issuer_master_id) AS no_issues,
           ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
           RANK() OVER (
-            ORDER BY SUM(mi.issue_size)DESC, COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC
+            ORDER BY SUM(mi.issue_size)DESC, COUNT(DISTINCT ir.registrar_id, mi.allotment_date, mi.issuer_master_id) DESC
           ) AS arr_rank
         FROM isin_re_issuance mi
         JOIN issuer_registrar ir ON ir.issuer_id = mi.isin_id
@@ -12685,7 +12685,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
     const countParams = registrar.length > 0 ? [...commonParams, ...registrar] : [...commonParams];
 
     const totalCountResult = await prisma.$queryRawUnsafe(`
-      SELECT COUNT(DISTINCT ir.registrar_id) AS total
+      SELECT COUNT(DISTINCT ir.registrar_id, mi.allotment_date, mi.issuer_master_id) AS total
       FROM isin_re_issuance mi
       JOIN issuer_registrar ir ON ir.issuer_id = mi.isin_id
       ${countJoins}
@@ -12698,7 +12698,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
     /* ── SECTOR BREAKUP QUERY ── */
     const sectorValueSelect =
       normalizedIssueType === 'count'
-        ? 'COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date)'
+        ? 'COUNT(DISTINCT ir.registrar_id, mi.allotment_date, mi.issuer_master_id)'
         : 'ROUND(SUM(mi.issue_size) / 10000000, 2)';
 
     const rankJoins = commonJoinsSql;
@@ -12712,7 +12712,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
         mr.id AS registrar_id,
         mr.short_name AS registrar_name,
         RANK() OVER (
-          ORDER BY SUM(mi.issue_size)DESC, COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC
+          ORDER BY SUM(mi.issue_size)DESC, COUNT(DISTINCT ir.registrar_id, mi.allotment_date, mi.issuer_master_id) DESC
         ) AS arr_rank
       FROM isin_re_issuance mi
       JOIN issuer_registrar ir ON ir.issuer_id = mi.isin_id
@@ -12729,7 +12729,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
         mr.id AS registrar_id,
         mr.short_name AS registrar_name,
         RANK() OVER (
-          ORDER BY SUM(mi.issue_size)DESC, COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC
+          ORDER BY SUM(mi.issue_size)DESC, COUNT(DISTINCT ir.registrar_id, mi.allotment_date, mi.issuer_master_id) DESC
         ) AS arr_rank
       FROM isin_re_issuance mi
       JOIN issuer_registrar ir ON ir.issuer_id = mi.isin_id
