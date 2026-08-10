@@ -14319,21 +14319,6 @@ app.post('/registrar_top_participants_details', async (req, res) => {
       });
     }
 
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid date format',
-      });
-    }
-    if (start > end) {
-      return res.status(400).json({
-        success: false,
-        message: 'startDate must be before or equal to endDate',
-      });
-    }
-
     const parsedRegistrarId = parseInt(registrarId, 10);
     if (isNaN(parsedRegistrarId) || parsedRegistrarId <= 0) {
       return res.status(400).json({
@@ -14344,19 +14329,50 @@ app.post('/registrar_top_participants_details', async (req, res) => {
 
     const parsedLimit = parseInt(limit, 10);
     const parsedOffset = parseInt(offset, 10);
+
     if (isNaN(parsedLimit) || parsedLimit < 0) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid limit value',
+        message: 'limit must be a non-negative integer',
       });
     }
     if (isNaN(parsedOffset) || parsedOffset < 0) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid offset value',
+        message: 'offset must be a non-negative integer',
       });
     }
 
+    // Validate and format dates
+    const formatDateTime = (dateStr, isEnd = false) => {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return null;
+      if (isEnd) {
+        date.setHours(23, 59, 59, 0);
+      } else {
+        date.setHours(0, 0, 0, 0);
+      }
+      return date.toISOString().slice(0, 19).replace('T', ' ');
+    };
+
+    const sqlStartDate = formatDateTime(startDate, false);
+    const sqlEndDate = formatDateTime(endDate, true);
+
+    if (!sqlStartDate || !sqlEndDate) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid date format',
+      });
+    }
+
+    if (new Date(startDate) > new Date(endDate)) {
+      return res.status(400).json({
+        success: false,
+        message: 'startDate must be before or equal to endDate',
+      });
+    }
+
+    // ── SORT CONFIGURATION ──
     const validSortFields = [
       'issuer_name',
       'allotment_date',
@@ -14379,252 +14395,158 @@ app.post('/registrar_top_participants_details', async (req, res) => {
         ? 'DESC'
         : 'ASC';
 
-    // ── SEARCH SETUP ──
-    const searchTerm = SearchQuery?.trim();
-    const hasSearch = !!searchTerm;
+    // ── SEARCH CONFIGURATION ──
+    const searchTerm = SearchQuery?.trim() || '';
+    const searchPattern = searchTerm ? `%${searchTerm}%` : null;
 
-    const searchFields = [
-      'issuer_name',
-      'isin',
-      'CAST(coupon_rate AS CHAR)',
-      'debenture_trustee_name',
-      'registrar_detail',
-      'rating',
-      'arranger_name',
-      'security_name',
-      'security_type',
-      'mode_issue',
-      'CAST(issue_size AS CHAR)',
-      'CAST(face_value AS CHAR)',
-      'agency_name',
-      'seniority',
-      'tax_free',
-      'secured_flag',
-      'listing_status',
-    ];
-
-    const searchConditions = hasSearch
-      ? searchFields.map(() => '?').join(' LIKE ? OR ')
-      : '';
-    const searchSql = hasSearch
-      ? `AND (${searchConditions} LIKE ?)`
-      : '';
-    const searchParams = hasSearch
-      ? Array(searchFields.length).fill(`%${searchTerm}%`)
-      : [];
-
-    // ── BASE PARAMETERS ──
-    const startDateTime = `${startDate}`;
-    const endDateTime = `${endDate}`;
-    const baseParams = [parsedRegistrarId, startDateTime, endDateTime];
+    // ── BASE QUERY (shared between data and count) ──
+    const baseQuery = `
+      SELECT
+        i.isin_id AS issuerId,
+        i.isin,
+        id.issuer_name,
+        i.allotment_date,
+        i.maturity_date,
+        i.security_name,
+        i.issue_size,
+        i.face_value,
+        i.issuer_master_id,
+        (
+          SELECT GROUP_CONCAT(DISTINCT icd.coupon_rate SEPARATOR ', ')
+          FROM issuer_coupon_details icd
+          WHERE icd.issuer_id = i.isin_id
+        ) AS coupon_rate,
+        mr.short_name AS registrar_detail,
+        (
+          SELECT GROUP_CONCAT(DISTINCT mt.short_name SEPARATOR ', ')
+          FROM issuer_trustee it
+          JOIN master_trustee mt ON mt.id = it.trustee_id
+          WHERE it.issuer_id = i.isin_id
+        ) AS debenture_trustee_name,
+        (
+          SELECT GROUP_CONCAT(DISTINCT mir.rating SEPARATOR ', ')
+          FROM master_issuer_rating mir
+          WHERE mir.issuer_id = i.isin_id
+        ) AS rating,
+        (
+          SELECT GROUP_CONCAT(DISTINCT ma.short_name SEPARATOR ', ')
+          FROM issuer_arranger ia
+          JOIN master_arranger ma ON ma.id = ia.arranger_id
+          WHERE ia.issuer_id = i.isin_id
+        ) AS arranger_name,
+        s.description AS security_type,
+        mi.description AS mode_issue,
+        (
+          SELECT GROUP_CONCAT(DISTINCT mag.short_name SEPARATOR ', ')
+          FROM master_issuer_rating mir
+          JOIN master_agency mag ON mag.id = mir.agency_id
+          WHERE mir.issuer_id = i.isin_id
+        ) AS agency_name,
+        mstc.description AS seniority,
+        tf.description AS tax_free,
+        msf.description AS secured_flag,
+        (
+          SELECT mls.description
+          FROM master_issuer_stock_exchange mise
+          LEFT JOIN master_listing_status mls ON mls.code = mise.listing_status
+          WHERE mise.issuer_id = i.isin_id
+          ORDER BY mise.listing_status
+          LIMIT 1
+        ) AS listing_status
+      FROM isin_re_issuance i
+      INNER JOIN issuer_registrar ir1 ON i.isin_id = ir1.issuer_id
+      INNER JOIN master_registrar mr ON ir1.registrar_id = mr.id
+      LEFT JOIN issuer_details id ON i.issuer_master_id = id.id
+      LEFT JOIN master_security_type s ON i.security_class = s.code
+      LEFT JOIN master_mode_issue mi ON i.mode_issue = mi.code
+      LEFT JOIN master_seniority_tier_classification mstc ON mstc.code = i.seniority
+      LEFT JOIN master_tax_free tf ON tf.code = i.tax_free
+      LEFT JOIN master_secured_flag msf ON msf.code = i.secured_flag
+      WHERE ir1.registrar_id = ? AND i.allotment_date BETWEEN ? AND ? AND (i.is_visible = 1)
+    `;
 
     // ── DATA QUERY ──
-    const dataQuery = `
-      SELECT *
-      FROM (
-          SELECT
-              i.isin_id AS issuerId,
-              i.isin,
-              MIN(id.issuer_name) AS issuer_name,
-              MIN(i.allotment_date) AS allotment_date,
-              MIN(icd.coupon_rate) AS coupon_rate,
-              MIN(mt.short_name) AS debenture_trustee_name,
-              MIN(mr.short_name) AS registrar_detail,
-              MIN(i.maturity_date) AS maturity_date,
-              GROUP_CONCAT(DISTINCT mir.rating) AS rating,
-              MIN(ma.short_name) AS arranger_name,
-              MIN(i.security_name) AS security_name,
-              MIN(s.description) AS security_type,
-              MIN(mi.description) AS mode_issue,
-              MIN(i.issue_size) AS issue_size,
-              MIN(i.face_value) AS face_value,
-              GROUP_CONCAT(DISTINCT mag.short_name) AS agency_name,
-              MIN(mstc.description) AS seniority,
-              MIN(tf.description) AS tax_free,
-              MIN(msf.description) AS secured_flag,
-              MIN((
-                  SELECT mls.description
-                  FROM master_issuer_stock_exchange mise
-                  LEFT JOIN master_listing_status mls
-                      ON mls.code = mise.listing_status
-                  WHERE mise.issuer_id = i.isin_id
-                  ORDER BY mise.listing_status
-                  LIMIT 1
-              )) AS listing_status,
-              MIN(i.issuer_master_id) AS issuer_master_id
+    let dataQuery = `SELECT * FROM (${baseQuery}) x WHERE 1=1`;
+    const dataParams = [parsedRegistrarId, sqlStartDate, sqlEndDate];
 
-          FROM isin_re_issuance i
+    if (searchPattern) {
+      dataQuery += `
+        AND (
+          issuer_name LIKE ?
+          OR isin LIKE ?
+          OR coupon_rate LIKE ?
+          OR debenture_trustee_name LIKE ?
+          OR registrar_detail LIKE ?
+          OR rating LIKE ?
+          OR arranger_name LIKE ?
+          OR security_name LIKE ?
+          OR security_type LIKE ?
+          OR mode_issue LIKE ?
+          OR CAST(issue_size AS CHAR) LIKE ?
+          OR CAST(face_value AS CHAR) LIKE ?
+          OR agency_name LIKE ?
+          OR seniority LIKE ?
+          OR tax_free LIKE ?
+          OR secured_flag LIKE ?
+          OR listing_status LIKE ?
+        )
+      `;
+      dataParams.push(
+        searchPattern, searchPattern, searchPattern, searchPattern,
+        searchPattern, searchPattern, searchPattern, searchPattern,
+        searchPattern, searchPattern, searchPattern, searchPattern,
+        searchPattern, searchPattern, searchPattern, searchPattern,
+        searchPattern
+      );
+    }
 
-          LEFT JOIN issuer_details id
-              ON i.issuer_master_id = id.id
-
-          LEFT JOIN master_security_type s
-              ON i.security_class = s.code
-
-          LEFT JOIN master_mode_issue mi
-              ON i.mode_issue = mi.code
-
-          LEFT JOIN issuer_coupon_details icd
-              ON i.isin_id = icd.issuer_id
-
-          LEFT JOIN master_seniority_tier_classification mstc
-              ON mstc.code = i.seniority
-
-          LEFT JOIN master_tax_free tf
-              ON tf.code = i.tax_free
-
-          LEFT JOIN master_secured_flag msf
-              ON msf.code = i.secured_flag
-
-          LEFT JOIN issuer_arranger ia
-              ON i.isin_id = ia.issuer_id
-
-          LEFT JOIN master_arranger ma
-              ON ia.arranger_id = ma.id
-
-          LEFT JOIN issuer_trustee it
-              ON i.isin_id = it.issuer_id
-
-          LEFT JOIN master_trustee mt
-              ON it.trustee_id = mt.id
-
-          LEFT JOIN master_issuer_rating mir
-              ON i.isin_id = mir.issuer_id
-
-          LEFT JOIN master_agency mag
-              ON mag.id = mir.agency_id
-
-          INNER JOIN issuer_registrar ir1
-              ON i.isin_id = ir1.issuer_id
-
-          INNER JOIN master_registrar mr
-              ON ir1.registrar_id = mr.id
-
-          WHERE
-              ir1.registrar_id = ?
-              AND i.allotment_date BETWEEN ? AND ? AND i.is_visible = 1
-
-          GROUP BY i.isin_id, i.isin
-      ) x
-
-      WHERE 1 = 1
-      ${searchSql}
-
-      ORDER BY ${orderBy} ${orderDirection}
-
-      LIMIT ${parsedLimit}
-      OFFSET ${parsedOffset}
-    `;
+    dataQuery += ` ORDER BY ${orderBy} ${orderDirection} LIMIT ? OFFSET ?`;
+    dataParams.push(parsedLimit, parsedOffset);
 
     // ── COUNT QUERY ──
-    const countQuery = `
-      SELECT COUNT(DISTINCT t.issuer_master_id, t.allotment_date) AS total
-      FROM (
-          SELECT i.issuer_master_id, i.allotment_date
-          FROM isin_re_issuance i
+    let countQuery = `SELECT COUNT(*) AS total FROM (${baseQuery}) x WHERE 1=1`;
+    const countParams = [parsedRegistrarId, sqlStartDate, sqlEndDate];
 
-          LEFT JOIN issuer_details id
-              ON i.issuer_master_id = id.id
-
-          LEFT JOIN master_security_type s
-              ON i.security_class = s.code
-
-          LEFT JOIN master_mode_issue mi
-              ON i.mode_issue = mi.code
-
-          LEFT JOIN issuer_coupon_details icd
-              ON i.isin_id = icd.issuer_id
-
-          LEFT JOIN master_seniority_tier_classification mstc
-              ON mstc.code = i.seniority
-
-          LEFT JOIN master_tax_free tf
-              ON tf.code = i.tax_free
-
-          LEFT JOIN master_secured_flag msf
-              ON msf.code = i.secured_flag
-
-          LEFT JOIN issuer_arranger ia
-              ON i.isin_id = ia.issuer_id
-
-          LEFT JOIN master_arranger ma
-              ON ia.arranger_id = ma.id
-
-          LEFT JOIN issuer_trustee it
-              ON i.isin_id = it.issuer_id
-
-          LEFT JOIN master_trustee mt
-              ON it.trustee_id = mt.id
-
-          LEFT JOIN master_issuer_rating mir
-              ON i.isin_id = mir.issuer_id
-
-          LEFT JOIN master_agency mag
-              ON mag.id = mir.agency_id
-
-          INNER JOIN issuer_registrar ir1
-              ON i.isin_id = ir1.issuer_id
-
-          INNER JOIN master_registrar mr
-              ON ir1.registrar_id = mr.id
-
-          WHERE
-              ir1.registrar_id = ?
-              AND i.allotment_date BETWEEN ? AND ? AND i.is_visible = 1
-
-          HAVING
-              1 = 1
-              ${hasSearch ? `
-              AND (
-                  MIN(id.issuer_name) LIKE ?
-                  OR i.isin LIKE ?
-                  OR MIN(CAST(icd.coupon_rate AS CHAR)) LIKE ?
-                  OR MIN(mt.short_name) LIKE ?
-                  OR MIN(mr.short_name) LIKE ?
-                  OR GROUP_CONCAT(DISTINCT mir.rating) LIKE ?
-                  OR MIN(ma.short_name) LIKE ?
-                  OR MIN(i.security_name) LIKE ?
-                  OR MIN(s.description) LIKE ?
-                  OR MIN(mi.description) LIKE ?
-                  OR MIN(CAST(i.issue_size AS CHAR)) LIKE ?
-                  OR MIN(CAST(i.face_value AS CHAR)) LIKE ?
-                  OR GROUP_CONCAT(DISTINCT mag.short_name) LIKE ?
-                  OR MIN(mstc.description) LIKE ?
-                  OR MIN(tf.description) LIKE ?
-                  OR MIN(msf.description) LIKE ?
-                  OR MIN((
-                      SELECT mls.description
-                      FROM master_issuer_stock_exchange mise
-                      LEFT JOIN master_listing_status mls
-                          ON mls.code = mise.listing_status
-                      WHERE mise.issuer_id = i.isin_id
-                      ORDER BY mise.listing_status
-                      LIMIT 1
-                  )) LIKE ?
-              )
-              ` : ''}
-      ) t
-    `;
+    if (searchPattern) {
+      countQuery += `
+        AND (
+          issuer_name LIKE ?
+          OR isin LIKE ?
+          OR coupon_rate LIKE ?
+          OR debenture_trustee_name LIKE ?
+          OR registrar_detail LIKE ?
+          OR rating LIKE ?
+          OR arranger_name LIKE ?
+          OR security_name LIKE ?
+          OR security_type LIKE ?
+          OR mode_issue LIKE ?
+          OR CAST(issue_size AS CHAR) LIKE ?
+          OR CAST(face_value AS CHAR) LIKE ?
+          OR agency_name LIKE ?
+          OR seniority LIKE ?
+          OR tax_free LIKE ?
+          OR secured_flag LIKE ?
+          OR listing_status LIKE ?
+        )
+      `;
+      countParams.push(
+        searchPattern, searchPattern, searchPattern, searchPattern,
+        searchPattern, searchPattern, searchPattern, searchPattern,
+        searchPattern, searchPattern, searchPattern, searchPattern,
+        searchPattern, searchPattern, searchPattern, searchPattern,
+        searchPattern
+      );
+    }
 
     // ── EXECUTE QUERIES ──
     const [data, totalCount] = await Promise.all([
-      prisma.$queryRawUnsafe(dataQuery, ...baseParams, ...searchParams),
-      prisma.$queryRawUnsafe(
-        countQuery,
-        ...baseParams,
-        ...(hasSearch ? searchParams : [])
-      ),
+      prisma.$queryRawUnsafe(dataQuery, ...dataParams),
+      prisma.$queryRawUnsafe(countQuery, ...countParams),
     ]);
-
-    // Safe number extraction from BigInt
-    const safeNumber = (val) => {
-      if (val === null || val === undefined) return 0;
-      return typeof val === 'bigint' ? Number(val) : Number(val) || 0;
-    };
 
     return res.json({
       success: true,
-      totalRecords: safeNumber(totalCount?.[0]?.total),
+      totalRecords: Number(totalCount[0]?.total || 0),
       data,
     });
 
