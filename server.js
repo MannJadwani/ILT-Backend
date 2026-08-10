@@ -5524,7 +5524,7 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
     `, pyStart, pyEnd, ...filterParams);
 
     const totalIssuesCountCurrYear = await prisma.$queryRawUnsafe(`
-      SELECT COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS aggregate
+      SELECT COUNT(DISTINCT ia.arranger_id, mi.allotment_date, mi.issuer_master_id) AS aggregate
       FROM isin_re_issuance mi
       JOIN issuer_arranger ia
         ON ia.issuer_id = mi.isin_id
@@ -5533,7 +5533,7 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
     `, cyStart, cyEnd, ...filterParams);
 
     const totalIssuesCountPrevYear = await prisma.$queryRawUnsafe(`
-      SELECT COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS aggregate
+      SELECT COUNT(DISTINCT ia.arranger_id, mi.allotment_date, mi.issuer_master_id) AS aggregate
       FROM isin_re_issuance mi
       JOIN issuer_arranger ia
         ON ia.issuer_id = mi.isin_id
@@ -5590,10 +5590,10 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
           SELECT
             ma.id,
             ma.short_name AS arranger_name,
-            COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS no_issues,
+            COUNT(DISTINCT ia.arranger_id, mi.allotment_date, mi.issuer_master_id) AS no_issues,
             ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
             RANK() OVER (
-              ORDER BY COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC, SUM(mi.issue_size) DESC
+              ORDER BY COUNT(DISTINCT ia.arranger_id, mi.allotment_date, mi.issuer_master_id) DESC, SUM(mi.issue_size) DESC
             ) AS arr_rank
           FROM isin_re_issuance mi
           JOIN issuer_arranger ia ON ia.issuer_id = mi.isin_id
@@ -5610,7 +5610,7 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
             COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS no_issues,
             ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
             RANK() OVER (
-              ORDER BY COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC, SUM(mi.issue_size) DESC
+              ORDER BY COUNT(DISTINCT ia.arranger_id, mi.allotment_date, mi.issuer_master_id) DESC, SUM(mi.issue_size) DESC
             ) AS arr_rank
           FROM isin_re_issuance mi
           JOIN issuer_arranger ia ON ia.issuer_id = mi.isin_id
@@ -5654,10 +5654,10 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
           SELECT
             ma.id,
             ma.short_name AS arranger_name,
-            COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS no_issues,
+            COUNT(DISTINCT ia.arranger_id, mi.allotment_date, mi.issuer_master_id) AS no_issues,
             ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
             RANK() OVER (
-              ORDER BY SUM(mi.issue_size) DESC, COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC
+              ORDER BY SUM(mi.issue_size) DESC, COUNT(DISTINCT ia.arranger_id, mi.allotment_date, mi.issuer_master_id) DESC
             ) AS arr_rank
           FROM isin_re_issuance mi
           JOIN issuer_arranger ia ON ia.issuer_id = mi.isin_id
@@ -5671,10 +5671,10 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
         LEFT JOIN (
           SELECT
             ma.id,
-            COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS no_issues,
+            COUNT(DISTINCT ia.arranger_id, mi.allotment_date, mi.issuer_master_id) AS no_issues,
             ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
             RANK() OVER (
-              ORDER BY SUM(mi.issue_size) DESC, COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC
+              ORDER BY SUM(mi.issue_size) DESC, COUNT(DISTINCT ia.arranger_id, mi.allotment_date, mi.issuer_master_id) DESC
             ) AS arr_rank
           FROM isin_re_issuance mi
           JOIN issuer_arranger ia ON ia.issuer_id = mi.isin_id
@@ -5701,7 +5701,7 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
     /* ---------------- TOTAL COUNT FOR PAGINATION ---------------- */
 
     const totalCountResult = await prisma.$queryRawUnsafe(`
-      SELECT COUNT(DISTINCT ia.arranger_id) AS total
+      SELECT COUNT(DISTINCT ia.arranger_id, mi.allotment_date, mi.issuer_master_id) AS total
       FROM isin_re_issuance mi
       JOIN issuer_arranger ia ON ia.issuer_id = mi.isin_id
       WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
@@ -5714,7 +5714,7 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
 
     const sectorValueSelect =
       issueType === 'count'
-        ? 'COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date)'
+        ? 'COUNT(DISTINCT ia.arranger_id, mi.allotment_date, mi.issuer_master_id)'
         : 'ROUND(SUM(mi.issue_size) / 10000000, 2)';
 
     const rankedArrangersSubQuery =
@@ -5724,7 +5724,7 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
             ma.id AS arranger_id,
             ma.short_name AS arranger_name,
             RANK() OVER (
-              ORDER BY COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC, SUM(mi.issue_size) DESC
+              ORDER BY COUNT(DISTINCT ia.arranger_id, mi.allotment_date, mi.issuer_master_id) DESC, SUM(mi.issue_size) DESC
             ) AS arr_rank
           FROM isin_re_issuance mi
           JOIN issuer_arranger ia ON ia.issuer_id = mi.isin_id
@@ -5740,7 +5740,7 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
             ma.id AS arranger_id,
             ma.short_name AS arranger_name,
             RANK() OVER (
-              ORDER BY SUM(mi.issue_size) DESC, COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) DESC
+              ORDER BY SUM(mi.issue_size) DESC, COUNT(DISTINCT ia.arranger_id, mi.allotment_date, mi.issuer_master_id) DESC
             ) AS arr_rank
           FROM isin_re_issuance mi
           JOIN issuer_arranger ia ON ia.issuer_id = mi.isin_id
@@ -8310,7 +8310,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
 
     /*----total count for table pagination ---*/
     const totalCountResult = await prisma.$queryRawUnsafe(`
-      SELECT COUNT(DISTINCT mt.id) AS total
+      SELECT COUNT(DISTINCT it.trustee_id, mi.allotment_date, mi.issuer_master_id) AS total
       FROM isin_re_issuance mi
       JOIN issuer_trustee it ON it.issuer_id = mi.isin_id
       JOIN master_trustee mt ON mt.id = it.trustee_id
