@@ -3334,7 +3334,7 @@ app.post('/issuers_page_outstanding_data', async (req, res) => {
         MONTH(mi.allotment_date) AS month,
         MONTHNAME(mi.allotment_date) AS label,
         ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
-        COUNT(DISTINCT mi.isin) AS isin_count
+        COUNT(mi.isin) AS isin_count
       FROM (
         SELECT DISTINCT isin_re_issuance.isin_id, isin_re_issuance.allotment_date, isin_re_issuance.isin, isin_re_issuance.issue_size
         FROM isin_re_issuance
@@ -3351,7 +3351,7 @@ app.post('/issuers_page_outstanding_data', async (req, res) => {
         MONTH(mi.maturity_date) AS month,
         MONTHNAME(mi.maturity_date) AS label,
         ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
-        COUNT(DISTINCT mi.isin) AS isin_count
+        COUNT(mi.isin) AS isin_count
       FROM (
         SELECT DISTINCT isin_re_issuance.isin_id, isin_re_issuance.maturity_date, isin_re_issuance.isin, isin_re_issuance.issue_size
         FROM isin_re_issuance
@@ -3397,7 +3397,7 @@ app.post('/issuers_page_outstanding_data', async (req, res) => {
       const [result] = await prisma.$queryRawUnsafe(`
         SELECT ROUND(SUM(mi.issue_size) / 10000000, 2) AS aggregate
         FROM (
-          SELECT DISTINCT isin_re_issuance.isin_id, isin_re_issuance.issue_size
+          SELECT isin_re_issuance.isin_id, isin_re_issuance.issue_size
           FROM isin_re_issuance
           ${baseJoins}
           WHERE isin_re_issuance.allotment_date < ?
