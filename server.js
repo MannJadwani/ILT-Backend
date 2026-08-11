@@ -2593,6 +2593,7 @@ app.post('/analysisPage_entity_ranking_data', async (req, res) => {
 });
 
 //updated issuer APIs DONE
+//updated issuer APIs DONE
 app.post('/issuers_page_top_issuers_data', async (req, res) => {
   try {
     const {
@@ -2803,12 +2804,13 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
 
     const totalIssuesCountQuery = `
       SELECT 
-        COUNT( isin_re_issuance.isin_id) AS aggregate
+        COUNT(isin_re_issuance.isin_id) AS aggregate
       FROM isin_re_issuance
       ${baseJoins}
       WHERE ${dateConditions}
       ${filterClause}
     `;
+
     // Current year params: [cyStart, cyEnd, ...filterParams]
     const cyParams = [cyStart, cyEnd, ...filterParams];
     // Previous year params: [pyStart, pyEnd, ...filterParams]
@@ -2855,7 +2857,7 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
           ROUND(SUM(mi.issue_size) / 10000000, 2) as issue_size,
           RANK() OVER ( ORDER BY ${rankOrder} ) as arr_rank
         FROM (
-          SELECT isin_re_issuance.isin_id, isin_re_issuance.issuer_master_id, isin_re_issuance.isin, isin_re_issuance.issue_size
+          SELECT DISTINCT isin_re_issuance.isin_id, isin_re_issuance.issuer_master_id, isin_re_issuance.isin, isin_re_issuance.issue_size
           FROM isin_re_issuance
           ${baseJoins}
           WHERE ${dateConditions} ${filterClause}
@@ -2873,7 +2875,7 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
           ROUND(SUM(mi.issue_size) / 10000000, 2) as issue_size,
           RANK() OVER ( ORDER BY ${rankOrder} ) as arr_rank
         FROM (
-          SELECT isin_re_issuance.isin_id, isin_re_issuance.issuer_master_id, isin_re_issuance.isin, isin_re_issuance.issue_size
+          SELECT DISTINCT isin_re_issuance.isin_id, isin_re_issuance.issuer_master_id, isin_re_issuance.isin, isin_re_issuance.issue_size
           FROM isin_re_issuance
           ${baseJoins}
           WHERE ${dateConditions} ${filterClause}
