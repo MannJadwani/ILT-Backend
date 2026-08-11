@@ -2793,17 +2793,22 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
 
     // ─── Total aggregate queries (deduplicated to avoid join inflation) ───
     const totalIssueSizeQuery = `
-      SELECT SUM(isin_re_issuance.issue_size) as aggregate 
+      SELECT 
+        SUM(isin_re_issuance.issue_size) AS aggregate
       FROM isin_re_issuance
-        WHERE ${dateConditions}
+      ${baseJoins}
+      WHERE ${dateConditions}
+      ${filterClause}
     `;
 
     const totalIssuesCountQuery = `
-      SELECT COUNT(isin_re_issuance.isin_id) as aggregate
+      SELECT 
+        COUNT( isin_re_issuance.isin_id) AS aggregate
       FROM isin_re_issuance
+      ${baseJoins}
       WHERE ${dateConditions}
+      ${filterClause}
     `;
-
     // Current year params: [cyStart, cyEnd, ...filterParams]
     const cyParams = [cyStart, cyEnd, ...filterParams];
     // Previous year params: [pyStart, pyEnd, ...filterParams]
@@ -2832,8 +2837,8 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
     const rankByCount = issueType === 'count';
 
     const rankOrder = rankByCount
-      ? `COUNT(DISTINCT mi.isin) DESC, ROUND(SUM(mi.issue_size) / 10000000, 2) DESC`
-      : `ROUND(SUM(mi.issue_size) / 10000000, 2) DESC, COUNT(DISTINCT mi.isin) DESC`;
+      ? `COUNT(mi.isin) DESC, ROUND(SUM(mi.issue_size) / 10000000, 2) DESC`
+      : `ROUND(SUM(mi.issue_size) / 10000000, 2) DESC, COUNT(mi.isin) DESC`;
 
     const shareColumn = rankByCount ? 'no_issues' : 'issue_size';
     const cyDivisor = rankByCount ? cyCountDivisor : cySizeDivisor;
@@ -2850,7 +2855,7 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
           ROUND(SUM(mi.issue_size) / 10000000, 2) as issue_size,
           RANK() OVER ( ORDER BY ${rankOrder} ) as arr_rank
         FROM (
-          SELECT DISTINCT isin_re_issuance.isin_id, isin_re_issuance.issuer_master_id, isin_re_issuance.isin, isin_re_issuance.issue_size
+          SELECT isin_re_issuance.isin_id, isin_re_issuance.issuer_master_id, isin_re_issuance.isin, isin_re_issuance.issue_size
           FROM isin_re_issuance
           ${baseJoins}
           WHERE ${dateConditions} ${filterClause}
@@ -2868,7 +2873,7 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
           ROUND(SUM(mi.issue_size) / 10000000, 2) as issue_size,
           RANK() OVER ( ORDER BY ${rankOrder} ) as arr_rank
         FROM (
-          SELECT DISTINCT isin_re_issuance.isin_id, isin_re_issuance.issuer_master_id, isin_re_issuance.isin, isin_re_issuance.issue_size
+          SELECT isin_re_issuance.isin_id, isin_re_issuance.issuer_master_id, isin_re_issuance.isin, isin_re_issuance.issue_size
           FROM isin_re_issuance
           ${baseJoins}
           WHERE ${dateConditions} ${filterClause}
@@ -3763,20 +3768,20 @@ app.post('/issuePage_detailed_data', async (req, res) => {
     };
 
     // ─── Multi-select filters (arrays) ───
-    const rating             = toArray(req.body.rating);
-    const seniority          = toArray(req.body.seniority);
-    const securedFlag        = toArray(req.body.securedFlag);
-    const sector             = toArray(req.body.sector);
-    const trustee            = toArray(req.body.trustee);
-    const nature             = toArray(req.body.nature);
-    const ownershipType      = toArray(req.body.ownershipType);
+    const rating = toArray(req.body.rating);
+    const seniority = toArray(req.body.seniority);
+    const securedFlag = toArray(req.body.securedFlag);
+    const sector = toArray(req.body.sector);
+    const trustee = toArray(req.body.trustee);
+    const nature = toArray(req.body.nature);
+    const ownershipType = toArray(req.body.ownershipType);
     const creditRatingAgency = toArray(req.body.creditRatingAgency);
-    const listingStatus      = toArray(req.body.listingStatus);
-    const securityType       = toArray(req.body.securityType);
-    const modeOfIssue        = toArray(req.body.modeOfIssue);
+    const listingStatus = toArray(req.body.listingStatus);
+    const securityType = toArray(req.body.securityType);
+    const modeOfIssue = toArray(req.body.modeOfIssue);
 
     // ─── Validate and sanitize inputs ───
-    const parsedLimit  = Math.min(Math.max(parseInt(limit) || 25, 1), 1000);
+    const parsedLimit = Math.min(Math.max(parseInt(limit) || 25, 1), 1000);
     const parsedOffset = Math.max(parseInt(offset) || 0, 0);
 
     if (!startDate || !endDate) {
@@ -3784,7 +3789,7 @@ app.post('/issuePage_detailed_data', async (req, res) => {
     }
 
     const currentStartDate = new Date(startDate);
-    const currentEndDate   = new Date(endDate);
+    const currentEndDate = new Date(endDate);
 
     if (isNaN(currentStartDate.getTime()) || isNaN(currentEndDate.getTime())) {
       return res.status(400).json({ error: 'Invalid date format' });
@@ -3810,7 +3815,7 @@ app.post('/issuePage_detailed_data', async (req, res) => {
 
     // ─── Build dynamic filter conditions ───
     const conditions = [];
-    const params     = [];
+    const params = [];
 
     conditions.push(`mi.allotment_date BETWEEN ? AND ?`);
     params.push(cyStart, cyEnd);
@@ -4013,7 +4018,7 @@ app.post('/issuePage_detailed_data', async (req, res) => {
 
     const finalResult = result.map((item) => {
       const allotment = item?.allotment_date ? new Date(item?.allotment_date).toISOString().split('T')[0] : null;
-      const maturity  = item?.maturity_date  ? new Date(item?.maturity_date).toISOString().split('T')[0]  : null;
+      const maturity = item?.maturity_date ? new Date(item?.maturity_date).toISOString().split('T')[0] : null;
 
       return {
         id: item?.id ?? '-',
@@ -4336,16 +4341,16 @@ app.post('/issuer_page_monthly_summary_data', async (req, res) => {
     };
 
     // ── Multi-select filters (arrays) ──
-    const ownershipType      = toArray(req.body.ownershipType);
-    const sector             = toArray(req.body.sector);
-    const nature             = toArray(req.body.nature);
-    const securityType       = toArray(req.body.securityType);
+    const ownershipType = toArray(req.body.ownershipType);
+    const sector = toArray(req.body.sector);
+    const nature = toArray(req.body.nature);
+    const securityType = toArray(req.body.securityType);
     const creditRatingAgency = toArray(req.body.creditRatingAgency);
-    const modeOfIssue        = toArray(req.body.modeOfIssue);
-    const seniority          = toArray(req.body.seniority);
-    const listingStatus      = toArray(req.body.listingStatus);
-    const securedFlag        = toArray(req.body.securedFlag);
-    const rating             = toArray(req.body.rating);
+    const modeOfIssue = toArray(req.body.modeOfIssue);
+    const seniority = toArray(req.body.seniority);
+    const listingStatus = toArray(req.body.listingStatus);
+    const securedFlag = toArray(req.body.securedFlag);
+    const rating = toArray(req.body.rating);
 
     // ─── Validate dates ───
     if (!startDate || !endDate) {
@@ -4353,7 +4358,7 @@ app.post('/issuer_page_monthly_summary_data', async (req, res) => {
     }
 
     const currentStartDate = new Date(startDate);
-    const currentEndDate   = new Date(endDate);
+    const currentEndDate = new Date(endDate);
 
     if (isNaN(currentStartDate.getTime()) || isNaN(currentEndDate.getTime())) {
       return res.status(400).json({ error: 'Invalid date format' });
@@ -4386,7 +4391,7 @@ app.post('/issuer_page_monthly_summary_data', async (req, res) => {
        - EXISTS subqueries for 1:N lookups (prevents cartesian products)
     --------------------------------- */
     const conditions = [];
-    const params     = [];
+    const params = [];
 
     // Base filters
     conditions.push(`mi.allotment_date BETWEEN ? AND ?`);
@@ -4525,10 +4530,10 @@ app.post('/issuer_page_monthly_summary_data', async (req, res) => {
     const finalResult = expectedMonths.map((month) => {
       const data = resultMap.get(month.monthNo);
       return {
-        issueMonthNo:    month.monthNo,
-        issueMonth:      month.monthName,   // ← reliable JS-generated name
-        noOfIssue:       data ? Number(data.no_of_issue ?? 0) : 0,
-        issueSize:       data ? Number(data.issue_size ?? 0) : 0,
+        issueMonthNo: month.monthNo,
+        issueMonth: month.monthName,   // ← reliable JS-generated name
+        noOfIssue: data ? Number(data.no_of_issue ?? 0) : 0,
+        issueSize: data ? Number(data.issue_size ?? 0) : 0,
         actualIssueSize: data ? Number(data.actual_issue_size ?? 0) : 0
       };
     });
@@ -6503,20 +6508,20 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
     };
 
     // ── Multi-select filters (arrays) ──
-    const rating             = toArray(req.body.rating);
-    const seniority          = toArray(req.body.seniority);
-    const securedFlag        = toArray(req.body.securedFlag);
-    const sector             = toArray(req.body.sector);
-    const trustee            = toArray(req.body.trustee);
-    const nature             = toArray(req.body.nature);
-    const ownershipType      = toArray(req.body.ownershipType);
+    const rating = toArray(req.body.rating);
+    const seniority = toArray(req.body.seniority);
+    const securedFlag = toArray(req.body.securedFlag);
+    const sector = toArray(req.body.sector);
+    const trustee = toArray(req.body.trustee);
+    const nature = toArray(req.body.nature);
+    const ownershipType = toArray(req.body.ownershipType);
     const creditRatingAgency = toArray(req.body.creditRatingAgency);
-    const listingStatus      = toArray(req.body.listingStatus);
-    const securityType       = toArray(req.body.securityType);
-    const modeOfIssue        = toArray(req.body.modeOfIssue);
+    const listingStatus = toArray(req.body.listingStatus);
+    const securityType = toArray(req.body.securityType);
+    const modeOfIssue = toArray(req.body.modeOfIssue);
 
     // ── Single-select filters (strings) ──
-    const arranger  = req.body.arranger || "";
+    const arranger = req.body.arranger || "";
     const registrar = req.body.registrar || "";
 
     // ─── Validate dates ───
@@ -6525,7 +6530,7 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
     }
 
     const currentStartDate = new Date(startDate);
-    const currentEndDate   = new Date(endDate);
+    const currentEndDate = new Date(endDate);
 
     if (isNaN(currentStartDate.getTime()) || isNaN(currentEndDate.getTime())) {
       return res.status(400).json({ error: 'Invalid date format' });
@@ -6550,14 +6555,14 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
     )));
 
     // Fix: Validate and sanitize limit/offset
-    const safeLimit  = Math.max(1, Math.min(1000, parseInt(limit, 10) || 25));
+    const safeLimit = Math.max(1, Math.min(1000, parseInt(limit, 10) || 25));
     const safeOffset = Math.max(0, parseInt(offset, 10) || 0);
 
     // ---------------------
     // Dynamic WHERE conditions
     // ---------------------
     const conditions = [];
-    const params     = [];
+    const params = [];
 
     conditions.push(`mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)`);
     params.push(cyStart, cyEnd);
@@ -6885,17 +6890,17 @@ app.post('/arranger_page_monthly_summary_data', async (req, res) => {
     };
 
     // ── Multi-select filters (arrays) ──
-    const ownershipType      = toArray(req.body.ownershipType);
-    const sector             = toArray(req.body.sector);
-    const nature             = toArray(req.body.nature);
-    const securityType       = toArray(req.body.securityType);
+    const ownershipType = toArray(req.body.ownershipType);
+    const sector = toArray(req.body.sector);
+    const nature = toArray(req.body.nature);
+    const securityType = toArray(req.body.securityType);
     const creditRatingAgency = toArray(req.body.creditRatingAgency);
-    const modeOfIssue        = toArray(req.body.modeOfIssue);
-    const seniority          = toArray(req.body.seniority);
-    const taxFree            = toArray(req.body.taxFree);
-    const listingStatus      = toArray(req.body.listingStatus);
-    const securedFlag        = toArray(req.body.securedFlag);
-    const rating             = toArray(req.body.rating);
+    const modeOfIssue = toArray(req.body.modeOfIssue);
+    const seniority = toArray(req.body.seniority);
+    const taxFree = toArray(req.body.taxFree);
+    const listingStatus = toArray(req.body.listingStatus);
+    const securedFlag = toArray(req.body.securedFlag);
+    const rating = toArray(req.body.rating);
 
     // ── Single-select filters (strings) ──
     const dealSize = req.body.dealSize || "";
@@ -6907,7 +6912,7 @@ app.post('/arranger_page_monthly_summary_data', async (req, res) => {
     }
 
     const currentStartDate = new Date(startDate);
-    const currentEndDate   = new Date(endDate);
+    const currentEndDate = new Date(endDate);
 
     if (isNaN(currentStartDate.getTime()) || isNaN(currentEndDate.getTime())) {
       return res.status(400).json({ error: 'Invalid date format' });
@@ -6938,7 +6943,7 @@ app.post('/arranger_page_monthly_summary_data', async (req, res) => {
        BUILD DYNAMIC CONDITIONS
     --------------------------------- */
     const conditions = [];
-    const params     = [];
+    const params = [];
 
     // Base filters
     conditions.push(`mi.allotment_date BETWEEN ? AND ?`);
@@ -7099,10 +7104,10 @@ app.post('/arranger_page_monthly_summary_data', async (req, res) => {
     const finalResult = expectedMonths.map((month) => {
       const data = resultMap.get(month.monthNo);
       return {
-        issueMonthNo:    month.monthNo,
-        issueMonth:      month.monthName,
-        noOfIssue:       data ? Number(data.no_of_issue ?? 0) : 0,
-        issueSize:       data ? Number(data.issue_size ?? 0) : 0,
+        issueMonthNo: month.monthNo,
+        issueMonth: month.monthName,
+        noOfIssue: data ? Number(data.no_of_issue ?? 0) : 0,
+        issueSize: data ? Number(data.issue_size ?? 0) : 0,
         actualIssueSize: data ? Number(data.actual_issue_size ?? 0) : 0
       };
     });
@@ -8776,17 +8781,17 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
     };
 
     // ── Multi-select filters (arrays) ──
-    const rating             = toArray(req.body.rating);
-    const seniority          = toArray(req.body.seniority);
-    const securedFlag        = toArray(req.body.securedFlag);
-    const sector             = toArray(req.body.sector);
-    const trustee            = toArray(req.body.trustee);
-    const nature             = toArray(req.body.nature);
-    const ownershipType      = toArray(req.body.ownershipType);
+    const rating = toArray(req.body.rating);
+    const seniority = toArray(req.body.seniority);
+    const securedFlag = toArray(req.body.securedFlag);
+    const sector = toArray(req.body.sector);
+    const trustee = toArray(req.body.trustee);
+    const nature = toArray(req.body.nature);
+    const ownershipType = toArray(req.body.ownershipType);
     const creditRatingAgency = toArray(req.body.creditRatingAgency);
-    const listingStatus      = toArray(req.body.listingStatus);
-    const securityType       = toArray(req.body.securityType);
-    const modeOfIssue        = toArray(req.body.modeOfIssue);
+    const listingStatus = toArray(req.body.listingStatus);
+    const securityType = toArray(req.body.securityType);
+    const modeOfIssue = toArray(req.body.modeOfIssue);
 
     // ── Single-select filters (strings) ──
     const registrar = req.body.registrar || "";
@@ -8797,7 +8802,7 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
     }
 
     const currentStartDate = new Date(startDate);
-    const currentEndDate   = new Date(endDate);
+    const currentEndDate = new Date(endDate);
 
     if (isNaN(currentStartDate.getTime()) || isNaN(currentEndDate.getTime())) {
       return res.status(400).json({ error: 'Invalid date format' });
@@ -8822,14 +8827,14 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
     )));
 
     // Fix: Validate and sanitize limit/offset
-    const safeLimit  = Math.max(1, Math.min(1000, parseInt(limit, 10) || 25));
+    const safeLimit = Math.max(1, Math.min(1000, parseInt(limit, 10) || 25));
     const safeOffset = Math.max(0, parseInt(offset, 10) || 0);
 
     // ─────────────────────
     // Dynamic WHERE conditions
     // ─────────────────────
     const conditions = [];
-    const params     = [];
+    const params = [];
 
     conditions.push(`mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)`);
     params.push(cyStart, cyEnd);
@@ -9215,21 +9220,21 @@ app.post('/trustee_page_monthly_summary_data', async (req, res) => {
     };
 
     // ── Multi-select filters (arrays) ──
-    const ownershipType      = toArray(req.body.ownershipType);
-    const sector             = toArray(req.body.sector);
-    const nature             = toArray(req.body.nature);
-    const securityType       = toArray(req.body.securityType);
+    const ownershipType = toArray(req.body.ownershipType);
+    const sector = toArray(req.body.sector);
+    const nature = toArray(req.body.nature);
+    const securityType = toArray(req.body.securityType);
     const creditRatingAgency = toArray(req.body.creditRatingAgency);
-    const modeOfIssue        = toArray(req.body.modeOfIssue);
-    const seniority          = toArray(req.body.seniority);
-    const taxFree            = toArray(req.body.taxFree);
-    const listingStatus      = toArray(req.body.listingStatus);
-    const securedFlag        = toArray(req.body.securedFlag);
-    const rating             = toArray(req.body.rating);
+    const modeOfIssue = toArray(req.body.modeOfIssue);
+    const seniority = toArray(req.body.seniority);
+    const taxFree = toArray(req.body.taxFree);
+    const listingStatus = toArray(req.body.listingStatus);
+    const securedFlag = toArray(req.body.securedFlag);
+    const rating = toArray(req.body.rating);
 
     // ── Single-select filters (strings) ──
     const dealSize = req.body.dealSize || "";
-    const trustee  = req.body.trustee || "";
+    const trustee = req.body.trustee || "";
 
     // ─── Validate dates ───
     if (!startDate || !endDate) {
@@ -9237,7 +9242,7 @@ app.post('/trustee_page_monthly_summary_data', async (req, res) => {
     }
 
     const currentStartDate = new Date(startDate);
-    const currentEndDate   = new Date(endDate);
+    const currentEndDate = new Date(endDate);
 
     if (isNaN(currentStartDate.getTime()) || isNaN(currentEndDate.getTime())) {
       return res.status(400).json({ error: 'Invalid date format' });
@@ -9268,7 +9273,7 @@ app.post('/trustee_page_monthly_summary_data', async (req, res) => {
        BUILD DYNAMIC CONDITIONS
     --------------------------------- */
     const conditions = [];
-    const params     = [];
+    const params = [];
 
     // Base filters
     conditions.push(`mi.allotment_date BETWEEN ? AND ?`);
@@ -9429,10 +9434,10 @@ app.post('/trustee_page_monthly_summary_data', async (req, res) => {
     const finalResult = expectedMonths.map((month) => {
       const data = resultMap.get(month.monthNo);
       return {
-        issueMonthNo:    month.monthNo,
-        issueMonth:      month.monthName,
-        noOfIssue:       data ? Number(data.no_of_issue ?? 0) : 0,
-        issueSize:       data ? Number(data.issue_size ?? 0) : 0,
+        issueMonthNo: month.monthNo,
+        issueMonth: month.monthName,
+        noOfIssue: data ? Number(data.no_of_issue ?? 0) : 0,
+        issueSize: data ? Number(data.issue_size ?? 0) : 0,
         actualIssueSize: data ? Number(data.actual_issue_size ?? 0) : 0
       };
     });
@@ -10883,22 +10888,22 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
     };
 
     // ── Multi-select filters (arrays) ──
-    const rating             = toArray(req.body.rating);
-    const seniority          = toArray(req.body.seniority);
-    const securedFlag        = toArray(req.body.securedFlag);
-    const sector             = toArray(req.body.sector);
-    const nature             = toArray(req.body.nature);
-    const ownershipType      = toArray(req.body.ownershipType);
+    const rating = toArray(req.body.rating);
+    const seniority = toArray(req.body.seniority);
+    const securedFlag = toArray(req.body.securedFlag);
+    const sector = toArray(req.body.sector);
+    const nature = toArray(req.body.nature);
+    const ownershipType = toArray(req.body.ownershipType);
     const creditRatingAgency = toArray(req.body.creditRatingAgency);
-    const listingStatus      = toArray(req.body.listingStatus);
-    const securityType       = toArray(req.body.securityType);
-    const modeOfIssue        = toArray(req.body.modeOfIssue);
+    const listingStatus = toArray(req.body.listingStatus);
+    const securityType = toArray(req.body.securityType);
+    const modeOfIssue = toArray(req.body.modeOfIssue);
 
     // ── Single-select filters (strings) ──
     const issuerName = req.body.issuerName || "";
-    const isin       = req.body.isin || "";
-    const arranger   = req.body.arranger || "";
-    const registrar  = req.body.registrar || "";
+    const isin = req.body.isin || "";
+    const arranger = req.body.arranger || "";
+    const registrar = req.body.registrar || "";
 
     // ─── Validate dates ───
     if (!startDate || !endDate) {
@@ -10906,7 +10911,7 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
     }
 
     const currentStartDate = new Date(startDate);
-    const currentEndDate   = new Date(endDate);
+    const currentEndDate = new Date(endDate);
 
     if (isNaN(currentStartDate.getTime()) || isNaN(currentEndDate.getTime())) {
       return res.status(400).json({ error: 'Invalid date format' });
@@ -10931,14 +10936,14 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
     )));
 
     // Fix: Validate and sanitize limit/offset
-    const safeLimit  = Math.max(1, Math.min(1000, parseInt(limit, 10) || 25));
+    const safeLimit = Math.max(1, Math.min(1000, parseInt(limit, 10) || 25));
     const safeOffset = Math.max(0, parseInt(offset, 10) || 0);
 
     // ─────────────────────
     // Dynamic WHERE conditions
     // ─────────────────────
     const conditions = [];
-    const params     = [];
+    const params = [];
 
     conditions.push(`mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)`);
     params.push(cyStart, cyEnd);
@@ -11338,17 +11343,17 @@ app.post('/rating_agencies_page_monthly_summary_data', async (req, res) => {
     };
 
     // ── Multi-select filters (arrays) ──
-    const ownershipType      = toArray(req.body.ownershipType);
-    const sector             = toArray(req.body.sector);
-    const nature             = toArray(req.body.nature);
-    const securityType       = toArray(req.body.securityType);
+    const ownershipType = toArray(req.body.ownershipType);
+    const sector = toArray(req.body.sector);
+    const nature = toArray(req.body.nature);
+    const securityType = toArray(req.body.securityType);
     const creditRatingAgency = toArray(req.body.creditRatingAgency);
-    const modeOfIssue        = toArray(req.body.modeOfIssue);
-    const seniority          = toArray(req.body.seniority);
-    const taxFree            = toArray(req.body.taxFree);
-    const listingStatus      = toArray(req.body.listingStatus);
-    const securedFlag        = toArray(req.body.securedFlag);
-    const rating             = toArray(req.body.rating);
+    const modeOfIssue = toArray(req.body.modeOfIssue);
+    const seniority = toArray(req.body.seniority);
+    const taxFree = toArray(req.body.taxFree);
+    const listingStatus = toArray(req.body.listingStatus);
+    const securedFlag = toArray(req.body.securedFlag);
+    const rating = toArray(req.body.rating);
 
     // ── Single-select filters (strings) ──
     const dealSize = req.body.dealSize || "";
@@ -11359,7 +11364,7 @@ app.post('/rating_agencies_page_monthly_summary_data', async (req, res) => {
     }
 
     const currentStartDate = new Date(startDate);
-    const currentEndDate   = new Date(endDate);
+    const currentEndDate = new Date(endDate);
 
     if (isNaN(currentStartDate.getTime()) || isNaN(currentEndDate.getTime())) {
       return res.status(400).json({ error: 'Invalid date format' });
@@ -11390,7 +11395,7 @@ app.post('/rating_agencies_page_monthly_summary_data', async (req, res) => {
        BUILD DYNAMIC CONDITIONS
     --------------------------------- */
     const conditions = [];
-    const params     = [];
+    const params = [];
 
     // Base filters
     conditions.push(`mi.allotment_date BETWEEN ? AND ?`);
@@ -11546,10 +11551,10 @@ app.post('/rating_agencies_page_monthly_summary_data', async (req, res) => {
     const finalResult = expectedMonths.map((month) => {
       const data = resultMap.get(month.monthNo);
       return {
-        issueMonthNo:    month.monthNo,
-        issueMonth:      month.monthName,
-        noOfIssue:       data ? Number(data.no_of_issue ?? 0) : 0,
-        issueSize:       data ? Number(data.issue_size ?? 0) : 0,
+        issueMonthNo: month.monthNo,
+        issueMonth: month.monthName,
+        noOfIssue: data ? Number(data.no_of_issue ?? 0) : 0,
+        issueSize: data ? Number(data.issue_size ?? 0) : 0,
         actualIssueSize: data ? Number(data.actual_issue_size ?? 0) : 0
       };
     });
@@ -13104,16 +13109,16 @@ app.post('/registrarPage_detailed_data', async (req, res) => {
     };
 
     // ── Multi-select filters (arrays) ──
-    const rating             = toArray(req.body.rating);
-    const seniority          = toArray(req.body.seniority);
-    const securedFlag        = toArray(req.body.securedFlag);
-    const sector             = toArray(req.body.sector);
-    const nature             = toArray(req.body.nature);
-    const ownershipType      = toArray(req.body.ownershipType);
+    const rating = toArray(req.body.rating);
+    const seniority = toArray(req.body.seniority);
+    const securedFlag = toArray(req.body.securedFlag);
+    const sector = toArray(req.body.sector);
+    const nature = toArray(req.body.nature);
+    const ownershipType = toArray(req.body.ownershipType);
     const creditRatingAgency = toArray(req.body.creditRatingAgency);
-    const listingStatus      = toArray(req.body.listingStatus);
-    const securityType       = toArray(req.body.securityType);
-    const modeOfIssue        = toArray(req.body.modeOfIssue);
+    const listingStatus = toArray(req.body.listingStatus);
+    const securityType = toArray(req.body.securityType);
+    const modeOfIssue = toArray(req.body.modeOfIssue);
 
     // ── Single-select filters (strings) ──
     const registrar = req.body.registrar || "";
@@ -13157,7 +13162,7 @@ app.post('/registrarPage_detailed_data', async (req, res) => {
 
     // ── DYNAMIC WHERE CONDITIONS ──
     const conditions = [];
-    const params     = [];
+    const params = [];
 
     conditions.push(`mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1`);
     params.push(cyStart, cyEnd);
@@ -13474,20 +13479,20 @@ app.post('/registrar_page_monthly_summary_data', async (req, res) => {
     };
 
     // ── Multi-select filters (arrays) ──
-    const ownershipType      = toArray(req.body.ownershipType);
-    const sector             = toArray(req.body.sector);
-    const nature             = toArray(req.body.nature);
-    const securityType       = toArray(req.body.securityType);
+    const ownershipType = toArray(req.body.ownershipType);
+    const sector = toArray(req.body.sector);
+    const nature = toArray(req.body.nature);
+    const securityType = toArray(req.body.securityType);
     const creditRatingAgency = toArray(req.body.creditRatingAgency);
-    const modeOfIssue        = toArray(req.body.modeOfIssue);
-    const seniority          = toArray(req.body.seniority);
-    const taxFree            = toArray(req.body.taxFree);
-    const listingStatus      = toArray(req.body.listingStatus);
-    const securedFlag        = toArray(req.body.securedFlag);
-    const rating             = toArray(req.body.rating);
+    const modeOfIssue = toArray(req.body.modeOfIssue);
+    const seniority = toArray(req.body.seniority);
+    const taxFree = toArray(req.body.taxFree);
+    const listingStatus = toArray(req.body.listingStatus);
+    const securedFlag = toArray(req.body.securedFlag);
+    const rating = toArray(req.body.rating);
 
     // ── Single-select filters (strings) ──
-    const dealSize  = req.body.dealSize || "";
+    const dealSize = req.body.dealSize || "";
     const registrar = req.body.registrar || "";
 
     // ─── Validate dates ───
@@ -13496,7 +13501,7 @@ app.post('/registrar_page_monthly_summary_data', async (req, res) => {
     }
 
     const currentStartDate = new Date(startDate);
-    const currentEndDate   = new Date(endDate);
+    const currentEndDate = new Date(endDate);
 
     if (isNaN(currentStartDate.getTime()) || isNaN(currentEndDate.getTime())) {
       return res.status(400).json({ error: 'Invalid date format' });
@@ -13527,7 +13532,7 @@ app.post('/registrar_page_monthly_summary_data', async (req, res) => {
        BUILD DYNAMIC CONDITIONS
     --------------------------------- */
     const conditions = [];
-    const params     = [];
+    const params = [];
 
     // Base filters
     conditions.push(`mi.allotment_date BETWEEN ? AND ?`);
@@ -13694,10 +13699,10 @@ app.post('/registrar_page_monthly_summary_data', async (req, res) => {
     const finalResult = expectedMonths.map((month) => {
       const data = resultMap.get(month.monthNo);
       return {
-        issueMonthNo:    month.monthNo,
-        issueMonth:      month.monthName,
-        noOfIssue:       data ? safeNumber(data.no_of_issue) : 0,
-        issueSize:       data ? safeNumber(data.issue_size) : 0,
+        issueMonthNo: month.monthNo,
+        issueMonth: month.monthName,
+        noOfIssue: data ? safeNumber(data.no_of_issue) : 0,
+        issueSize: data ? safeNumber(data.issue_size) : 0,
         actualIssueSize: data ? safeNumber(data.actual_issue_size) : 0
       };
     });
