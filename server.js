@@ -5315,7 +5315,7 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
           conditions.push(`EXISTS (
             SELECT 1 FROM master_issuer_rating mir2
             JOIN master_agency ma2 ON ma2.id = mir2.agency_id
-            WHERE mir2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+            WHERE mir2.issuer_id = ${tableAlias}.isin_id AND ${inClause.clause}
           )`);
           params.push(...inClause.params);
         }
@@ -5327,7 +5327,7 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
           conditions.push(`EXISTS (
             SELECT 1 FROM master_issuer_rating mir2
             JOIN master_agency ma2 ON ma2.id = mir2.agency_id
-            WHERE mir2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+            WHERE mir2.issuer_id = ${tableAlias}.isin_id AND ${inClause.clause}
           )`);
           params.push(...inClause.params);
         }
@@ -5339,7 +5339,7 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
           conditions.push(`EXISTS (
             SELECT 1 FROM issuer_registrar ir2
             JOIN master_registrar mr2 ON mr2.id = ir2.registrar_id
-            WHERE ir2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+            WHERE ir2.issuer_id = ${tableAlias}.isin_id AND ${inClause.clause}
           )`);
           params.push(...inClause.params);
         }
@@ -5351,7 +5351,7 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
           conditions.push(`EXISTS (
             SELECT 1 FROM issuer_arranger ia2
             JOIN master_arranger ma2 ON ma2.id = ia2.arranger_id
-            WHERE ia2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+            WHERE ia2.issuer_id = ${tableAlias}.isin_id AND ${inClause.clause}
           )`);
           params.push(...inClause.params);
         }
@@ -5407,7 +5407,7 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
           conditions.push(`EXISTS (
             SELECT 1 FROM issuer_trustee it2
             JOIN master_trustee mt2 ON mt2.id = it2.trustee_id
-            WHERE it2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+            WHERE it2.issuer_id = ${tableAlias}.isin_id AND ${inClause.clause}
           )`);
           params.push(...inClause.params);
         }
@@ -5453,7 +5453,7 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
           conditions.push(`EXISTS (
             SELECT 1 FROM master_issuer_stock_exchange mise2
             JOIN master_listing_status mls2 ON mls2.code = mise2.listing_status
-            WHERE mise2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+            WHERE mise2.issuer_id = ${tableAlias}.isin_id AND ${inClause.clause}
           )`);
           params.push(...inClause.params);
         }
@@ -5903,7 +5903,7 @@ app.post('/arrangers_page_credit_rating_data', async (req, res) => {
         if (inClause) {
           conditions.push(`EXISTS (
             SELECT 1 FROM master_issuer_rating mir2
-            WHERE mir2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+            WHERE mir2.issuer_id = ${tableAlias}.isin_id AND ${inClause.clause}
           )`);
           params.push(...inClause.params);
         }
@@ -5915,7 +5915,7 @@ app.post('/arrangers_page_credit_rating_data', async (req, res) => {
           conditions.push(`EXISTS (
             SELECT 1 FROM master_issuer_rating mir2
             JOIN master_agency mag2 ON mag2.id = mir2.agency_id
-            WHERE mir2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+            WHERE mir2.issuer_id = ${tableAlias}.isin_id AND ${inClause.clause}
           )`);
           params.push(...inClause.params);
         }
@@ -5927,7 +5927,7 @@ app.post('/arrangers_page_credit_rating_data', async (req, res) => {
           conditions.push(`EXISTS (
             SELECT 1 FROM issuer_registrar ir2
             JOIN master_registrar mr2 ON mr2.id = ir2.registrar_id
-            WHERE ir2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+            WHERE ir2.issuer_id = ${tableAlias}.isin_id AND ${inClause.clause}
           )`);
           params.push(...inClause.params);
         }
@@ -5939,7 +5939,7 @@ app.post('/arrangers_page_credit_rating_data', async (req, res) => {
           conditions.push(`EXISTS (
             SELECT 1 FROM issuer_arranger ia2
             JOIN master_arranger ma2 ON ma2.id = ia2.arranger_id
-            WHERE ia2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+            WHERE ia2.issuer_id = ${tableAlias}.isin_id AND ${inClause.clause}
           )`);
           params.push(...inClause.params);
         }
@@ -5995,7 +5995,7 @@ app.post('/arrangers_page_credit_rating_data', async (req, res) => {
           conditions.push(`EXISTS (
             SELECT 1 FROM issuer_trustee it2
             JOIN master_trustee mt2 ON mt2.id = it2.trustee_id
-            WHERE it2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+            WHERE it2.issuer_id = ${tableAlias}.isin_id AND ${inClause.clause}
           )`);
           params.push(...inClause.params);
         }
@@ -6041,7 +6041,7 @@ app.post('/arrangers_page_credit_rating_data', async (req, res) => {
           conditions.push(`EXISTS (
             SELECT 1 FROM master_issuer_stock_exchange mise2
             JOIN master_listing_status mls2 ON mls2.code = mise2.listing_status
-            WHERE mise2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+            WHERE mise2.issuer_id = ${tableAlias}.isin_id AND ${inClause.clause}
           )`);
           params.push(...inClause.params);
         }
@@ -8875,7 +8875,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
         if (inClause) {
           conditions.push(`EXISTS (
             SELECT 1 FROM master_issuer_rating mir2
-            WHERE mir2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+            WHERE mir2.issuer_id = ${tableAlias}.isin_id AND ${inClause.clause}
           )`);
           params.push(...inClause.params);
         }
@@ -8887,7 +8887,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
           conditions.push(`EXISTS (
             SELECT 1 FROM master_issuer_rating mir2
             JOIN master_agency ma2 ON ma2.id = mir2.agency_id
-            WHERE mir2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+            WHERE mir2.issuer_id = ${tableAlias}.isin_id AND ${inClause.clause}
           )`);
           params.push(...inClause.params);
         }
@@ -8899,7 +8899,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
           conditions.push(`EXISTS (
             SELECT 1 FROM issuer_registrar ir2
             JOIN master_registrar mr2 ON mr2.id = ir2.registrar_id
-            WHERE ir2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+            WHERE ir2.issuer_id = ${tableAlias}.isin_id AND ${inClause.clause}
           )`);
           params.push(...inClause.params);
         }
@@ -9457,7 +9457,7 @@ app.post('/trustees_page_credit_rating_data', async (req, res) => {
         if (inClause) {
           conditions.push(`EXISTS (
             SELECT 1 FROM master_issuer_rating mir2
-            WHERE mir2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+            WHERE mir2.issuer_id = ${tableAlias}.isin_id AND ${inClause.clause}
           )`);
           params.push(...inClause.params);
         }
@@ -9469,7 +9469,7 @@ app.post('/trustees_page_credit_rating_data', async (req, res) => {
           conditions.push(`EXISTS (
             SELECT 1 FROM master_issuer_rating mir2
             JOIN master_agency mag2 ON mag2.id = mir2.agency_id
-            WHERE mir2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+            WHERE mir2.issuer_id = ${tableAlias}.isin_id AND ${inClause.clause}
           )`);
           params.push(...inClause.params);
         }
@@ -9481,7 +9481,7 @@ app.post('/trustees_page_credit_rating_data', async (req, res) => {
           conditions.push(`EXISTS (
             SELECT 1 FROM issuer_registrar ir2
             JOIN master_registrar mr2 ON mr2.id = ir2.registrar_id
-            WHERE ir2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+            WHERE ir2.issuer_id = ${tableAlias}.isin_id AND ${inClause.clause}
           )`);
           params.push(...inClause.params);
         }
@@ -9537,7 +9537,7 @@ app.post('/trustees_page_credit_rating_data', async (req, res) => {
           conditions.push(`EXISTS (
             SELECT 1 FROM issuer_trustee it2
             JOIN master_trustee mt2 ON mt2.id = it2.trustee_id
-            WHERE it2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+            WHERE it2.issuer_id = ${tableAlias}.isin_id AND ${inClause.clause}
           )`);
           params.push(...inClause.params);
         }
@@ -9583,7 +9583,7 @@ app.post('/trustees_page_credit_rating_data', async (req, res) => {
           conditions.push(`EXISTS (
             SELECT 1 FROM master_issuer_stock_exchange mise2
             JOIN master_listing_status mls2 ON mls2.code = mise2.listing_status
-            WHERE mise2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+            WHERE mise2.issuer_id = ${tableAlias}.isin_id AND ${inClause.clause}
           )`);
           params.push(...inClause.params);
         }
@@ -12427,7 +12427,7 @@ app.post('/rating_agencies_page_credit_rating_data', async (req, res) => {
 
       if (rating.length > 0) {
         const placeholders = rating.map(() => '?').join(', ');
-        conditions.push(`EXISTS (SELECT 1 FROM master_issuer_rating mir_sub WHERE mir_sub.issuer_id = ${issuerAlias}.id AND mir_sub.rating IN (${placeholders}))`);
+        conditions.push(`EXISTS (SELECT 1 FROM master_issuer_rating mir_sub WHERE mir_sub.issuer_id = ${issuerAlias}.isin_id AND mir_sub.rating IN (${placeholders}))`);
         params.push(...rating);
       }
 
@@ -12436,7 +12436,7 @@ app.post('/rating_agencies_page_credit_rating_data', async (req, res) => {
         conditions.push(`EXISTS (
           SELECT 1 FROM master_issuer_stock_exchange mise
           LEFT JOIN master_listing_status mls ON mls.code = mise.listing_status
-          WHERE mise.issuer_id = ${issuerAlias}.id AND mls.description IN (${placeholders})
+          WHERE mise.issuer_id = ${issuerAlias}.isin_id AND mls.description IN (${placeholders})
         )`);
         params.push(...listingStatus);
       }
@@ -12483,7 +12483,7 @@ app.post('/rating_agencies_page_credit_rating_data', async (req, res) => {
 
       if (creditRatingAgency.length > 0) {
         const placeholders = creditRatingAgency.map(() => '?').join(', ');
-        conditions.push(`EXISTS (SELECT 1 FROM master_issuer_rating mir_sub2 JOIN master_agency ma_sub ON ma_sub.id = mir_sub2.agency_id WHERE mir_sub2.issuer_id = ${issuerAlias}.id AND ma_sub.short_name IN (${placeholders}))`);
+        conditions.push(`EXISTS (SELECT 1 FROM master_issuer_rating mir_sub2 JOIN master_agency ma_sub ON ma_sub.id = mir_sub2.agency_id WHERE mir_sub2.issuer_id = ${issuerAlias}.isin_id AND ma_sub.short_name IN (${placeholders}))`);
         params.push(...creditRatingAgency);
       }
 
@@ -12509,7 +12509,7 @@ app.post('/rating_agencies_page_credit_rating_data', async (req, res) => {
         conditions.push(`EXISTS (
           SELECT 1 FROM issuer_registrar ir
           JOIN master_registrar mr ON mr.id = ir.registrar_id
-          WHERE ir.issuer_id = ${issuerAlias}.id AND mr.registrar_name IN (${placeholders})
+          WHERE ir.issuer_id = ${issuerAlias}.isin_id AND mr.registrar_name IN (${placeholders})
         )`);
         params.push(...registrar);
       }
@@ -15116,7 +15116,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
         conditions.push(`EXISTS (
           SELECT 1 FROM master_issuer_stock_exchange mise
           JOIN master_listing_status mls ON mls.code = mise.listing_status
-          WHERE mise.issuer_id = ${alias}.id AND mls.description IN (${placeholders})
+          WHERE mise.issuer_id = ${alias}.isin_id AND mls.description IN (${placeholders})
         )`);
         params.push(...listingStatus);
       }
@@ -15125,7 +15125,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
         const placeholders = creditRating.map(() => '?').join(', ');
         conditions.push(`EXISTS (
           SELECT 1 FROM master_issuer_rating mir
-          WHERE mir.issuer_id = ${alias}.id AND mir.rating IN (${placeholders})
+          WHERE mir.issuer_id = ${alias}.isin_id AND mir.rating IN (${placeholders})
         )`);
         params.push(...creditRating);
       }
@@ -15134,7 +15134,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
         const placeholders = creditRatingAgency.map(() => '?').join(', ');
         conditions.push(`EXISTS (
           SELECT 1 FROM master_issuer_rating mir
-          WHERE mir.issuer_id = ${alias}.id AND mir.rating_agency IN (${placeholders})
+          WHERE mir.issuer_id = ${alias}.isin_id AND mir.rating_agency IN (${placeholders})
         )`);
         params.push(...creditRatingAgency);
       }
