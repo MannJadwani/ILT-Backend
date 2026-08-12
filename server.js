@@ -7721,17 +7721,17 @@ app.post('/arranger_top_participants_details', async (req, res) => {
 
       const vals = Array.isArray(values)
         ? values.filter(
-            (v) =>
-              v !== '' &&
-              v !== null &&
-              v !== undefined
-          )
+          (v) =>
+            v !== '' &&
+            v !== null &&
+            v !== undefined
+        )
         : [values].filter(
-            (v) =>
-              v !== '' &&
-              v !== null &&
-              v !== undefined
-          );
+          (v) =>
+            v !== '' &&
+            v !== null &&
+            v !== undefined
+        );
 
       if (vals.length === 0) {
         return null;
@@ -8680,8 +8680,8 @@ app.post('/arranger_top_participants_details', async (req, res) => {
       allotmentDate:
         item?.allotment_date
           ? new Date(item.allotment_date)
-              .toISOString()
-              .split('T')[0]
+            .toISOString()
+            .split('T')[0]
           : '-',
 
       couponRate:
@@ -8696,8 +8696,8 @@ app.post('/arranger_top_participants_details', async (req, res) => {
       maturityDate:
         item?.maturity_date
           ? new Date(item.maturity_date)
-              .toISOString()
-              .split('T')[0]
+            .toISOString()
+            .split('T')[0]
           : '-',
 
       rating:
@@ -8835,6 +8835,17 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
     previousEndDate.setFullYear(previousEndDate.getFullYear() - 1);
 
     const formatDate = (date) => date.toISOString().slice(0, 19).replace('T', ' ');
+
+    const formatDateTime = (dateStr, isEnd = false) => {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return null;
+      if (isEnd) {
+        date.setHours(23, 59, 59, 0);
+      } else {
+        date.setHours(0, 0, 0, 0);
+      }
+      return date.toISOString().slice(0, 19).replace('T', ' ');
+    };
 
     /* ---------------- HELPER: Build multi-value IN clause ---------------- */
     const buildInClause = (field, values, useLike = false) => {
@@ -8978,7 +8989,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
           conditions.push(`EXISTS (
             SELECT 1 FROM master_issuer_stock_exchange mise2
             JOIN master_listing_status mls2 ON mls2.code = mise2.listing_status
-            WHERE mise2.issuer_id = ${tableAlias}.id AND ${inClause.clause}
+            WHERE mise2.issuer_id = ${tableAlias}.isin_id AND ${inClause.clause}
           )`);
           params.push(...inClause.params);
         }
@@ -9051,10 +9062,10 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
     const { sql: trusteeDirectSql, params: trusteeDirectParams } = buildTrusteeDirectFilter();
     const { sql: trusteeExistsSql, params: trusteeExistsParams } = buildTrusteeExistsFilter();
 
-    const cyStart = formatDate(currentStartDate);
-    const cyEnd = formatDate(currentEndDate);
-    const pyStart = formatDate(previousStartDate);
-    const pyEnd = formatDate(previousEndDate);
+    const cyStart = formatDateTime(currentStartDate);
+    const cyEnd = formatDateTime(currentEndDate);
+    const pyStart = formatDateTime(previousStartDate);
+    const pyEnd = formatDateTime(previousEndDate);
 
     /* ---------------- TOTALS ---------------- */
 
@@ -10950,17 +10961,17 @@ app.post('/trustee_top_participants_details', async (req, res) => {
 
       const vals = Array.isArray(values)
         ? values.filter(
-            (v) =>
-              v !== '' &&
-              v !== null &&
-              v !== undefined
-          )
+          (v) =>
+            v !== '' &&
+            v !== null &&
+            v !== undefined
+        )
         : [values].filter(
-            (v) =>
-              v !== '' &&
-              v !== null &&
-              v !== undefined
-          );
+          (v) =>
+            v !== '' &&
+            v !== null &&
+            v !== undefined
+        );
 
       if (vals.length === 0) {
         return null;
@@ -13898,8 +13909,8 @@ app.post('/rating_agency_top_participants_details', async (req, res) => {
     const searchPattern =
       safeSearchQuery
         ? `%${escapeLike(
-            safeSearchQuery
-          )}%`
+          safeSearchQuery
+        )}%`
         : null;
 
     // =========================================================
@@ -13923,17 +13934,17 @@ app.post('/rating_agency_top_participants_details', async (req, res) => {
 
       const vals = Array.isArray(values)
         ? values.filter(
-            (v) =>
-              v !== '' &&
-              v !== null &&
-              v !== undefined
-          )
+          (v) =>
+            v !== '' &&
+            v !== null &&
+            v !== undefined
+        )
         : [values].filter(
-            (v) =>
-              v !== '' &&
-              v !== null &&
-              v !== undefined
-          );
+          (v) =>
+            v !== '' &&
+            v !== null &&
+            v !== undefined
+        );
 
       if (vals.length === 0) {
         return null;
@@ -17097,17 +17108,17 @@ app.post('/registrar_top_participants_details', async (req, res) => {
 
       const vals = Array.isArray(values)
         ? values.filter(
-            (v) =>
-              v !== '' &&
-              v !== null &&
-              v !== undefined
-          )
+          (v) =>
+            v !== '' &&
+            v !== null &&
+            v !== undefined
+        )
         : [values].filter(
-            (v) =>
-              v !== '' &&
-              v !== null &&
-              v !== undefined
-          );
+          (v) =>
+            v !== '' &&
+            v !== null &&
+            v !== undefined
+        );
 
       if (vals.length === 0) {
         return null;
