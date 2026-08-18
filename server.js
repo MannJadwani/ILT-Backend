@@ -5025,7 +5025,6 @@ app.post('/issuePage_specific_isin_detailed_data', async (req, res) => {
     const resultQuery = `
       SELECT DISTINCT
         isin_re_issuance.isin,
-        isin_re_issuance.series,
         isin_re_issuance.convertible_flag,
         isin_re_issuance.option_flag,
         isin_re_issuance.tier_classification,
