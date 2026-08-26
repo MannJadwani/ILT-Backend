@@ -259,23 +259,40 @@ app.post('/market-snapshot', async (req, res) => {
           SELECT
               issuer_id,
               rating,
-              ROW_NUMBER() OVER (
-                  PARTITION BY issuer_id
-                  ORDER BY rating_date DESC
-              ) AS rn
+              ROW_NUMBER() OVER (PARTITION BY issuer_id ORDER BY rating_date DESC) AS rn
           FROM master_issuer_rating
+      ),
+      rating_agg AS (
+          SELECT
+              lr.rating,
+              COUNT(DISTINCT ij.issuer_master_id) AS issuer_count,
+              SUM(ij.total_issue_size) AS total_issue_size
+          FROM issuer_monthly ij
+          INNER JOIN latest_rating lr ON ij.issuer_master_id = lr.issuer_id AND lr.rn = 1
+          GROUP BY lr.rating
+      ),
+      rating_ranked AS (
+          SELECT *,
+              ROW_NUMBER() OVER (ORDER BY issuer_count DESC, total_issue_size DESC) AS rank_num
+          FROM rating_agg
+      ),
+      sixth_rating AS (
+          SELECT rating FROM rating_ranked WHERE rank_num = 6
       )
-      SELECT
-          lr.rating,
-          COUNT(DISTINCT ij.issuer_master_id) AS issuer_count,
-          SUM(ij.total_issue_size) AS total_issue_size
-      FROM issuer_monthly ij
-      INNER JOIN latest_rating lr
-          ON ij.issuer_master_id = lr.issuer_id
-          AND lr.rn = 1
-      GROUP BY lr.rating
-      ORDER BY issuer_count DESC, total_issue_size DESC
-      LIMIT 6;
+      SELECT rating_label, issuer_count, total_issue_size
+      FROM (
+          SELECT rating AS rating_label, issuer_count, total_issue_size, rank_num AS sort_order
+          FROM rating_ranked
+          WHERE rank_num <= 5
+          UNION ALL
+          SELECT CONCAT((SELECT rating FROM sixth_rating), ' & rest'),
+                SUM(issuer_count),
+                SUM(total_issue_size),
+                6 AS sort_order
+          FROM rating_ranked
+          WHERE rank_num >= 6
+      ) t
+      ORDER BY sort_order;
     `;
 
     const sectorList = `
@@ -368,6 +385,40 @@ app.post('/market-snapshot', async (req, res) => {
       FROM monthly_2025 m2025, monthly_2026 m2026;
     `;
 
+    const topSectorsWithIssuers = `
+      WITH top_sectors AS (
+          SELECT
+              business_sector,
+              SUM(issue_size) AS total_issue_size
+          FROM isin_re_issuance
+          WHERE allotment_date BETWEEN ? AND ? AND (is_visible = 1) AND business_sector <> 0
+          GROUP BY business_sector
+          ORDER BY total_issue_size DESC
+          LIMIT 5
+      )
+      SELECT
+          bs.description AS sector_name,
+          id.issuer_name,
+          SUM(ir.issue_size) AS total_issue_size,
+          COUNT(ir.isin) AS isin_count
+      FROM isin_re_issuance ir
+      INNER JOIN top_sectors ts
+          ON ir.business_sector = ts.business_sector
+      INNER JOIN issuer_details id
+          ON ir.issuer_master_id = id.id
+      INNER JOIN master_business_sector bs
+          ON ir.business_sector = bs.code
+      WHERE ir.allotment_date BETWEEN ? AND ? AND (ir.is_visible = 1)
+      GROUP BY
+          bs.description,
+          ir.business_sector,
+          id.issuer_name,
+          ir.issuer_master_id
+      ORDER BY
+          ts.total_issue_size DESC,
+          total_issue_size DESC;
+    `;
+
 
     const Params = [cyStart, cyEnd];
 
@@ -383,7 +434,8 @@ app.post('/market-snapshot', async (req, res) => {
       ratingsListResult,
       sectorListResult,
       sectorAndRatingListResult,
-      monthlyCompareListResult
+      monthlyCompareListResult,
+      topSectorsWithIssuersResult
     ] = await Promise.all([
       prisma.$queryRawUnsafe(totalIssuers, ...Params),
       prisma.$queryRawUnsafe(totalIssueCount, ...Params),
@@ -396,7 +448,8 @@ app.post('/market-snapshot', async (req, res) => {
       prisma.$queryRawUnsafe(ratingsList, ...Params),
       prisma.$queryRawUnsafe(sectorList, ...Params),
       prisma.$queryRawUnsafe(sectorAndRatingList, ...Params),
-      prisma.$queryRawUnsafe(monthlyCompareList, ...Params)
+      prisma.$queryRawUnsafe(monthlyCompareList, ...Params),
+      prisma.$queryRawUnsafe(topSectorsWithIssuers, ...Params),
     ]);
 
     /* ---------------- RESPONSE ---------------- */
@@ -413,7 +466,8 @@ app.post('/market-snapshot', async (req, res) => {
       ratingsListResult,
       sectorListResult,
       sectorAndRatingListResult,
-      monthlyCompareListResult
+      monthlyCompareListResult,
+      topSectorsWithIssuersResult
     });
 
   } catch (error) {
