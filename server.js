@@ -139,6 +139,293 @@ function getCombinedSimilarity(str1, str2) {
 // MAIN ADMIN APIs:
 // ==========================================
 
+app.post('/market-snapshot', async (req, res) => {
+  try {
+    const { startDate, endDate } = req.body;
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: 'startDate, endDate are required' });
+    }
+
+    const currentStartDate = new Date(startDate);
+    const currentEndDate = new Date(endDate);
+
+    if (isNaN(currentStartDate.getTime()) || isNaN(currentEndDate.getTime())) {
+      return res.status(400).json({ error: 'Invalid date format' });
+    }
+
+    const formatDate = (date) =>
+      date.toISOString().slice(0, 19).replace('T', ' ');
+
+    const cyStart = formatDate(currentStartDate);
+    const cyEnd = formatDate(currentEndDate);
+
+    /* ---------------- TOTALS (percentage denominator) ---------------- */
+    const totalIssuers = `
+      SELECT COUNT(issuer_master_id) AS total_issuers
+      FROM isin_re_issuance
+      WHERE allotment_date BETWEEN ? AND ? AND (is_visible = 1)
+    `;
+
+    const totalIssueCount = `
+        SELECT COUNT(isin) AS total_isins
+        FROM isin_re_issuance
+        WHERE allotment_date BETWEEN ? AND ? AND (is_visible = 1)
+    `;
+
+    const totalIssueSize = `
+        SELECT SUM(issue_size) AS total_issue_size
+        FROM isin_re_issuance
+        WHERE allotment_date BETWEEN ? AND ? AND (is_visible = 1)
+    `;
+
+    const AvgIssueSize = `
+        SELECT AVG(issue_size) AS avg_issue_size
+        FROM isin_re_issuance
+        WHERE allotment_date BETWEEN ? AND ? AND (is_visible = 1)
+    `;
+
+    const totalUniqueIssuers = `
+      SELECT COUNT(DISTINCT issuer_master_id) AS total_issuers
+      FROM isin_re_issuance
+      WHERE allotment_date BETWEEN ? AND ? AND (is_visible = 1)
+    `;
+
+    const topIssuer = `
+      SELECT 
+          id.issuer_name,
+          SUM(ir.issue_size) AS total_issue_size,
+          COUNT(ir.isin) AS isin_count
+      FROM isin_re_issuance ir
+      INNER JOIN issuer_details id ON ir.issuer_master_id = id.id
+      WHERE ir.allotment_date BETWEEN ? AND ? AND (ir.is_visible = 1)
+      GROUP BY ir.issuer_master_id, id.issuer_name
+      ORDER BY total_issue_size DESC
+      LIMIT 1;
+    `;
+
+    const topRating = `
+      SELECT 
+          mr.rating,
+          COUNT(*) AS count_entries
+      FROM isin_re_issuance ir
+      INNER JOIN master_issuer_rating mr ON ir.isin_id = mr.issuer_id
+      WHERE ir.allotment_date BETWEEN ? AND ? AND (ir.is_visible = 1)
+      GROUP BY mr.rating
+      ORDER BY count_entries DESC
+      LIMIT 1;
+    `;
+
+    const issuerList = `
+      WITH latest_rating AS (
+          SELECT
+              ir.issuer_master_id,
+              mr.rating,
+              ROW_NUMBER() OVER (
+                  PARTITION BY ir.issuer_master_id 
+                  ORDER BY mr.rating_date DESC
+              ) AS rn
+          FROM isin_re_issuance ir
+          INNER JOIN master_issuer_rating mr ON ir.isin_id = mr.issuer_id
+          WHERE ir.is_visible = 1
+      )
+      SELECT
+          id.issuer_name,
+          COUNT(DISTINCT ir.isin) AS isin_count,
+          SUM(ir.issue_size) AS total_issue_size,
+          lr.rating AS latest_rating,
+          bs.description AS sector
+      FROM isin_re_issuance ir
+      INNER JOIN issuer_details id ON ir.issuer_master_id = id.id
+      LEFT JOIN master_business_sector bs ON ir.business_sector = bs.code
+      LEFT JOIN latest_rating lr 
+          ON ir.issuer_master_id = lr.issuer_master_id AND lr.rn = 1
+      WHERE ir.allotment_date BETWEEN ? AND ? AND (ir.is_visible = 1)
+      GROUP BY ir.issuer_master_id, id.issuer_name, bs.description, lr.rating
+      ORDER BY total_issue_size DESC
+      LIMIT 15;
+    `;
+
+    const ratingsList = `
+      WITH issuer_monthly AS (
+          SELECT
+              issuer_master_id,
+              SUM(issue_size) AS total_issue_size
+          FROM isin_re_issuance
+          WHERE allotment_date BETWEEN ? AND ? AND (is_visible = 1)
+          GROUP BY issuer_master_id
+      ),
+      latest_rating AS (
+          SELECT
+              issuer_id,
+              rating,
+              ROW_NUMBER() OVER (
+                  PARTITION BY issuer_id
+                  ORDER BY rating_date DESC
+              ) AS rn
+          FROM master_issuer_rating
+      )
+      SELECT
+          lr.rating,
+          COUNT(DISTINCT ij.issuer_master_id) AS issuer_count,
+          SUM(ij.total_issue_size) AS total_issue_size
+      FROM issuer_monthly ij
+      INNER JOIN latest_rating lr
+          ON ij.issuer_master_id = lr.issuer_id
+          AND lr.rn = 1
+      GROUP BY lr.rating
+      ORDER BY issuer_count DESC, total_issue_size DESC
+      LIMIT 6;
+    `;
+
+    const sectorList = `
+      SELECT
+          bs.description AS sector_name,
+          COUNT(DISTINCT ir.isin) AS isin_count,
+          COUNT(DISTINCT ir.issuer_master_id) AS issuer_count,
+          SUM(ir.issue_size) AS total_issue_size
+      FROM isin_re_issuance ir
+      INNER JOIN master_business_sector bs ON ir.business_sector = bs.code
+      WHERE ir.allotment_date BETWEEN ? AND ? AND (ir.is_visible = 1)
+      GROUP BY bs.description, ir.business_sector
+      ORDER BY issuer_count DESC, total_issue_size DESC
+      LIMIT 6;
+    `;
+
+    const sectorAndRatingList = `
+      WITH latest_rating AS (
+          SELECT
+              issuer_id,
+              rating,
+              ROW_NUMBER() OVER (PARTITION BY issuer_id ORDER BY rating_date DESC) AS rn
+          FROM master_issuer_rating
+      ),
+      monthly_issuances AS (
+          SELECT
+              ir.issuer_master_id,
+              ir.issue_size,
+              bs.description AS sector_name
+          FROM isin_re_issuance ir
+          INNER JOIN master_business_sector bs ON ir.business_sector = bs.code
+          WHERE ir.allotment_date BETWEEN ? AND ? AND (ir.is_visible = 1)
+      ),
+      sector_rating AS (
+          SELECT
+              ji.sector_name,
+              ji.issue_size,
+              CASE
+                  WHEN lr.rating IN ('AAA', 'AA+', 'AA', 'AA-', 'A+') THEN lr.rating
+                  ELSE 'A'  
+              END AS rating_category
+          FROM monthly_issuances ji
+          INNER JOIN latest_rating lr ON ji.issuer_master_id = lr.issuer_id AND lr.rn = 1
+      )
+
+      SELECT
+          sector_name,
+          SUM(issue_size) AS total_issue_size,
+          SUM(CASE WHEN rating_category = 'AAA'  THEN issue_size ELSE 0 END) AS AAA,
+          SUM(CASE WHEN rating_category = 'AA+'  THEN issue_size ELSE 0 END) AS AA_plus,
+          SUM(CASE WHEN rating_category = 'AA'   THEN issue_size ELSE 0 END) AS AA,
+          SUM(CASE WHEN rating_category = 'AA-'  THEN issue_size ELSE 0 END) AS AA_minus,
+          SUM(CASE WHEN rating_category = 'A+'   THEN issue_size ELSE 0 END) AS A_plus,
+          SUM(CASE WHEN rating_category = 'A'    THEN issue_size ELSE 0 END) AS A_others
+      FROM sector_rating
+      GROUP BY sector_name
+      ORDER BY total_issue_size DESC
+      LIMIT 6;
+    `;
+
+    const monthlyCompareList = `
+      WITH monthly_2025 AS (
+          SELECT 
+              COUNT(issuer_master_id) AS issuers,
+              SUM(issue_size) AS issue_size,
+              COUNT(isin) AS isins
+          FROM isin_re_issuance
+          WHERE allotment_date BETWEEN ? AND ? AND (is_visible = 1)
+      ),
+      monthly_2026 AS (
+          SELECT 
+              COUNT(issuer_master_id) AS issuers,
+              SUM(issue_size) AS issue_size,
+              COUNT(isin) AS isins
+          FROM isin_re_issuance
+          WHERE allotment_date BETWEEN ? AND ? AND (is_visible = 1)
+      )
+      SELECT 'Issuers' AS metric_name, 
+            m2025.issuers AS value_2025, 
+            m2026.issuers AS value_2026,
+            ROUND((m2026.issuers - m2025.issuers) / NULLIF(m2025.issuers, 0) * 100, 2) AS yoy_change_pct
+      FROM monthly_2025 m2025, monthly_2026 m2026
+      UNION ALL
+      SELECT 'Issue Size', m2025.issue_size, m2026.issue_size,
+            ROUND((m2026.issue_size - m2025.issue_size) / NULLIF(m2025.issue_size, 0) * 100, 2)
+      FROM monthly_2025 m2025, monthly_2026 m2026
+      UNION ALL
+      SELECT 'ISINs', m2025.isins, m2026.isins,
+            ROUND((m2026.isins - m2025.isins) / NULLIF(m2025.isins, 0) * 100, 2)
+      FROM monthly_2025 m2025, monthly_2026 m2026;
+    `;
+
+
+    const Params = [cyStart, cyEnd];
+
+    const [
+      totalIssuersResult,
+      totalIssueCountResult,
+      totalIssueSizeResult,
+      AvgIssueSizeResult,
+      totalUniqueIssuersResult,
+      topIssuerResult,
+      topRatingResult,
+      issuerListResult,
+      ratingsListResult,
+      sectorListResult,
+      sectorAndRatingListResult,
+      monthlyCompareListResult
+    ] = await Promise.all([
+      prisma.$queryRawUnsafe(totalIssuers, ...Params),
+      prisma.$queryRawUnsafe(totalIssueCount, ...Params),
+      prisma.$queryRawUnsafe(totalIssueSize, ...Params),
+      prisma.$queryRawUnsafe(AvgIssueSize, ...Params),
+      prisma.$queryRawUnsafe(totalUniqueIssuers, ...Params),
+      prisma.$queryRawUnsafe(topIssuer, ...Params),
+      prisma.$queryRawUnsafe(topRating, ...Params),
+      prisma.$queryRawUnsafe(issuerList, ...Params),
+      prisma.$queryRawUnsafe(ratingsList, ...Params),
+      prisma.$queryRawUnsafe(sectorList, ...Params),
+      prisma.$queryRawUnsafe(sectorAndRatingList, ...Params),
+      prisma.$queryRawUnsafe(monthlyCompareList, ...Params)
+    ]);
+
+    /* ---------------- RESPONSE ---------------- */
+
+    return res.status(200).json({
+      totalIssuersResult,
+      totalIssueCountResult,
+      totalIssueSizeResult,
+      AvgIssueSizeResult,
+      totalUniqueIssuersResult,
+      topIssuerResult,
+      topRatingResult,
+      issuerListResult,
+      ratingsListResult,
+      sectorListResult,
+      sectorAndRatingListResult,
+      monthlyCompareListResult
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      error: 'Failed to fetch market snapshot data',
+      message: error.message
+    });
+  }
+});
+
+
 //upload re-issuance data
 app.post('/bulk-upsert', async (req, res) => {
   try {
