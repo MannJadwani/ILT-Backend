@@ -139,7 +139,7 @@ function getCombinedSimilarity(str1, str2) {
 // MAIN ADMIN APIs:
 // ==========================================
 
-app.post('/market-snapshot', async (req, res) => {
+app.post('/market_snapshot', async (req, res) => {
   try {
     const { startDate, endDate } = req.body;
 
@@ -154,11 +154,19 @@ app.post('/market-snapshot', async (req, res) => {
       return res.status(400).json({ error: 'Invalid date format' });
     }
 
-    const formatDate = (date) =>
-      date.toISOString().slice(0, 19).replace('T', ' ');
+    const previousStartDate = new Date(currentStartDate);
+    previousStartDate.setFullYear(previousStartDate.getFullYear() - 1);
+
+    const previousEndDate = new Date(currentEndDate);
+    previousEndDate.setFullYear(previousEndDate.getFullYear() - 1);
+
+    const formatDate = (date) => date.toISOString().slice(0, 19).replace('T', ' ');
 
     const cyStart = formatDate(currentStartDate);
     const cyEnd = formatDate(currentEndDate);
+    const pyStart = formatDate(previousStartDate);
+    const pyEnd = formatDate(previousEndDate);
+
 
     /* ---------------- TOTALS (percentage denominator) ---------------- */
     const totalIssuers = `
@@ -173,14 +181,18 @@ app.post('/market-snapshot', async (req, res) => {
         WHERE allotment_date BETWEEN ? AND ? AND (is_visible = 1)
     `;
 
+    
+
     const totalIssueSize = `
-        SELECT SUM(issue_size) AS total_issue_size
+        SELECT 
+        COALESCE(ROUND(SUM(issue_size) / 10000000), 0) AS total_issue_size
         FROM isin_re_issuance
         WHERE allotment_date BETWEEN ? AND ? AND (is_visible = 1)
     `;
 
     const AvgIssueSize = `
-        SELECT AVG(issue_size) AS avg_issue_size
+        SELECT  
+        COALESCE(ROUND(AVG(issue_size) / 10000000), 0) AS avg_issue_size
         FROM isin_re_issuance
         WHERE allotment_date BETWEEN ? AND ? AND (is_visible = 1)
     `;
@@ -231,8 +243,8 @@ app.post('/market-snapshot', async (req, res) => {
       )
       SELECT
           id.issuer_name,
-          COUNT(DISTINCT ir.isin) AS isin_count,
-          SUM(ir.issue_size) AS total_issue_size,
+          COUNT(ir.isin) AS isin_count, 
+          COALESCE(ROUND(SUM(ir.issue_size) / 10000000), 0) AS total_issue_size,
           lr.rating AS latest_rating,
           bs.description AS sector
       FROM isin_re_issuance ir
@@ -246,11 +258,13 @@ app.post('/market-snapshot', async (req, res) => {
       LIMIT 15;
     `;
 
+    
+
     const ratingsList = `
       WITH issuer_monthly AS (
           SELECT
               issuer_master_id,
-              SUM(issue_size) AS total_issue_size
+              COALESCE(ROUND(SUM(issue_size) / 10000000), 0) AS total_issue_size
           FROM isin_re_issuance
           WHERE allotment_date BETWEEN ? AND ? AND (is_visible = 1)
           GROUP BY issuer_master_id
@@ -297,10 +311,10 @@ app.post('/market-snapshot', async (req, res) => {
 
     const sectorList = `
       SELECT
-          bs.description AS sector_name,
-          COUNT(DISTINCT ir.isin) AS isin_count,
-          COUNT(DISTINCT ir.issuer_master_id) AS issuer_count,
-          SUM(ir.issue_size) AS total_issue_size
+          bs.description AS sector_name, 
+          COUNT(ir.isin) AS isin_count,
+          COUNT(ir.issuer_master_id) AS issuer_count,
+          COALESCE(ROUND(SUM(ir.issue_size) / 10000000), 0) AS total_issue_size
       FROM isin_re_issuance ir
       INNER JOIN master_business_sector bs ON ir.business_sector = bs.code
       WHERE ir.allotment_date BETWEEN ? AND ? AND (ir.is_visible = 1)
@@ -308,6 +322,8 @@ app.post('/market-snapshot', async (req, res) => {
       ORDER BY issuer_count DESC, total_issue_size DESC
       LIMIT 6;
     `;
+
+    //COALESCE(ROUND(SUM(issue_size) / 10000000), 0) AS issueSize,
 
     const sectorAndRatingList = `
       WITH latest_rating AS (
@@ -329,7 +345,7 @@ app.post('/market-snapshot', async (req, res) => {
       sector_rating AS (
           SELECT
               ji.sector_name,
-              ji.issue_size,
+              ji.issue_size/ 10000000 AS issue_size,
               CASE
                   WHEN lr.rating IN ('AAA', 'AA+', 'AA', 'AA-', 'A+') THEN lr.rating
                   ELSE 'A'  
@@ -340,7 +356,7 @@ app.post('/market-snapshot', async (req, res) => {
 
       SELECT
           sector_name,
-          SUM(issue_size) AS total_issue_size,
+          COALESCE(ROUND(SUM(issue_size) / 10000000), 0) AS total_issue_size,
           SUM(CASE WHEN rating_category = 'AAA'  THEN issue_size ELSE 0 END) AS AAA,
           SUM(CASE WHEN rating_category = 'AA+'  THEN issue_size ELSE 0 END) AS AA_plus,
           SUM(CASE WHEN rating_category = 'AA'   THEN issue_size ELSE 0 END) AS AA,
@@ -357,7 +373,7 @@ app.post('/market-snapshot', async (req, res) => {
       WITH monthly_2025 AS (
           SELECT 
               COUNT(issuer_master_id) AS issuers,
-              SUM(issue_size) AS issue_size,
+              COALESCE(ROUND(SUM(issue_size) / 10000000), 0) AS issue_size,
               COUNT(isin) AS isins
           FROM isin_re_issuance
           WHERE allotment_date BETWEEN ? AND ? AND (is_visible = 1)
@@ -365,7 +381,7 @@ app.post('/market-snapshot', async (req, res) => {
       monthly_2026 AS (
           SELECT 
               COUNT(issuer_master_id) AS issuers,
-              SUM(issue_size) AS issue_size,
+              COALESCE(ROUND(SUM(issue_size) / 10000000), 0) AS issue_size,
               COUNT(isin) AS isins
           FROM isin_re_issuance
           WHERE allotment_date BETWEEN ? AND ? AND (is_visible = 1)
@@ -389,7 +405,7 @@ app.post('/market-snapshot', async (req, res) => {
       WITH top_sectors AS (
           SELECT
               business_sector,
-              SUM(issue_size) AS total_issue_size
+              COALESCE(ROUND(SUM(issue_size) / 10000000), 0) AS total_issue_size
           FROM isin_re_issuance
           WHERE allotment_date BETWEEN ? AND ? AND (is_visible = 1) AND business_sector <> 0
           GROUP BY business_sector
@@ -398,8 +414,8 @@ app.post('/market-snapshot', async (req, res) => {
       )
       SELECT
           bs.description AS sector_name,
-          id.issuer_name,
-          SUM(ir.issue_size) AS total_issue_size,
+          id.issuer_name, 
+          COALESCE(ROUND(SUM(ir.issue_size) / 10000000), 0) AS total_issue_size,
           COUNT(ir.isin) AS isin_count
       FROM isin_re_issuance ir
       INNER JOIN top_sectors ts
@@ -421,6 +437,8 @@ app.post('/market-snapshot', async (req, res) => {
 
 
     const Params = [cyStart, cyEnd];
+    const prevParams = [pyStart, pyEnd, cyStart, cyEnd];
+    const doubleParams = [cyStart, cyEnd, cyStart, cyEnd ];
 
     const [
       totalIssuersResult,
@@ -448,8 +466,8 @@ app.post('/market-snapshot', async (req, res) => {
       prisma.$queryRawUnsafe(ratingsList, ...Params),
       prisma.$queryRawUnsafe(sectorList, ...Params),
       prisma.$queryRawUnsafe(sectorAndRatingList, ...Params),
-      prisma.$queryRawUnsafe(monthlyCompareList, ...Params),
-      prisma.$queryRawUnsafe(topSectorsWithIssuers, ...Params),
+      prisma.$queryRawUnsafe(monthlyCompareList, ...prevParams),
+      prisma.$queryRawUnsafe(topSectorsWithIssuers, ...doubleParams),
     ]);
 
     /* ---------------- RESPONSE ---------------- */
