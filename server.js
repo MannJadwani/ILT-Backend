@@ -203,17 +203,28 @@ app.post('/market_snapshot', async (req, res) => {
       WHERE allotment_date BETWEEN ? AND ? AND (is_visible = 1)
     `;
 
-    const topIssuer = `
+    const topIssuerByIssueSize = `
       SELECT 
           id.issuer_name,
-          SUM(ir.issue_size) AS total_issue_size,
-          COUNT(ir.isin) AS isin_count
+          SUM(ir.issue_size) AS total_issue_size
       FROM isin_re_issuance ir
       INNER JOIN issuer_details id ON ir.issuer_master_id = id.id
       WHERE ir.allotment_date BETWEEN ? AND ? AND (ir.is_visible = 1)
       GROUP BY ir.issuer_master_id, id.issuer_name
       ORDER BY total_issue_size DESC
       LIMIT 1;
+    `;
+
+    const topIssuerByIssuerNumber = `
+        SELECT 
+            id.issuer_name,
+            COUNT(ir.isin) AS isin_count
+        FROM isin_re_issuance ir
+        INNER JOIN issuer_details id ON ir.issuer_master_id = id.id
+        WHERE ir.allotment_date BETWEEN ? AND ? AND (ir.is_visible = 1)
+        GROUP BY ir.issuer_master_id, id.issuer_name
+        ORDER BY isin_count DESC
+        LIMIT 1;
     `;
 
     const topRating = `
@@ -446,7 +457,8 @@ app.post('/market_snapshot', async (req, res) => {
       totalIssueSizeResult,
       AvgIssueSizeResult,
       totalUniqueIssuersResult,
-      topIssuerResult,
+      topIssuerByIssueSizeResult,
+      topIssuerByIssuerNumberResult,
       topRatingResult,
       issuerListResult,
       ratingsListResult,
@@ -460,7 +472,8 @@ app.post('/market_snapshot', async (req, res) => {
       prisma.$queryRawUnsafe(totalIssueSize, ...Params),
       prisma.$queryRawUnsafe(AvgIssueSize, ...Params),
       prisma.$queryRawUnsafe(totalUniqueIssuers, ...Params),
-      prisma.$queryRawUnsafe(topIssuer, ...Params),
+      prisma.$queryRawUnsafe(topIssuerByIssueSize, ...Params),
+      prisma.$queryRawUnsafe(topIssuerByIssuerNumber, ...Params),
       prisma.$queryRawUnsafe(topRating, ...Params),
       prisma.$queryRawUnsafe(issuerList, ...Params),
       prisma.$queryRawUnsafe(ratingsList, ...Params),
@@ -478,7 +491,8 @@ app.post('/market_snapshot', async (req, res) => {
       totalIssueSizeResult,
       AvgIssueSizeResult,
       totalUniqueIssuersResult,
-      topIssuerResult,
+      topIssuerByIssueSizeResult,
+      topIssuerByIssuerNumberResult,
       topRatingResult,
       issuerListResult,
       ratingsListResult,
