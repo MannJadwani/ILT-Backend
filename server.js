@@ -181,7 +181,7 @@ app.post('/market_snapshot', async (req, res) => {
         WHERE allotment_date BETWEEN ? AND ? AND (is_visible = 1)
     `;
 
-    
+
 
     const totalIssueSize = `
         SELECT 
@@ -258,7 +258,7 @@ app.post('/market_snapshot', async (req, res) => {
       LIMIT 15;
     `;
 
-    
+
 
     const ratingsList = `
       WITH issuer_monthly AS (
@@ -336,7 +336,7 @@ app.post('/market_snapshot', async (req, res) => {
       monthly_issuances AS (
           SELECT
               ir.issuer_master_id,
-              ir.issue_size,
+              ir.issue_size / 10000000.0 AS issue_size,
               bs.description AS sector_name
           FROM isin_re_issuance ir
           INNER JOIN master_business_sector bs ON ir.business_sector = bs.code
@@ -345,7 +345,7 @@ app.post('/market_snapshot', async (req, res) => {
       sector_rating AS (
           SELECT
               ji.sector_name,
-              ji.issue_size/ 10000000 AS issue_size,
+              ji.issue_size AS issue_size,
               CASE
                   WHEN lr.rating IN ('AAA', 'AA+', 'AA', 'AA-', 'A+') THEN lr.rating
                   ELSE 'A'  
@@ -356,16 +356,16 @@ app.post('/market_snapshot', async (req, res) => {
 
       SELECT
           sector_name,
-          COALESCE(ROUND(SUM(issue_size) / 10000000), 0) AS total_issue_size,
-          SUM(CASE WHEN rating_category = 'AAA'  THEN issue_size ELSE 0 END) AS AAA,
-          SUM(CASE WHEN rating_category = 'AA+'  THEN issue_size ELSE 0 END) AS AA_plus,
-          SUM(CASE WHEN rating_category = 'AA'   THEN issue_size ELSE 0 END) AS AA,
-          SUM(CASE WHEN rating_category = 'AA-'  THEN issue_size ELSE 0 END) AS AA_minus,
-          SUM(CASE WHEN rating_category = 'A+'   THEN issue_size ELSE 0 END) AS A_plus,
-          SUM(CASE WHEN rating_category = 'A'    THEN issue_size ELSE 0 END) AS A_others
+          ROUND(SUM(issue_size), 2) AS total_issue_size_crores,
+          ROUND(SUM(CASE WHEN rating_category = 'AAA'  THEN issue_size ELSE 0 END), 2) AS AAA,
+          ROUND(SUM(CASE WHEN rating_category = 'AA+'  THEN issue_size ELSE 0 END), 2) AS AA_plus,
+          ROUND(SUM(CASE WHEN rating_category = 'AA'   THEN issue_size ELSE 0 END), 2) AS AA,
+          ROUND(SUM(CASE WHEN rating_category = 'AA-'  THEN issue_size ELSE 0 END), 2) AS AA_minus,
+          ROUND(SUM(CASE WHEN rating_category = 'A+'   THEN issue_size ELSE 0 END), 2) AS A_plus,
+          ROUND(SUM(CASE WHEN rating_category = 'A'    THEN issue_size ELSE 0 END), 2) AS A_others
       FROM sector_rating
       GROUP BY sector_name
-      ORDER BY total_issue_size DESC
+      ORDER BY total_issue_size_crores DESC
       LIMIT 6;
     `;
 
@@ -438,7 +438,7 @@ app.post('/market_snapshot', async (req, res) => {
 
     const Params = [cyStart, cyEnd];
     const prevParams = [pyStart, pyEnd, cyStart, cyEnd];
-    const doubleParams = [cyStart, cyEnd, cyStart, cyEnd ];
+    const doubleParams = [cyStart, cyEnd, cyStart, cyEnd];
 
     const [
       totalIssuersResult,
