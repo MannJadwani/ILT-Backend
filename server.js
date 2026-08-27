@@ -301,20 +301,34 @@ app.post('/market_snapshot', async (req, res) => {
       ),
       sixth_rating AS (
           SELECT rating FROM rating_ranked WHERE rank_num = 6
-      )
-      SELECT rating_label, issuer_count, total_issue_size
-      FROM (
-          SELECT rating AS rating_label, issuer_count, total_issue_size, rank_num AS sort_order
+      ),
+      total_issuer AS (
+          SELECT SUM(issuer_count) AS total
+          FROM rating_agg
+      ),
+      combined AS (
+          SELECT
+              rating AS rating_label,
+              issuer_count,
+              total_issue_size,
+              rank_num AS sort_order
           FROM rating_ranked
           WHERE rank_num <= 5
           UNION ALL
-          SELECT CONCAT((SELECT rating FROM sixth_rating), ' & rest'),
-                SUM(issuer_count),
-                SUM(total_issue_size),
-                6 AS sort_order
+          SELECT
+              CONCAT((SELECT rating FROM sixth_rating), ' & rest'),
+              SUM(issuer_count),
+              SUM(total_issue_size),
+              6 AS sort_order
           FROM rating_ranked
           WHERE rank_num >= 6
-      ) t
+      )
+      SELECT
+          rating_label,
+          issuer_count,
+          total_issue_size,
+          ROUND((issuer_count / (SELECT total FROM total_issuer)) * 100, 2) AS shares
+      FROM combined
       ORDER BY sort_order;
     `;
 
