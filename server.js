@@ -333,16 +333,30 @@ app.post('/market_snapshot', async (req, res) => {
     `;
 
     const sectorList = `
+      WITH sector_agg AS (
+          SELECT
+              bs.description AS sector_name,
+              COUNT(ir.isin) AS isin_count,
+              COUNT(ir.issuer_master_id) AS issuer_count,
+              SUM(ir.issue_size) AS total_issue_size_raw
+          FROM isin_re_issuance ir
+          INNER JOIN master_business_sector bs ON ir.business_sector = bs.code
+          WHERE ir.allotment_date BETWEEN ? AND ? 
+            AND (ir.is_visible = 1)
+          GROUP BY bs.description, ir.business_sector
+      ),
+      total_issuers AS (
+          SELECT SUM(issuer_count) AS total_issuer_count
+          FROM sector_agg
+      )
       SELECT
-          bs.description AS sector_name, 
-          COUNT(ir.isin) AS isin_count,
-          COUNT(ir.issuer_master_id) AS issuer_count,
-          COALESCE(ROUND(SUM(ir.issue_size) / 10000000), 0) AS total_issue_size
-      FROM isin_re_issuance ir
-      INNER JOIN master_business_sector bs ON ir.business_sector = bs.code
-      WHERE ir.allotment_date BETWEEN ? AND ? AND (ir.is_visible = 1)
-      GROUP BY bs.description, ir.business_sector
-      ORDER BY issuer_count DESC, total_issue_size DESC
+          sector_name,
+          isin_count,
+          issuer_count,
+          COALESCE(ROUND(total_issue_size_raw / 10000000), 0) AS total_issue_size,
+          ROUND((issuer_count / (SELECT total_issuer_count FROM total_issuers)) * 100, 2) AS shares
+      FROM sector_agg
+      ORDER BY issuer_count DESC, total_issue_size_raw DESC
       LIMIT 6;
     `;
 
