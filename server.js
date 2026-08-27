@@ -168,7 +168,7 @@ app.post('/market_snapshot', async (req, res) => {
     const pyEnd = formatDate(previousEndDate);
 
 
-    /* ---------------- TOTALS (percentage denominator) ---------------- */
+    /* ---------------- SECTION-1 ---------------- */
     const totalIssuers = `
       SELECT COUNT(issuer_master_id) AS total_issuers
       FROM isin_re_issuance
@@ -180,8 +180,6 @@ app.post('/market_snapshot', async (req, res) => {
         FROM isin_re_issuance
         WHERE allotment_date BETWEEN ? AND ? AND (is_visible = 1)
     `;
-
-
 
     const totalIssueSize = `
         SELECT 
@@ -239,6 +237,8 @@ app.post('/market_snapshot', async (req, res) => {
       LIMIT 1;
     `;
 
+     /* ---------------- SECTION-2 ---------------- */
+
     const issuerList = `
       WITH latest_rating AS (
           SELECT
@@ -266,10 +266,8 @@ app.post('/market_snapshot', async (req, res) => {
       WHERE ir.allotment_date BETWEEN ? AND ? AND (ir.is_visible = 1)
       GROUP BY ir.issuer_master_id, id.issuer_name, bs.description, lr.rating
       ORDER BY total_issue_size DESC
-      LIMIT 15;
+      LIMIT 10;
     `;
-
-
 
     const ratingsList = `
       WITH issuer_monthly AS (
