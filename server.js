@@ -199,12 +199,14 @@ app.post('/market_snapshot', async (req, res) => {
         WHERE allotment_date BETWEEN ? AND ? AND (is_visible = 1)
     `;
 
-    const AvgIssueSize = `
-        SELECT  
-        COALESCE(ROUND(AVG(issue_size) / 10000000), 0) AS avg_issue_size
-        FROM isin_re_issuance
-        WHERE allotment_date BETWEEN ? AND ? AND (is_visible = 1)
-    `;
+    // const AvgIssueSize = `
+    //     SELECT  
+    //     COALESCE(ROUND(AVG(issue_size) / 10000000), 0) AS avg_issue_size
+    //     FROM isin_re_issuance
+    //     WHERE allotment_date BETWEEN ? AND ? AND (is_visible = 1)
+    // `;
+
+    
 
     const totalUniqueIssuers = `
       SELECT COUNT(DISTINCT issuer_master_id) AS total_issuers
@@ -720,7 +722,7 @@ app.post('/market_snapshot', async (req, res) => {
       totalIssuersResult,
       totalIssueCountResult,
       totalIssueSizeResult,
-      AvgIssueSizeResult,
+      // AvgIssueSizeResult,
       totalUniqueIssuersResult,
       topIssuerByIssueSizeResult,
       topIssuerByIssuerNumberResult,
@@ -738,7 +740,7 @@ app.post('/market_snapshot', async (req, res) => {
       prisma.$queryRawUnsafe(totalIssuers, ...Params),
       prisma.$queryRawUnsafe(totalIssueCount, ...Params),
       prisma.$queryRawUnsafe(totalIssueSize, ...Params),
-      prisma.$queryRawUnsafe(AvgIssueSize, ...Params),
+      // prisma.$queryRawUnsafe(AvgIssueSize, ...Params),
       prisma.$queryRawUnsafe(totalUniqueIssuers, ...Params),
       prisma.$queryRawUnsafe(topIssuerByIssueSize, ...Params),
       prisma.$queryRawUnsafe(topIssuerByIssuerNumber, ...Params),
@@ -753,6 +755,8 @@ app.post('/market_snapshot', async (req, res) => {
       prisma.$queryRawUnsafe(topSectorsWithIssuers, ...tripleParams),
       prisma.$queryRawUnsafe(topRatingWithIssuers, ...tripleParams)
     ]);
+
+    const AvgIssueSizeResult = totalIssueSizeResult.length > 0 ? Number(totalIssueSizeResult[0]?.total_issue_size) / Number(totalIssuersResult[0]?.total_issuers || 1) : 0;
 
     const mergedRatings = new Map();
     const allBuckets = ['AAA', 'AA+', 'AA', 'AA-', 'A+', 'A & below'];
