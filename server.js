@@ -237,7 +237,7 @@ app.post('/market_snapshot', async (req, res) => {
       LIMIT 1;
     `;
 
-     /* ---------------- SECTION-2 ---------------- */
+    /* ---------------- SECTION-2 ---------------- */
 
     const issuerList = `
       WITH latest_rating AS (
@@ -270,94 +270,94 @@ app.post('/market_snapshot', async (req, res) => {
     `;
 
     const ratingsList = `
-      WITH issuer_monthly AS (
-          SELECT
-              issuer_master_id,
-              COALESCE(ROUND(SUM(issue_size) / 10000000), 0) AS total_issue_size
-          FROM isin_re_issuance
-          WHERE allotment_date BETWEEN ? AND ? AND (is_visible = 1)
-          GROUP BY issuer_master_id
-      ),
-      latest_rating AS (
-          SELECT
-              issuer_id,
-              rating,
-              ROW_NUMBER() OVER (PARTITION BY issuer_id ORDER BY rating_date DESC) AS rn
-          FROM master_issuer_rating
-      ),
-      rating_agg AS (
-          SELECT
-              lr.rating,
-              COUNT(DISTINCT ij.issuer_master_id) AS issuer_count,
-              SUM(ij.total_issue_size) AS total_issue_size
-          FROM issuer_monthly ij
-          INNER JOIN latest_rating lr ON ij.issuer_master_id = lr.issuer_id AND lr.rn = 1
-          GROUP BY lr.rating
-      ),
-      rating_ranked AS (
-          SELECT *,
-              ROW_NUMBER() OVER (ORDER BY issuer_count DESC, total_issue_size DESC) AS rank_num
-          FROM rating_agg
-      ),
-      sixth_rating AS (
-          SELECT rating FROM rating_ranked WHERE rank_num = 6
-      ),
-      total_issuer AS (
-          SELECT SUM(issuer_count) AS total
-          FROM rating_agg
-      ),
-      combined AS (
-          SELECT
-              rating AS rating_label,
-              issuer_count,
-              total_issue_size,
-              rank_num AS sort_order
-          FROM rating_ranked
-          WHERE rank_num <= 5
-          UNION ALL
-          SELECT
-              CONCAT((SELECT rating FROM sixth_rating), ' & rest'),
-              SUM(issuer_count),
-              SUM(total_issue_size),
-              6 AS sort_order
-          FROM rating_ranked
-          WHERE rank_num >= 6
-      )
-      SELECT
-          rating_label,
-          issuer_count,
-          total_issue_size,
-          ROUND((issuer_count / (SELECT total FROM total_issuer)) * 100, 2) AS shares
-      FROM combined
-      ORDER BY sort_order;
+        WITH issuer_monthly AS (
+            SELECT
+                issuer_master_id,
+                COALESCE(ROUND(SUM(issue_size) / 10000000), 0) AS total_issue_size
+            FROM isin_re_issuance
+            WHERE allotment_date BETWEEN ? AND ? AND (is_visible = 1)
+            GROUP BY issuer_master_id
+        ),
+        latest_rating AS (
+            SELECT
+                issuer_id,
+                rating,
+                ROW_NUMBER() OVER (PARTITION BY issuer_id ORDER BY rating_date DESC) AS rn
+            FROM master_issuer_rating
+        ),
+        rating_agg AS (
+            SELECT
+                lr.rating,
+                COUNT(DISTINCT ij.issuer_master_id) AS issuer_count,
+                SUM(ij.total_issue_size) AS total_issue_size
+            FROM issuer_monthly ij
+            INNER JOIN latest_rating lr ON ij.issuer_master_id = lr.issuer_id AND lr.rn = 1
+            GROUP BY lr.rating
+        ),
+        rating_ranked AS (
+            SELECT *,
+                ROW_NUMBER() OVER (ORDER BY total_issue_size DESC, issuer_count DESC) AS rank_num
+            FROM rating_agg
+        ),
+        sixth_rating AS (
+            SELECT rating FROM rating_ranked WHERE rank_num = 6
+        ),
+        total_issuer AS (
+            SELECT SUM(issuer_count) AS total
+            FROM rating_agg
+        ),
+        combined AS (
+            SELECT
+                rating AS rating_label,
+                issuer_count,
+                total_issue_size,
+                rank_num AS sort_order
+            FROM rating_ranked
+            WHERE rank_num <= 5
+            UNION ALL
+            SELECT
+                CONCAT((SELECT rating FROM sixth_rating), ' & rest'),
+                SUM(issuer_count),
+                SUM(total_issue_size),
+                6 AS sort_order
+            FROM rating_ranked
+            WHERE rank_num >= 6
+        )
+        SELECT
+            rating_label,
+            issuer_count,
+            total_issue_size,
+            ROUND((issuer_count / (SELECT total FROM total_issuer)) * 100, 2) AS shares
+        FROM combined
+        ORDER BY sort_order;
     `;
 
     const sectorList = `
-      WITH sector_agg AS (
-          SELECT
-              bs.description AS sector_name,
-              COUNT(ir.isin) AS isin_count,
-              COUNT(ir.issuer_master_id) AS issuer_count,
-              SUM(ir.issue_size) AS total_issue_size_raw
-          FROM isin_re_issuance ir
-          INNER JOIN master_business_sector bs ON ir.business_sector = bs.code
-          WHERE ir.allotment_date BETWEEN ? AND ? 
-            AND (ir.is_visible = 1)
-          GROUP BY bs.description, ir.business_sector
-      ),
-      total_issuers AS (
-          SELECT SUM(issuer_count) AS total_issuer_count
-          FROM sector_agg
-      )
-      SELECT
-          sector_name,
-          isin_count,
-          issuer_count,
-          COALESCE(ROUND(total_issue_size_raw / 10000000), 0) AS total_issue_size,
-          ROUND((issuer_count / (SELECT total_issuer_count FROM total_issuers)) * 100, 2) AS shares
-      FROM sector_agg
-      ORDER BY issuer_count DESC, total_issue_size_raw DESC
-      LIMIT 6;
+        WITH sector_agg AS (
+            SELECT
+                bs.description AS sector_name,
+                COUNT(ir.isin) AS isin_count,
+                COUNT(ir.issuer_master_id) AS issuer_count,
+                SUM(ir.issue_size) AS total_issue_size_raw
+            FROM isin_re_issuance ir
+            INNER JOIN master_business_sector bs ON ir.business_sector = bs.code
+            WHERE ir.allotment_date BETWEEN ? AND ? 
+              AND (ir.is_visible = 1)
+            GROUP BY bs.description, ir.business_sector
+        ),
+        total_issuers AS (
+            SELECT SUM(issuer_count) AS total_issuer_count
+            FROM sector_agg
+        )
+        SELECT
+            sector_name,
+            isin_count,
+            issuer_count,
+            COALESCE(ROUND(total_issue_size_raw / 10000000), 0) AS total_issue_size,
+            ROUND((issuer_count / (SELECT total_issuer_count FROM total_issuers)) * 100, 2) AS shares
+        FROM sector_agg
+        ORDER BY total_issue_size_raw DESC, issuer_count DESC
+        LIMIT 6;
     `;
 
     //COALESCE(ROUND(SUM(issue_size) / 10000000), 0) AS issueSize,
