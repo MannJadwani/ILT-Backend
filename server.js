@@ -344,6 +344,14 @@ app.post('/market_snapshot', async (req, res) => {
             INNER JOIN master_business_sector bs ON ir.business_sector = bs.code
             WHERE ir.allotment_date BETWEEN ? AND ? 
               AND (ir.is_visible = 1)
+              AND bs.description IN (
+                'Non-Banking Financial Company (NBFC)',
+                'Financial Institution',
+                'Housing Finance Company',
+                'Investment Company',
+                'Diversified',
+                'Electric Utilities'
+              )
             GROUP BY bs.description, ir.business_sector
         ),
         total_issuers AS (
@@ -357,9 +365,17 @@ app.post('/market_snapshot', async (req, res) => {
             COALESCE(ROUND(total_issue_size_raw / 10000000), 0) AS total_issue_size,
             ROUND((issuer_count / (SELECT total_issuer_count FROM total_issuers)) * 100, 2) AS shares
         FROM sector_agg
-        ORDER BY total_issue_size_raw DESC, issuer_count DESC
-        LIMIT 6;
-    `;
+        ORDER BY 
+            CASE sector_name
+                WHEN 'Non-Banking Financial Company (NBFC)' THEN 1
+                WHEN 'Financial Institution' THEN 2
+                WHEN 'Housing Finance Company' THEN 3
+                WHEN 'Investment Company' THEN 4
+                WHEN 'Diversified' THEN 5
+                WHEN 'Electric Utilities' THEN 6
+                ELSE 7
+            END;
+      `;
 
     //COALESCE(ROUND(SUM(issue_size) / 10000000), 0) AS issueSize,
 
@@ -712,7 +728,8 @@ app.post('/market_snapshot', async (req, res) => {
       issuerListResult,
       currentRatings,
       previousRatings,
-      sectorListResult,
+      currentSectors,
+      previousSectors,
       sectorAndRatingListResult,
       monthlyCompareListResult,
       topSectorsWithIssuersResult,
@@ -729,7 +746,8 @@ app.post('/market_snapshot', async (req, res) => {
       prisma.$queryRawUnsafe(issuerList, ...Params),
       prisma.$queryRawUnsafe(ratingsList, cyStart, cyEnd),
       prisma.$queryRawUnsafe(ratingsList, pmStart, pmEnd),
-      prisma.$queryRawUnsafe(sectorList, ...Params),
+      prisma.$queryRawUnsafe(sectorList, cyStart, cyEnd),
+      prisma.$queryRawUnsafe(sectorList, pmStart, pmEnd),
       prisma.$queryRawUnsafe(sectorAndRatingList, ...Params),
       prisma.$queryRawUnsafe(monthlyCompareList, ...prevParams),
       prisma.$queryRawUnsafe(topSectorsWithIssuers, ...tripleParams),
@@ -738,6 +756,54 @@ app.post('/market_snapshot', async (req, res) => {
 
     const mergedRatings = new Map();
     const allBuckets = ['AAA', 'AA+', 'AA', 'AA-', 'A+', 'A & below'];
+    const sectorOrder = [
+      'Non-Banking Financial Company (NBFC)',
+      'Financial Institution',
+      'Housing Finance Company',
+      'Investment Company',
+      'Diversified',
+      'Electric Utilities'
+    ];
+
+    // Build merged array in the fixed order
+    const mergedSectors = sectorOrder.map(sector => ({
+      sector_name: sector,
+      isin_count_current_month: 0,
+      issuer_count_current_month: 0,
+      total_issue_size_current_month: 0,
+      shares_current_month: 0,
+      isin_count_previous_month: 0,
+      issuer_count_previous_month: 0,
+      total_issue_size_previous_month: 0,
+      shares_previous_month: 0
+    }));
+
+    const sectorMap = new Map(mergedSectors.map(item => [item.sector_name, item]));
+
+    currentSectors.forEach(row => {
+      const sector = row.sector_name;
+      if (sectorMap.has(sector)) {
+        const entry = sectorMap.get(sector);
+        entry.isin_count_current_month = Number(row.isin_count);
+        entry.issuer_count_current_month = Number(row.issuer_count);
+        entry.total_issue_size_current_month = Number(row.total_issue_size);
+        entry.shares_current_month = Number(row.shares);
+      }
+    });
+
+    previousSectors.forEach(row => {
+      const sector = row.sector_name;
+      if (sectorMap.has(sector)) {
+        const entry = sectorMap.get(sector);
+        entry.isin_count_previous_month = Number(row.isin_count);
+        entry.issuer_count_previous_month = Number(row.issuer_count);
+        entry.total_issue_size_previous_month = Number(row.total_issue_size);
+        entry.shares_previous_month = Number(row.shares);
+      }
+    });
+
+    const sectorListResult = Array.from(sectorMap.values());
+
 
     allBuckets.forEach(bucket => {
       mergedRatings.set(bucket, {
