@@ -444,38 +444,126 @@ app.post('/market_snapshot', async (req, res) => {
               business_sector,
               COALESCE(ROUND(SUM(issue_size) / 10000000), 0) AS total_issue_size
           FROM isin_re_issuance
-          WHERE allotment_date BETWEEN ? AND ? AND (is_visible = 1) AND business_sector <> 0
+          WHERE allotment_date BETWEEN ? AND ?
+            AND is_visible = 1
+            AND business_sector <> 0
           GROUP BY business_sector
           ORDER BY total_issue_size DESC
           LIMIT 5
+      ),
+
+      -- Main issuer-level data (sector, issuer, total size, ISIN count)
+      main_issuer_data AS (
+          SELECT
+              bs.description AS sector_name,
+              id.issuer_name,
+              ir.issuer_master_id,
+              ts.total_issue_size AS sector_total_issue_size,
+              COALESCE(ROUND(SUM(ir.issue_size) / 10000000), 0) AS total_issue_size,
+              COUNT(ir.isin) AS isin_count
+          FROM isin_re_issuance ir
+          INNER JOIN top_sectors ts
+              ON ir.business_sector = ts.business_sector
+          INNER JOIN issuer_details id
+              ON ir.issuer_master_id = id.id
+          INNER JOIN master_business_sector bs
+              ON ir.business_sector = bs.code
+          WHERE ir.allotment_date BETWEEN ? AND ?
+            AND ir.is_visible = 1
+          GROUP BY
+              bs.description,
+              ir.business_sector,
+              id.issuer_name,
+              ir.issuer_master_id,
+              ts.total_issue_size
+      ),
+
+      -- Aggregated tenure and coupon data per issuer (using the same ISIN set)
+      issuer_agg AS (
+          SELECT
+              ir.issuer_master_id,
+              MIN(itd.tenure) AS tenure_min,
+              MAX(itd.tenure) AS tenure_max,
+              -- flag: does this issuer have any market‑linked coupon?
+              MAX(
+                  CASE
+                      WHEN icd.coupon_rate IS NOT NULL
+                      AND icd.coupon_rate NOT REGEXP '^[0-9]+(\\.[0-9]+)?%?$'
+                      THEN 1
+                      ELSE 0
+                  END
+              ) AS has_market_linked,
+              -- numeric coupon value (NULL → 0, market‑linked → NULL)
+              MIN(
+                  COALESCE(
+                      CASE
+                          WHEN icd.coupon_rate REGEXP '^[0-9]+(\\.[0-9]+)?%?$'
+                          THEN CAST(REPLACE(REPLACE(icd.coupon_rate, '%', ''), ' ', '') AS DECIMAL(10,4))
+                          WHEN icd.coupon_rate IS NULL THEN 0
+                          ELSE NULL
+                      END,
+                      0
+                  )
+              ) AS min_numeric_coupon,
+              MAX(
+                  COALESCE(
+                      CASE
+                          WHEN icd.coupon_rate REGEXP '^[0-9]+(\\.[0-9]+)?%?$'
+                          THEN CAST(REPLACE(REPLACE(icd.coupon_rate, '%', ''), ' ', '') AS DECIMAL(10,4))
+                          WHEN icd.coupon_rate IS NULL THEN 0
+                          ELSE NULL
+                      END,
+                      0
+                  )
+              ) AS max_numeric_coupon,
+              -- average over numeric coupons only (ignoring market‑linked and NULL)
+              AVG(
+                  CASE
+                      WHEN icd.coupon_rate REGEXP '^[0-9]+(\\.[0-9]+)?%?$'
+                      THEN CAST(REPLACE(REPLACE(icd.coupon_rate, '%', ''), ' ', '') AS DECIMAL(10,4))
+                      ELSE NULL
+                  END
+              ) AS avg_coupon_rate
+          FROM isin_re_issuance ir
+          LEFT JOIN issuer_tenure_details itd
+              ON ir.isin_id = itd.issuer_id
+          LEFT JOIN issuer_coupon_details icd
+              ON ir.isin_id = icd.issuer_id
+          WHERE ir.allotment_date BETWEEN ? AND ?
+            AND ir.is_visible = 1
+            AND ir.business_sector <> 0
+          GROUP BY ir.issuer_master_id
       )
+
+      -- Final select, joining main data with issuer aggregates
       SELECT
-          bs.description AS sector_name,
-          id.issuer_name, 
-          COALESCE(ROUND(SUM(ir.issue_size) / 10000000), 0) AS total_issue_size,
-          COUNT(ir.isin) AS isin_count
-      FROM isin_re_issuance ir
-      INNER JOIN top_sectors ts
-          ON ir.business_sector = ts.business_sector
-      INNER JOIN issuer_details id
-          ON ir.issuer_master_id = id.id
-      INNER JOIN master_business_sector bs
-          ON ir.business_sector = bs.code
-      WHERE ir.allotment_date BETWEEN ? AND ? AND (ir.is_visible = 1)
-      GROUP BY
-          bs.description,
-          ir.business_sector,
-          id.issuer_name,
-          ir.issuer_master_id
+          m.sector_name,
+          m.issuer_name,
+          m.total_issue_size,
+          m.isin_count,
+          a.tenure_min,
+          a.tenure_max,
+          CASE
+              WHEN a.has_market_linked = 1 THEN 'Market-Linked Coupon'
+              ELSE CAST(COALESCE(a.min_numeric_coupon, 0) AS CHAR)
+          END AS coupon_min,
+          CASE
+              WHEN a.has_market_linked = 1 THEN 'Market-Linked Coupon'
+              ELSE CAST(COALESCE(a.max_numeric_coupon, 0) AS CHAR)
+          END AS coupon_max,
+          COALESCE(a.avg_coupon_rate, 0) AS avg_coupon_rate
+      FROM main_issuer_data m
+      LEFT JOIN issuer_agg a
+          ON m.issuer_master_id = a.issuer_master_id
       ORDER BY
-          ts.total_issue_size DESC,
-          total_issue_size DESC;
+          m.sector_total_issue_size DESC,
+          m.total_issue_size DESC;
     `;
 
 
     const Params = [cyStart, cyEnd];
     const prevParams = [pyStart, pyEnd, cyStart, cyEnd];
-    const doubleParams = [cyStart, cyEnd, cyStart, cyEnd];
+    const tripleParams = [cyStart, cyEnd, cyStart, cyEnd, cyStart, cyEnd];
 
     const [
       totalIssuersResult,
@@ -506,7 +594,7 @@ app.post('/market_snapshot', async (req, res) => {
       prisma.$queryRawUnsafe(sectorList, ...Params),
       prisma.$queryRawUnsafe(sectorAndRatingList, ...Params),
       prisma.$queryRawUnsafe(monthlyCompareList, ...prevParams),
-      prisma.$queryRawUnsafe(topSectorsWithIssuers, ...doubleParams),
+      prisma.$queryRawUnsafe(topSectorsWithIssuers, ...tripleParams),
     ]);
 
     /* ---------------- RESPONSE ---------------- */
