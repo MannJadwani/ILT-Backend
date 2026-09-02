@@ -154,6 +154,15 @@ app.post('/market_snapshot', async (req, res) => {
       return res.status(400).json({ error: 'Invalid date format' });
     }
 
+    // --- Previous month (for month-over-month comparison) ---
+    const prevMonthStart = new Date(currentStartDate);
+    prevMonthStart.setMonth(prevMonthStart.getMonth() - 1);
+    const prevMonthEnd = new Date(currentEndDate);
+    prevMonthEnd.setMonth(prevMonthEnd.getMonth() - 1);
+
+    const pmStart = formatDate(prevMonthStart);
+    const pmEnd = formatDate(prevMonthEnd);
+
     const previousStartDate = new Date(currentStartDate);
     previousStartDate.setFullYear(previousStartDate.getFullYear() - 1);
 
@@ -287,50 +296,40 @@ app.post('/market_snapshot', async (req, res) => {
         ),
         rating_agg AS (
             SELECT
-                lr.rating,
+                CASE
+                    WHEN lr.rating = 'AAA'  THEN 'AAA'
+                    WHEN lr.rating = 'AA+'  THEN 'AA+'
+                    WHEN lr.rating = 'AA'   THEN 'AA'
+                    WHEN lr.rating = 'AA-'  THEN 'AA-'
+                    WHEN lr.rating = 'A+'   THEN 'A+'
+                    ELSE 'A & below'
+                END AS rating_bucket,
                 COUNT(DISTINCT ij.issuer_master_id) AS issuer_count,
                 SUM(ij.total_issue_size) AS total_issue_size
             FROM issuer_monthly ij
             INNER JOIN latest_rating lr ON ij.issuer_master_id = lr.issuer_id AND lr.rn = 1
-            GROUP BY lr.rating
-        ),
-        rating_ranked AS (
-            SELECT *,
-                ROW_NUMBER() OVER (ORDER BY total_issue_size DESC, issuer_count DESC) AS rank_num
-            FROM rating_agg
-        ),
-        sixth_rating AS (
-            SELECT rating FROM rating_ranked WHERE rank_num = 6
+            GROUP BY rating_bucket
         ),
         total_issuer AS (
             SELECT SUM(issuer_count) AS total
             FROM rating_agg
-        ),
-        combined AS (
-            SELECT
-                rating AS rating_label,
-                issuer_count,
-                total_issue_size,
-                rank_num AS sort_order
-            FROM rating_ranked
-            WHERE rank_num <= 5
-            UNION ALL
-            SELECT
-                CONCAT((SELECT rating FROM sixth_rating), ' & rest'),
-                SUM(issuer_count),
-                SUM(total_issue_size),
-                6 AS sort_order
-            FROM rating_ranked
-            WHERE rank_num >= 6
         )
         SELECT
-            rating_label,
+            rating_bucket AS rating_label,
             issuer_count,
             total_issue_size,
             ROUND((issuer_count / (SELECT total FROM total_issuer)) * 100, 2) AS shares
-        FROM combined
-        ORDER BY sort_order;
-    `;
+        FROM rating_agg
+        ORDER BY 
+            CASE rating_bucket
+                WHEN 'AAA'  THEN 1
+                WHEN 'AA+'  THEN 2
+                WHEN 'AA'   THEN 3
+                WHEN 'AA-'  THEN 4
+                WHEN 'A+'   THEN 5
+                ELSE 6
+            END;
+      `;
 
     const sectorList = `
         WITH sector_agg AS (
@@ -709,7 +708,8 @@ app.post('/market_snapshot', async (req, res) => {
       topIssuerByIssuerNumberResult,
       topRatingResult,
       issuerListResult,
-      ratingsListResult,
+      currentRatings,
+      previousRatings,
       sectorListResult,
       sectorAndRatingListResult,
       monthlyCompareListResult,
@@ -725,13 +725,51 @@ app.post('/market_snapshot', async (req, res) => {
       prisma.$queryRawUnsafe(topIssuerByIssuerNumber, ...Params),
       prisma.$queryRawUnsafe(topRating, ...Params),
       prisma.$queryRawUnsafe(issuerList, ...Params),
-      prisma.$queryRawUnsafe(ratingsList, ...Params),
+      prisma.$queryRawUnsafe(ratingsList, cyStart, cyEnd),
+      prisma.$queryRawUnsafe(ratingsList, pmStart, pmEnd),
       prisma.$queryRawUnsafe(sectorList, ...Params),
       prisma.$queryRawUnsafe(sectorAndRatingList, ...Params),
       prisma.$queryRawUnsafe(monthlyCompareList, ...prevParams),
       prisma.$queryRawUnsafe(topSectorsWithIssuers, ...tripleParams),
       prisma.$queryRawUnsafe(topRatingWithIssuers, ...tripleParams)
     ]);
+
+    const mergedRatings = new Map();
+    const allBuckets = ['AAA', 'AA+', 'AA', 'AA-', 'A+', 'A & below'];
+
+    allBuckets.forEach(bucket => {
+      mergedRatings.set(bucket, {
+        rating_label: bucket,
+        issuer_count_current_month: 0,
+        total_issue_size_current_month: 0,
+        shares_current_month: 0,
+        issuer_count_previous_month: 0,
+        total_issue_size_previous_month: 0,
+        shares_previous_month: 0
+      });
+    });
+
+    currentRatings.forEach(row => {
+      const bucket = row.rating_label;
+      if (mergedRatings.has(bucket)) {
+        const entry = mergedRatings.get(bucket);
+        entry.issuer_count_current_month = Number(row.issuer_count);
+        entry.total_issue_size_current_month = Number(row.total_issue_size);
+        entry.shares_current_month = Number(row.shares);
+      }
+    });
+
+    previousRatings.forEach(row => {
+      const bucket = row.rating_label;
+      if (mergedRatings.has(bucket)) {
+        const entry = mergedRatings.get(bucket);
+        entry.issuer_count_previous_month = Number(row.issuer_count);
+        entry.total_issue_size_previous_month = Number(row.total_issue_size);
+        entry.shares_previous_month = Number(row.shares);
+      }
+    });
+
+    const ratingsListResult = Array.from(mergedRatings.values());
 
     /* ---------------- RESPONSE ---------------- */
 
