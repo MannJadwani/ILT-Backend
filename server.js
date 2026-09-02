@@ -181,7 +181,7 @@ app.post('/market_snapshot', async (req, res) => {
 
     /* ---------------- SECTION-1 ---------------- */
     const totalIssuers = `
-      SELECT COUNT(issuer_master_id) AS total_issuers
+      SELECT COUNT(DISTINCT issuer_master_id) AS total_issuers
       FROM isin_re_issuance
       WHERE allotment_date BETWEEN ? AND ? AND (is_visible = 1)
     `;
