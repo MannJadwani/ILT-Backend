@@ -150,6 +150,9 @@ app.post('/market_snapshot', async (req, res) => {
     const currentStartDate = new Date(startDate);
     const currentEndDate = new Date(endDate);
 
+    const formatDate = (date) => date.toISOString().slice(0, 19).replace('T', ' ');
+
+
     if (isNaN(currentStartDate.getTime()) || isNaN(currentEndDate.getTime())) {
       return res.status(400).json({ error: 'Invalid date format' });
     }
@@ -169,7 +172,6 @@ app.post('/market_snapshot', async (req, res) => {
     const previousEndDate = new Date(currentEndDate);
     previousEndDate.setFullYear(previousEndDate.getFullYear() - 1);
 
-    const formatDate = (date) => date.toISOString().slice(0, 19).replace('T', ' ');
 
     const cyStart = formatDate(currentStartDate);
     const cyEnd = formatDate(currentEndDate);
