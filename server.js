@@ -459,7 +459,7 @@ app.post('/market_snapshot', async (req, res) => {
     const monthlyCompareList = `
       WITH monthly_2025 AS (
           SELECT 
-              COUNT(issuer_master_id) AS issuers,
+              COUNT(DISTINCT issuer_master_id) AS issuers,
               COALESCE(ROUND(SUM(issue_size) / 10000000), 0) AS issue_size,
               COUNT(isin) AS isins
           FROM isin_re_issuance
@@ -467,7 +467,7 @@ app.post('/market_snapshot', async (req, res) => {
       ),
       monthly_2026 AS (
           SELECT 
-              COUNT(issuer_master_id) AS issuers,
+              COUNT(DISTINCT issuer_master_id) AS issuers,
               COALESCE(ROUND(SUM(issue_size) / 10000000), 0) AS issue_size,
               COUNT(isin) AS isins
           FROM isin_re_issuance
