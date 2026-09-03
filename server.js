@@ -471,56 +471,43 @@ app.post('/market_snapshot', async (req, res) => {
             GROUP BY business_sector
         ),
 
-        -- 2. Rank sectors by total size, get total number of sectors
+        -- 2. Rank sectors by total size; top 5 get rank 1-5, others get a group
         ranked_sectors AS (
             SELECT
                 st.business_sector,
                 st.total_size,
-                ROW_NUMBER() OVER (ORDER BY st.total_size DESC) AS rn,
-                COUNT(*) OVER () AS total_sectors
+                ROW_NUMBER() OVER (ORDER BY st.total_size DESC) AS rn
             FROM sector_totals st
         ),
 
-        -- 3. Get the description of the 5th sector (if it exists)
-        fifth_sector AS (
-            SELECT description
-            FROM ranked_sectors rs
-            JOIN master_business_sector bs ON rs.business_sector = bs.code
-            WHERE rs.rn = 5
-        ),
-
-        -- 4. Assign sector group names and order keys
+        -- 3. Assign sector group names and an order key
         sector_groups AS (
             SELECT
                 rs.business_sector,
-                rs.total_size AS sector_total,
                 CASE
-                    WHEN rs.rn <= 4 THEN bs.description
-                    WHEN rs.rn = 5 AND rs.total_sectors >= 5 THEN
-                        CONCAT((SELECT description FROM fifth_sector), ' & Others')
-                    WHEN rs.rn > 5 THEN
-                        CONCAT((SELECT description FROM fifth_sector), ' & Others')
-                    ELSE bs.description   -- if fewer than 5 sectors, keep individual names
+                    WHEN rs.rn <= 5 THEN bs.description
+                    ELSE 'Others'                         -- or 'Diversified & Others'
                 END AS sector_group_name,
                 CASE
-                    WHEN rs.rn <= 4 THEN rs.rn
-                    ELSE 5                -- all remaining groups (5th and beyond) go to order 5
-                END AS group_order
+                    WHEN rs.rn <= 5 THEN rs.rn
+                    ELSE 6                                -- order key for Others (last)
+                END AS group_order,
+                rs.total_size AS sector_total
             FROM ranked_sectors rs
             JOIN master_business_sector bs ON rs.business_sector = bs.code
         ),
 
-        -- 5. Total size per sector group and final order
+        -- 4. Total size per sector group (for the 'Others' group, sum of all non‑top sectors)
         group_totals AS (
             SELECT
                 sector_group_name,
                 SUM(sector_total) AS group_total,
-                MIN(group_order) AS group_order
+                MIN(group_order) AS group_order          -- preserves order for each group
             FROM sector_groups
             GROUP BY sector_group_name
         ),
 
-        -- 6. Main issuer‑level data for all sectors (top 4 individually, 5th+ combined)
+        -- 5. Main issuer‑level data for all sectors (top 5 + Others)
         main_issuer_data AS (
             SELECT
                 sg.sector_group_name AS sector_name,
@@ -544,7 +531,7 @@ app.post('/market_snapshot', async (req, res) => {
                 gt.group_order
         ),
 
-        -- 7. Aggregated tenure and coupon data per issuer (unchanged)
+        -- 6. Aggregated tenure and coupon data per issuer (unfiltered by sector)
         issuer_agg AS (
             SELECT
                 ir.issuer_master_id,
@@ -596,7 +583,7 @@ app.post('/market_snapshot', async (req, res) => {
             GROUP BY ir.issuer_master_id
         )
 
-        -- 8. Final output sorted with top 4 sectors first, then the combined group
+        -- 7. Final output, sorted with top 5 sectors first, then "Others" at the end
         SELECT
             m.sector_name,
             m.issuer_name,
@@ -616,8 +603,8 @@ app.post('/market_snapshot', async (req, res) => {
         FROM main_issuer_data m
         LEFT JOIN issuer_agg a ON m.issuer_master_id = a.issuer_master_id
         ORDER BY
-            m.group_order ASC,          -- top 4 (1‑4) then combined group (5)
-            m.total_issue_size DESC;    -- within each group, largest issuers first
+            m.group_order ASC,        -- top sectors (1‑5) first, then Others (6)
+            m.total_issue_size DESC;  -- within each sector, largest issuers first
     `;
 
     const topRatingWithIssuers = `
