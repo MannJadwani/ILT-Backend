@@ -336,47 +336,78 @@ app.post('/market_snapshot', async (req, res) => {
       `;
 
     const sectorList = `
-        WITH sector_agg AS (
+        WITH
+        -- 1. Define the five fixed sectors and their display order
+        fixed_sectors AS (
+            SELECT 'Non-Banking Financial Company (NBFC)' AS sector_name, 1 AS ord
+            UNION ALL SELECT 'Financial Institution', 2
+            UNION ALL SELECT 'Housing Finance Company', 3
+            UNION ALL SELECT 'Investment Company', 4
+            UNION ALL SELECT 'Diversified', 5
+        ),
+
+        -- 2. Raw data per actual business sector (for the given period)
+        sector_data AS (
             SELECT
-                bs.description AS sector_name,
-                COUNT(ir.isin) AS isin_count,
-                COUNT(ir.issuer_master_id) AS issuer_count,
-                SUM(ir.issue_size) AS total_issue_size_raw
+                bs.description AS sector_desc,
+                COUNT(ir.isin)                     AS isin_count,
+                COUNT(ir.issuer_master_id)         AS issuer_count,
+                SUM(ir.issue_size)                 AS total_issue_size_raw
             FROM isin_re_issuance ir
             INNER JOIN master_business_sector bs ON ir.business_sector = bs.code
-            WHERE ir.allotment_date BETWEEN ? AND ? 
-              AND (ir.is_visible = 1)
-              AND bs.description IN (
+            WHERE ir.allotment_date BETWEEN ? AND ?
+              AND ir.is_visible = 1
+              AND ir.business_sector <> 0
+            GROUP BY bs.description
+        ),
+
+        -- 3. Categorise each sector into fixed group or 'Others'
+        categorized AS (
+            -- Fixed sectors: left join with fixed_sectors to ensure they always appear
+            SELECT
+                fs.sector_name,
+                fs.ord,
+                COALESCE(sd.isin_count, 0)                 AS isin_count,
+                COALESCE(sd.issuer_count, 0)               AS issuer_count,
+                COALESCE(sd.total_issue_size_raw, 0)       AS total_issue_size_raw
+            FROM fixed_sectors fs
+            LEFT JOIN sector_data sd ON fs.sector_name = sd.sector_desc
+
+            UNION ALL
+
+            -- 'Others' group: sum all sectors not in the fixed list (only if they exist)
+            SELECT
+                'Others' AS sector_name,
+                6 AS ord,
+                SUM(sd.isin_count)                 AS isin_count,
+                SUM(sd.issuer_count)               AS issuer_count,
+                SUM(sd.total_issue_size_raw)       AS total_issue_size_raw
+            FROM sector_data sd
+            WHERE sd.sector_desc NOT IN (
                 'Non-Banking Financial Company (NBFC)',
                 'Financial Institution',
                 'Housing Finance Company',
                 'Investment Company',
-                'Diversified',
-                'Electric Utilities'
-              )
-            GROUP BY bs.description, ir.business_sector
+                'Diversified'
+            )
+            HAVING SUM(sd.isin_count) > 0   -- include 'Others' only if there is at least one ISIN
         ),
+
+        -- 4. Total issuer count across all categories (for share calculation)
         total_issuers AS (
             SELECT SUM(issuer_count) AS total_issuer_count
-            FROM sector_agg
+            FROM categorized
         )
+
+        -- 5. Final output
         SELECT
             sector_name,
             isin_count,
             issuer_count,
             COALESCE(ROUND(total_issue_size_raw / 10000000), 0) AS total_issue_size,
             ROUND((issuer_count / (SELECT total_issuer_count FROM total_issuers)) * 100, 2) AS shares
-        FROM sector_agg
-        ORDER BY 
-            CASE sector_name
-                WHEN 'Non-Banking Financial Company (NBFC)' THEN 1
-                WHEN 'Financial Institution' THEN 2
-                WHEN 'Housing Finance Company' THEN 3
-                WHEN 'Investment Company' THEN 4
-                WHEN 'Diversified' THEN 5
-                WHEN 'Electric Utilities' THEN 6
-                ELSE 7
-            END;
+        FROM categorized
+        ORDER BY ord;
       `;
 
     //COALESCE(ROUND(SUM(issue_size) / 10000000), 0) AS issueSize,
