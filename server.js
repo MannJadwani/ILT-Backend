@@ -192,6 +192,18 @@ app.post('/market_snapshot', async (req, res) => {
         WHERE allotment_date BETWEEN ? AND ? AND (is_visible = 1)
     `;
 
+    const topSectorNameQuery = `
+      SELECT bs.description AS sector_name
+      FROM isin_re_issuance ir
+      INNER JOIN master_business_sector bs ON ir.business_sector = bs.code
+      WHERE ir.allotment_date BETWEEN ? AND ?
+        AND ir.is_visible = 1
+        AND ir.business_sector <> 0
+      GROUP BY bs.description
+      ORDER BY SUM(ir.issue_size) DESC
+      LIMIT 1
+    `;
+
     const totalIssueSize = `
         SELECT 
         COALESCE(ROUND(SUM(issue_size) / 10000000), 0) AS total_issue_size
@@ -780,8 +792,8 @@ app.post('/market_snapshot', async (req, res) => {
     const [
       totalIssuersResult,
       totalIssueCountResult,
+      topSectorNameQueryResult,
       totalIssueSizeResult,
-      // AvgIssueSizeResult,
       totalUniqueIssuersResult,
       topIssuerByIssueSizeResult,
       topIssuerByIssuerNumberResult,
@@ -798,8 +810,8 @@ app.post('/market_snapshot', async (req, res) => {
     ] = await Promise.all([
       prisma.$queryRawUnsafe(totalIssuers, ...Params),
       prisma.$queryRawUnsafe(totalIssueCount, ...Params),
+      prisma.$queryRawUnsafe(topSectorNameQuery, ...Params),
       prisma.$queryRawUnsafe(totalIssueSize, ...Params),
-      // prisma.$queryRawUnsafe(AvgIssueSize, ...Params),
       prisma.$queryRawUnsafe(totalUniqueIssuers, ...Params),
       prisma.$queryRawUnsafe(topIssuerByIssueSize, ...Params),
       prisma.$queryRawUnsafe(topIssuerByIssuerNumber, ...Params),
@@ -907,6 +919,7 @@ app.post('/market_snapshot', async (req, res) => {
     return res.status(200).json({
       totalIssuersResult,
       totalIssueCountResult,
+      topSectorNameQueryResult,
       totalIssueSizeResult,
       AvgIssueSizeResult,
       totalUniqueIssuersResult,
