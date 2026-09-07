@@ -349,123 +349,209 @@ app.post('/market_snapshot', async (req, res) => {
 
     const sectorList = `
               WITH
-      -- 1. Define the five fixed sectors and their display order
-      fixed_sectors AS (
-          SELECT 'Non-Banking Financial Company (NBFC)' AS sector_name, 1 AS ord
-          UNION ALL SELECT 'Financial Institution', 2
-          UNION ALL SELECT 'Housing Finance Company', 3
-          UNION ALL SELECT 'Investment Company', 4
-          UNION ALL SELECT 'Diversified', 5
-      ),
+              -- 1. Raw sector data (issue size, counts)
+              sector_data AS (
+                SELECT
+                  bs.description AS sector_desc,
+                  COUNT(ir.isin)                     AS isin_count,
+                  COUNT(ir.issuer_master_id)         AS issuer_count,
+                  SUM(ir.issue_size)                 AS total_issue_size_raw
+                FROM isin_re_issuance ir
+                INNER JOIN master_business_sector bs ON ir.business_sector = bs.code
+                WHERE ir.allotment_date BETWEEN ? AND ?
+                  AND ir.is_visible = 1
+                  AND ir.business_sector <> 0
+                GROUP BY bs.description
+              ),
 
-      -- 2. Raw data per actual business sector (for the given period)
-      sector_data AS (
-          SELECT
-              bs.description AS sector_desc,
-              COUNT(ir.isin)                     AS isin_count,
-              COUNT(ir.issuer_master_id)         AS issuer_count,
-              SUM(ir.issue_size)                 AS total_issue_size_raw
-          FROM isin_re_issuance ir
-          INNER JOIN master_business_sector bs ON ir.business_sector = bs.code
-          WHERE ir.allotment_date BETWEEN ? AND ?
-            AND ir.is_visible = 1
-            AND ir.business_sector <> 0
-          GROUP BY bs.description
-      ),
+              -- 2. Rank sectors by issue size (descending)
+              ranked AS (
+                SELECT
+                  sector_desc,
+                  isin_count,
+                  issuer_count,
+                  total_issue_size_raw,
+                  ROW_NUMBER() OVER (ORDER BY total_issue_size_raw DESC) AS rn
+                FROM sector_data
+              ),
 
-      -- 3. Categorise each sector into fixed group or 'Others'
-      categorized AS (
-          -- Fixed sectors: left join with fixed_sectors to ensure they always appear
-          SELECT
-              fs.sector_name,
-              fs.ord,
-              COALESCE(sd.isin_count, 0)                 AS isin_count,
-              COALESCE(sd.issuer_count, 0)               AS issuer_count,
-              COALESCE(sd.total_issue_size_raw, 0)       AS total_issue_size_raw
-          FROM fixed_sectors fs
-          LEFT JOIN sector_data sd ON fs.sector_name = sd.sector_desc
+              -- 3. Split into top 5 and 'Others'
+              categorized AS (
+                -- Top 5 sectors
+                SELECT
+                  sector_desc AS sector_name,
+                  rn AS ord,
+                  isin_count,
+                  issuer_count,
+                  total_issue_size_raw
+                FROM ranked
+                WHERE rn <= 5
 
-          UNION ALL
+                UNION ALL
 
-          -- 'Others' group: sum all sectors not in the fixed list (only if they exist)
-          SELECT
-              'Others' AS sector_name,
-              6 AS ord,
-              SUM(sd.isin_count)                 AS isin_count,
-              SUM(sd.issuer_count)               AS issuer_count,
-              SUM(sd.total_issue_size_raw)       AS total_issue_size_raw
-          FROM sector_data sd
-          WHERE sd.sector_desc NOT IN (
-              'Non-Banking Financial Company (NBFC)',
-              'Financial Institution',
-              'Housing Finance Company',
-              'Investment Company',
-              'Diversified'
-          )
-          HAVING SUM(sd.isin_count) > 0   -- include 'Others' only if there is at least one ISIN
-      ),
+                -- 'Others' – all sectors ranked 6 and above
+                SELECT
+                  'Others' AS sector_name,
+                  6 AS ord,
+                  SUM(isin_count)        AS isin_count,
+                  SUM(issuer_count)      AS issuer_count,
+                  SUM(total_issue_size_raw) AS total_issue_size_raw
+                FROM ranked
+                WHERE rn > 5
+                HAVING SUM(isin_count) > 0   -- include only if there is at least one ISIN
+              ),
 
-      -- 4. Total issuer count across all categories (for share calculation)
-      total_issuers AS (
-          SELECT SUM(issuer_count) AS total_issuer_count
-          FROM categorized
-      )
+              -- 4. Total issuer count across all categories (for share)
+              total_issuers AS (
+                SELECT SUM(issuer_count) AS total_issuer_count
+                FROM categorized
+              )
 
-      -- 5. Final output
-      SELECT
-          sector_name,
-          isin_count,
-          issuer_count,
-          COALESCE(ROUND(total_issue_size_raw / 10000000), 0) AS total_issue_size,
-          ROUND((issuer_count / (SELECT total_issuer_count FROM total_issuers)) * 100, 2) AS shares
-      FROM categorized
-      ORDER BY ord;
+            -- 5. Final output
+            SELECT
+              sector_name,
+              isin_count,
+              issuer_count,
+              COALESCE(ROUND(total_issue_size_raw / 10000000), 0) AS total_issue_size,
+              ROUND((issuer_count / (SELECT total_issuer_count FROM total_issuers)) * 100, 2) AS shares
+            FROM categorized
+            ORDER BY ord;
       `;
 
     //COALESCE(ROUND(SUM(issue_size) / 10000000), 0) AS issueSize,
 
     const sectorAndRatingList = `
-      WITH latest_rating AS (
-          SELECT
+        WITH
+          -- 1. Base issuances for the period
+          base_issuance AS (
+            SELECT
+              ir.issuer_master_id,
+              ir.business_sector,
+              ir.issue_size,
+              ir.isin,
+              bs.description AS sector_desc
+            FROM isin_re_issuance ir
+            INNER JOIN master_business_sector bs ON ir.business_sector = bs.code
+            WHERE ir.allotment_date BETWEEN ? AND ?
+              AND ir.is_visible = 1
+              AND ir.business_sector <> 0
+          ),
+
+          -- 2. Latest rating per issuer
+          latest_rating AS (
+            SELECT
               issuer_id,
               rating,
               ROW_NUMBER() OVER (PARTITION BY issuer_id ORDER BY rating_date DESC) AS rn
-          FROM master_issuer_rating
-      ),
-      monthly_issuances AS (
-          SELECT
-              ir.issuer_master_id,
-              ir.issue_size / 10000000.0 AS issue_size,
-              bs.description AS sector_name
-          FROM isin_re_issuance ir
-          INNER JOIN master_business_sector bs ON ir.business_sector = bs.code
-          WHERE ir.allotment_date BETWEEN ? AND ? AND (ir.is_visible = 1)
-      ),
-      sector_rating AS (
-          SELECT
-              ji.sector_name,
-              ji.issue_size AS issue_size,
-              CASE
-                  WHEN lr.rating IN ('AAA', 'AA+', 'AA', 'AA-', 'A+') THEN lr.rating
-                  ELSE 'A'  
-              END AS rating_category
-          FROM monthly_issuances ji
-          INNER JOIN latest_rating lr ON ji.issuer_master_id = lr.issuer_id AND lr.rn = 1
-      )
+            FROM master_issuer_rating
+          ),
+          issuer_rating AS (
+            SELECT issuer_id, rating
+            FROM latest_rating
+            WHERE rn = 1
+          ),
 
-      SELECT
+          -- 3. Enrich each issuance with the issuer's current rating (may be NULL)
+          issuance_with_rating AS (
+            SELECT
+              b.issuer_master_id,
+              b.sector_desc,
+              b.issue_size,
+              b.isin,
+              r.rating
+            FROM base_issuance b
+            LEFT JOIN issuer_rating r ON b.issuer_master_id = r.issuer_id
+          ),
+
+          -- 4. Sector-level aggregates: totals + issue size per rating bucket
+          sector_agg AS (
+            SELECT
+              sector_desc,
+              COUNT(DISTINCT issuer_master_id)                     AS issuer_count,
+              COUNT(DISTINCT isin)                                AS isin_count,
+              SUM(issue_size)                                     AS total_issue_size_raw,
+              -- Issue size (raw) per rating bucket
+              COALESCE(SUM(CASE WHEN rating = 'AAA'    THEN issue_size ELSE 0 END), 0) AS size_AAA,
+              COALESCE(SUM(CASE WHEN rating = 'AA+'   THEN issue_size ELSE 0 END), 0) AS size_AAplus,
+              COALESCE(SUM(CASE WHEN rating = 'AA'    THEN issue_size ELSE 0 END), 0) AS size_AA,
+              COALESCE(SUM(CASE WHEN rating = 'AA-'   THEN issue_size ELSE 0 END), 0) AS size_AAminus,
+              COALESCE(SUM(CASE WHEN rating = 'A+'    THEN issue_size ELSE 0 END), 0) AS size_Aplus,
+              -- A & below: includes all other ratings (A, A-, BBB+, etc.) AND unrated (NULL)
+              COALESCE(SUM(CASE
+                WHEN rating IS NULL
+                  OR rating NOT IN ('AAA','AA+','AA','AA-','A+')
+                THEN issue_size
+                ELSE 0
+              END), 0) AS size_A_below
+            FROM issuance_with_rating
+            GROUP BY sector_desc
+          ),
+
+          -- 5. Rank sectors by total issue size (descending)
+          ranked AS (
+            SELECT
+              *,
+              ROW_NUMBER() OVER (ORDER BY total_issue_size_raw DESC) AS rn
+            FROM sector_agg
+          ),
+
+          -- 6. Top 5 + Others (aggregate the rest)
+          categorized AS (
+            SELECT
+              sector_desc AS sector_name,
+              rn AS ord,
+              issuer_count,
+              isin_count,
+              total_issue_size_raw,
+              size_AAA,
+              size_AAplus,
+              size_AA,
+              size_AAminus,
+              size_Aplus,
+              size_A_below
+            FROM ranked
+            WHERE rn <= 5
+
+            UNION ALL
+
+            SELECT
+              'Others' AS sector_name,
+              6 AS ord,
+              SUM(issuer_count)                 AS issuer_count,
+              SUM(isin_count)                   AS isin_count,
+              SUM(total_issue_size_raw)         AS total_issue_size_raw,
+              SUM(size_AAA)                     AS size_AAA,
+              SUM(size_AAplus)                  AS size_AAplus,
+              SUM(size_AA)                      AS size_AA,
+              SUM(size_AAminus)                 AS size_AAminus,
+              SUM(size_Aplus)                   AS size_Aplus,
+              SUM(size_A_below)                 AS size_A_below
+            FROM ranked
+            WHERE rn > 5
+            HAVING SUM(issuer_count) > 0
+          ),
+
+          -- 7. Total issuers across all categories (for share%)
+          total_issuers AS (
+            SELECT SUM(issuer_count) AS total_issuer_count
+            FROM categorized
+          )
+
+        -- 8. Final output (divide by 10,000,000 to show in crores)
+        SELECT
           sector_name,
-          ROUND(SUM(issue_size), 2) AS total_issue_size_crores,
-          ROUND(SUM(CASE WHEN rating_category = 'AAA'  THEN issue_size ELSE 0 END), 2) AS AAA,
-          ROUND(SUM(CASE WHEN rating_category = 'AA+'  THEN issue_size ELSE 0 END), 2) AS AA_plus,
-          ROUND(SUM(CASE WHEN rating_category = 'AA'   THEN issue_size ELSE 0 END), 2) AS AA,
-          ROUND(SUM(CASE WHEN rating_category = 'AA-'  THEN issue_size ELSE 0 END), 2) AS AA_minus,
-          ROUND(SUM(CASE WHEN rating_category = 'A+'   THEN issue_size ELSE 0 END), 2) AS A_plus,
-          ROUND(SUM(CASE WHEN rating_category = 'A'    THEN issue_size ELSE 0 END), 2) AS A_others
-      FROM sector_rating
-      GROUP BY sector_name
-      ORDER BY total_issue_size_crores DESC
-      LIMIT 6;
+          isin_count,
+          issuer_count                                                AS total_issuers,
+          COALESCE(ROUND(total_issue_size_raw / 10000000), 0)        AS total_issue_size_cr,
+          COALESCE(ROUND(size_AAA / 10000000), 0)                    AS "AAA_cr",
+          COALESCE(ROUND(size_AAplus / 10000000), 0)                 AS "AA+_cr",
+          COALESCE(ROUND(size_AA / 10000000), 0)                     AS "AA_cr",
+          COALESCE(ROUND(size_AAminus / 10000000), 0)                AS "AA-_cr",
+          COALESCE(ROUND(size_Aplus / 10000000), 0)                  AS "A+_cr",
+          COALESCE(ROUND(size_A_below / 10000000), 0)                AS "A & below_cr",
+          ROUND((issuer_count / (SELECT total_issuer_count FROM total_issuers)) * 100, 2) AS shares
+        FROM categorized
+        ORDER BY ord;
     `;
 
     const monthlyCompareList = `
@@ -831,53 +917,65 @@ app.post('/market_snapshot', async (req, res) => {
 
     const mergedRatings = new Map();
     const allBuckets = ['AAA', 'AA+', 'AA', 'AA-', 'A+', 'A & below'];
-    const sectorOrder = [
-      'Non-Banking Financial Company (NBFC)',
-      'Financial Institution',
-      'Housing Finance Company',
-      'Investment Company',
-      'Diversified',
-      'Others'
-    ];
 
-    // Build merged array in the fixed order
-    const mergedSectors = sectorOrder.map(sector => ({
-      sector_name: sector,
-      isin_count_current_month: 0,
-      issuer_count_current_month: 0,
-      total_issue_size_current_month: 0,
-      shares_current_month: 0,
-      isin_count_previous_month: 0,
-      issuer_count_previous_month: 0,
-      total_issue_size_previous_month: 0,
-      shares_previous_month: 0
-    }));
 
-    const sectorMap = new Map(mergedSectors.map(item => [item.sector_name, item]));
+    const sectorMap = new Map();
 
+    // Helper to initialize a sector entry
+    function initSectorEntry(name) {
+      return {
+        sector_name: name,
+        isin_count_current_month: 0,
+        issuer_count_current_month: 0,
+        total_issue_size_current_month: 0,
+        shares_current_month: 0,
+        isin_count_previous_month: 0,
+        issuer_count_previous_month: 0,
+        total_issue_size_previous_month: 0,
+        shares_previous_month: 0
+      };
+    }
+
+    // 1. Populate current month data
     currentSectors.forEach(row => {
-      const sector = row.sector_name;
-      if (sectorMap.has(sector)) {
-        const entry = sectorMap.get(sector);
-        entry.isin_count_current_month = Number(row.isin_count);
-        entry.issuer_count_current_month = Number(row.issuer_count);
-        entry.total_issue_size_current_month = Number(row.total_issue_size);
-        entry.shares_current_month = Number(row.shares);
+      const name = row.sector_name;
+      if (!sectorMap.has(name)) {
+        sectorMap.set(name, initSectorEntry(name));
       }
+      const entry = sectorMap.get(name);
+      entry.isin_count_current_month = Number(row.isin_count);
+      entry.issuer_count_current_month = Number(row.issuer_count);
+      entry.total_issue_size_current_month = Number(row.total_issue_size);
+      entry.shares_current_month = Number(row.shares);
     });
 
+    // 2. Populate previous month data
     previousSectors.forEach(row => {
-      const sector = row.sector_name;
-      if (sectorMap.has(sector)) {
-        const entry = sectorMap.get(sector);
-        entry.isin_count_previous_month = Number(row.isin_count);
-        entry.issuer_count_previous_month = Number(row.issuer_count);
-        entry.total_issue_size_previous_month = Number(row.total_issue_size);
-        entry.shares_previous_month = Number(row.shares);
+      const name = row.sector_name;
+      if (!sectorMap.has(name)) {
+        sectorMap.set(name, initSectorEntry(name));
+      }
+      const entry = sectorMap.get(name);
+      entry.isin_count_previous_month = Number(row.isin_count);
+      entry.issuer_count_previous_month = Number(row.issuer_count);
+      entry.total_issue_size_previous_month = Number(row.total_issue_size);
+      entry.shares_previous_month = Number(row.shares);
+    });
+
+    // 3. Build ordered list: first current sectors (preserve query order), then any missing from previous
+    const orderedNames = [];
+    currentSectors.forEach(row => {
+      if (!orderedNames.includes(row.sector_name)) {
+        orderedNames.push(row.sector_name);
+      }
+    });
+    previousSectors.forEach(row => {
+      if (!orderedNames.includes(row.sector_name)) {
+        orderedNames.push(row.sector_name);
       }
     });
 
-    const sectorListResult = Array.from(sectorMap.values());
+    const sectorListResult = orderedNames.map(name => sectorMap.get(name));
 
 
     allBuckets.forEach(bucket => {
