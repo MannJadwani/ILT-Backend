@@ -139,7 +139,7 @@ function getCombinedSimilarity(str1, str2) {
 // MAIN ADMIN APIs:
 // ==========================================
 
-app.post('/market_snapshot', async (req, res) => {
+app.post('/market-snapshot-data', async (req, res) => {
   try {
     const { startDate, endDate } = req.body;
 
