@@ -975,7 +975,7 @@ app.post('/market_snapshot', async (req, res) => {
       }
     });
 
-    const sectorListResult = orderedNames.map(name => sectorMap.get(name));
+    const sectorListResult = orderedNames.map(name => sectorMap.get(name)); //changes
 
 
     allBuckets.forEach(bucket => {
