@@ -919,63 +919,83 @@ app.post('/market-snapshot-data', async (req, res) => {
     const allBuckets = ['AAA', 'AA+', 'AA', 'AA-', 'A+', 'A & below'];
 
 
-    const sectorMap = new Map();
+    // --- Merge sector data: base on current month's categories ---
 
-    // Helper to initialize a sector entry
-    function initSectorEntry(name) {
-      return {
+    // 1. Extract current month's top 5 sector names (exclude "Others")
+    const currentTopSectors = currentSectors
+      .filter(row => row.sector_name !== 'Others')
+      .map(row => row.sector_name);
+
+    // 2. Aggregate previous month's data into current month's categories
+    const prevAggregated = new Map();
+
+    // Initialize with zero values for each current category
+    currentTopSectors.forEach(name => {
+      prevAggregated.set(name, {
+        isin_count_previous_month: 0,
+        issuer_count_previous_month: 0,
+        total_issue_size_previous_month: 0,
+        shares_previous_month: 0
+      });
+    });
+    prevAggregated.set('Others', {
+      isin_count_previous_month: 0,
+      issuer_count_previous_month: 0,
+      total_issue_size_previous_month: 0,
+      shares_previous_month: 0
+    });
+
+    // Fill aggregation from previous month's data
+    previousSectors.forEach(row => {
+      const sectorName = row.sector_name;
+      // If the sector is in current top 5, keep its name; otherwise map to "Others"
+      const category = currentTopSectors.includes(sectorName) ? sectorName : 'Others';
+      const entry = prevAggregated.get(category);
+      if (entry) {
+        entry.isin_count_previous_month += Number(row.isin_count);
+        entry.issuer_count_previous_month += Number(row.issuer_count);
+        entry.total_issue_size_previous_month += Number(row.total_issue_size);
+        // shares will be recalculated later
+      }
+    });
+
+    // 3. Recalculate shares for previous month based on the new grouping
+    let totalPrevIssuers = 0;
+    for (let entry of prevAggregated.values()) {
+      totalPrevIssuers += entry.issuer_count_previous_month;
+    }
+    for (let entry of prevAggregated.values()) {
+      entry.shares_previous_month = totalPrevIssuers > 0
+        ? (entry.issuer_count_previous_month / totalPrevIssuers) * 100
+        : 0;
+    }
+
+    // 4. Build the final sectorListResult in the order of currentSectors
+    const sectorListResult = currentSectors.map(row => {
+      const name = row.sector_name;
+      const currentEntry = {
         sector_name: name,
-        isin_count_current_month: 0,
-        issuer_count_current_month: 0,
-        total_issue_size_current_month: 0,
-        shares_current_month: 0,
+        isin_count_current_month: Number(row.isin_count),
+        issuer_count_current_month: Number(row.issuer_count),
+        total_issue_size_current_month: Number(row.total_issue_size),
+        shares_current_month: Number(row.shares),
         isin_count_previous_month: 0,
         issuer_count_previous_month: 0,
         total_issue_size_previous_month: 0,
         shares_previous_month: 0
       };
-    }
-
-    // 1. Populate current month data
-    currentSectors.forEach(row => {
-      const name = row.sector_name;
-      if (!sectorMap.has(name)) {
-        sectorMap.set(name, initSectorEntry(name));
+      const prevEntry = prevAggregated.get(name);
+      if (prevEntry) {
+        currentEntry.isin_count_previous_month = prevEntry.isin_count_previous_month;
+        currentEntry.issuer_count_previous_month = prevEntry.issuer_count_previous_month;
+        currentEntry.total_issue_size_previous_month = prevEntry.total_issue_size_previous_month;
+        currentEntry.shares_previous_month = prevEntry.shares_previous_month;
       }
-      const entry = sectorMap.get(name);
-      entry.isin_count_current_month = Number(row.isin_count);
-      entry.issuer_count_current_month = Number(row.issuer_count);
-      entry.total_issue_size_current_month = Number(row.total_issue_size);
-      entry.shares_current_month = Number(row.shares);
+      return currentEntry;
     });
 
-    // 2. Populate previous month data
-    previousSectors.forEach(row => {
-      const name = row.sector_name;
-      if (!sectorMap.has(name)) {
-        sectorMap.set(name, initSectorEntry(name));
-      }
-      const entry = sectorMap.get(name);
-      entry.isin_count_previous_month = Number(row.isin_count);
-      entry.issuer_count_previous_month = Number(row.issuer_count);
-      entry.total_issue_size_previous_month = Number(row.total_issue_size);
-      entry.shares_previous_month = Number(row.shares);
-    });
 
-    // 3. Build ordered list: first current sectors (preserve query order), then any missing from previous
-    const orderedNames = [];
-    currentSectors.forEach(row => {
-      if (!orderedNames.includes(row.sector_name)) {
-        orderedNames.push(row.sector_name);
-      }
-    });
-    previousSectors.forEach(row => {
-      if (!orderedNames.includes(row.sector_name)) {
-        orderedNames.push(row.sector_name);
-      }
-    });
 
-    const sectorListResult = orderedNames.map(name => sectorMap.get(name)); //changes
 
 
     allBuckets.forEach(bucket => {
