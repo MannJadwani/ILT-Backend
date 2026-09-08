@@ -621,152 +621,165 @@ app.post('/market-snapshot-data', async (req, res) => {
 
     const topSectorsWithIssuers = `
         WITH
-        -- 1. Total issue size per business sector
+        -- 1. Total issue size per business sector (including unknown/null)
         sector_totals AS (
-            SELECT
-                business_sector,
-                SUM(issue_size) AS total_size
-            FROM isin_re_issuance
-            WHERE allotment_date BETWEEN ? AND ?
-              AND is_visible = 1
-              AND business_sector <> 0
-            GROUP BY business_sector
+          SELECT
+            ir.business_sector,
+            SUM(ir.issue_size) AS total_size
+          FROM isin_re_issuance ir
+          WHERE ir.allotment_date BETWEEN ? AND ?
+            AND ir.is_visible = 1
+          GROUP BY ir.business_sector
         ),
 
-        -- 2. Rank sectors by total size; top 5 get rank 1-5, others get a group
+        -- 2. Rank only known sectors (exclude those without a valid master entry)
         ranked_sectors AS (
-            SELECT
-                st.business_sector,
-                st.total_size,
-                ROW_NUMBER() OVER (ORDER BY st.total_size DESC) AS rn
-            FROM sector_totals st
+          SELECT
+            st.business_sector,
+            st.total_size,
+            ROW_NUMBER() OVER (ORDER BY st.total_size DESC) AS rn
+          FROM sector_totals st
+          INNER JOIN master_business_sector bs ON st.business_sector = bs.code   -- only known sectors
         ),
 
-        -- 3. Assign sector group names and an order key
+        -- 3. Assign group name and order for ALL business_sectors (known + unknown)
         sector_groups AS (
-            SELECT
-                rs.business_sector,
-                CASE
-                    WHEN rs.rn <= 5 THEN bs.description
-                    ELSE 'Others'                         -- or 'Diversified & Others'
-                END AS sector_group_name,
-                CASE
-                    WHEN rs.rn <= 5 THEN rs.rn
-                    ELSE 6                                -- order key for Others (last)
-                END AS group_order,
-                rs.total_size AS sector_total
-            FROM ranked_sectors rs
-            JOIN master_business_sector bs ON rs.business_sector = bs.code
+          -- Known sectors: top 5 get their description, rest become 'Others'
+          SELECT
+            rs.business_sector,
+            CASE
+              WHEN rs.rn <= 5 THEN bs.description
+              ELSE 'Others'
+            END AS sector_group_name,
+            CASE
+              WHEN rs.rn <= 5 THEN rs.rn
+              ELSE 6
+            END AS group_order,
+            rs.total_size AS sector_total
+          FROM ranked_sectors rs
+          JOIN master_business_sector bs ON rs.business_sector = bs.code
+
+          UNION ALL
+
+          -- Unknown sectors (business_sector not found in master or is 0/NULL)
+          SELECT
+            st.business_sector,
+            'Others' AS sector_group_name,
+            6 AS group_order,
+            st.total_size AS sector_total
+          FROM sector_totals st
+          LEFT JOIN master_business_sector bs ON st.business_sector = bs.code
+          WHERE bs.code IS NULL   -- no matching sector description
+            OR st.business_sector = 0
         ),
 
         -- 4. Total size per sector group (for the 'Others' group, sum of all non‑top sectors)
         group_totals AS (
-            SELECT
-                sector_group_name,
-                SUM(sector_total) AS group_total,
-                MIN(group_order) AS group_order          -- preserves order for each group
-            FROM sector_groups
-            GROUP BY sector_group_name
+          SELECT
+            sector_group_name,
+            SUM(sector_total) AS group_total,
+            MIN(group_order) AS group_order
+          FROM sector_groups
+          GROUP BY sector_group_name
         ),
 
         -- 5. Main issuer‑level data for all sectors (top 5 + Others)
         main_issuer_data AS (
-            SELECT
-                sg.sector_group_name AS sector_name,
-                id.issuer_name,
-                ir.issuer_master_id,
-                gt.group_total AS sector_total_issue_size,
-                COALESCE(ROUND(SUM(ir.issue_size) / 10000000), 0) AS total_issue_size,
-                COUNT(ir.isin) AS isin_count,
-                gt.group_order
-            FROM isin_re_issuance ir
-            JOIN sector_groups sg ON ir.business_sector = sg.business_sector
-            JOIN group_totals gt ON sg.sector_group_name = gt.sector_group_name
-            INNER JOIN issuer_details id ON ir.issuer_master_id = id.id
-            WHERE ir.allotment_date BETWEEN ? AND ?
-              AND ir.is_visible = 1
-            GROUP BY
-                sg.sector_group_name,
-                id.issuer_name,
-                ir.issuer_master_id,
-                gt.group_total,
-                gt.group_order
+          SELECT
+            sg.sector_group_name AS sector_name,
+            id.issuer_name,
+            ir.issuer_master_id,
+            gt.group_total AS sector_total_issue_size,
+            COALESCE(ROUND(SUM(ir.issue_size) / 10000000), 0) AS total_issue_size,
+            COUNT(ir.isin) AS isin_count,
+            gt.group_order
+          FROM isin_re_issuance ir
+          JOIN sector_groups sg ON ir.business_sector = sg.business_sector
+          JOIN group_totals gt ON sg.sector_group_name = gt.sector_group_name
+          INNER JOIN issuer_details id ON ir.issuer_master_id = id.id
+          WHERE ir.allotment_date BETWEEN ? AND ?
+            AND ir.is_visible = 1
+          GROUP BY
+            sg.sector_group_name,
+            id.issuer_name,
+            ir.issuer_master_id,
+            gt.group_total,
+            gt.group_order
         ),
 
-        -- 6. Aggregated tenure and coupon data per issuer (unfiltered by sector)
+        -- 6. Aggregated tenure and coupon data per issuer (no sector filter)
         issuer_agg AS (
-            SELECT
-                ir.issuer_master_id,
-                MIN(itd.tenure) AS tenure_min,
-                MAX(itd.tenure) AS tenure_max,
-                MAX(
-                    CASE
-                        WHEN icd.coupon_rate IS NOT NULL
-                        AND icd.coupon_rate NOT REGEXP '^[0-9]+(\\.[0-9]+)?%?$'
-                        THEN 1
-                        ELSE 0
-                    END
-                ) AS has_market_linked,
-                MIN(
-                    COALESCE(
-                        CASE
-                            WHEN icd.coupon_rate REGEXP '^[0-9]+(\\.[0-9]+)?%?$'
-                            THEN CAST(REPLACE(REPLACE(icd.coupon_rate, '%', ''), ' ', '') AS DECIMAL(10,4))
-                            WHEN icd.coupon_rate IS NULL THEN 0
-                            ELSE NULL
-                        END,
-                        0
-                    )
-                ) AS min_numeric_coupon,
-                MAX(
-                    COALESCE(
-                        CASE
-                            WHEN icd.coupon_rate REGEXP '^[0-9]+(\\.[0-9]+)?%?$'
-                            THEN CAST(REPLACE(REPLACE(icd.coupon_rate, '%', ''), ' ', '') AS DECIMAL(10,4))
-                            WHEN icd.coupon_rate IS NULL THEN 0
-                            ELSE NULL
-                        END,
-                        0
-                    )
-                ) AS max_numeric_coupon,
-                AVG(
-                    CASE
-                        WHEN icd.coupon_rate REGEXP '^[0-9]+(\\.[0-9]+)?%?$'
-                        THEN CAST(REPLACE(REPLACE(icd.coupon_rate, '%', ''), ' ', '') AS DECIMAL(10,4))
-                        ELSE NULL
-                    END
-                ) AS avg_coupon_rate
-            FROM isin_re_issuance ir
-            LEFT JOIN issuer_tenure_details itd ON ir.isin_id = itd.issuer_id
-            LEFT JOIN issuer_coupon_details icd ON ir.isin_id = icd.issuer_id
-            WHERE ir.allotment_date BETWEEN ? AND ?
-              AND ir.is_visible = 1
-              AND ir.business_sector <> 0
-            GROUP BY ir.issuer_master_id
+          SELECT
+            ir.issuer_master_id,
+            MIN(itd.tenure) AS tenure_min,
+            MAX(itd.tenure) AS tenure_max,
+            MAX(
+              CASE
+                WHEN icd.coupon_rate IS NOT NULL
+                AND icd.coupon_rate NOT REGEXP '^[0-9]+(\\.[0-9]+)?%?$'
+                THEN 1
+                ELSE 0
+              END
+            ) AS has_market_linked,
+            MIN(
+              COALESCE(
+                CASE
+                  WHEN icd.coupon_rate REGEXP '^[0-9]+(\\.[0-9]+)?%?$'
+                  THEN CAST(REPLACE(REPLACE(icd.coupon_rate, '%', ''), ' ', '') AS DECIMAL(10,4))
+                  WHEN icd.coupon_rate IS NULL THEN 0
+                  ELSE NULL
+                END,
+                0
+              )
+            ) AS min_numeric_coupon,
+            MAX(
+              COALESCE(
+                CASE
+                  WHEN icd.coupon_rate REGEXP '^[0-9]+(\\.[0-9]+)?%?$'
+                  THEN CAST(REPLACE(REPLACE(icd.coupon_rate, '%', ''), ' ', '') AS DECIMAL(10,4))
+                  WHEN icd.coupon_rate IS NULL THEN 0
+                  ELSE NULL
+                END,
+                0
+              )
+            ) AS max_numeric_coupon,
+            AVG(
+              CASE
+                WHEN icd.coupon_rate REGEXP '^[0-9]+(\\.[0-9]+)?%?$'
+                THEN CAST(REPLACE(REPLACE(icd.coupon_rate, '%', ''), ' ', '') AS DECIMAL(10,4))
+                ELSE NULL
+              END
+            ) AS avg_coupon_rate
+          FROM isin_re_issuance ir
+          LEFT JOIN issuer_tenure_details itd ON ir.isin_id = itd.issuer_id
+          LEFT JOIN issuer_coupon_details icd ON ir.isin_id = icd.issuer_id
+          WHERE ir.allotment_date BETWEEN ? AND ?
+            AND ir.is_visible = 1
+          GROUP BY ir.issuer_master_id
         )
 
-        -- 7. Final output, sorted with top 5 sectors first, then "Others" at the end
-        SELECT
-            m.sector_name,
-            m.issuer_name,
-            m.total_issue_size,
-            m.isin_count,
-            a.tenure_min,
-            a.tenure_max,
-            CASE
-                WHEN a.has_market_linked = 1 THEN 'Market-Linked Coupon'
-                ELSE CAST(COALESCE(a.min_numeric_coupon, 0) AS CHAR)
-            END AS coupon_min,
-            CASE
-                WHEN a.has_market_linked = 1 THEN 'Market-Linked Coupon'
-                ELSE CAST(COALESCE(a.max_numeric_coupon, 0) AS CHAR)
-            END AS coupon_max,
-            COALESCE(a.avg_coupon_rate, 0) AS avg_coupon_rate
-        FROM main_issuer_data m
-        LEFT JOIN issuer_agg a ON m.issuer_master_id = a.issuer_master_id
-        ORDER BY
-            m.group_order ASC,        -- top sectors (1‑5) first, then Others (6)
-            m.total_issue_size DESC;  -- within each sector, largest issuers first
+      -- 7. Final output, sorted with top 5 sectors first, then "Others" at the end
+      SELECT
+        m.sector_name,
+        m.issuer_name,
+        m.total_issue_size,
+        m.isin_count,
+        a.tenure_min,
+        a.tenure_max,
+        CASE
+          WHEN a.has_market_linked = 1 THEN 'Market-Linked Coupon'
+          ELSE CAST(COALESCE(a.min_numeric_coupon, 0) AS CHAR)
+        END AS coupon_min,
+        CASE
+          WHEN a.has_market_linked = 1 THEN 'Market-Linked Coupon'
+          ELSE CAST(COALESCE(a.max_numeric_coupon, 0) AS CHAR)
+        END AS coupon_max,
+        COALESCE(a.avg_coupon_rate, 0) AS avg_coupon_rate
+      FROM main_issuer_data m
+      LEFT JOIN issuer_agg a ON m.issuer_master_id = a.issuer_master_id
+      ORDER BY
+        m.group_order ASC,
+        m.total_issue_size DESC;
     `;
 
     const topRatingWithIssuers = `
