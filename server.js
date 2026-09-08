@@ -349,22 +349,22 @@ app.post('/market-snapshot-data', async (req, res) => {
 
     const sectorList = `
               WITH
-              -- 1. Raw sector data (issue size, counts)
+              -- 1. All sectors (known + unknown)
               sector_data AS (
                 SELECT
-                  bs.description AS sector_desc,
+                  COALESCE(bs.description, 'Unknown') AS sector_desc,
                   COUNT(ir.isin)                     AS isin_count,
                   COUNT(ir.issuer_master_id)         AS issuer_count,
                   SUM(ir.issue_size)                 AS total_issue_size_raw
                 FROM isin_re_issuance ir
-                INNER JOIN master_business_sector bs ON ir.business_sector = bs.code
+                LEFT JOIN master_business_sector bs ON ir.business_sector = bs.code
                 WHERE ir.allotment_date BETWEEN ? AND ?
                   AND ir.is_visible = 1
-                  AND ir.business_sector <> 0
-                GROUP BY bs.description
+                  -- Removed ir.business_sector <> 0 to include all issuers
+                GROUP BY COALESCE(bs.description, 'Unknown')
               ),
 
-              -- 2. Rank sectors by issue size (descending)
+              -- 2. Rank only known sectors (exclude 'Unknown')
               ranked AS (
                 SELECT
                   sector_desc,
@@ -373,11 +373,12 @@ app.post('/market-snapshot-data', async (req, res) => {
                   total_issue_size_raw,
                   ROW_NUMBER() OVER (ORDER BY total_issue_size_raw DESC) AS rn
                 FROM sector_data
+                WHERE sector_desc != 'Unknown'   -- only real sectors are ranked
               ),
 
-              -- 3. Split into top 5 and 'Others'
+              -- 3. Split into Top 5 and Others (including Unknown)
               categorized AS (
-                -- Top 5 sectors
+                -- Top 5 known sectors
                 SELECT
                   sector_desc AS sector_name,
                   rn AS ord,
@@ -389,15 +390,24 @@ app.post('/market-snapshot-data', async (req, res) => {
 
                 UNION ALL
 
-                -- 'Others' – all sectors ranked 6 and above
+                -- Others = known sectors ranked >5 + all Unknown sectors
                 SELECT
                   'Others' AS sector_name,
                   6 AS ord,
                   SUM(isin_count)        AS isin_count,
                   SUM(issuer_count)      AS issuer_count,
                   SUM(total_issue_size_raw) AS total_issue_size_raw
-                FROM ranked
-                WHERE rn > 5
+                FROM (
+                  SELECT isin_count, issuer_count, total_issue_size_raw
+                  FROM ranked
+                  WHERE rn > 5
+
+                  UNION ALL
+
+                  SELECT isin_count, issuer_count, total_issue_size_raw
+                  FROM sector_data
+                  WHERE sector_desc = 'Unknown'
+                ) AS combined_others
                 HAVING SUM(isin_count) > 0   -- include only if there is at least one ISIN
               ),
 
@@ -422,19 +432,19 @@ app.post('/market-snapshot-data', async (req, res) => {
 
     const sectorAndRatingList = `
         WITH
-        -- 1. Base issuances for the period
+        -- 1. Base issuances for the period (include all sectors, even unknown)
         base_issuance AS (
           SELECT
             ir.issuer_master_id,
             ir.business_sector,
             ir.issue_size,
             ir.isin,
-            bs.description AS sector_desc
+            COALESCE(bs.description, 'Unknown') AS sector_desc
           FROM isin_re_issuance ir
-          INNER JOIN master_business_sector bs ON ir.business_sector = bs.code
+          LEFT JOIN master_business_sector bs ON ir.business_sector = bs.code
           WHERE ir.allotment_date BETWEEN ? AND ?
             AND ir.is_visible = 1
-            AND ir.business_sector <> 0
+            -- Removed ir.business_sector <> 0 to include all
         ),
 
         -- 2. Latest rating per issuer
@@ -463,7 +473,7 @@ app.post('/market-snapshot-data', async (req, res) => {
           LEFT JOIN issuer_rating r ON b.issuer_master_id = r.issuer_id
         ),
 
-        -- 4. Sector-level aggregates: totals + issue size per rating bucket
+        -- 4. Sector-level aggregates: totals + issue size per rating bucket (includes 'Unknown')
         sector_agg AS (
           SELECT
             sector_desc,
@@ -476,7 +486,6 @@ app.post('/market-snapshot-data', async (req, res) => {
             COALESCE(SUM(CASE WHEN rating = 'AA'    THEN issue_size ELSE 0 END), 0) AS size_AA,
             COALESCE(SUM(CASE WHEN rating = 'AA-'   THEN issue_size ELSE 0 END), 0) AS size_AAminus,
             COALESCE(SUM(CASE WHEN rating = 'A+'    THEN issue_size ELSE 0 END), 0) AS size_Aplus,
-            -- Split the former "A & below" into rated (other ratings) and unrated (NULL)
             COALESCE(SUM(CASE
               WHEN rating IS NOT NULL
               AND rating NOT IN ('AAA','AA+','AA','AA-','A+')
@@ -492,16 +501,18 @@ app.post('/market-snapshot-data', async (req, res) => {
           GROUP BY sector_desc
         ),
 
-        -- 5. Rank sectors by total issue size (descending)
+        -- 5. Rank only known sectors (exclude 'Unknown') by total issue size
         ranked AS (
           SELECT
             *,
             ROW_NUMBER() OVER (ORDER BY total_issue_size_raw DESC) AS rn
           FROM sector_agg
+          WHERE sector_desc != 'Unknown'   -- Unknown sector is not ranked
         ),
 
-        -- 6. Top 5 + Others (aggregate the rest)
+        -- 6. Top 5 known sectors + Others (includes ranked >5 and all Unknown)
         categorized AS (
+          -- Top 5 known sectors
           SELECT
             sector_desc AS sector_name,
             rn AS ord,
@@ -520,6 +531,7 @@ app.post('/market-snapshot-data', async (req, res) => {
 
           UNION ALL
 
+          -- Others = known sectors with rank > 5 + all Unknown sector(s)
           SELECT
             'Others' AS sector_name,
             6 AS ord,
@@ -533,9 +545,22 @@ app.post('/market-snapshot-data', async (req, res) => {
             SUM(size_Aplus)                   AS size_Aplus,
             SUM(size_A_below_rated)           AS size_A_below_rated,
             SUM(size_A_below_unrated)         AS size_A_below_unrated
-          FROM ranked
-          WHERE rn > 5
-          HAVING SUM(issuer_count) > 0
+          FROM (
+            SELECT issuer_count, isin_count, total_issue_size_raw,
+                  size_AAA, size_AAplus, size_AA, size_AAminus, size_Aplus,
+                  size_A_below_rated, size_A_below_unrated
+            FROM ranked
+            WHERE rn > 5
+
+            UNION ALL
+
+            SELECT issuer_count, isin_count, total_issue_size_raw,
+                  size_AAA, size_AAplus, size_AA, size_AAminus, size_Aplus,
+                  size_A_below_rated, size_A_below_unrated
+            FROM sector_agg
+            WHERE sector_desc = 'Unknown'
+          ) combined_others
+          HAVING SUM(issuer_count) > 0   -- include only if there is at least one issuer
         ),
 
         -- 7. Total issuers across all categories (for share%)
