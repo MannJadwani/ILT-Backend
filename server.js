@@ -5971,230 +5971,156 @@ app.post('/issuePage_specific_isin_detailed_data', async (req, res) => {
       });
     }
 
-    // ─── Sanitize limit and offset ───
-    const parsedLimit = Math.min(Math.max(parseInt(limit) || 25, 1), 100);
-    const parsedOffset = Math.max(parseInt(offset) || 0, 0);
-
-    // ─── Build IN clause placeholders ───
-    const idPlaceholders = issuerIds.map(() => '?').join(', ');
-
-    // ─── Shared listing data subquery ───
-    const listingDataJoin = `
-      LEFT JOIN (
-        SELECT 
-          mise.issuer_id, 
-          MAX(mls.description) AS listing_status, 
-          MAX(mise.listing_status) AS listing_status_code
-        FROM master_issuer_stock_exchange mise
-        LEFT JOIN master_listing_status mls ON mls.code = mise.listing_status
-        WHERE mise.listing_status IS NOT NULL
-        GROUP BY mise.issuer_id
-      ) AS listing_data ON listing_data.issuer_id = isin_re_issuance.isin_id
-    `;
 
     const resultQuery = `
-      SELECT DISTINCT
-        isin_re_issuance.isin,
-        isin_re_issuance.convertible_flag,
-        isin_re_issuance.option_flag,
-        isin_re_issuance.tier_classification,
-        isin_re_issuance.security_name,
-        isin_re_issuance.issue_size,
-        isin_re_issuance.face_value,
-        isin_re_issuance.allotment_date,
-        isin_re_issuance.maturity_date,
-        isin_re_issuance.call_desc,
-        isin_re_issuance.put_desc,
-        isin_re_issuance.isin_desc,
-        isin_re_issuance.convertible_details,
-        isin_re_issuance.stipulation_details,
-        isin_re_issuance.guaranteed,
-        isin_re_issuance.if_taxable,
-        isin_re_issuance.allotment_qty,
-        isin_re_issuance.stepupdwnbasis,
-        isin_re_issuance.stepupdwndtls,
-        isin_re_issuance.call_option,
-        isin_re_issuance.put_option,
-        isin_re_issuance.infra_category,
-        isin_re_issuance.issue_price,
-        isin_re_issuance.fintrpydte,
-        isin_re_issuance.freq,
-        isin_re_issuance.freq_dis,
-        isin_re_issuance.next_sch_date,
-        isin_re_issuance.intratupto,
-        isin_re_issuance.intratlkto,
-        isin_re_issuance.created_by,
-        isin_re_issuance.created_at,
-        isin_re_issuance.updated_by,
-        isin_re_issuance.updated_at,
-        master_interest_type.description AS interest_type,
-        master_perpetual_nature_indicator.description AS perpetual_nature,
-        master_guaranteed_type.description AS guaranteed_type,
-        master_convertible_type_a.description AS convertible_type_a, 
-        master_convertible_type_b.description AS convertible_type_b,
-        master_cra_status.description AS rated_flag,
-        master_day_count.description AS day_count,
-        master_frequency.description AS compound_frequency,
-        issuer_details.issuer_name AS issuer_name,
-        issuer_details.issuer_former_name AS issuer_former_name,
-        listing_data.listing_status AS listing_status,
-        listing_data.listing_status_code AS listing_status_code,
-        master_issuer_type_nature.description AS nature,
-        master_issuer_ownership_type.description AS ownership_type,
-        master_security_type.description AS security_type,
-        master_mode_issue.description AS mode_of_issue,
-        issuer_coupon_details.coupon_rate,
-        master_issuer_rating.rating AS credit_rating,
-        master_agency.short_name AS credit_rating_agency,
-        master_trustee.short_name AS debenture_trustee,
-        master_registrar.registrar_name AS Registrar,
-        master_arranger.short_name AS Arranger,
-        master_seniority_tier_classification.description AS Seniority,
-        master_tax_free.description AS tax_free,
-        master_secured_flag.description AS secured_flag,
-        master_business_sector.description AS sector
-      FROM isin_re_issuance
-      ${listingDataJoin}
-      LEFT JOIN master_issuer 
-        ON master_issuer.id = isin_re_issuance.isin_id
-      LEFT JOIN master_issuer_type_nature
-        ON master_issuer_type_nature.code = master_issuer.nature_type
-      LEFT JOIN master_issuer_ownership_type
-        ON master_issuer_ownership_type.code = master_issuer.issuer_ownership_type
-      LEFT JOIN issuer_details 
-        ON issuer_details.id = isin_re_issuance.issuer_master_id
-      LEFT JOIN master_day_count 
-        ON master_day_count.code = isin_re_issuance.day_count
-      LEFT JOIN master_frequency 
-        ON master_frequency.code = isin_re_issuance.compound_frequency
-      LEFT JOIN master_cra_status 
-        ON master_cra_status.code = isin_re_issuance.rated_flag
-      LEFT JOIN master_convertible_type_a 
-        ON master_convertible_type_a.code = isin_re_issuance.convertible_type_a
-      LEFT JOIN master_convertible_type_b
-        ON master_convertible_type_b.code = isin_re_issuance.convertible_type_b
-      LEFT JOIN master_guaranteed_type 
-        ON master_guaranteed_type.code = isin_re_issuance.guaranteed_type
-      LEFT JOIN master_perpetual_nature_indicator 
-        ON master_perpetual_nature_indicator.code = isin_re_issuance.perpetual_nature
-      LEFT JOIN master_interest_type 
-        ON master_interest_type.code = isin_re_issuance.interest_type
-      LEFT JOIN master_security_type 
-        ON master_security_type.code = isin_re_issuance.security_class
-      LEFT JOIN master_mode_issue
-        ON master_mode_issue.code = isin_re_issuance.mode_issue
-      LEFT JOIN issuer_coupon_details 
-        ON issuer_coupon_details.issuer_id = isin_re_issuance.isin_id
-      LEFT JOIN master_issuer_rating 
-        ON master_issuer_rating.issuer_id = isin_re_issuance.isin_id
-      LEFT JOIN master_agency 
-        ON master_agency.id = master_issuer_rating.agency_id
-      LEFT JOIN issuer_trustee 
-        ON issuer_trustee.issuer_id = isin_re_issuance.isin_id
-      LEFT JOIN master_trustee 
-        ON master_trustee.id = issuer_trustee.trustee_id
-      LEFT JOIN issuer_registrar 
-        ON issuer_registrar.issuer_id = isin_re_issuance.isin_id
-      LEFT JOIN master_registrar 
-        ON master_registrar.id = issuer_registrar.registrar_id
-      LEFT JOIN issuer_arranger 
-        ON issuer_arranger.issuer_id = isin_re_issuance.isin_id
-      LEFT JOIN master_arranger 
-        ON master_arranger.id = issuer_arranger.arranger_id
-      LEFT JOIN master_seniority_tier_classification 
-        ON master_seniority_tier_classification.code = isin_re_issuance.seniority
-      LEFT JOIN master_tax_free 
-        ON master_tax_free.code = isin_re_issuance.tax_free
-      LEFT JOIN master_secured_flag 
-        ON master_secured_flag.code = isin_re_issuance.secured_flag
-      LEFT JOIN master_business_sector 
-        ON master_business_sector.code = isin_re_issuance.business_sector
-      WHERE isin_re_issuance.isin_id IN (${idPlaceholders})
-      ORDER BY isin_re_issuance.allotment_date ASC
-      LIMIT ? OFFSET ?
+          SELECT
+          -- Basic issuer info
+          idet.issuer_name AS "Issuer Name",
+          mi.isin AS "ISIN",
+          mot.description AS "Issuer Ownership Type",
+          mint.description AS "Nature Type",
+          mbs.description AS "Business Sector",
+          idet.issuer_former_name AS "Issuer Former Name",
+          mi.security_name AS "Security Name",
+          mst.description AS "Security Class",
+          mi.series AS "Series",
+          mi.allotment_date AS "Allotment Date",
+          mi.face_value AS "Face Value",
+          mi.maturity_date AS "Maturity Date",
+
+          -- Tenure details (from issuer_tenure_details)
+          itd.tenure AS "Tenure",
+          itd.tenure_no_years AS "Tenure : No of Years",
+          itd.tenure_no_months AS "Tenure : No of Months",
+          itd.tenure_no_days AS "Tenure : No of Days",
+
+          -- Flags and classifications
+          mi.convertible_flag AS "Convertible Flag",
+          mi.option_flag AS "Option Flag",
+          mi.tier_classification AS "Tier Classification",
+          mdc.description AS "Day Count",
+          mstc.description AS "Seniority",
+          msf.description AS "Secured Flag",
+          mf.description AS "Compound Frequency",
+          mcs.description AS "Rated Flag",
+          mi.isin_desc AS "ISIN Description",
+          mcta.description AS "Convertible Type A",
+          mctb.description AS "Convertible Type B",
+          mi.stipulation_details AS "Stipulation Details",
+          mi.issue_size AS "Issue Size",
+          mgt.description AS "Guaranteed Type",
+          mi.guaranteed AS "Guaranteed",
+          mtf.description AS "Tax Free",
+          mi.if_taxable AS "If Taxable",
+          mmi.description AS "Mode of Issue",
+          mss.description AS "Security Status",
+          mi.allotment_qty AS "Allotment Quantity",
+          mpni.description AS "Perpetual Nature",
+          mi.infra_category AS "Infrastructure Category",
+          mi.issue_price AS "Issue Price",
+
+          -- Coupon details (latest)
+          icd.coupon_type AS "Coupon Type",
+          icd.coupon_pay_date AS "Coupon Pay Date",
+          icd.coupon_rate AS "Coupon Rate",
+
+          -- Interest and frequency
+          mit.description AS "Interest Type",
+          mi.freq AS "Frequency",
+          mi.freq_dis AS "Frequency Dis",
+          mi.intratupto AS "Intra Upto",
+          mi.fintrpydte AS "Interest Start Date",
+
+          -- Call / Put
+          mi.call_desc AS "Call Description",
+          mi.put_desc AS "Put Description",
+          mi.call_option AS "Call Option",
+          mi.put_option AS "Put Option",
+
+          -- Redemption details
+          ird.redmp_premimum_date AS "Redemption Premimum Date",
+          mrt.description AS "Type of Redemption",
+          ird.defaultinredmptn AS "Default in Redemption",
+          ird.redmp_details AS "Redemption Details",
+
+          -- Next schedule
+          mi.next_sch_date AS "Next schedule Date"
+
+      FROM master_issuer mi
+
+      -- Issuer details (name, former name)
+      LEFT JOIN issuer_details idet
+          ON mi.issuer_master_id = idet.id
+
+      -- Master lookups (descriptions)
+      LEFT JOIN master_issuer_ownership_type mot
+          ON mi.issuer_ownership_type = mot.code
+      LEFT JOIN master_issuer_type_nature mint
+          ON mi.nature_type = mint.code
+      LEFT JOIN master_business_sector mbs
+          ON mi.business_sector = mbs.code
+      LEFT JOIN master_security_type mst
+          ON mi.security_class = mst.code
+      LEFT JOIN master_day_count mdc
+          ON mi.day_count = mdc.code
+      LEFT JOIN master_seniority_tier_classification mstc
+          ON mi.seniority = mstc.code
+      LEFT JOIN master_secured_flag msf
+          ON mi.secured_flag = msf.code
+      LEFT JOIN master_frequency mf
+          ON mi.compound_frequency = mf.code
+      LEFT JOIN master_cra_status mcs
+          ON mi.rated_flag = mcs.code
+      LEFT JOIN master_convertible_type_a mcta
+          ON mi.convertible_type_a = mcta.code
+      LEFT JOIN master_convertible_type_b mctb
+          ON mi.convertible_type_b = mctb.code
+      LEFT JOIN master_guaranteed_type mgt
+          ON mi.guaranteed_type = mgt.code
+      LEFT JOIN master_tax_free mtf
+          ON mi.tax_free = mtf.code
+      LEFT JOIN master_mode_issue mmi
+          ON mi.mode_issue = mmi.code
+      LEFT JOIN master_security_status mss
+          ON mi.security_status = mss.code
+      LEFT JOIN master_perpetual_nature_indicator mpni
+          ON mi.perpetual_nature = mpni.code
+      LEFT JOIN master_interest_type mit
+          ON mi.interest_type = mit.code
+
+      -- Tenure details (assumed one row per issuer)
+      LEFT JOIN issuer_tenure_details itd
+          ON mi.id = itd.issuer_id
+
+      -- Redemption details (assumed one row per issuer)
+      LEFT JOIN issuer_redemption_details ird
+          ON mi.id = ird.issuer_id
+      LEFT JOIN master_redemption_type mrt
+          ON ird.type_redmptn = mrt.code
+
+      -- Coupon details – get the latest row by coupon_rate_date
+      LEFT JOIN (
+          SELECT
+              issuer_id,
+              coupon_type,
+              coupon_pay_date,
+              coupon_rate
+          FROM issuer_coupon_details
+          WHERE issuer_id = ?
+          ORDER BY coupon_rate_date DESC
+          LIMIT 1
+      ) icd ON mi.id = icd.issuer_id
+
+      WHERE mi.id = ?;
     `;
 
-    const couponTypeDataQuery = `
-      SELECT 
-        issuer_id, 
-        coupon_pay_date, 
-        coupon_rate_date, 
-        coupon_rate,
-        master_coupon_type.description AS coupon_type
-      FROM issuer_coupon_details 
-      LEFT JOIN master_coupon_type
-        ON master_coupon_type.code = issuer_coupon_details.coupon_type
-      WHERE issuer_coupon_details.issuer_id IN (${idPlaceholders})
-    `;
 
-    const tenureDataQuery = `
-      SELECT 
-        issuer_id, 
-        tenure, 
-        tenure_no_years, 
-        tenure_no_months, 
-        tenure_no_days 
-      FROM issuer_tenure_details 
-      WHERE issuer_tenure_details.issuer_id IN (${idPlaceholders})
-    `;
-
-    const redemptionTypeDataQuery = `
-      SELECT 
-        issuer_id, 
-        redmp_premimum_date, 
-        defaultinredmptn, 
-        redmp_details,
-        master_redemption_type.description AS type_redmptn
-      FROM issuer_redemption_details 
-      LEFT JOIN master_redemption_type
-        ON master_redemption_type.code = issuer_redemption_details.type_redmptn
-      WHERE issuer_redemption_details.issuer_id IN (${idPlaceholders})
-    `;
-
-    const masterIssuerAdditionalDataQuery = `
-      SELECT 
-        issuer_id, 
-        cin, 
-        macro, 
-        sector, 
-        industry, 
-        basicIndustry, 
-        amountRaised, 
-        greenShoeOption, 
-        redemptionDate, 
-        category, 
-        trancheNumber, 
-        natureOfInstrument, 
-        objectOfIssue, 
-        scheduledOpeningDate, 
-        scheduledClosingDate, 
-        actualClosingDate 
-      FROM master_issuer_additional 
-      WHERE master_issuer_additional.issuer_id IN (${idPlaceholders})
-    `;
-
-    // ─── FIX: Use parameterized queries with sanitized values ───
-    const queryParams = [...issuerIds, parsedLimit, parsedOffset];
-    const idParams = [...issuerIds];
-
-    const [result, couponTypeData, tenureData, redemptionTypeData, masterIssuerAdditionalData] = await Promise.all([
-      prisma.$queryRawUnsafe(resultQuery, ...queryParams),
-      prisma.$queryRawUnsafe(couponTypeDataQuery, ...idParams),
-      prisma.$queryRawUnsafe(tenureDataQuery, ...idParams),
-      prisma.$queryRawUnsafe(redemptionTypeDataQuery, ...idParams),
-      prisma.$queryRawUnsafe(masterIssuerAdditionalDataQuery, ...idParams)
+    const [result] = await Promise.all([
+      prisma.$queryRawUnsafe(resultQuery, masterIssuerId, masterIssuerId),
     ]);
 
-    // ─── FIX: Preserve response format (flat merge) but handle empty results ───
-    const overAll = {
-      ...(result?.[0] || {}),
-      ...(couponTypeData?.[0] || {}),
-      ...(tenureData?.[0] || {}),
-      ...(redemptionTypeData?.[0] || {}),
-      ...(masterIssuerAdditionalData?.[0] || {})
-    };
 
-    res.status(200).json(overAll);
+    res.status(200).json(result);
 
   } catch (error) {
     console.error('Error in issuePage_specific_isin_detailed_data:', error);
