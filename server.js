@@ -422,136 +422,144 @@ app.post('/market-snapshot-data', async (req, res) => {
 
     const sectorAndRatingList = `
         WITH
-          -- 1. Base issuances for the period
-          base_issuance AS (
-            SELECT
-              ir.issuer_master_id,
-              ir.business_sector,
-              ir.issue_size,
-              ir.isin,
-              bs.description AS sector_desc
-            FROM isin_re_issuance ir
-            INNER JOIN master_business_sector bs ON ir.business_sector = bs.code
-            WHERE ir.allotment_date BETWEEN ? AND ?
-              AND ir.is_visible = 1
-              AND ir.business_sector <> 0
-          ),
+        -- 1. Base issuances for the period
+        base_issuance AS (
+          SELECT
+            ir.issuer_master_id,
+            ir.business_sector,
+            ir.issue_size,
+            ir.isin,
+            bs.description AS sector_desc
+          FROM isin_re_issuance ir
+          INNER JOIN master_business_sector bs ON ir.business_sector = bs.code
+          WHERE ir.allotment_date BETWEEN ? AND ?
+            AND ir.is_visible = 1
+            AND ir.business_sector <> 0
+        ),
 
-          -- 2. Latest rating per issuer
-          latest_rating AS (
-            SELECT
-              issuer_id,
-              rating,
-              ROW_NUMBER() OVER (PARTITION BY issuer_id ORDER BY rating_date DESC) AS rn
-            FROM master_issuer_rating
-          ),
-          issuer_rating AS (
-            SELECT issuer_id, rating
-            FROM latest_rating
-            WHERE rn = 1
-          ),
+        -- 2. Latest rating per issuer
+        latest_rating AS (
+          SELECT
+            issuer_id,
+            rating,
+            ROW_NUMBER() OVER (PARTITION BY issuer_id ORDER BY rating_date DESC) AS rn
+          FROM master_issuer_rating
+        ),
+        issuer_rating AS (
+          SELECT issuer_id, rating
+          FROM latest_rating
+          WHERE rn = 1
+        ),
 
-          -- 3. Enrich each issuance with the issuer's current rating (may be NULL)
-          issuance_with_rating AS (
-            SELECT
-              b.issuer_master_id,
-              b.sector_desc,
-              b.issue_size,
-              b.isin,
-              r.rating
-            FROM base_issuance b
-            LEFT JOIN issuer_rating r ON b.issuer_master_id = r.issuer_id
-          ),
+        -- 3. Enrich each issuance with the issuer's current rating (may be NULL)
+        issuance_with_rating AS (
+          SELECT
+            b.issuer_master_id,
+            b.sector_desc,
+            b.issue_size,
+            b.isin,
+            r.rating
+          FROM base_issuance b
+          LEFT JOIN issuer_rating r ON b.issuer_master_id = r.issuer_id
+        ),
 
-          -- 4. Sector-level aggregates: totals + issue size per rating bucket
-          sector_agg AS (
-            SELECT
-              sector_desc,
-              COUNT(DISTINCT issuer_master_id)                     AS issuer_count,
-              COUNT(DISTINCT isin)                                AS isin_count,
-              SUM(issue_size)                                     AS total_issue_size_raw,
-              -- Issue size (raw) per rating bucket
-              COALESCE(SUM(CASE WHEN rating = 'AAA'    THEN issue_size ELSE 0 END), 0) AS size_AAA,
-              COALESCE(SUM(CASE WHEN rating = 'AA+'   THEN issue_size ELSE 0 END), 0) AS size_AAplus,
-              COALESCE(SUM(CASE WHEN rating = 'AA'    THEN issue_size ELSE 0 END), 0) AS size_AA,
-              COALESCE(SUM(CASE WHEN rating = 'AA-'   THEN issue_size ELSE 0 END), 0) AS size_AAminus,
-              COALESCE(SUM(CASE WHEN rating = 'A+'    THEN issue_size ELSE 0 END), 0) AS size_Aplus,
-              -- A & below: includes all other ratings (A, A-, BBB+, etc.) AND unrated (NULL)
-              COALESCE(SUM(CASE
-                WHEN rating IS NULL
-                  OR rating NOT IN ('AAA','AA+','AA','AA-','A+')
-                THEN issue_size
-                ELSE 0
-              END), 0) AS size_A_below
-            FROM issuance_with_rating
-            GROUP BY sector_desc
-          ),
+        -- 4. Sector-level aggregates: totals + issue size per rating bucket
+        sector_agg AS (
+          SELECT
+            sector_desc,
+            COUNT(DISTINCT issuer_master_id)                     AS issuer_count,
+            COUNT(DISTINCT isin)                                AS isin_count,
+            SUM(issue_size)                                     AS total_issue_size_raw,
+            -- Issue size (raw) per rating bucket
+            COALESCE(SUM(CASE WHEN rating = 'AAA'    THEN issue_size ELSE 0 END), 0) AS size_AAA,
+            COALESCE(SUM(CASE WHEN rating = 'AA+'   THEN issue_size ELSE 0 END), 0) AS size_AAplus,
+            COALESCE(SUM(CASE WHEN rating = 'AA'    THEN issue_size ELSE 0 END), 0) AS size_AA,
+            COALESCE(SUM(CASE WHEN rating = 'AA-'   THEN issue_size ELSE 0 END), 0) AS size_AAminus,
+            COALESCE(SUM(CASE WHEN rating = 'A+'    THEN issue_size ELSE 0 END), 0) AS size_Aplus,
+            -- Split the former "A & below" into rated (other ratings) and unrated (NULL)
+            COALESCE(SUM(CASE
+              WHEN rating IS NOT NULL
+              AND rating NOT IN ('AAA','AA+','AA','AA-','A+')
+              THEN issue_size
+              ELSE 0
+            END), 0) AS size_A_below_rated,
+            COALESCE(SUM(CASE
+              WHEN rating IS NULL
+              THEN issue_size
+              ELSE 0
+            END), 0) AS size_A_below_unrated
+          FROM issuance_with_rating
+          GROUP BY sector_desc
+        ),
 
-          -- 5. Rank sectors by total issue size (descending)
-          ranked AS (
-            SELECT
-              *,
-              ROW_NUMBER() OVER (ORDER BY total_issue_size_raw DESC) AS rn
-            FROM sector_agg
-          ),
+        -- 5. Rank sectors by total issue size (descending)
+        ranked AS (
+          SELECT
+            *,
+            ROW_NUMBER() OVER (ORDER BY total_issue_size_raw DESC) AS rn
+          FROM sector_agg
+        ),
 
-          -- 6. Top 5 + Others (aggregate the rest)
-          categorized AS (
-            SELECT
-              sector_desc AS sector_name,
-              rn AS ord,
-              issuer_count,
-              isin_count,
-              total_issue_size_raw,
-              size_AAA,
-              size_AAplus,
-              size_AA,
-              size_AAminus,
-              size_Aplus,
-              size_A_below
-            FROM ranked
-            WHERE rn <= 5
+        -- 6. Top 5 + Others (aggregate the rest)
+        categorized AS (
+          SELECT
+            sector_desc AS sector_name,
+            rn AS ord,
+            issuer_count,
+            isin_count,
+            total_issue_size_raw,
+            size_AAA,
+            size_AAplus,
+            size_AA,
+            size_AAminus,
+            size_Aplus,
+            size_A_below_rated,
+            size_A_below_unrated
+          FROM ranked
+          WHERE rn <= 5
 
-            UNION ALL
+          UNION ALL
 
-            SELECT
-              'Others' AS sector_name,
-              6 AS ord,
-              SUM(issuer_count)                 AS issuer_count,
-              SUM(isin_count)                   AS isin_count,
-              SUM(total_issue_size_raw)         AS total_issue_size_raw,
-              SUM(size_AAA)                     AS size_AAA,
-              SUM(size_AAplus)                  AS size_AAplus,
-              SUM(size_AA)                      AS size_AA,
-              SUM(size_AAminus)                 AS size_AAminus,
-              SUM(size_Aplus)                   AS size_Aplus,
-              SUM(size_A_below)                 AS size_A_below
-            FROM ranked
-            WHERE rn > 5
-            HAVING SUM(issuer_count) > 0
-          ),
+          SELECT
+            'Others' AS sector_name,
+            6 AS ord,
+            SUM(issuer_count)                 AS issuer_count,
+            SUM(isin_count)                   AS isin_count,
+            SUM(total_issue_size_raw)         AS total_issue_size_raw,
+            SUM(size_AAA)                     AS size_AAA,
+            SUM(size_AAplus)                  AS size_AAplus,
+            SUM(size_AA)                      AS size_AA,
+            SUM(size_AAminus)                 AS size_AAminus,
+            SUM(size_Aplus)                   AS size_Aplus,
+            SUM(size_A_below_rated)           AS size_A_below_rated,
+            SUM(size_A_below_unrated)         AS size_A_below_unrated
+          FROM ranked
+          WHERE rn > 5
+          HAVING SUM(issuer_count) > 0
+        ),
 
-          -- 7. Total issuers across all categories (for share%)
-          total_issuers AS (
-            SELECT SUM(issuer_count) AS total_issuer_count
-            FROM categorized
-          )
+        -- 7. Total issuers across all categories (for share%)
+        total_issuers AS (
+          SELECT SUM(issuer_count) AS total_issuer_count
+          FROM categorized
+        )
 
-        -- 8. Final output (divide by 10,000,000 to show in crores)
-        SELECT
-          sector_name,
-          isin_count,
-          issuer_count                                                AS total_issuers,
-          COALESCE(ROUND(total_issue_size_raw / 10000000), 0)        AS total_issue_size_cr,
-          COALESCE(ROUND(size_AAA / 10000000), 0)                    AS "AAA_cr",
-          COALESCE(ROUND(size_AAplus / 10000000), 0)                 AS "AA+_cr",
-          COALESCE(ROUND(size_AA / 10000000), 0)                     AS "AA_cr",
-          COALESCE(ROUND(size_AAminus / 10000000), 0)                AS "AA-_cr",
-          COALESCE(ROUND(size_Aplus / 10000000), 0)                  AS "A+_cr",
-          COALESCE(ROUND(size_A_below / 10000000), 0)                AS "A & below_cr",
-          ROUND((issuer_count / (SELECT total_issuer_count FROM total_issuers)) * 100, 2) AS shares
-        FROM categorized
-        ORDER BY ord;
+      -- 8. Final output (divide by 10,000,000 to show in crores)
+      SELECT
+        sector_name,
+        isin_count,
+        issuer_count                                                AS total_issuers,
+        COALESCE(ROUND(total_issue_size_raw / 10000000), 0)        AS total_issue_size_cr,
+        COALESCE(ROUND(size_AAA / 10000000), 0)                    AS "AAA_cr",
+        COALESCE(ROUND(size_AAplus / 10000000), 0)                 AS "AA+_cr",
+        COALESCE(ROUND(size_AA / 10000000), 0)                     AS "AA_cr",
+        COALESCE(ROUND(size_AAminus / 10000000), 0)                AS "AA-_cr",
+        COALESCE(ROUND(size_Aplus / 10000000), 0)                  AS "A+_cr",
+        COALESCE(ROUND(size_A_below_rated / 10000000), 0)          AS "A & below (Rated)_cr",
+        COALESCE(ROUND(size_A_below_unrated / 10000000), 0)        AS "A & below & (Unrated)_cr",
+        ROUND((issuer_count / (SELECT total_issuer_count FROM total_issuers)) * 100, 2) AS shares
+      FROM categorized
+      ORDER BY ord;
     `;
 
     const monthlyCompareList = `
