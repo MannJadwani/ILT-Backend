@@ -139,6 +139,16 @@ function getCombinedSimilarity(str1, str2) {
 // MAIN ADMIN APIs:
 // ==========================================
 
+app.post('/bulk-issuers-upload',async(req,res)=>{
+  try {
+    const { startDate, endDate } = req.body;
+    res.status(200).json({ message: 'Bulk issuers uploaded successfully',startDate, endDate });
+  } catch (error) {
+    console.error('Error uploading bulk issuers:', error);
+    res.status(500).json({ error: 'Failed to upload bulk issuers' });
+  }
+})
+
 app.post('/market-snapshot-data', async (req, res) => {
   try {
     const { startDate, endDate } = req.body;
@@ -300,7 +310,8 @@ app.post('/market-snapshot-data', async (req, res) => {
                 issuer_master_id,
                 COALESCE(ROUND(SUM(issue_size) / 10000000), 0) AS total_issue_size
             FROM isin_re_issuance
-            WHERE allotment_date BETWEEN ? AND ? AND (is_visible = 1)
+            WHERE allotment_date BETWEEN ? AND ?
+              AND is_visible = 1
             GROUP BY issuer_master_id
         ),
         latest_rating AS (
@@ -323,18 +334,20 @@ app.post('/market-snapshot-data', async (req, res) => {
                 COUNT(DISTINCT ij.issuer_master_id) AS issuer_count,
                 SUM(ij.total_issue_size) AS total_issue_size
             FROM issuer_monthly ij
-            INNER JOIN latest_rating lr ON ij.issuer_master_id = lr.issuer_id AND lr.rn = 1
+            INNER JOIN latest_rating lr 
+                ON ij.issuer_master_id = lr.issuer_id 
+                AND lr.rn = 1
             GROUP BY rating_bucket
         ),
-        total_issuer AS (
-            SELECT SUM(issuer_count) AS total
+        total_size AS (
+            SELECT SUM(total_issue_size) AS total_size_sum
             FROM rating_agg
         )
         SELECT
             rating_bucket AS rating_label,
             issuer_count,
             total_issue_size,
-            ROUND((issuer_count / (SELECT total FROM total_issuer)) * 100, 2) AS shares
+            ROUND((total_issue_size / (SELECT total_size_sum FROM total_size)) * 100, 2) AS shares
         FROM rating_agg
         ORDER BY 
             CASE rating_bucket
@@ -360,7 +373,6 @@ app.post('/market-snapshot-data', async (req, res) => {
                 LEFT JOIN master_business_sector bs ON ir.business_sector = bs.code
                 WHERE ir.allotment_date BETWEEN ? AND ?
                   AND ir.is_visible = 1
-                  -- Removed ir.business_sector <> 0 to include all issuers
                 GROUP BY COALESCE(bs.description, 'Unknown')
               ),
 
@@ -373,7 +385,7 @@ app.post('/market-snapshot-data', async (req, res) => {
                   total_issue_size_raw,
                   ROW_NUMBER() OVER (ORDER BY total_issue_size_raw DESC) AS rn
                 FROM sector_data
-                WHERE sector_desc != 'Unknown'   -- only real sectors are ranked
+                WHERE sector_desc != 'Unknown'
               ),
 
               -- 3. Split into Top 5 and Others (including Unknown)
@@ -411,9 +423,9 @@ app.post('/market-snapshot-data', async (req, res) => {
                 HAVING SUM(isin_count) > 0   -- include only if there is at least one ISIN
               ),
 
-              -- 4. Total issuer count across all categories (for share)
-              total_issuers AS (
-                SELECT SUM(issuer_count) AS total_issuer_count
+              -- 4. Total raw issue size across all categories (for share calculation)
+              total_raw AS (
+                SELECT SUM(total_issue_size_raw) AS total_raw_sum
                 FROM categorized
               )
 
@@ -423,7 +435,10 @@ app.post('/market-snapshot-data', async (req, res) => {
               isin_count,
               issuer_count,
               COALESCE(ROUND(total_issue_size_raw / 10000000), 0) AS total_issue_size,
-              ROUND((issuer_count / (SELECT total_issuer_count FROM total_issuers)) * 100, 2) AS shares
+              ROUND(
+                (total_issue_size_raw / (SELECT total_raw_sum FROM total_raw)) * 100,
+                2
+              ) AS shares
             FROM categorized
             ORDER BY ord;
       `;
