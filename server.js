@@ -376,7 +376,7 @@ app.post('/market-snapshot-data', async (req, res) => {
                 GROUP BY COALESCE(bs.description, 'Unknown')
               ),
 
-              -- 2. Rank only known sectors (exclude 'Unknown')
+              -- 2. Rank only "valid" sectors: exclude 'Unknown' and the literal 'Others'
               ranked AS (
                 SELECT
                   sector_desc,
@@ -385,12 +385,12 @@ app.post('/market-snapshot-data', async (req, res) => {
                   total_issue_size_raw,
                   ROW_NUMBER() OVER (ORDER BY total_issue_size_raw DESC) AS rn
                 FROM sector_data
-                WHERE sector_desc != 'Unknown'
+                WHERE sector_desc NOT IN ('Unknown', 'Others')
               ),
 
-              -- 3. Split into Top 5 and Others (including Unknown)
+              -- 3. Split into Top 5 and Others (now always includes the literal 'Others')
               categorized AS (
-                -- Top 5 known sectors
+                -- Top 5 known sectors (excluding 'Unknown' and 'Others')
                 SELECT
                   sector_desc AS sector_name,
                   rn AS ord,
@@ -402,7 +402,7 @@ app.post('/market-snapshot-data', async (req, res) => {
 
                 UNION ALL
 
-                -- Others = known sectors ranked >5 + all Unknown sectors
+                -- Aggregated Others = known sectors ranked >5 + all 'Unknown' + the literal 'Others'
                 SELECT
                   'Others' AS sector_name,
                   6 AS ord,
@@ -418,9 +418,9 @@ app.post('/market-snapshot-data', async (req, res) => {
 
                   SELECT isin_count, issuer_count, total_issue_size_raw
                   FROM sector_data
-                  WHERE sector_desc = 'Unknown'
+                  WHERE sector_desc IN ('Unknown', 'Others')
                 ) AS combined_others
-                HAVING SUM(isin_count) > 0   -- include only if there is at least one ISIN
+                HAVING SUM(isin_count) > 0   -- include only if at least one ISIN exists
               ),
 
               -- 4. Total raw issue size across all categories (for share calculation)
@@ -459,7 +459,6 @@ app.post('/market-snapshot-data', async (req, res) => {
           LEFT JOIN master_business_sector bs ON ir.business_sector = bs.code
           WHERE ir.allotment_date BETWEEN ? AND ?
             AND ir.is_visible = 1
-            -- Removed ir.business_sector <> 0 to include all
         ),
 
         -- 2. Latest rating per issuer
@@ -488,7 +487,7 @@ app.post('/market-snapshot-data', async (req, res) => {
           LEFT JOIN issuer_rating r ON b.issuer_master_id = r.issuer_id
         ),
 
-        -- 4. Sector-level aggregates: totals + issue size per rating bucket (includes 'Unknown')
+        -- 4. Sector-level aggregates: totals + issue size per rating bucket (includes all sectors)
         sector_agg AS (
           SELECT
             sector_desc,
@@ -516,16 +515,16 @@ app.post('/market-snapshot-data', async (req, res) => {
           GROUP BY sector_desc
         ),
 
-        -- 5. Rank only known sectors (exclude 'Unknown') by total issue size
+        -- 5. Rank only known sectors (exclude 'Unknown' and the literal 'Others') by total issue size
         ranked AS (
           SELECT
             *,
             ROW_NUMBER() OVER (ORDER BY total_issue_size_raw DESC) AS rn
           FROM sector_agg
-          WHERE sector_desc != 'Unknown'   -- Unknown sector is not ranked
+          WHERE sector_desc NOT IN ('Unknown', 'Others')   -- 👈 exclude both
         ),
 
-        -- 6. Top 5 known sectors + Others (includes ranked >5 and all Unknown)
+        -- 6. Top 5 known sectors + Others (includes ranked >5, Unknown, and literal 'Others')
         categorized AS (
           -- Top 5 known sectors
           SELECT
@@ -546,7 +545,7 @@ app.post('/market-snapshot-data', async (req, res) => {
 
           UNION ALL
 
-          -- Others = known sectors with rank > 5 + all Unknown sector(s)
+          -- Others = known sectors with rank > 5 + all Unknown + literal 'Others'
           SELECT
             'Others' AS sector_name,
             6 AS ord,
@@ -561,6 +560,7 @@ app.post('/market-snapshot-data', async (req, res) => {
             SUM(size_A_below_rated)           AS size_A_below_rated,
             SUM(size_A_below_unrated)         AS size_A_below_unrated
           FROM (
+            -- ranked > 5
             SELECT issuer_count, isin_count, total_issue_size_raw,
                   size_AAA, size_AAplus, size_AA, size_AAminus, size_Aplus,
                   size_A_below_rated, size_A_below_unrated
@@ -569,13 +569,23 @@ app.post('/market-snapshot-data', async (req, res) => {
 
             UNION ALL
 
+            -- Unknown
             SELECT issuer_count, isin_count, total_issue_size_raw,
                   size_AAA, size_AAplus, size_AA, size_AAminus, size_Aplus,
                   size_A_below_rated, size_A_below_unrated
             FROM sector_agg
             WHERE sector_desc = 'Unknown'
+
+            UNION ALL   -- 👈 add the literal 'Others' sector
+
+            -- literal 'Others' (if it exists)
+            SELECT issuer_count, isin_count, total_issue_size_raw,
+                  size_AAA, size_AAplus, size_AA, size_AAminus, size_Aplus,
+                  size_A_below_rated, size_A_below_unrated
+            FROM sector_agg
+            WHERE sector_desc = 'Others'
           ) combined_others
-          HAVING SUM(issuer_count) > 0   -- include only if there is at least one issuer
+          HAVING SUM(issuer_count) > 0   -- include only if at least one issuer exists
         ),
 
         -- 7. Total issuers across all categories (for share%)
@@ -647,19 +657,21 @@ app.post('/market-snapshot-data', async (req, res) => {
           GROUP BY ir.business_sector
         ),
 
-        -- 2. Rank only known sectors (exclude those without a valid master entry)
+        -- 2. Rank only known sectors (exclude those without a valid master entry AND exclude literal 'Others')
         ranked_sectors AS (
           SELECT
             st.business_sector,
             st.total_size,
             ROW_NUMBER() OVER (ORDER BY st.total_size DESC) AS rn
           FROM sector_totals st
-          INNER JOIN master_business_sector bs ON st.business_sector = bs.code   -- only known sectors
+          INNER JOIN master_business_sector bs 
+            ON st.business_sector = bs.code
+          AND bs.description != 'Others'   -- 👈 exclude the literal 'Others' sector
         ),
 
-        -- 3. Assign group name and order for ALL business_sectors (known + unknown)
+        -- 3. Assign group name and order for ALL business_sectors (known + unknown + literal 'Others')
         sector_groups AS (
-          -- Known sectors: top 5 get their description, rest become 'Others'
+          -- Known sectors (excluding 'Others'): top 5 get description, rest become 'Others'
           SELECT
             rs.business_sector,
             CASE
@@ -676,6 +688,18 @@ app.post('/market-snapshot-data', async (req, res) => {
 
           UNION ALL
 
+          -- Literal 'Others' sector (if it exists in master) – always forced into 'Others' group
+          SELECT
+            st.business_sector,
+            'Others' AS sector_group_name,
+            6 AS group_order,
+            st.total_size AS sector_total
+          FROM sector_totals st
+          INNER JOIN master_business_sector bs ON st.business_sector = bs.code
+          WHERE bs.description = 'Others'
+
+          UNION ALL
+
           -- Unknown sectors (business_sector not found in master or is 0/NULL)
           SELECT
             st.business_sector,
@@ -684,7 +708,7 @@ app.post('/market-snapshot-data', async (req, res) => {
             st.total_size AS sector_total
           FROM sector_totals st
           LEFT JOIN master_business_sector bs ON st.business_sector = bs.code
-          WHERE bs.code IS NULL   -- no matching sector description
+          WHERE bs.code IS NULL
             OR st.business_sector = 0
         ),
 
