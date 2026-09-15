@@ -133,21 +133,423 @@ function getCombinedSimilarity(str1, str2) {
 }
 
 
+/* ---------- helpers ---------- */
+
+function excelSerialToDate(serial) {
+  if (serial === null || serial === undefined || serial === '') return null;
+  const n = Number(serial);
+  if (Number.isNaN(n)) return null;
+  return new Date((n - 25569) * 86400 * 1000).toISOString().slice(0, 10);
+}
+
+function parseTenor(tenor) {
+  const out = { years: 0, months: 0, days: 0 };
+  if (!tenor) return out;
+  const y = /(\d+)\s*YEAR/i.exec(tenor);
+  const m = /(\d+)\s*MONTH/i.exec(tenor);
+  const d = /(\d+)\s*DAY/i.exec(tenor);
+  if (y) out.years = parseInt(y[1], 10);
+  if (m) out.months = parseInt(m[1], 10);
+  if (d) out.days = parseInt(d[1], 10);
+  return out;
+}
+
+// "SECURED" / "UNSECURED" -> 1 / 0   (for master_issuer.secured_flag)
+function securedToFlag(s) {
+  if (!s) return null;
+  const u = String(s).toUpperCase();
+  if (u.includes('UNSECURED')) return 0;
+  if (u.includes('SECURED')) return 1;
+  return null;
+}
+
+const convertToCrores = (n) => {
+  return n * 10000000;
+}
+
+// "SECURED" -> 'secured'  (enum for isin_re_issuance_details.secured_unsecured)
+function securedToEnum(s) {
+  if (!s) return null;
+  const u = String(s).toUpperCase();
+  if (u.includes('UNSECURED')) return 'unsecured';
+  if (u.includes('SECURED')) return 'secured';
+  return null;
+}
+
+// "CLOSE" / "CLOSED" -> 'closed'  (enum for isin_re_issuance_details.type_of_book_bidding)
+function bookBiddingToEnum(s) {
+  if (!s) return null;
+  const u = String(s).toUpperCase();
+  if (u.includes('OPEN')) return 'open';
+  if (u.includes('CLOSE')) return 'closed';
+  return null;
+}
+
+// "MONTHLY" -> 12, "QUARTERLY" -> 4, etc.
+function couponFreqToInt(s) {
+  if (!s) return null;
+  const u = String(s).toUpperCase().trim();
+  const map = {
+    WEEKLY: 52,
+    MONTHLY: 12,
+    QUARTERLY: 4,
+    'HALF YEARLY': 2,
+    'HALF-YEARLY': 2,
+    'SEMI-ANNUAL': 2,
+    'SEMI-ANNUALLY': 2,
+    YEARLY: 1,
+    ANNUAL: 1,
+    ANNUALLY: 1,
+  };
+  return map[u] ?? null;
+}
+
+// { years, months, days } -> decimal years (Float)
+function tenorToFloat(t) {
+  return (t.years || 0) + (t.months || 0) / 12 + (t.days || 0) / 365;
+}
 
 
 // ==========================================
 // MAIN ADMIN APIs:
 // ==========================================
 
-app.post('/bulk-issuers-upload',async(req,res)=>{
-  try {
-    const { startDate, endDate } = req.body;
-    res.status(200).json({ message: 'Bulk issuers uploaded successfully',startDate, endDate });
-  } catch (error) {
-    console.error('Error uploading bulk issuers:', error);
-    res.status(500).json({ error: 'Failed to upload bulk issuers' });
+app.post('/bulk-issuers-upload', async (req, res) => {
+  const issuers = Array.isArray(req.body) ? req.body : req.body?.issuers || [];
+
+  if (!issuers.length) {
+    return res.status(400).json({ error: 'No issuer records provided' });
   }
-})
+
+  const summary = { success: 0, failed: 0, errors: [] };
+
+  for (const item of issuers) {
+    try {
+      const result = await prisma.$transaction(async (tx) => {
+        const isin = item.isin;
+        const issuerName = item.issuerName;
+
+        if (!isin || !issuerName) {
+          throw new Error('Missing required field: isin or issuerName');
+        }
+
+        const allotmentDate = excelSerialToDate(item.allotmentDate);
+        const maturityDate = excelSerialToDate(item.maturityDate);
+        const tenure = parseTenor(item.tenor);
+
+        /* ---------- 1. issuer_details ---------- */
+        await tx.$executeRawUnsafe(
+          `INSERT INTO issuer_details (issuer_name)
+           SELECT ? FROM DUAL
+           WHERE NOT EXISTS (
+             SELECT 1 FROM issuer_details WHERE issuer_name = ?
+           )`,
+          issuerName, issuerName
+        );
+
+        const issuerRows = await tx.$queryRawUnsafe(
+          `SELECT id FROM issuer_details WHERE issuer_name = ? LIMIT 1`,
+          issuerName
+        );
+        const issuerId = issuerRows[0].id;
+
+        /* ---------- 2. master_arranger ---------- */
+        let arrangerId = null;
+        if (item.leadManagerArranger) {
+          await tx.$executeRawUnsafe(
+            `INSERT INTO master_arranger (short_name)
+             SELECT ? FROM DUAL
+             WHERE NOT EXISTS (
+               SELECT 1 FROM master_arranger WHERE short_name = ?
+             )`,
+            item.leadManagerArranger, item.leadManagerArranger
+          );
+          const r = await tx.$queryRawUnsafe(
+            `SELECT id FROM master_arranger WHERE short_name = ? LIMIT 1`,
+            item.leadManagerArranger
+          );
+          arrangerId = r[0]?.id ?? null;
+        }
+
+        /* ---------- 3. master_trustee ---------- */
+        let trusteeId = null;
+        if (item.trustee) {
+          await tx.$executeRawUnsafe(
+            `INSERT INTO master_trustee (short_name)
+             SELECT ? FROM DUAL
+             WHERE NOT EXISTS (
+               SELECT 1 FROM master_trustee WHERE short_name = ?
+             )`,
+            item.trustee, item.trustee
+          );
+          const r = await tx.$queryRawUnsafe(
+            `SELECT id FROM master_trustee WHERE short_name = ? LIMIT 1`,
+            item.trustee
+          );
+          trusteeId = r[0]?.id ?? null;
+        }
+
+        /* ---------- 4. master_registrar ---------- */
+        let registrarId = null;
+        if (item.registrar) {
+          await tx.$executeRawUnsafe(
+            `INSERT INTO master_registrar (short_name, registrar_name)
+             SELECT ?, ? FROM DUAL
+             WHERE NOT EXISTS (
+               SELECT 1 FROM master_registrar WHERE short_name = ?
+             )`,
+            item.registrar, item.registrar, item.registrar
+          );
+          const r = await tx.$queryRawUnsafe(
+            `SELECT id FROM master_registrar WHERE short_name = ? LIMIT 1`,
+            item.registrar
+          );
+          registrarId = r[0]?.id ?? null;
+        }
+
+        /* ---------- 5. master_issuer ---------- */
+        await tx.$executeRawUnsafe(
+          `INSERT INTO master_issuer (
+     issuer_master_id, isin, security_name,
+     issue_size, face_value, allotment_date, maturity_date,
+     secured_flag, is_visible
+   )
+   SELECT ?, ?, ?, ?, ?, ?, ?, ?, 1 FROM DUAL
+   WHERE NOT EXISTS (SELECT 1 FROM master_issuer WHERE isin = ?)`,
+          issuerId,
+          isin,
+          issuerName,
+          item.amountRaisedInRsCr ?? null,
+          item.faceValueInRsLakhs ?? null,
+          allotmentDate,
+          maturityDate,
+          securedToFlag(item.securedUnsecured),   // <-- was item.securedUnsecured
+          isin
+        );
+
+        const miRows = await tx.$queryRawUnsafe(
+          `SELECT id FROM master_issuer WHERE isin = ? LIMIT 1`,
+          isin
+        );
+        const isinId = miRows[0].id;
+
+        /* ---------- 6. isin_re_issuance ---------- */
+        await tx.$executeRawUnsafe(
+          `INSERT INTO isin_re_issuance (
+     isin_id, isin, issuer_master_id,
+     allotment_date, issue_size, face_value, maturity_date,
+     security_name, secured_flag, is_visible, is_updated, is_main
+   )
+   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1, 1)`,
+          isinId,
+          isin,
+          issuerId,
+          allotmentDate,
+          item.amountRaisedInRsCr ?? null,
+          item.faceValueInRsLakhs ?? null,
+          maturityDate,
+          issuerName,
+          securedToFlag(item.securedUnsecured)    // <-- was item.securedUnsecured
+        );
+
+        const riRows = await tx.$queryRawUnsafe(
+          `SELECT id FROM isin_re_issuance WHERE isin = ? ORDER BY id DESC LIMIT 1`,
+          isin
+        );
+        const reIssuanceId = riRows[0].id;
+
+        /* ---------- 7. isin_re_issuance_details ---------- */
+        /* ---------- 7. isin_re_issuance_details ---------- */
+        await tx.$executeRawUnsafe(
+          `INSERT INTO isin_re_issuance_details (
+     re_issuance_id, bidding_date, issuer_name, isin,
+     issue_description, type_of_issuance,
+     allotment_date, face_value, credit_rating,
+     type_of_book_bidding, price, spread, yield,
+     manner_of_allotment, manner_of_settlement,
+     link_of_gid_ppm, link_of_kid_term_sheet,
+     base_issue_size, green_shoe_option, amount_raised,
+     coupon, coupon_frequency,
+     successful_bidders_category, type_of_bidding,
+     secured_unsecured, tenor, maturity_type,
+     interest_payment_type,
+     anchor_amount, number_of_anchor_investors,
+     total_qib_bidding, total_qib_amount_accepted,
+     total_non_qib_bidding, total_non_qib_amount_accepted,
+     cutoff_yield_price, weighted_average_cutoff_yield_price,
+     issuance_done_through_bidding_process
+   ) VALUES (
+     ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+     ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+     ?, ?,
+     ?, ?,
+     ?, ?, ?,
+     ?,
+     ?, ?,
+     ?, ?,
+     ?, ?,
+     ?, ?,
+     ?
+   )`,
+          reIssuanceId,                                          //  1
+          null,                                                  //  2 bidding_date
+          issuerName,                                            //  3
+          isin,                                                  //  4
+          item.issueDescription ?? null,                         //  5
+          item.typeOfIssuanceTypeOfPlacement ?? null,            //  6
+          allotmentDate,                                         //  7
+          item.faceValueInRsLakhs ?? null,                       //  8
+          item.creditRating ?? null,                             //  9
+          bookBiddingToEnum(item.typeOfBookBidding),             // 10 'closed'
+          item.priceInRs ?? null,                                // 11
+          item.spreadBps ?? null,                                // 12
+          item.yield ?? null,                                    // 13
+          item.mannerOfAllotment ?? null,                        // 14
+          item.mannerOfSettlement ?? null,                       // 15
+          item.linkOfGidPpm ?? null,                             // 16
+          item.linkOfKidTermsheet ?? null,                       // 17
+          item.baseIssueSizeInRsCrs ?? null,                     // 18
+          item.greenShoeOptionInRsCrs ?? null,                   // 19
+          item.amountRaisedInRsCr ?? null,                       // 20
+          item.coupon_rate ?? null,                              // 21
+          couponFreqToInt(item.couponFrequency),                 // 22 12 = MONTHLY
+          item.noOfSuccesfulBiddersCategoryOfInvestors ?? null,  // 23
+          item.typeOfBidding ?? null,                            // 24
+          securedToEnum(item.securedUnsecured),                  // 25 'secured'
+          item.tenor ?? null,                                    // 26
+          item.maturityType ?? null,                             // 27
+          item.interestPaymentType ?? null,                      // 28
+          item.anchorAmountInRsCrs ?? null,                      // 29
+          item.noOfAnchorInvestors ?? null,                      // 30
+          item.totalQibBiddingAmountInRsCrs ?? null,             // 31
+          item.totalQibAmountAcceptedAmountInRsCrs ?? null,      // 32
+          item.totalNonQibBiddingAmountInRsCrs ?? null,          // 33
+          item.totalNonQibAmountAcceptedAmountInRsCrs ?? null,   // 34
+          item.cutOffYieldPriceRs ?? null,                       // 35
+          item.weightedAverageCutOffYieldPriceRsSpreadBps ?? null, // 36
+          'YES'                                                  // 37 string, not 1
+        );
+
+        /* ---------- 8. link tables ---------- */
+        if (arrangerId !== null) {
+          await tx.$executeRawUnsafe(
+            `INSERT INTO issuer_arranger (arranger_id, issuer_id)
+             SELECT ?, ? FROM DUAL
+             WHERE NOT EXISTS (
+               SELECT 1 FROM issuer_arranger
+               WHERE arranger_id = ? AND issuer_id = ?
+             )`,
+            arrangerId, isinId, arrangerId, isinId
+          );
+        }
+        if (trusteeId !== null) {
+          await tx.$executeRawUnsafe(
+            `INSERT INTO issuer_trustee (trustee_id, issuer_id)
+             SELECT ?, ? FROM DUAL
+             WHERE NOT EXISTS (
+               SELECT 1 FROM issuer_trustee
+               WHERE trustee_id = ? AND issuer_id = ?
+             )`,
+            trusteeId, isinId, trusteeId, isinId
+          );
+        }
+        if (registrarId !== null) {
+          await tx.$executeRawUnsafe(
+            `INSERT INTO issuer_registrar (registrar_id, issuer_id)
+             SELECT ?, ? FROM DUAL
+             WHERE NOT EXISTS (
+               SELECT 1 FROM issuer_registrar
+               WHERE registrar_id = ? AND issuer_id = ?
+             )`,
+            registrarId, isinId, registrarId, isinId
+          );
+        }
+
+        /* ---------- 9. issuer_coupon_details (upsert) ---------- */
+        if (item.coupon_rate !== null && item.coupon_rate !== undefined) {
+          const existing = await tx.$queryRawUnsafe(
+            `SELECT id FROM issuer_coupon_details WHERE issuer_id = ? LIMIT 1`,
+            isinId
+          );
+
+          const couponRate = String(item.coupon_rate);
+
+          if (existing.length) {
+            await tx.$executeRawUnsafe(
+              `UPDATE issuer_coupon_details
+          SET coupon_rate      = ?,
+              coupon_rate_date = ?,
+              updated_at       = NOW()
+        WHERE id = ?`,
+              couponRate,
+              allotmentDate,
+              existing[0].id
+            );
+          } else {
+            await tx.$executeRawUnsafe(
+              `INSERT INTO issuer_coupon_details
+         (issuer_id, coupon_rate, coupon_pay_date, coupon_rate_date, coupon_type)
+       VALUES (?, ?, ?, ?, ?)`,
+              isinId, couponRate, null, allotmentDate, null
+            );
+          }
+        }
+
+        /* ---------- 10. issuer_tenure_details (upsert) ---------- */
+        if (item.tenor) {
+          const existing = await tx.$queryRawUnsafe(
+            `SELECT id FROM issuer_tenure_details WHERE issuer_id = ? LIMIT 1`,
+            isinId
+          );
+
+          const tFloat = tenorToFloat(tenure);
+
+          if (existing.length) {
+            // Update the one row we already have for this issuer
+            await tx.$executeRawUnsafe(
+              `UPDATE issuer_tenure_details
+          SET tenure           = ?,
+              tenure_no_years  = ?,
+              tenure_no_months = ?,
+              tenure_no_days   = ?,
+              updated_at       = NOW()
+        WHERE id = ?`,
+              tFloat,
+              tenure.years,
+              tenure.months,
+              tenure.days,
+              existing[0].id
+            );
+          } else {
+            await tx.$executeRawUnsafe(
+              `INSERT INTO issuer_tenure_details
+         (issuer_id, tenure, tenure_no_years, tenure_no_months, tenure_no_days)
+       VALUES (?, ?, ?, ?, ?)`,
+              isinId,
+              tFloat,
+              tenure.years,
+              tenure.months,
+              tenure.days
+            );
+          }
+        }
+
+        return { isin, issuerId, isinId, reIssuanceId };
+      });
+
+      summary.success += 1;
+    } catch (err) {
+      console.error(`Failed to insert isin=${item?.isin}:`, err);
+      summary.failed += 1;
+      summary.errors.push({ isin: item?.isin, error: err.message });
+    }
+  }
+
+  return res.status(200).json({
+    message: 'Bulk issuers upload completed',
+    summary,
+  });
+});
 
 app.post('/market-snapshot-data', async (req, res) => {
   try {

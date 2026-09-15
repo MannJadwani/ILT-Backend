@@ -1026,8 +1026,6 @@ exports.Prisma.Isin_re_issuanceScalarFieldEnum = {
   issuer_master_id: 'issuer_master_id',
   allotment_date: 'allotment_date',
   issue_size: 'issue_size',
-  nsdl_issue_size: 'nsdl_issue_size',
-  source: 'source',
   face_value: 'face_value',
   maturity_date: 'maturity_date',
   business_sector: 'business_sector',
@@ -1088,11 +1086,131 @@ exports.Prisma.Isin_re_issuance_detailsScalarFieldEnum = {
   updated_at: 'updated_at'
 };
 
-exports.Prisma.Isin_recordsScalarFieldEnum = {
+exports.Prisma.Copy_admin_settingScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  type: 'type',
+  is_active: 'is_active',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+};
+
+exports.Prisma.Copy_all_monthsScalarFieldEnum = {
+  id: 'id',
+  month_no: 'month_no',
+  month_name: 'month_name'
+};
+
+exports.Prisma.Copy_cacheScalarFieldEnum = {
+  key: 'key',
+  value: 'value',
+  expiration: 'expiration'
+};
+
+exports.Prisma.Copy_cache_locksScalarFieldEnum = {
+  key: 'key',
+  owner: 'owner',
+  expiration: 'expiration'
+};
+
+exports.Prisma.Copy_cron_statusScalarFieldEnum = {
+  id: 'id',
+  cron_name: 'cron_name',
+  cron_date: 'cron_date',
+  updated_at: 'updated_at'
+};
+
+exports.Prisma.Copy_daily_issuer_cron_tableScalarFieldEnum = {
   id: 'id',
   isin: 'isin',
   allotment_date: 'allotment_date',
   status: 'status',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+};
+
+exports.Prisma.Copy_failed_jobsScalarFieldEnum = {
+  id: 'id',
+  uuid: 'uuid',
+  connection: 'connection',
+  queue: 'queue',
+  payload: 'payload',
+  exception: 'exception',
+  failed_at: 'failed_at'
+};
+
+exports.Prisma.Copy_incorporatedate_cronScalarFieldEnum = {
+  id: 'id',
+  isin: 'isin',
+  allotment_date: 'allotment_date',
+  status: 'status',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+};
+
+exports.Prisma.Copy_isin_re_issuanceScalarFieldEnum = {
+  id: 'id',
+  isin_id: 'isin_id',
+  isin: 'isin',
+  issuer_master_id: 'issuer_master_id',
+  allotment_date: 'allotment_date',
+  issue_size: 'issue_size',
+  face_value: 'face_value',
+  maturity_date: 'maturity_date',
+  business_sector: 'business_sector',
+  security_name: 'security_name',
+  security_class: 'security_class',
+  mode_issue: 'mode_issue',
+  seniority: 'seniority',
+  tax_free: 'tax_free',
+  secured_flag: 'secured_flag',
+  is_visible: 'is_visible',
+  is_updated: 'is_updated',
+  is_main: 'is_main',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+};
+
+exports.Prisma.Copy_isin_re_issuance_detailsScalarFieldEnum = {
+  id: 'id',
+  re_issuance_id: 're_issuance_id',
+  bidding_date: 'bidding_date',
+  issuer_name: 'issuer_name',
+  isin: 'isin',
+  issue_description: 'issue_description',
+  type_of_issuance: 'type_of_issuance',
+  allotment_date: 'allotment_date',
+  face_value: 'face_value',
+  credit_rating: 'credit_rating',
+  type_of_book_bidding: 'type_of_book_bidding',
+  price: 'price',
+  spread: 'spread',
+  yield: 'yield',
+  manner_of_allotment: 'manner_of_allotment',
+  manner_of_settlement: 'manner_of_settlement',
+  link_of_gid_ppm: 'link_of_gid_ppm',
+  link_of_kid_term_sheet: 'link_of_kid_term_sheet',
+  base_issue_size: 'base_issue_size',
+  green_shoe_option: 'green_shoe_option',
+  amount_raised: 'amount_raised',
+  coupon: 'coupon',
+  coupon_frequency: 'coupon_frequency',
+  successful_bidders_category: 'successful_bidders_category',
+  type_of_bidding: 'type_of_bidding',
+  secured_unsecured: 'secured_unsecured',
+  tenor: 'tenor',
+  maturity_type: 'maturity_type',
+  interest_payment_type: 'interest_payment_type',
+  anchor_amount: 'anchor_amount',
+  number_of_anchor_investors: 'number_of_anchor_investors',
+  total_qib_bidding: 'total_qib_bidding',
+  total_qib_amount_accepted: 'total_qib_amount_accepted',
+  total_non_qib_bidding: 'total_non_qib_bidding',
+  total_non_qib_amount_accepted: 'total_non_qib_amount_accepted',
+  cutoff_yield_price: 'cutoff_yield_price',
+  weighted_average_cutoff_yield_price: 'weighted_average_cutoff_yield_price',
+  issuance_done_through_bidding_process: 'issuance_done_through_bidding_process',
+  updated_by: 'updated_by',
   created_at: 'created_at',
   updated_at: 'updated_at'
 };
@@ -1476,7 +1594,6 @@ exports.Prisma.usersOrderByRelevanceFieldEnum = {
 
 exports.Prisma.isin_re_issuanceOrderByRelevanceFieldEnum = {
   isin: 'isin',
-  source: 'source',
   security_name: 'security_name',
   security_class: 'security_class'
 };
@@ -1499,8 +1616,66 @@ exports.Prisma.isin_re_issuance_detailsOrderByRelevanceFieldEnum = {
   issuance_done_through_bidding_process: 'issuance_done_through_bidding_process'
 };
 
-exports.Prisma.isin_recordsOrderByRelevanceFieldEnum = {
+exports.Prisma.copy_admin_settingOrderByRelevanceFieldEnum = {
+  name: 'name'
+};
+
+exports.Prisma.copy_all_monthsOrderByRelevanceFieldEnum = {
+  month_name: 'month_name'
+};
+
+exports.Prisma.copy_cacheOrderByRelevanceFieldEnum = {
+  key: 'key',
+  value: 'value'
+};
+
+exports.Prisma.copy_cache_locksOrderByRelevanceFieldEnum = {
+  key: 'key',
+  owner: 'owner'
+};
+
+exports.Prisma.copy_cron_statusOrderByRelevanceFieldEnum = {
+  cron_name: 'cron_name'
+};
+
+exports.Prisma.copy_daily_issuer_cron_tableOrderByRelevanceFieldEnum = {
   isin: 'isin'
+};
+
+exports.Prisma.copy_failed_jobsOrderByRelevanceFieldEnum = {
+  uuid: 'uuid',
+  connection: 'connection',
+  queue: 'queue',
+  payload: 'payload',
+  exception: 'exception'
+};
+
+exports.Prisma.copy_incorporatedate_cronOrderByRelevanceFieldEnum = {
+  isin: 'isin'
+};
+
+exports.Prisma.copy_isin_re_issuanceOrderByRelevanceFieldEnum = {
+  isin: 'isin',
+  security_name: 'security_name',
+  security_class: 'security_class'
+};
+
+exports.Prisma.copy_isin_re_issuance_detailsOrderByRelevanceFieldEnum = {
+  issuer_name: 'issuer_name',
+  isin: 'isin',
+  issue_description: 'issue_description',
+  type_of_issuance: 'type_of_issuance',
+  credit_rating: 'credit_rating',
+  manner_of_allotment: 'manner_of_allotment',
+  manner_of_settlement: 'manner_of_settlement',
+  link_of_gid_ppm: 'link_of_gid_ppm',
+  link_of_kid_term_sheet: 'link_of_kid_term_sheet',
+  successful_bidders_category: 'successful_bidders_category',
+  type_of_bidding: 'type_of_bidding',
+  tenor: 'tenor',
+  maturity_type: 'maturity_type',
+  interest_payment_type: 'interest_payment_type',
+  issuance_done_through_bidding_process: 'issuance_done_through_bidding_process'
 };
 exports.users_user_type = exports.$Enums.users_user_type = {
   TYPE_ONE: 'TYPE_ONE',
@@ -1513,6 +1688,16 @@ exports.isin_re_issuance_details_type_of_book_bidding = exports.$Enums.isin_re_i
 };
 
 exports.isin_re_issuance_details_secured_unsecured = exports.$Enums.isin_re_issuance_details_secured_unsecured = {
+  secured: 'secured',
+  unsecured: 'unsecured'
+};
+
+exports.copy_isin_re_issuance_details_type_of_book_bidding = exports.$Enums.copy_isin_re_issuance_details_type_of_book_bidding = {
+  open: 'open',
+  closed: 'closed'
+};
+
+exports.copy_isin_re_issuance_details_secured_unsecured = exports.$Enums.copy_isin_re_issuance_details_secured_unsecured = {
   secured: 'secured',
   unsecured: 'unsecured'
 };
@@ -1584,7 +1769,16 @@ exports.Prisma.ModelName = {
   users: 'users',
   isin_re_issuance: 'isin_re_issuance',
   isin_re_issuance_details: 'isin_re_issuance_details',
-  isin_records: 'isin_records'
+  copy_admin_setting: 'copy_admin_setting',
+  copy_all_months: 'copy_all_months',
+  copy_cache: 'copy_cache',
+  copy_cache_locks: 'copy_cache_locks',
+  copy_cron_status: 'copy_cron_status',
+  copy_daily_issuer_cron_table: 'copy_daily_issuer_cron_table',
+  copy_failed_jobs: 'copy_failed_jobs',
+  copy_incorporatedate_cron: 'copy_incorporatedate_cron',
+  copy_isin_re_issuance: 'copy_isin_re_issuance',
+  copy_isin_re_issuance_details: 'copy_isin_re_issuance_details'
 };
 
 /**

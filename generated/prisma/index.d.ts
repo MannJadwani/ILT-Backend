@@ -344,10 +344,55 @@ export type isin_re_issuance = $Result.DefaultSelection<Prisma.$isin_re_issuance
  */
 export type isin_re_issuance_details = $Result.DefaultSelection<Prisma.$isin_re_issuance_detailsPayload>
 /**
- * Model isin_records
+ * Model copy_admin_setting
  * 
  */
-export type isin_records = $Result.DefaultSelection<Prisma.$isin_recordsPayload>
+export type copy_admin_setting = $Result.DefaultSelection<Prisma.$copy_admin_settingPayload>
+/**
+ * Model copy_all_months
+ * 
+ */
+export type copy_all_months = $Result.DefaultSelection<Prisma.$copy_all_monthsPayload>
+/**
+ * Model copy_cache
+ * 
+ */
+export type copy_cache = $Result.DefaultSelection<Prisma.$copy_cachePayload>
+/**
+ * Model copy_cache_locks
+ * 
+ */
+export type copy_cache_locks = $Result.DefaultSelection<Prisma.$copy_cache_locksPayload>
+/**
+ * Model copy_cron_status
+ * 
+ */
+export type copy_cron_status = $Result.DefaultSelection<Prisma.$copy_cron_statusPayload>
+/**
+ * Model copy_daily_issuer_cron_table
+ * 
+ */
+export type copy_daily_issuer_cron_table = $Result.DefaultSelection<Prisma.$copy_daily_issuer_cron_tablePayload>
+/**
+ * Model copy_failed_jobs
+ * 
+ */
+export type copy_failed_jobs = $Result.DefaultSelection<Prisma.$copy_failed_jobsPayload>
+/**
+ * Model copy_incorporatedate_cron
+ * 
+ */
+export type copy_incorporatedate_cron = $Result.DefaultSelection<Prisma.$copy_incorporatedate_cronPayload>
+/**
+ * Model copy_isin_re_issuance
+ * 
+ */
+export type copy_isin_re_issuance = $Result.DefaultSelection<Prisma.$copy_isin_re_issuancePayload>
+/**
+ * Model copy_isin_re_issuance_details
+ * 
+ */
+export type copy_isin_re_issuance_details = $Result.DefaultSelection<Prisma.$copy_isin_re_issuance_detailsPayload>
 
 /**
  * Enums
@@ -376,6 +421,22 @@ export const isin_re_issuance_details_secured_unsecured: {
 
 export type isin_re_issuance_details_secured_unsecured = (typeof isin_re_issuance_details_secured_unsecured)[keyof typeof isin_re_issuance_details_secured_unsecured]
 
+
+export const copy_isin_re_issuance_details_type_of_book_bidding: {
+  open: 'open',
+  closed: 'closed'
+};
+
+export type copy_isin_re_issuance_details_type_of_book_bidding = (typeof copy_isin_re_issuance_details_type_of_book_bidding)[keyof typeof copy_isin_re_issuance_details_type_of_book_bidding]
+
+
+export const copy_isin_re_issuance_details_secured_unsecured: {
+  secured: 'secured',
+  unsecured: 'unsecured'
+};
+
+export type copy_isin_re_issuance_details_secured_unsecured = (typeof copy_isin_re_issuance_details_secured_unsecured)[keyof typeof copy_isin_re_issuance_details_secured_unsecured]
+
 }
 
 export type users_user_type = $Enums.users_user_type
@@ -389,6 +450,14 @@ export const isin_re_issuance_details_type_of_book_bidding: typeof $Enums.isin_r
 export type isin_re_issuance_details_secured_unsecured = $Enums.isin_re_issuance_details_secured_unsecured
 
 export const isin_re_issuance_details_secured_unsecured: typeof $Enums.isin_re_issuance_details_secured_unsecured
+
+export type copy_isin_re_issuance_details_type_of_book_bidding = $Enums.copy_isin_re_issuance_details_type_of_book_bidding
+
+export const copy_isin_re_issuance_details_type_of_book_bidding: typeof $Enums.copy_isin_re_issuance_details_type_of_book_bidding
+
+export type copy_isin_re_issuance_details_secured_unsecured = $Enums.copy_isin_re_issuance_details_secured_unsecured
+
+export const copy_isin_re_issuance_details_secured_unsecured: typeof $Enums.copy_isin_re_issuance_details_secured_unsecured
 
 /**
  * ##  Prisma Client ʲˢ
@@ -1176,14 +1245,104 @@ export class PrismaClient<
   get isin_re_issuance_details(): Prisma.isin_re_issuance_detailsDelegate<ExtArgs, ClientOptions>;
 
   /**
-   * `prisma.isin_records`: Exposes CRUD operations for the **isin_records** model.
+   * `prisma.copy_admin_setting`: Exposes CRUD operations for the **copy_admin_setting** model.
     * Example usage:
     * ```ts
-    * // Fetch zero or more Isin_records
-    * const isin_records = await prisma.isin_records.findMany()
+    * // Fetch zero or more Copy_admin_settings
+    * const copy_admin_settings = await prisma.copy_admin_setting.findMany()
     * ```
     */
-  get isin_records(): Prisma.isin_recordsDelegate<ExtArgs, ClientOptions>;
+  get copy_admin_setting(): Prisma.copy_admin_settingDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.copy_all_months`: Exposes CRUD operations for the **copy_all_months** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Copy_all_months
+    * const copy_all_months = await prisma.copy_all_months.findMany()
+    * ```
+    */
+  get copy_all_months(): Prisma.copy_all_monthsDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.copy_cache`: Exposes CRUD operations for the **copy_cache** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Copy_caches
+    * const copy_caches = await prisma.copy_cache.findMany()
+    * ```
+    */
+  get copy_cache(): Prisma.copy_cacheDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.copy_cache_locks`: Exposes CRUD operations for the **copy_cache_locks** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Copy_cache_locks
+    * const copy_cache_locks = await prisma.copy_cache_locks.findMany()
+    * ```
+    */
+  get copy_cache_locks(): Prisma.copy_cache_locksDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.copy_cron_status`: Exposes CRUD operations for the **copy_cron_status** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Copy_cron_statuses
+    * const copy_cron_statuses = await prisma.copy_cron_status.findMany()
+    * ```
+    */
+  get copy_cron_status(): Prisma.copy_cron_statusDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.copy_daily_issuer_cron_table`: Exposes CRUD operations for the **copy_daily_issuer_cron_table** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Copy_daily_issuer_cron_tables
+    * const copy_daily_issuer_cron_tables = await prisma.copy_daily_issuer_cron_table.findMany()
+    * ```
+    */
+  get copy_daily_issuer_cron_table(): Prisma.copy_daily_issuer_cron_tableDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.copy_failed_jobs`: Exposes CRUD operations for the **copy_failed_jobs** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Copy_failed_jobs
+    * const copy_failed_jobs = await prisma.copy_failed_jobs.findMany()
+    * ```
+    */
+  get copy_failed_jobs(): Prisma.copy_failed_jobsDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.copy_incorporatedate_cron`: Exposes CRUD operations for the **copy_incorporatedate_cron** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Copy_incorporatedate_crons
+    * const copy_incorporatedate_crons = await prisma.copy_incorporatedate_cron.findMany()
+    * ```
+    */
+  get copy_incorporatedate_cron(): Prisma.copy_incorporatedate_cronDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.copy_isin_re_issuance`: Exposes CRUD operations for the **copy_isin_re_issuance** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Copy_isin_re_issuances
+    * const copy_isin_re_issuances = await prisma.copy_isin_re_issuance.findMany()
+    * ```
+    */
+  get copy_isin_re_issuance(): Prisma.copy_isin_re_issuanceDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.copy_isin_re_issuance_details`: Exposes CRUD operations for the **copy_isin_re_issuance_details** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Copy_isin_re_issuance_details
+    * const copy_isin_re_issuance_details = await prisma.copy_isin_re_issuance_details.findMany()
+    * ```
+    */
+  get copy_isin_re_issuance_details(): Prisma.copy_isin_re_issuance_detailsDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -1690,7 +1849,16 @@ export namespace Prisma {
     users: 'users',
     isin_re_issuance: 'isin_re_issuance',
     isin_re_issuance_details: 'isin_re_issuance_details',
-    isin_records: 'isin_records'
+    copy_admin_setting: 'copy_admin_setting',
+    copy_all_months: 'copy_all_months',
+    copy_cache: 'copy_cache',
+    copy_cache_locks: 'copy_cache_locks',
+    copy_cron_status: 'copy_cron_status',
+    copy_daily_issuer_cron_table: 'copy_daily_issuer_cron_table',
+    copy_failed_jobs: 'copy_failed_jobs',
+    copy_incorporatedate_cron: 'copy_incorporatedate_cron',
+    copy_isin_re_issuance: 'copy_isin_re_issuance',
+    copy_isin_re_issuance_details: 'copy_isin_re_issuance_details'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -1709,7 +1877,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "admin_setting" | "all_months" | "cache" | "cache_locks" | "cron_status" | "daily_issuer_cron_table" | "failed_jobs" | "incorporatedate_cron" | "issuer_coupon_details" | "issuer_details" | "issuer_redemption_details" | "issuer_tenure_details" | "job_batches" | "jobs" | "master_agency" | "master_arranger" | "master_booking_basis" | "master_businees_sector_v1" | "master_business_sector" | "master_call_option_details" | "master_contact" | "master_convertible_type_a" | "master_convertible_type_b" | "master_coupon_basis" | "master_coupon_type" | "master_cra" | "master_cra_status" | "master_credit_rating_watch" | "master_day_count" | "master_depository_indicator" | "master_exchange_bp_id" | "master_frequency" | "master_guaranteed_type" | "master_interest_type" | "master_issuer" | "master_issuer_additional" | "master_issuer_daily" | "master_issuer_ownership_type" | "master_issuer_rating" | "master_issuer_stock_exchange" | "master_issuer_type_nature" | "master_issuer_type_roles" | "master_law_firm" | "master_listing_status" | "master_mode_issue" | "master_perpetual_nature_indicator" | "master_put_option_details" | "master_redemption_type" | "master_registrar" | "master_secured_flag" | "master_security_status" | "master_security_type" | "master_seniority_tier_classification" | "master_step_up_down_coupon_basis" | "master_tax_free" | "master_trustee" | "migrations" | "password_reset_tokens" | "personal_access_tokens" | "redis_cron_table" | "redis_iro_cron_table" | "sessions" | "user_enquiry" | "users" | "isin_re_issuance" | "isin_re_issuance_details" | "isin_records"
+      modelProps: "admin_setting" | "all_months" | "cache" | "cache_locks" | "cron_status" | "daily_issuer_cron_table" | "failed_jobs" | "incorporatedate_cron" | "issuer_coupon_details" | "issuer_details" | "issuer_redemption_details" | "issuer_tenure_details" | "job_batches" | "jobs" | "master_agency" | "master_arranger" | "master_booking_basis" | "master_businees_sector_v1" | "master_business_sector" | "master_call_option_details" | "master_contact" | "master_convertible_type_a" | "master_convertible_type_b" | "master_coupon_basis" | "master_coupon_type" | "master_cra" | "master_cra_status" | "master_credit_rating_watch" | "master_day_count" | "master_depository_indicator" | "master_exchange_bp_id" | "master_frequency" | "master_guaranteed_type" | "master_interest_type" | "master_issuer" | "master_issuer_additional" | "master_issuer_daily" | "master_issuer_ownership_type" | "master_issuer_rating" | "master_issuer_stock_exchange" | "master_issuer_type_nature" | "master_issuer_type_roles" | "master_law_firm" | "master_listing_status" | "master_mode_issue" | "master_perpetual_nature_indicator" | "master_put_option_details" | "master_redemption_type" | "master_registrar" | "master_secured_flag" | "master_security_status" | "master_security_type" | "master_seniority_tier_classification" | "master_step_up_down_coupon_basis" | "master_tax_free" | "master_trustee" | "migrations" | "password_reset_tokens" | "personal_access_tokens" | "redis_cron_table" | "redis_iro_cron_table" | "sessions" | "user_enquiry" | "users" | "isin_re_issuance" | "isin_re_issuance_details" | "copy_admin_setting" | "copy_all_months" | "copy_cache" | "copy_cache_locks" | "copy_cron_status" | "copy_daily_issuer_cron_table" | "copy_failed_jobs" | "copy_incorporatedate_cron" | "copy_isin_re_issuance" | "copy_isin_re_issuance_details"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -6069,69 +6237,663 @@ export namespace Prisma {
           }
         }
       }
-      isin_records: {
-        payload: Prisma.$isin_recordsPayload<ExtArgs>
-        fields: Prisma.isin_recordsFieldRefs
+      copy_admin_setting: {
+        payload: Prisma.$copy_admin_settingPayload<ExtArgs>
+        fields: Prisma.copy_admin_settingFieldRefs
         operations: {
           findUnique: {
-            args: Prisma.isin_recordsFindUniqueArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$isin_recordsPayload> | null
+            args: Prisma.copy_admin_settingFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_admin_settingPayload> | null
           }
           findUniqueOrThrow: {
-            args: Prisma.isin_recordsFindUniqueOrThrowArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$isin_recordsPayload>
+            args: Prisma.copy_admin_settingFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_admin_settingPayload>
           }
           findFirst: {
-            args: Prisma.isin_recordsFindFirstArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$isin_recordsPayload> | null
+            args: Prisma.copy_admin_settingFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_admin_settingPayload> | null
           }
           findFirstOrThrow: {
-            args: Prisma.isin_recordsFindFirstOrThrowArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$isin_recordsPayload>
+            args: Prisma.copy_admin_settingFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_admin_settingPayload>
           }
           findMany: {
-            args: Prisma.isin_recordsFindManyArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$isin_recordsPayload>[]
+            args: Prisma.copy_admin_settingFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_admin_settingPayload>[]
           }
           create: {
-            args: Prisma.isin_recordsCreateArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$isin_recordsPayload>
+            args: Prisma.copy_admin_settingCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_admin_settingPayload>
           }
           createMany: {
-            args: Prisma.isin_recordsCreateManyArgs<ExtArgs>
+            args: Prisma.copy_admin_settingCreateManyArgs<ExtArgs>
             result: BatchPayload
           }
           delete: {
-            args: Prisma.isin_recordsDeleteArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$isin_recordsPayload>
+            args: Prisma.copy_admin_settingDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_admin_settingPayload>
           }
           update: {
-            args: Prisma.isin_recordsUpdateArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$isin_recordsPayload>
+            args: Prisma.copy_admin_settingUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_admin_settingPayload>
           }
           deleteMany: {
-            args: Prisma.isin_recordsDeleteManyArgs<ExtArgs>
+            args: Prisma.copy_admin_settingDeleteManyArgs<ExtArgs>
             result: BatchPayload
           }
           updateMany: {
-            args: Prisma.isin_recordsUpdateManyArgs<ExtArgs>
+            args: Prisma.copy_admin_settingUpdateManyArgs<ExtArgs>
             result: BatchPayload
           }
           upsert: {
-            args: Prisma.isin_recordsUpsertArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$isin_recordsPayload>
+            args: Prisma.copy_admin_settingUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_admin_settingPayload>
           }
           aggregate: {
-            args: Prisma.Isin_recordsAggregateArgs<ExtArgs>
-            result: $Utils.Optional<AggregateIsin_records>
+            args: Prisma.Copy_admin_settingAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateCopy_admin_setting>
           }
           groupBy: {
-            args: Prisma.isin_recordsGroupByArgs<ExtArgs>
-            result: $Utils.Optional<Isin_recordsGroupByOutputType>[]
+            args: Prisma.copy_admin_settingGroupByArgs<ExtArgs>
+            result: $Utils.Optional<Copy_admin_settingGroupByOutputType>[]
           }
           count: {
-            args: Prisma.isin_recordsCountArgs<ExtArgs>
-            result: $Utils.Optional<Isin_recordsCountAggregateOutputType> | number
+            args: Prisma.copy_admin_settingCountArgs<ExtArgs>
+            result: $Utils.Optional<Copy_admin_settingCountAggregateOutputType> | number
+          }
+        }
+      }
+      copy_all_months: {
+        payload: Prisma.$copy_all_monthsPayload<ExtArgs>
+        fields: Prisma.copy_all_monthsFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.copy_all_monthsFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_all_monthsPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.copy_all_monthsFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_all_monthsPayload>
+          }
+          findFirst: {
+            args: Prisma.copy_all_monthsFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_all_monthsPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.copy_all_monthsFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_all_monthsPayload>
+          }
+          findMany: {
+            args: Prisma.copy_all_monthsFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_all_monthsPayload>[]
+          }
+          create: {
+            args: Prisma.copy_all_monthsCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_all_monthsPayload>
+          }
+          createMany: {
+            args: Prisma.copy_all_monthsCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.copy_all_monthsDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_all_monthsPayload>
+          }
+          update: {
+            args: Prisma.copy_all_monthsUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_all_monthsPayload>
+          }
+          deleteMany: {
+            args: Prisma.copy_all_monthsDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.copy_all_monthsUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.copy_all_monthsUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_all_monthsPayload>
+          }
+          aggregate: {
+            args: Prisma.Copy_all_monthsAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateCopy_all_months>
+          }
+          groupBy: {
+            args: Prisma.copy_all_monthsGroupByArgs<ExtArgs>
+            result: $Utils.Optional<Copy_all_monthsGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.copy_all_monthsCountArgs<ExtArgs>
+            result: $Utils.Optional<Copy_all_monthsCountAggregateOutputType> | number
+          }
+        }
+      }
+      copy_cache: {
+        payload: Prisma.$copy_cachePayload<ExtArgs>
+        fields: Prisma.copy_cacheFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.copy_cacheFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_cachePayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.copy_cacheFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_cachePayload>
+          }
+          findFirst: {
+            args: Prisma.copy_cacheFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_cachePayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.copy_cacheFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_cachePayload>
+          }
+          findMany: {
+            args: Prisma.copy_cacheFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_cachePayload>[]
+          }
+          create: {
+            args: Prisma.copy_cacheCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_cachePayload>
+          }
+          createMany: {
+            args: Prisma.copy_cacheCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.copy_cacheDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_cachePayload>
+          }
+          update: {
+            args: Prisma.copy_cacheUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_cachePayload>
+          }
+          deleteMany: {
+            args: Prisma.copy_cacheDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.copy_cacheUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.copy_cacheUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_cachePayload>
+          }
+          aggregate: {
+            args: Prisma.Copy_cacheAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateCopy_cache>
+          }
+          groupBy: {
+            args: Prisma.copy_cacheGroupByArgs<ExtArgs>
+            result: $Utils.Optional<Copy_cacheGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.copy_cacheCountArgs<ExtArgs>
+            result: $Utils.Optional<Copy_cacheCountAggregateOutputType> | number
+          }
+        }
+      }
+      copy_cache_locks: {
+        payload: Prisma.$copy_cache_locksPayload<ExtArgs>
+        fields: Prisma.copy_cache_locksFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.copy_cache_locksFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_cache_locksPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.copy_cache_locksFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_cache_locksPayload>
+          }
+          findFirst: {
+            args: Prisma.copy_cache_locksFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_cache_locksPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.copy_cache_locksFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_cache_locksPayload>
+          }
+          findMany: {
+            args: Prisma.copy_cache_locksFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_cache_locksPayload>[]
+          }
+          create: {
+            args: Prisma.copy_cache_locksCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_cache_locksPayload>
+          }
+          createMany: {
+            args: Prisma.copy_cache_locksCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.copy_cache_locksDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_cache_locksPayload>
+          }
+          update: {
+            args: Prisma.copy_cache_locksUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_cache_locksPayload>
+          }
+          deleteMany: {
+            args: Prisma.copy_cache_locksDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.copy_cache_locksUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.copy_cache_locksUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_cache_locksPayload>
+          }
+          aggregate: {
+            args: Prisma.Copy_cache_locksAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateCopy_cache_locks>
+          }
+          groupBy: {
+            args: Prisma.copy_cache_locksGroupByArgs<ExtArgs>
+            result: $Utils.Optional<Copy_cache_locksGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.copy_cache_locksCountArgs<ExtArgs>
+            result: $Utils.Optional<Copy_cache_locksCountAggregateOutputType> | number
+          }
+        }
+      }
+      copy_cron_status: {
+        payload: Prisma.$copy_cron_statusPayload<ExtArgs>
+        fields: Prisma.copy_cron_statusFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.copy_cron_statusFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_cron_statusPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.copy_cron_statusFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_cron_statusPayload>
+          }
+          findFirst: {
+            args: Prisma.copy_cron_statusFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_cron_statusPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.copy_cron_statusFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_cron_statusPayload>
+          }
+          findMany: {
+            args: Prisma.copy_cron_statusFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_cron_statusPayload>[]
+          }
+          create: {
+            args: Prisma.copy_cron_statusCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_cron_statusPayload>
+          }
+          createMany: {
+            args: Prisma.copy_cron_statusCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.copy_cron_statusDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_cron_statusPayload>
+          }
+          update: {
+            args: Prisma.copy_cron_statusUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_cron_statusPayload>
+          }
+          deleteMany: {
+            args: Prisma.copy_cron_statusDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.copy_cron_statusUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.copy_cron_statusUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_cron_statusPayload>
+          }
+          aggregate: {
+            args: Prisma.Copy_cron_statusAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateCopy_cron_status>
+          }
+          groupBy: {
+            args: Prisma.copy_cron_statusGroupByArgs<ExtArgs>
+            result: $Utils.Optional<Copy_cron_statusGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.copy_cron_statusCountArgs<ExtArgs>
+            result: $Utils.Optional<Copy_cron_statusCountAggregateOutputType> | number
+          }
+        }
+      }
+      copy_daily_issuer_cron_table: {
+        payload: Prisma.$copy_daily_issuer_cron_tablePayload<ExtArgs>
+        fields: Prisma.copy_daily_issuer_cron_tableFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.copy_daily_issuer_cron_tableFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_daily_issuer_cron_tablePayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.copy_daily_issuer_cron_tableFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_daily_issuer_cron_tablePayload>
+          }
+          findFirst: {
+            args: Prisma.copy_daily_issuer_cron_tableFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_daily_issuer_cron_tablePayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.copy_daily_issuer_cron_tableFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_daily_issuer_cron_tablePayload>
+          }
+          findMany: {
+            args: Prisma.copy_daily_issuer_cron_tableFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_daily_issuer_cron_tablePayload>[]
+          }
+          create: {
+            args: Prisma.copy_daily_issuer_cron_tableCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_daily_issuer_cron_tablePayload>
+          }
+          createMany: {
+            args: Prisma.copy_daily_issuer_cron_tableCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.copy_daily_issuer_cron_tableDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_daily_issuer_cron_tablePayload>
+          }
+          update: {
+            args: Prisma.copy_daily_issuer_cron_tableUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_daily_issuer_cron_tablePayload>
+          }
+          deleteMany: {
+            args: Prisma.copy_daily_issuer_cron_tableDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.copy_daily_issuer_cron_tableUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.copy_daily_issuer_cron_tableUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_daily_issuer_cron_tablePayload>
+          }
+          aggregate: {
+            args: Prisma.Copy_daily_issuer_cron_tableAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateCopy_daily_issuer_cron_table>
+          }
+          groupBy: {
+            args: Prisma.copy_daily_issuer_cron_tableGroupByArgs<ExtArgs>
+            result: $Utils.Optional<Copy_daily_issuer_cron_tableGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.copy_daily_issuer_cron_tableCountArgs<ExtArgs>
+            result: $Utils.Optional<Copy_daily_issuer_cron_tableCountAggregateOutputType> | number
+          }
+        }
+      }
+      copy_failed_jobs: {
+        payload: Prisma.$copy_failed_jobsPayload<ExtArgs>
+        fields: Prisma.copy_failed_jobsFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.copy_failed_jobsFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_failed_jobsPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.copy_failed_jobsFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_failed_jobsPayload>
+          }
+          findFirst: {
+            args: Prisma.copy_failed_jobsFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_failed_jobsPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.copy_failed_jobsFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_failed_jobsPayload>
+          }
+          findMany: {
+            args: Prisma.copy_failed_jobsFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_failed_jobsPayload>[]
+          }
+          create: {
+            args: Prisma.copy_failed_jobsCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_failed_jobsPayload>
+          }
+          createMany: {
+            args: Prisma.copy_failed_jobsCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.copy_failed_jobsDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_failed_jobsPayload>
+          }
+          update: {
+            args: Prisma.copy_failed_jobsUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_failed_jobsPayload>
+          }
+          deleteMany: {
+            args: Prisma.copy_failed_jobsDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.copy_failed_jobsUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.copy_failed_jobsUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_failed_jobsPayload>
+          }
+          aggregate: {
+            args: Prisma.Copy_failed_jobsAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateCopy_failed_jobs>
+          }
+          groupBy: {
+            args: Prisma.copy_failed_jobsGroupByArgs<ExtArgs>
+            result: $Utils.Optional<Copy_failed_jobsGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.copy_failed_jobsCountArgs<ExtArgs>
+            result: $Utils.Optional<Copy_failed_jobsCountAggregateOutputType> | number
+          }
+        }
+      }
+      copy_incorporatedate_cron: {
+        payload: Prisma.$copy_incorporatedate_cronPayload<ExtArgs>
+        fields: Prisma.copy_incorporatedate_cronFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.copy_incorporatedate_cronFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_incorporatedate_cronPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.copy_incorporatedate_cronFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_incorporatedate_cronPayload>
+          }
+          findFirst: {
+            args: Prisma.copy_incorporatedate_cronFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_incorporatedate_cronPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.copy_incorporatedate_cronFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_incorporatedate_cronPayload>
+          }
+          findMany: {
+            args: Prisma.copy_incorporatedate_cronFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_incorporatedate_cronPayload>[]
+          }
+          create: {
+            args: Prisma.copy_incorporatedate_cronCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_incorporatedate_cronPayload>
+          }
+          createMany: {
+            args: Prisma.copy_incorporatedate_cronCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.copy_incorporatedate_cronDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_incorporatedate_cronPayload>
+          }
+          update: {
+            args: Prisma.copy_incorporatedate_cronUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_incorporatedate_cronPayload>
+          }
+          deleteMany: {
+            args: Prisma.copy_incorporatedate_cronDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.copy_incorporatedate_cronUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.copy_incorporatedate_cronUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_incorporatedate_cronPayload>
+          }
+          aggregate: {
+            args: Prisma.Copy_incorporatedate_cronAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateCopy_incorporatedate_cron>
+          }
+          groupBy: {
+            args: Prisma.copy_incorporatedate_cronGroupByArgs<ExtArgs>
+            result: $Utils.Optional<Copy_incorporatedate_cronGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.copy_incorporatedate_cronCountArgs<ExtArgs>
+            result: $Utils.Optional<Copy_incorporatedate_cronCountAggregateOutputType> | number
+          }
+        }
+      }
+      copy_isin_re_issuance: {
+        payload: Prisma.$copy_isin_re_issuancePayload<ExtArgs>
+        fields: Prisma.copy_isin_re_issuanceFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.copy_isin_re_issuanceFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_isin_re_issuancePayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.copy_isin_re_issuanceFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_isin_re_issuancePayload>
+          }
+          findFirst: {
+            args: Prisma.copy_isin_re_issuanceFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_isin_re_issuancePayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.copy_isin_re_issuanceFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_isin_re_issuancePayload>
+          }
+          findMany: {
+            args: Prisma.copy_isin_re_issuanceFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_isin_re_issuancePayload>[]
+          }
+          create: {
+            args: Prisma.copy_isin_re_issuanceCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_isin_re_issuancePayload>
+          }
+          createMany: {
+            args: Prisma.copy_isin_re_issuanceCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.copy_isin_re_issuanceDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_isin_re_issuancePayload>
+          }
+          update: {
+            args: Prisma.copy_isin_re_issuanceUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_isin_re_issuancePayload>
+          }
+          deleteMany: {
+            args: Prisma.copy_isin_re_issuanceDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.copy_isin_re_issuanceUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.copy_isin_re_issuanceUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_isin_re_issuancePayload>
+          }
+          aggregate: {
+            args: Prisma.Copy_isin_re_issuanceAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateCopy_isin_re_issuance>
+          }
+          groupBy: {
+            args: Prisma.copy_isin_re_issuanceGroupByArgs<ExtArgs>
+            result: $Utils.Optional<Copy_isin_re_issuanceGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.copy_isin_re_issuanceCountArgs<ExtArgs>
+            result: $Utils.Optional<Copy_isin_re_issuanceCountAggregateOutputType> | number
+          }
+        }
+      }
+      copy_isin_re_issuance_details: {
+        payload: Prisma.$copy_isin_re_issuance_detailsPayload<ExtArgs>
+        fields: Prisma.copy_isin_re_issuance_detailsFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.copy_isin_re_issuance_detailsFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_isin_re_issuance_detailsPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.copy_isin_re_issuance_detailsFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_isin_re_issuance_detailsPayload>
+          }
+          findFirst: {
+            args: Prisma.copy_isin_re_issuance_detailsFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_isin_re_issuance_detailsPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.copy_isin_re_issuance_detailsFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_isin_re_issuance_detailsPayload>
+          }
+          findMany: {
+            args: Prisma.copy_isin_re_issuance_detailsFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_isin_re_issuance_detailsPayload>[]
+          }
+          create: {
+            args: Prisma.copy_isin_re_issuance_detailsCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_isin_re_issuance_detailsPayload>
+          }
+          createMany: {
+            args: Prisma.copy_isin_re_issuance_detailsCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.copy_isin_re_issuance_detailsDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_isin_re_issuance_detailsPayload>
+          }
+          update: {
+            args: Prisma.copy_isin_re_issuance_detailsUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_isin_re_issuance_detailsPayload>
+          }
+          deleteMany: {
+            args: Prisma.copy_isin_re_issuance_detailsDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.copy_isin_re_issuance_detailsUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.copy_isin_re_issuance_detailsUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$copy_isin_re_issuance_detailsPayload>
+          }
+          aggregate: {
+            args: Prisma.Copy_isin_re_issuance_detailsAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateCopy_isin_re_issuance_details>
+          }
+          groupBy: {
+            args: Prisma.copy_isin_re_issuance_detailsGroupByArgs<ExtArgs>
+            result: $Utils.Optional<Copy_isin_re_issuance_detailsGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.copy_isin_re_issuance_detailsCountArgs<ExtArgs>
+            result: $Utils.Optional<Copy_isin_re_issuance_detailsCountAggregateOutputType> | number
           }
         }
       }
@@ -6285,7 +7047,16 @@ export namespace Prisma {
     users?: usersOmit
     isin_re_issuance?: isin_re_issuanceOmit
     isin_re_issuance_details?: isin_re_issuance_detailsOmit
-    isin_records?: isin_recordsOmit
+    copy_admin_setting?: copy_admin_settingOmit
+    copy_all_months?: copy_all_monthsOmit
+    copy_cache?: copy_cacheOmit
+    copy_cache_locks?: copy_cache_locksOmit
+    copy_cron_status?: copy_cron_statusOmit
+    copy_daily_issuer_cron_table?: copy_daily_issuer_cron_tableOmit
+    copy_failed_jobs?: copy_failed_jobsOmit
+    copy_incorporatedate_cron?: copy_incorporatedate_cronOmit
+    copy_isin_re_issuance?: copy_isin_re_issuanceOmit
+    copy_isin_re_issuance_details?: copy_isin_re_issuance_detailsOmit
   }
 
   /* Types for Logging */
@@ -70613,7 +71384,6 @@ export namespace Prisma {
     isin_id: number | null
     issuer_master_id: number | null
     issue_size: Decimal | null
-    nsdl_issue_size: Decimal | null
     face_value: number | null
     business_sector: number | null
     mode_issue: number | null
@@ -70630,7 +71400,6 @@ export namespace Prisma {
     isin_id: bigint | null
     issuer_master_id: bigint | null
     issue_size: Decimal | null
-    nsdl_issue_size: Decimal | null
     face_value: number | null
     business_sector: number | null
     mode_issue: number | null
@@ -70649,8 +71418,6 @@ export namespace Prisma {
     issuer_master_id: bigint | null
     allotment_date: Date | null
     issue_size: Decimal | null
-    nsdl_issue_size: Decimal | null
-    source: string | null
     face_value: number | null
     maturity_date: Date | null
     business_sector: number | null
@@ -70674,8 +71441,6 @@ export namespace Prisma {
     issuer_master_id: bigint | null
     allotment_date: Date | null
     issue_size: Decimal | null
-    nsdl_issue_size: Decimal | null
-    source: string | null
     face_value: number | null
     maturity_date: Date | null
     business_sector: number | null
@@ -70699,8 +71464,6 @@ export namespace Prisma {
     issuer_master_id: number
     allotment_date: number
     issue_size: number
-    nsdl_issue_size: number
-    source: number
     face_value: number
     maturity_date: number
     business_sector: number
@@ -70724,7 +71487,6 @@ export namespace Prisma {
     isin_id?: true
     issuer_master_id?: true
     issue_size?: true
-    nsdl_issue_size?: true
     face_value?: true
     business_sector?: true
     mode_issue?: true
@@ -70741,7 +71503,6 @@ export namespace Prisma {
     isin_id?: true
     issuer_master_id?: true
     issue_size?: true
-    nsdl_issue_size?: true
     face_value?: true
     business_sector?: true
     mode_issue?: true
@@ -70760,8 +71521,6 @@ export namespace Prisma {
     issuer_master_id?: true
     allotment_date?: true
     issue_size?: true
-    nsdl_issue_size?: true
-    source?: true
     face_value?: true
     maturity_date?: true
     business_sector?: true
@@ -70785,8 +71544,6 @@ export namespace Prisma {
     issuer_master_id?: true
     allotment_date?: true
     issue_size?: true
-    nsdl_issue_size?: true
-    source?: true
     face_value?: true
     maturity_date?: true
     business_sector?: true
@@ -70810,8 +71567,6 @@ export namespace Prisma {
     issuer_master_id?: true
     allotment_date?: true
     issue_size?: true
-    nsdl_issue_size?: true
-    source?: true
     face_value?: true
     maturity_date?: true
     business_sector?: true
@@ -70922,8 +71677,6 @@ export namespace Prisma {
     issuer_master_id: bigint
     allotment_date: Date
     issue_size: Decimal
-    nsdl_issue_size: Decimal | null
-    source: string | null
     face_value: number | null
     maturity_date: Date | null
     business_sector: number | null
@@ -70966,8 +71719,6 @@ export namespace Prisma {
     issuer_master_id?: boolean
     allotment_date?: boolean
     issue_size?: boolean
-    nsdl_issue_size?: boolean
-    source?: boolean
     face_value?: boolean
     maturity_date?: boolean
     business_sector?: boolean
@@ -70993,8 +71744,6 @@ export namespace Prisma {
     issuer_master_id?: boolean
     allotment_date?: boolean
     issue_size?: boolean
-    nsdl_issue_size?: boolean
-    source?: boolean
     face_value?: boolean
     maturity_date?: boolean
     business_sector?: boolean
@@ -71011,7 +71760,7 @@ export namespace Prisma {
     updated_at?: boolean
   }
 
-  export type isin_re_issuanceOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "isin_id" | "isin" | "issuer_master_id" | "allotment_date" | "issue_size" | "nsdl_issue_size" | "source" | "face_value" | "maturity_date" | "business_sector" | "security_name" | "security_class" | "mode_issue" | "seniority" | "tax_free" | "secured_flag" | "is_visible" | "is_updated" | "is_main" | "created_at" | "updated_at", ExtArgs["result"]["isin_re_issuance"]>
+  export type isin_re_issuanceOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "isin_id" | "isin" | "issuer_master_id" | "allotment_date" | "issue_size" | "face_value" | "maturity_date" | "business_sector" | "security_name" | "security_class" | "mode_issue" | "seniority" | "tax_free" | "secured_flag" | "is_visible" | "is_updated" | "is_main" | "created_at" | "updated_at", ExtArgs["result"]["isin_re_issuance"]>
 
   export type $isin_re_issuancePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "isin_re_issuance"
@@ -71023,8 +71772,6 @@ export namespace Prisma {
       issuer_master_id: bigint
       allotment_date: Date
       issue_size: Prisma.Decimal
-      nsdl_issue_size: Prisma.Decimal | null
-      source: string | null
       face_value: number | null
       maturity_date: Date | null
       business_sector: number | null
@@ -71414,8 +72161,6 @@ export namespace Prisma {
     readonly issuer_master_id: FieldRef<"isin_re_issuance", 'BigInt'>
     readonly allotment_date: FieldRef<"isin_re_issuance", 'DateTime'>
     readonly issue_size: FieldRef<"isin_re_issuance", 'Decimal'>
-    readonly nsdl_issue_size: FieldRef<"isin_re_issuance", 'Decimal'>
-    readonly source: FieldRef<"isin_re_issuance", 'String'>
     readonly face_value: FieldRef<"isin_re_issuance", 'Float'>
     readonly maturity_date: FieldRef<"isin_re_issuance", 'DateTime'>
     readonly business_sector: FieldRef<"isin_re_issuance", 'Int'>
@@ -73140,373 +73885,381 @@ export namespace Prisma {
 
 
   /**
-   * Model isin_records
+   * Model copy_admin_setting
    */
 
-  export type AggregateIsin_records = {
-    _count: Isin_recordsCountAggregateOutputType | null
-    _avg: Isin_recordsAvgAggregateOutputType | null
-    _sum: Isin_recordsSumAggregateOutputType | null
-    _min: Isin_recordsMinAggregateOutputType | null
-    _max: Isin_recordsMaxAggregateOutputType | null
+  export type AggregateCopy_admin_setting = {
+    _count: Copy_admin_settingCountAggregateOutputType | null
+    _avg: Copy_admin_settingAvgAggregateOutputType | null
+    _sum: Copy_admin_settingSumAggregateOutputType | null
+    _min: Copy_admin_settingMinAggregateOutputType | null
+    _max: Copy_admin_settingMaxAggregateOutputType | null
   }
 
-  export type Isin_recordsAvgAggregateOutputType = {
+  export type Copy_admin_settingAvgAggregateOutputType = {
     id: number | null
+    type: number | null
+    is_active: number | null
   }
 
-  export type Isin_recordsSumAggregateOutputType = {
-    id: number | null
+  export type Copy_admin_settingSumAggregateOutputType = {
+    id: bigint | null
+    type: number | null
+    is_active: number | null
   }
 
-  export type Isin_recordsMinAggregateOutputType = {
-    id: number | null
-    isin: string | null
-    allotment_date: Date | null
-    status: boolean | null
+  export type Copy_admin_settingMinAggregateOutputType = {
+    id: bigint | null
+    name: string | null
+    type: number | null
+    is_active: number | null
     created_at: Date | null
     updated_at: Date | null
   }
 
-  export type Isin_recordsMaxAggregateOutputType = {
-    id: number | null
-    isin: string | null
-    allotment_date: Date | null
-    status: boolean | null
+  export type Copy_admin_settingMaxAggregateOutputType = {
+    id: bigint | null
+    name: string | null
+    type: number | null
+    is_active: number | null
     created_at: Date | null
     updated_at: Date | null
   }
 
-  export type Isin_recordsCountAggregateOutputType = {
+  export type Copy_admin_settingCountAggregateOutputType = {
     id: number
-    isin: number
-    allotment_date: number
-    status: number
+    name: number
+    type: number
+    is_active: number
     created_at: number
     updated_at: number
     _all: number
   }
 
 
-  export type Isin_recordsAvgAggregateInputType = {
+  export type Copy_admin_settingAvgAggregateInputType = {
     id?: true
+    type?: true
+    is_active?: true
   }
 
-  export type Isin_recordsSumAggregateInputType = {
+  export type Copy_admin_settingSumAggregateInputType = {
     id?: true
+    type?: true
+    is_active?: true
   }
 
-  export type Isin_recordsMinAggregateInputType = {
+  export type Copy_admin_settingMinAggregateInputType = {
     id?: true
-    isin?: true
-    allotment_date?: true
-    status?: true
+    name?: true
+    type?: true
+    is_active?: true
     created_at?: true
     updated_at?: true
   }
 
-  export type Isin_recordsMaxAggregateInputType = {
+  export type Copy_admin_settingMaxAggregateInputType = {
     id?: true
-    isin?: true
-    allotment_date?: true
-    status?: true
+    name?: true
+    type?: true
+    is_active?: true
     created_at?: true
     updated_at?: true
   }
 
-  export type Isin_recordsCountAggregateInputType = {
+  export type Copy_admin_settingCountAggregateInputType = {
     id?: true
-    isin?: true
-    allotment_date?: true
-    status?: true
+    name?: true
+    type?: true
+    is_active?: true
     created_at?: true
     updated_at?: true
     _all?: true
   }
 
-  export type Isin_recordsAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type Copy_admin_settingAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Filter which isin_records to aggregate.
+     * Filter which copy_admin_setting to aggregate.
      */
-    where?: isin_recordsWhereInput
+    where?: copy_admin_settingWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
      * 
-     * Determine the order of isin_records to fetch.
+     * Determine the order of copy_admin_settings to fetch.
      */
-    orderBy?: isin_recordsOrderByWithRelationInput | isin_recordsOrderByWithRelationInput[]
+    orderBy?: copy_admin_settingOrderByWithRelationInput | copy_admin_settingOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      * 
      * Sets the start position
      */
-    cursor?: isin_recordsWhereUniqueInput
+    cursor?: copy_admin_settingWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Take `±n` isin_records from the position of the cursor.
+     * Take `±n` copy_admin_settings from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Skip the first `n` isin_records.
+     * Skip the first `n` copy_admin_settings.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      * 
-     * Count returned isin_records
+     * Count returned copy_admin_settings
     **/
-    _count?: true | Isin_recordsCountAggregateInputType
+    _count?: true | Copy_admin_settingCountAggregateInputType
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      * 
      * Select which fields to average
     **/
-    _avg?: Isin_recordsAvgAggregateInputType
+    _avg?: Copy_admin_settingAvgAggregateInputType
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      * 
      * Select which fields to sum
     **/
-    _sum?: Isin_recordsSumAggregateInputType
+    _sum?: Copy_admin_settingSumAggregateInputType
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      * 
      * Select which fields to find the minimum value
     **/
-    _min?: Isin_recordsMinAggregateInputType
+    _min?: Copy_admin_settingMinAggregateInputType
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      * 
      * Select which fields to find the maximum value
     **/
-    _max?: Isin_recordsMaxAggregateInputType
+    _max?: Copy_admin_settingMaxAggregateInputType
   }
 
-  export type GetIsin_recordsAggregateType<T extends Isin_recordsAggregateArgs> = {
-        [P in keyof T & keyof AggregateIsin_records]: P extends '_count' | 'count'
+  export type GetCopy_admin_settingAggregateType<T extends Copy_admin_settingAggregateArgs> = {
+        [P in keyof T & keyof AggregateCopy_admin_setting]: P extends '_count' | 'count'
       ? T[P] extends true
         ? number
-        : GetScalarType<T[P], AggregateIsin_records[P]>
-      : GetScalarType<T[P], AggregateIsin_records[P]>
+        : GetScalarType<T[P], AggregateCopy_admin_setting[P]>
+      : GetScalarType<T[P], AggregateCopy_admin_setting[P]>
   }
 
 
 
 
-  export type isin_recordsGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: isin_recordsWhereInput
-    orderBy?: isin_recordsOrderByWithAggregationInput | isin_recordsOrderByWithAggregationInput[]
-    by: Isin_recordsScalarFieldEnum[] | Isin_recordsScalarFieldEnum
-    having?: isin_recordsScalarWhereWithAggregatesInput
+  export type copy_admin_settingGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: copy_admin_settingWhereInput
+    orderBy?: copy_admin_settingOrderByWithAggregationInput | copy_admin_settingOrderByWithAggregationInput[]
+    by: Copy_admin_settingScalarFieldEnum[] | Copy_admin_settingScalarFieldEnum
+    having?: copy_admin_settingScalarWhereWithAggregatesInput
     take?: number
     skip?: number
-    _count?: Isin_recordsCountAggregateInputType | true
-    _avg?: Isin_recordsAvgAggregateInputType
-    _sum?: Isin_recordsSumAggregateInputType
-    _min?: Isin_recordsMinAggregateInputType
-    _max?: Isin_recordsMaxAggregateInputType
+    _count?: Copy_admin_settingCountAggregateInputType | true
+    _avg?: Copy_admin_settingAvgAggregateInputType
+    _sum?: Copy_admin_settingSumAggregateInputType
+    _min?: Copy_admin_settingMinAggregateInputType
+    _max?: Copy_admin_settingMaxAggregateInputType
   }
 
-  export type Isin_recordsGroupByOutputType = {
-    id: number
-    isin: string | null
-    allotment_date: Date | null
-    status: boolean
-    created_at: Date
+  export type Copy_admin_settingGroupByOutputType = {
+    id: bigint
+    name: string | null
+    type: number
+    is_active: number
+    created_at: Date | null
     updated_at: Date | null
-    _count: Isin_recordsCountAggregateOutputType | null
-    _avg: Isin_recordsAvgAggregateOutputType | null
-    _sum: Isin_recordsSumAggregateOutputType | null
-    _min: Isin_recordsMinAggregateOutputType | null
-    _max: Isin_recordsMaxAggregateOutputType | null
+    _count: Copy_admin_settingCountAggregateOutputType | null
+    _avg: Copy_admin_settingAvgAggregateOutputType | null
+    _sum: Copy_admin_settingSumAggregateOutputType | null
+    _min: Copy_admin_settingMinAggregateOutputType | null
+    _max: Copy_admin_settingMaxAggregateOutputType | null
   }
 
-  type GetIsin_recordsGroupByPayload<T extends isin_recordsGroupByArgs> = Prisma.PrismaPromise<
+  type GetCopy_admin_settingGroupByPayload<T extends copy_admin_settingGroupByArgs> = Prisma.PrismaPromise<
     Array<
-      PickEnumerable<Isin_recordsGroupByOutputType, T['by']> &
+      PickEnumerable<Copy_admin_settingGroupByOutputType, T['by']> &
         {
-          [P in ((keyof T) & (keyof Isin_recordsGroupByOutputType))]: P extends '_count'
+          [P in ((keyof T) & (keyof Copy_admin_settingGroupByOutputType))]: P extends '_count'
             ? T[P] extends boolean
               ? number
-              : GetScalarType<T[P], Isin_recordsGroupByOutputType[P]>
-            : GetScalarType<T[P], Isin_recordsGroupByOutputType[P]>
+              : GetScalarType<T[P], Copy_admin_settingGroupByOutputType[P]>
+            : GetScalarType<T[P], Copy_admin_settingGroupByOutputType[P]>
         }
       >
     >
 
 
-  export type isin_recordsSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+  export type copy_admin_settingSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
-    isin?: boolean
-    allotment_date?: boolean
-    status?: boolean
+    name?: boolean
+    type?: boolean
+    is_active?: boolean
     created_at?: boolean
     updated_at?: boolean
-  }, ExtArgs["result"]["isin_records"]>
+  }, ExtArgs["result"]["copy_admin_setting"]>
 
 
 
-  export type isin_recordsSelectScalar = {
+  export type copy_admin_settingSelectScalar = {
     id?: boolean
-    isin?: boolean
-    allotment_date?: boolean
-    status?: boolean
+    name?: boolean
+    type?: boolean
+    is_active?: boolean
     created_at?: boolean
     updated_at?: boolean
   }
 
-  export type isin_recordsOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "isin" | "allotment_date" | "status" | "created_at" | "updated_at", ExtArgs["result"]["isin_records"]>
+  export type copy_admin_settingOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "type" | "is_active" | "created_at" | "updated_at", ExtArgs["result"]["copy_admin_setting"]>
 
-  export type $isin_recordsPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    name: "isin_records"
+  export type $copy_admin_settingPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "copy_admin_setting"
     objects: {}
     scalars: $Extensions.GetPayloadResult<{
-      id: number
-      isin: string | null
-      allotment_date: Date | null
-      status: boolean
-      created_at: Date
+      id: bigint
+      name: string | null
+      type: number
+      is_active: number
+      created_at: Date | null
       updated_at: Date | null
-    }, ExtArgs["result"]["isin_records"]>
+    }, ExtArgs["result"]["copy_admin_setting"]>
     composites: {}
   }
 
-  type isin_recordsGetPayload<S extends boolean | null | undefined | isin_recordsDefaultArgs> = $Result.GetResult<Prisma.$isin_recordsPayload, S>
+  type copy_admin_settingGetPayload<S extends boolean | null | undefined | copy_admin_settingDefaultArgs> = $Result.GetResult<Prisma.$copy_admin_settingPayload, S>
 
-  type isin_recordsCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
-    Omit<isin_recordsFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
-      select?: Isin_recordsCountAggregateInputType | true
+  type copy_admin_settingCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<copy_admin_settingFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: Copy_admin_settingCountAggregateInputType | true
     }
 
-  export interface isin_recordsDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
-    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['isin_records'], meta: { name: 'isin_records' } }
+  export interface copy_admin_settingDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['copy_admin_setting'], meta: { name: 'copy_admin_setting' } }
     /**
-     * Find zero or one Isin_records that matches the filter.
-     * @param {isin_recordsFindUniqueArgs} args - Arguments to find a Isin_records
+     * Find zero or one Copy_admin_setting that matches the filter.
+     * @param {copy_admin_settingFindUniqueArgs} args - Arguments to find a Copy_admin_setting
      * @example
-     * // Get one Isin_records
-     * const isin_records = await prisma.isin_records.findUnique({
+     * // Get one Copy_admin_setting
+     * const copy_admin_setting = await prisma.copy_admin_setting.findUnique({
      *   where: {
      *     // ... provide filter here
      *   }
      * })
      */
-    findUnique<T extends isin_recordsFindUniqueArgs>(args: SelectSubset<T, isin_recordsFindUniqueArgs<ExtArgs>>): Prisma__isin_recordsClient<$Result.GetResult<Prisma.$isin_recordsPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    findUnique<T extends copy_admin_settingFindUniqueArgs>(args: SelectSubset<T, copy_admin_settingFindUniqueArgs<ExtArgs>>): Prisma__copy_admin_settingClient<$Result.GetResult<Prisma.$copy_admin_settingPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
 
     /**
-     * Find one Isin_records that matches the filter or throw an error with `error.code='P2025'`
+     * Find one Copy_admin_setting that matches the filter or throw an error with `error.code='P2025'`
      * if no matches were found.
-     * @param {isin_recordsFindUniqueOrThrowArgs} args - Arguments to find a Isin_records
+     * @param {copy_admin_settingFindUniqueOrThrowArgs} args - Arguments to find a Copy_admin_setting
      * @example
-     * // Get one Isin_records
-     * const isin_records = await prisma.isin_records.findUniqueOrThrow({
+     * // Get one Copy_admin_setting
+     * const copy_admin_setting = await prisma.copy_admin_setting.findUniqueOrThrow({
      *   where: {
      *     // ... provide filter here
      *   }
      * })
      */
-    findUniqueOrThrow<T extends isin_recordsFindUniqueOrThrowArgs>(args: SelectSubset<T, isin_recordsFindUniqueOrThrowArgs<ExtArgs>>): Prisma__isin_recordsClient<$Result.GetResult<Prisma.$isin_recordsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    findUniqueOrThrow<T extends copy_admin_settingFindUniqueOrThrowArgs>(args: SelectSubset<T, copy_admin_settingFindUniqueOrThrowArgs<ExtArgs>>): Prisma__copy_admin_settingClient<$Result.GetResult<Prisma.$copy_admin_settingPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
     /**
-     * Find the first Isin_records that matches the filter.
+     * Find the first Copy_admin_setting that matches the filter.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {isin_recordsFindFirstArgs} args - Arguments to find a Isin_records
+     * @param {copy_admin_settingFindFirstArgs} args - Arguments to find a Copy_admin_setting
      * @example
-     * // Get one Isin_records
-     * const isin_records = await prisma.isin_records.findFirst({
+     * // Get one Copy_admin_setting
+     * const copy_admin_setting = await prisma.copy_admin_setting.findFirst({
      *   where: {
      *     // ... provide filter here
      *   }
      * })
      */
-    findFirst<T extends isin_recordsFindFirstArgs>(args?: SelectSubset<T, isin_recordsFindFirstArgs<ExtArgs>>): Prisma__isin_recordsClient<$Result.GetResult<Prisma.$isin_recordsPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    findFirst<T extends copy_admin_settingFindFirstArgs>(args?: SelectSubset<T, copy_admin_settingFindFirstArgs<ExtArgs>>): Prisma__copy_admin_settingClient<$Result.GetResult<Prisma.$copy_admin_settingPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
 
     /**
-     * Find the first Isin_records that matches the filter or
+     * Find the first Copy_admin_setting that matches the filter or
      * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {isin_recordsFindFirstOrThrowArgs} args - Arguments to find a Isin_records
+     * @param {copy_admin_settingFindFirstOrThrowArgs} args - Arguments to find a Copy_admin_setting
      * @example
-     * // Get one Isin_records
-     * const isin_records = await prisma.isin_records.findFirstOrThrow({
+     * // Get one Copy_admin_setting
+     * const copy_admin_setting = await prisma.copy_admin_setting.findFirstOrThrow({
      *   where: {
      *     // ... provide filter here
      *   }
      * })
      */
-    findFirstOrThrow<T extends isin_recordsFindFirstOrThrowArgs>(args?: SelectSubset<T, isin_recordsFindFirstOrThrowArgs<ExtArgs>>): Prisma__isin_recordsClient<$Result.GetResult<Prisma.$isin_recordsPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    findFirstOrThrow<T extends copy_admin_settingFindFirstOrThrowArgs>(args?: SelectSubset<T, copy_admin_settingFindFirstOrThrowArgs<ExtArgs>>): Prisma__copy_admin_settingClient<$Result.GetResult<Prisma.$copy_admin_settingPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
     /**
-     * Find zero or more Isin_records that matches the filter.
+     * Find zero or more Copy_admin_settings that matches the filter.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {isin_recordsFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @param {copy_admin_settingFindManyArgs} args - Arguments to filter and select certain fields only.
      * @example
-     * // Get all Isin_records
-     * const isin_records = await prisma.isin_records.findMany()
+     * // Get all Copy_admin_settings
+     * const copy_admin_settings = await prisma.copy_admin_setting.findMany()
      * 
-     * // Get first 10 Isin_records
-     * const isin_records = await prisma.isin_records.findMany({ take: 10 })
+     * // Get first 10 Copy_admin_settings
+     * const copy_admin_settings = await prisma.copy_admin_setting.findMany({ take: 10 })
      * 
      * // Only select the `id`
-     * const isin_recordsWithIdOnly = await prisma.isin_records.findMany({ select: { id: true } })
+     * const copy_admin_settingWithIdOnly = await prisma.copy_admin_setting.findMany({ select: { id: true } })
      * 
      */
-    findMany<T extends isin_recordsFindManyArgs>(args?: SelectSubset<T, isin_recordsFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$isin_recordsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+    findMany<T extends copy_admin_settingFindManyArgs>(args?: SelectSubset<T, copy_admin_settingFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$copy_admin_settingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
 
     /**
-     * Create a Isin_records.
-     * @param {isin_recordsCreateArgs} args - Arguments to create a Isin_records.
+     * Create a Copy_admin_setting.
+     * @param {copy_admin_settingCreateArgs} args - Arguments to create a Copy_admin_setting.
      * @example
-     * // Create one Isin_records
-     * const Isin_records = await prisma.isin_records.create({
+     * // Create one Copy_admin_setting
+     * const Copy_admin_setting = await prisma.copy_admin_setting.create({
      *   data: {
-     *     // ... data to create a Isin_records
+     *     // ... data to create a Copy_admin_setting
      *   }
      * })
      * 
      */
-    create<T extends isin_recordsCreateArgs>(args: SelectSubset<T, isin_recordsCreateArgs<ExtArgs>>): Prisma__isin_recordsClient<$Result.GetResult<Prisma.$isin_recordsPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    create<T extends copy_admin_settingCreateArgs>(args: SelectSubset<T, copy_admin_settingCreateArgs<ExtArgs>>): Prisma__copy_admin_settingClient<$Result.GetResult<Prisma.$copy_admin_settingPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
     /**
-     * Create many Isin_records.
-     * @param {isin_recordsCreateManyArgs} args - Arguments to create many Isin_records.
+     * Create many Copy_admin_settings.
+     * @param {copy_admin_settingCreateManyArgs} args - Arguments to create many Copy_admin_settings.
      * @example
-     * // Create many Isin_records
-     * const isin_records = await prisma.isin_records.createMany({
+     * // Create many Copy_admin_settings
+     * const copy_admin_setting = await prisma.copy_admin_setting.createMany({
      *   data: [
      *     // ... provide data here
      *   ]
      * })
      *     
      */
-    createMany<T extends isin_recordsCreateManyArgs>(args?: SelectSubset<T, isin_recordsCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    createMany<T extends copy_admin_settingCreateManyArgs>(args?: SelectSubset<T, copy_admin_settingCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
 
     /**
-     * Delete a Isin_records.
-     * @param {isin_recordsDeleteArgs} args - Arguments to delete one Isin_records.
+     * Delete a Copy_admin_setting.
+     * @param {copy_admin_settingDeleteArgs} args - Arguments to delete one Copy_admin_setting.
      * @example
-     * // Delete one Isin_records
-     * const Isin_records = await prisma.isin_records.delete({
+     * // Delete one Copy_admin_setting
+     * const Copy_admin_setting = await prisma.copy_admin_setting.delete({
      *   where: {
-     *     // ... filter to delete one Isin_records
+     *     // ... filter to delete one Copy_admin_setting
      *   }
      * })
      * 
      */
-    delete<T extends isin_recordsDeleteArgs>(args: SelectSubset<T, isin_recordsDeleteArgs<ExtArgs>>): Prisma__isin_recordsClient<$Result.GetResult<Prisma.$isin_recordsPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    delete<T extends copy_admin_settingDeleteArgs>(args: SelectSubset<T, copy_admin_settingDeleteArgs<ExtArgs>>): Prisma__copy_admin_settingClient<$Result.GetResult<Prisma.$copy_admin_settingPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
     /**
-     * Update one Isin_records.
-     * @param {isin_recordsUpdateArgs} args - Arguments to update one Isin_records.
+     * Update one Copy_admin_setting.
+     * @param {copy_admin_settingUpdateArgs} args - Arguments to update one Copy_admin_setting.
      * @example
-     * // Update one Isin_records
-     * const isin_records = await prisma.isin_records.update({
+     * // Update one Copy_admin_setting
+     * const copy_admin_setting = await prisma.copy_admin_setting.update({
      *   where: {
      *     // ... provide filter here
      *   },
@@ -73516,30 +74269,30 @@ export namespace Prisma {
      * })
      * 
      */
-    update<T extends isin_recordsUpdateArgs>(args: SelectSubset<T, isin_recordsUpdateArgs<ExtArgs>>): Prisma__isin_recordsClient<$Result.GetResult<Prisma.$isin_recordsPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    update<T extends copy_admin_settingUpdateArgs>(args: SelectSubset<T, copy_admin_settingUpdateArgs<ExtArgs>>): Prisma__copy_admin_settingClient<$Result.GetResult<Prisma.$copy_admin_settingPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
     /**
-     * Delete zero or more Isin_records.
-     * @param {isin_recordsDeleteManyArgs} args - Arguments to filter Isin_records to delete.
+     * Delete zero or more Copy_admin_settings.
+     * @param {copy_admin_settingDeleteManyArgs} args - Arguments to filter Copy_admin_settings to delete.
      * @example
-     * // Delete a few Isin_records
-     * const { count } = await prisma.isin_records.deleteMany({
+     * // Delete a few Copy_admin_settings
+     * const { count } = await prisma.copy_admin_setting.deleteMany({
      *   where: {
      *     // ... provide filter here
      *   }
      * })
      * 
      */
-    deleteMany<T extends isin_recordsDeleteManyArgs>(args?: SelectSubset<T, isin_recordsDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    deleteMany<T extends copy_admin_settingDeleteManyArgs>(args?: SelectSubset<T, copy_admin_settingDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
 
     /**
-     * Update zero or more Isin_records.
+     * Update zero or more Copy_admin_settings.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {isin_recordsUpdateManyArgs} args - Arguments to update one or more rows.
+     * @param {copy_admin_settingUpdateManyArgs} args - Arguments to update one or more rows.
      * @example
-     * // Update many Isin_records
-     * const isin_records = await prisma.isin_records.updateMany({
+     * // Update many Copy_admin_settings
+     * const copy_admin_setting = await prisma.copy_admin_setting.updateMany({
      *   where: {
      *     // ... provide filter here
      *   },
@@ -73549,56 +74302,56 @@ export namespace Prisma {
      * })
      * 
      */
-    updateMany<T extends isin_recordsUpdateManyArgs>(args: SelectSubset<T, isin_recordsUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    updateMany<T extends copy_admin_settingUpdateManyArgs>(args: SelectSubset<T, copy_admin_settingUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
 
     /**
-     * Create or update one Isin_records.
-     * @param {isin_recordsUpsertArgs} args - Arguments to update or create a Isin_records.
+     * Create or update one Copy_admin_setting.
+     * @param {copy_admin_settingUpsertArgs} args - Arguments to update or create a Copy_admin_setting.
      * @example
-     * // Update or create a Isin_records
-     * const isin_records = await prisma.isin_records.upsert({
+     * // Update or create a Copy_admin_setting
+     * const copy_admin_setting = await prisma.copy_admin_setting.upsert({
      *   create: {
-     *     // ... data to create a Isin_records
+     *     // ... data to create a Copy_admin_setting
      *   },
      *   update: {
      *     // ... in case it already exists, update
      *   },
      *   where: {
-     *     // ... the filter for the Isin_records we want to update
+     *     // ... the filter for the Copy_admin_setting we want to update
      *   }
      * })
      */
-    upsert<T extends isin_recordsUpsertArgs>(args: SelectSubset<T, isin_recordsUpsertArgs<ExtArgs>>): Prisma__isin_recordsClient<$Result.GetResult<Prisma.$isin_recordsPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    upsert<T extends copy_admin_settingUpsertArgs>(args: SelectSubset<T, copy_admin_settingUpsertArgs<ExtArgs>>): Prisma__copy_admin_settingClient<$Result.GetResult<Prisma.$copy_admin_settingPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
 
     /**
-     * Count the number of Isin_records.
+     * Count the number of Copy_admin_settings.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {isin_recordsCountArgs} args - Arguments to filter Isin_records to count.
+     * @param {copy_admin_settingCountArgs} args - Arguments to filter Copy_admin_settings to count.
      * @example
-     * // Count the number of Isin_records
-     * const count = await prisma.isin_records.count({
+     * // Count the number of Copy_admin_settings
+     * const count = await prisma.copy_admin_setting.count({
      *   where: {
-     *     // ... the filter for the Isin_records we want to count
+     *     // ... the filter for the Copy_admin_settings we want to count
      *   }
      * })
     **/
-    count<T extends isin_recordsCountArgs>(
-      args?: Subset<T, isin_recordsCountArgs>,
+    count<T extends copy_admin_settingCountArgs>(
+      args?: Subset<T, copy_admin_settingCountArgs>,
     ): Prisma.PrismaPromise<
       T extends $Utils.Record<'select', any>
         ? T['select'] extends true
           ? number
-          : GetScalarType<T['select'], Isin_recordsCountAggregateOutputType>
+          : GetScalarType<T['select'], Copy_admin_settingCountAggregateOutputType>
         : number
     >
 
     /**
-     * Allows you to perform aggregations operations on a Isin_records.
+     * Allows you to perform aggregations operations on a Copy_admin_setting.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {Isin_recordsAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @param {Copy_admin_settingAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
      * @example
      * // Ordered by age ascending
      * // Where email contains prisma.io
@@ -73618,13 +74371,13 @@ export namespace Prisma {
      *   take: 10,
      * })
     **/
-    aggregate<T extends Isin_recordsAggregateArgs>(args: Subset<T, Isin_recordsAggregateArgs>): Prisma.PrismaPromise<GetIsin_recordsAggregateType<T>>
+    aggregate<T extends Copy_admin_settingAggregateArgs>(args: Subset<T, Copy_admin_settingAggregateArgs>): Prisma.PrismaPromise<GetCopy_admin_settingAggregateType<T>>
 
     /**
-     * Group by Isin_records.
+     * Group by Copy_admin_setting.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {isin_recordsGroupByArgs} args - Group by arguments.
+     * @param {copy_admin_settingGroupByArgs} args - Group by arguments.
      * @example
      * // Group by city, order by createdAt, get count
      * const result = await prisma.user.groupBy({
@@ -73639,14 +74392,14 @@ export namespace Prisma {
      * 
     **/
     groupBy<
-      T extends isin_recordsGroupByArgs,
+      T extends copy_admin_settingGroupByArgs,
       HasSelectOrTake extends Or<
         Extends<'skip', Keys<T>>,
         Extends<'take', Keys<T>>
       >,
       OrderByArg extends True extends HasSelectOrTake
-        ? { orderBy: isin_recordsGroupByArgs['orderBy'] }
-        : { orderBy?: isin_recordsGroupByArgs['orderBy'] },
+        ? { orderBy: copy_admin_settingGroupByArgs['orderBy'] }
+        : { orderBy?: copy_admin_settingGroupByArgs['orderBy'] },
       OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
       ByFields extends MaybeTupleToUnion<T['by']>,
       ByValid extends Has<ByFields, OrderFields>,
@@ -73695,20 +74448,20 @@ export namespace Prisma {
             ? never
             : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
         }[OrderFields]
-    >(args: SubsetIntersection<T, isin_recordsGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetIsin_recordsGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+    >(args: SubsetIntersection<T, copy_admin_settingGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetCopy_admin_settingGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
   /**
-   * Fields of the isin_records model
+   * Fields of the copy_admin_setting model
    */
-  readonly fields: isin_recordsFieldRefs;
+  readonly fields: copy_admin_settingFieldRefs;
   }
 
   /**
-   * The delegate class that acts as a "Promise-like" for isin_records.
+   * The delegate class that acts as a "Promise-like" for copy_admin_setting.
    * Why is this prefixed with `Prisma__`?
    * Because we want to prevent naming conflicts as mentioned in
    * https://github.com/prisma/prisma-client-js/issues/707
    */
-  export interface Prisma__isin_recordsClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+  export interface Prisma__copy_admin_settingClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -73736,333 +74489,9241 @@ export namespace Prisma {
 
 
   /**
-   * Fields of the isin_records model
+   * Fields of the copy_admin_setting model
    */
-  interface isin_recordsFieldRefs {
-    readonly id: FieldRef<"isin_records", 'Int'>
-    readonly isin: FieldRef<"isin_records", 'String'>
-    readonly allotment_date: FieldRef<"isin_records", 'DateTime'>
-    readonly status: FieldRef<"isin_records", 'Boolean'>
-    readonly created_at: FieldRef<"isin_records", 'DateTime'>
-    readonly updated_at: FieldRef<"isin_records", 'DateTime'>
+  interface copy_admin_settingFieldRefs {
+    readonly id: FieldRef<"copy_admin_setting", 'BigInt'>
+    readonly name: FieldRef<"copy_admin_setting", 'String'>
+    readonly type: FieldRef<"copy_admin_setting", 'Int'>
+    readonly is_active: FieldRef<"copy_admin_setting", 'Int'>
+    readonly created_at: FieldRef<"copy_admin_setting", 'DateTime'>
+    readonly updated_at: FieldRef<"copy_admin_setting", 'DateTime'>
   }
     
 
   // Custom InputTypes
   /**
-   * isin_records findUnique
+   * copy_admin_setting findUnique
    */
-  export type isin_recordsFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type copy_admin_settingFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the isin_records
+     * Select specific fields to fetch from the copy_admin_setting
      */
-    select?: isin_recordsSelect<ExtArgs> | null
+    select?: copy_admin_settingSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the isin_records
+     * Omit specific fields from the copy_admin_setting
      */
-    omit?: isin_recordsOmit<ExtArgs> | null
+    omit?: copy_admin_settingOmit<ExtArgs> | null
     /**
-     * Filter, which isin_records to fetch.
+     * Filter, which copy_admin_setting to fetch.
      */
-    where: isin_recordsWhereUniqueInput
+    where: copy_admin_settingWhereUniqueInput
   }
 
   /**
-   * isin_records findUniqueOrThrow
+   * copy_admin_setting findUniqueOrThrow
    */
-  export type isin_recordsFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type copy_admin_settingFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the isin_records
+     * Select specific fields to fetch from the copy_admin_setting
      */
-    select?: isin_recordsSelect<ExtArgs> | null
+    select?: copy_admin_settingSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the isin_records
+     * Omit specific fields from the copy_admin_setting
      */
-    omit?: isin_recordsOmit<ExtArgs> | null
+    omit?: copy_admin_settingOmit<ExtArgs> | null
     /**
-     * Filter, which isin_records to fetch.
+     * Filter, which copy_admin_setting to fetch.
      */
-    where: isin_recordsWhereUniqueInput
+    where: copy_admin_settingWhereUniqueInput
   }
 
   /**
-   * isin_records findFirst
+   * copy_admin_setting findFirst
    */
-  export type isin_recordsFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type copy_admin_settingFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the isin_records
+     * Select specific fields to fetch from the copy_admin_setting
      */
-    select?: isin_recordsSelect<ExtArgs> | null
+    select?: copy_admin_settingSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the isin_records
+     * Omit specific fields from the copy_admin_setting
      */
-    omit?: isin_recordsOmit<ExtArgs> | null
+    omit?: copy_admin_settingOmit<ExtArgs> | null
     /**
-     * Filter, which isin_records to fetch.
+     * Filter, which copy_admin_setting to fetch.
      */
-    where?: isin_recordsWhereInput
+    where?: copy_admin_settingWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
      * 
-     * Determine the order of isin_records to fetch.
+     * Determine the order of copy_admin_settings to fetch.
      */
-    orderBy?: isin_recordsOrderByWithRelationInput | isin_recordsOrderByWithRelationInput[]
+    orderBy?: copy_admin_settingOrderByWithRelationInput | copy_admin_settingOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      * 
-     * Sets the position for searching for isin_records.
+     * Sets the position for searching for copy_admin_settings.
      */
-    cursor?: isin_recordsWhereUniqueInput
+    cursor?: copy_admin_settingWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Take `±n` isin_records from the position of the cursor.
+     * Take `±n` copy_admin_settings from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Skip the first `n` isin_records.
+     * Skip the first `n` copy_admin_settings.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
      * 
-     * Filter by unique combinations of isin_records.
+     * Filter by unique combinations of copy_admin_settings.
      */
-    distinct?: Isin_recordsScalarFieldEnum | Isin_recordsScalarFieldEnum[]
+    distinct?: Copy_admin_settingScalarFieldEnum | Copy_admin_settingScalarFieldEnum[]
   }
 
   /**
-   * isin_records findFirstOrThrow
+   * copy_admin_setting findFirstOrThrow
    */
-  export type isin_recordsFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type copy_admin_settingFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the isin_records
+     * Select specific fields to fetch from the copy_admin_setting
      */
-    select?: isin_recordsSelect<ExtArgs> | null
+    select?: copy_admin_settingSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the isin_records
+     * Omit specific fields from the copy_admin_setting
      */
-    omit?: isin_recordsOmit<ExtArgs> | null
+    omit?: copy_admin_settingOmit<ExtArgs> | null
     /**
-     * Filter, which isin_records to fetch.
+     * Filter, which copy_admin_setting to fetch.
      */
-    where?: isin_recordsWhereInput
+    where?: copy_admin_settingWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
      * 
-     * Determine the order of isin_records to fetch.
+     * Determine the order of copy_admin_settings to fetch.
      */
-    orderBy?: isin_recordsOrderByWithRelationInput | isin_recordsOrderByWithRelationInput[]
+    orderBy?: copy_admin_settingOrderByWithRelationInput | copy_admin_settingOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      * 
-     * Sets the position for searching for isin_records.
+     * Sets the position for searching for copy_admin_settings.
      */
-    cursor?: isin_recordsWhereUniqueInput
+    cursor?: copy_admin_settingWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Take `±n` isin_records from the position of the cursor.
+     * Take `±n` copy_admin_settings from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Skip the first `n` isin_records.
+     * Skip the first `n` copy_admin_settings.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
      * 
-     * Filter by unique combinations of isin_records.
+     * Filter by unique combinations of copy_admin_settings.
      */
-    distinct?: Isin_recordsScalarFieldEnum | Isin_recordsScalarFieldEnum[]
+    distinct?: Copy_admin_settingScalarFieldEnum | Copy_admin_settingScalarFieldEnum[]
   }
 
   /**
-   * isin_records findMany
+   * copy_admin_setting findMany
    */
-  export type isin_recordsFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type copy_admin_settingFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the isin_records
+     * Select specific fields to fetch from the copy_admin_setting
      */
-    select?: isin_recordsSelect<ExtArgs> | null
+    select?: copy_admin_settingSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the isin_records
+     * Omit specific fields from the copy_admin_setting
      */
-    omit?: isin_recordsOmit<ExtArgs> | null
+    omit?: copy_admin_settingOmit<ExtArgs> | null
     /**
-     * Filter, which isin_records to fetch.
+     * Filter, which copy_admin_settings to fetch.
      */
-    where?: isin_recordsWhereInput
+    where?: copy_admin_settingWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
      * 
-     * Determine the order of isin_records to fetch.
+     * Determine the order of copy_admin_settings to fetch.
      */
-    orderBy?: isin_recordsOrderByWithRelationInput | isin_recordsOrderByWithRelationInput[]
+    orderBy?: copy_admin_settingOrderByWithRelationInput | copy_admin_settingOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      * 
-     * Sets the position for listing isin_records.
+     * Sets the position for listing copy_admin_settings.
      */
-    cursor?: isin_recordsWhereUniqueInput
+    cursor?: copy_admin_settingWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Take `±n` isin_records from the position of the cursor.
+     * Take `±n` copy_admin_settings from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Skip the first `n` isin_records.
+     * Skip the first `n` copy_admin_settings.
      */
     skip?: number
-    distinct?: Isin_recordsScalarFieldEnum | Isin_recordsScalarFieldEnum[]
+    distinct?: Copy_admin_settingScalarFieldEnum | Copy_admin_settingScalarFieldEnum[]
   }
 
   /**
-   * isin_records create
+   * copy_admin_setting create
    */
-  export type isin_recordsCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type copy_admin_settingCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the isin_records
+     * Select specific fields to fetch from the copy_admin_setting
      */
-    select?: isin_recordsSelect<ExtArgs> | null
+    select?: copy_admin_settingSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the isin_records
+     * Omit specific fields from the copy_admin_setting
      */
-    omit?: isin_recordsOmit<ExtArgs> | null
+    omit?: copy_admin_settingOmit<ExtArgs> | null
     /**
-     * The data needed to create a isin_records.
+     * The data needed to create a copy_admin_setting.
      */
-    data?: XOR<isin_recordsCreateInput, isin_recordsUncheckedCreateInput>
+    data?: XOR<copy_admin_settingCreateInput, copy_admin_settingUncheckedCreateInput>
   }
 
   /**
-   * isin_records createMany
+   * copy_admin_setting createMany
    */
-  export type isin_recordsCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type copy_admin_settingCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * The data used to create many isin_records.
+     * The data used to create many copy_admin_settings.
      */
-    data: isin_recordsCreateManyInput | isin_recordsCreateManyInput[]
+    data: copy_admin_settingCreateManyInput | copy_admin_settingCreateManyInput[]
     skipDuplicates?: boolean
   }
 
   /**
-   * isin_records update
+   * copy_admin_setting update
    */
-  export type isin_recordsUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type copy_admin_settingUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the isin_records
+     * Select specific fields to fetch from the copy_admin_setting
      */
-    select?: isin_recordsSelect<ExtArgs> | null
+    select?: copy_admin_settingSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the isin_records
+     * Omit specific fields from the copy_admin_setting
      */
-    omit?: isin_recordsOmit<ExtArgs> | null
+    omit?: copy_admin_settingOmit<ExtArgs> | null
     /**
-     * The data needed to update a isin_records.
+     * The data needed to update a copy_admin_setting.
      */
-    data: XOR<isin_recordsUpdateInput, isin_recordsUncheckedUpdateInput>
+    data: XOR<copy_admin_settingUpdateInput, copy_admin_settingUncheckedUpdateInput>
     /**
-     * Choose, which isin_records to update.
+     * Choose, which copy_admin_setting to update.
      */
-    where: isin_recordsWhereUniqueInput
+    where: copy_admin_settingWhereUniqueInput
   }
 
   /**
-   * isin_records updateMany
+   * copy_admin_setting updateMany
    */
-  export type isin_recordsUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type copy_admin_settingUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * The data used to update isin_records.
+     * The data used to update copy_admin_settings.
      */
-    data: XOR<isin_recordsUpdateManyMutationInput, isin_recordsUncheckedUpdateManyInput>
+    data: XOR<copy_admin_settingUpdateManyMutationInput, copy_admin_settingUncheckedUpdateManyInput>
     /**
-     * Filter which isin_records to update
+     * Filter which copy_admin_settings to update
      */
-    where?: isin_recordsWhereInput
+    where?: copy_admin_settingWhereInput
     /**
-     * Limit how many isin_records to update.
+     * Limit how many copy_admin_settings to update.
      */
     limit?: number
   }
 
   /**
-   * isin_records upsert
+   * copy_admin_setting upsert
    */
-  export type isin_recordsUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type copy_admin_settingUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the isin_records
+     * Select specific fields to fetch from the copy_admin_setting
      */
-    select?: isin_recordsSelect<ExtArgs> | null
+    select?: copy_admin_settingSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the isin_records
+     * Omit specific fields from the copy_admin_setting
      */
-    omit?: isin_recordsOmit<ExtArgs> | null
+    omit?: copy_admin_settingOmit<ExtArgs> | null
     /**
-     * The filter to search for the isin_records to update in case it exists.
+     * The filter to search for the copy_admin_setting to update in case it exists.
      */
-    where: isin_recordsWhereUniqueInput
+    where: copy_admin_settingWhereUniqueInput
     /**
-     * In case the isin_records found by the `where` argument doesn't exist, create a new isin_records with this data.
+     * In case the copy_admin_setting found by the `where` argument doesn't exist, create a new copy_admin_setting with this data.
      */
-    create: XOR<isin_recordsCreateInput, isin_recordsUncheckedCreateInput>
+    create: XOR<copy_admin_settingCreateInput, copy_admin_settingUncheckedCreateInput>
     /**
-     * In case the isin_records was found with the provided `where` argument, update it with this data.
+     * In case the copy_admin_setting was found with the provided `where` argument, update it with this data.
      */
-    update: XOR<isin_recordsUpdateInput, isin_recordsUncheckedUpdateInput>
+    update: XOR<copy_admin_settingUpdateInput, copy_admin_settingUncheckedUpdateInput>
   }
 
   /**
-   * isin_records delete
+   * copy_admin_setting delete
    */
-  export type isin_recordsDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type copy_admin_settingDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the isin_records
+     * Select specific fields to fetch from the copy_admin_setting
      */
-    select?: isin_recordsSelect<ExtArgs> | null
+    select?: copy_admin_settingSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the isin_records
+     * Omit specific fields from the copy_admin_setting
      */
-    omit?: isin_recordsOmit<ExtArgs> | null
+    omit?: copy_admin_settingOmit<ExtArgs> | null
     /**
-     * Filter which isin_records to delete.
+     * Filter which copy_admin_setting to delete.
      */
-    where: isin_recordsWhereUniqueInput
+    where: copy_admin_settingWhereUniqueInput
   }
 
   /**
-   * isin_records deleteMany
+   * copy_admin_setting deleteMany
    */
-  export type isin_recordsDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type copy_admin_settingDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Filter which isin_records to delete
+     * Filter which copy_admin_settings to delete
      */
-    where?: isin_recordsWhereInput
+    where?: copy_admin_settingWhereInput
     /**
-     * Limit how many isin_records to delete.
+     * Limit how many copy_admin_settings to delete.
      */
     limit?: number
   }
 
   /**
-   * isin_records without action
+   * copy_admin_setting without action
    */
-  export type isin_recordsDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type copy_admin_settingDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the isin_records
+     * Select specific fields to fetch from the copy_admin_setting
      */
-    select?: isin_recordsSelect<ExtArgs> | null
+    select?: copy_admin_settingSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the isin_records
+     * Omit specific fields from the copy_admin_setting
      */
-    omit?: isin_recordsOmit<ExtArgs> | null
+    omit?: copy_admin_settingOmit<ExtArgs> | null
+  }
+
+
+  /**
+   * Model copy_all_months
+   */
+
+  export type AggregateCopy_all_months = {
+    _count: Copy_all_monthsCountAggregateOutputType | null
+    _avg: Copy_all_monthsAvgAggregateOutputType | null
+    _sum: Copy_all_monthsSumAggregateOutputType | null
+    _min: Copy_all_monthsMinAggregateOutputType | null
+    _max: Copy_all_monthsMaxAggregateOutputType | null
+  }
+
+  export type Copy_all_monthsAvgAggregateOutputType = {
+    id: number | null
+    month_no: number | null
+  }
+
+  export type Copy_all_monthsSumAggregateOutputType = {
+    id: number | null
+    month_no: number | null
+  }
+
+  export type Copy_all_monthsMinAggregateOutputType = {
+    id: number | null
+    month_no: number | null
+    month_name: string | null
+  }
+
+  export type Copy_all_monthsMaxAggregateOutputType = {
+    id: number | null
+    month_no: number | null
+    month_name: string | null
+  }
+
+  export type Copy_all_monthsCountAggregateOutputType = {
+    id: number
+    month_no: number
+    month_name: number
+    _all: number
+  }
+
+
+  export type Copy_all_monthsAvgAggregateInputType = {
+    id?: true
+    month_no?: true
+  }
+
+  export type Copy_all_monthsSumAggregateInputType = {
+    id?: true
+    month_no?: true
+  }
+
+  export type Copy_all_monthsMinAggregateInputType = {
+    id?: true
+    month_no?: true
+    month_name?: true
+  }
+
+  export type Copy_all_monthsMaxAggregateInputType = {
+    id?: true
+    month_no?: true
+    month_name?: true
+  }
+
+  export type Copy_all_monthsCountAggregateInputType = {
+    id?: true
+    month_no?: true
+    month_name?: true
+    _all?: true
+  }
+
+  export type Copy_all_monthsAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which copy_all_months to aggregate.
+     */
+    where?: copy_all_monthsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of copy_all_months to fetch.
+     */
+    orderBy?: copy_all_monthsOrderByWithRelationInput | copy_all_monthsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: copy_all_monthsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` copy_all_months from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` copy_all_months.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned copy_all_months
+    **/
+    _count?: true | Copy_all_monthsCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: Copy_all_monthsAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: Copy_all_monthsSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: Copy_all_monthsMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: Copy_all_monthsMaxAggregateInputType
+  }
+
+  export type GetCopy_all_monthsAggregateType<T extends Copy_all_monthsAggregateArgs> = {
+        [P in keyof T & keyof AggregateCopy_all_months]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateCopy_all_months[P]>
+      : GetScalarType<T[P], AggregateCopy_all_months[P]>
+  }
+
+
+
+
+  export type copy_all_monthsGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: copy_all_monthsWhereInput
+    orderBy?: copy_all_monthsOrderByWithAggregationInput | copy_all_monthsOrderByWithAggregationInput[]
+    by: Copy_all_monthsScalarFieldEnum[] | Copy_all_monthsScalarFieldEnum
+    having?: copy_all_monthsScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: Copy_all_monthsCountAggregateInputType | true
+    _avg?: Copy_all_monthsAvgAggregateInputType
+    _sum?: Copy_all_monthsSumAggregateInputType
+    _min?: Copy_all_monthsMinAggregateInputType
+    _max?: Copy_all_monthsMaxAggregateInputType
+  }
+
+  export type Copy_all_monthsGroupByOutputType = {
+    id: number
+    month_no: number
+    month_name: string
+    _count: Copy_all_monthsCountAggregateOutputType | null
+    _avg: Copy_all_monthsAvgAggregateOutputType | null
+    _sum: Copy_all_monthsSumAggregateOutputType | null
+    _min: Copy_all_monthsMinAggregateOutputType | null
+    _max: Copy_all_monthsMaxAggregateOutputType | null
+  }
+
+  type GetCopy_all_monthsGroupByPayload<T extends copy_all_monthsGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<Copy_all_monthsGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof Copy_all_monthsGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], Copy_all_monthsGroupByOutputType[P]>
+            : GetScalarType<T[P], Copy_all_monthsGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type copy_all_monthsSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    month_no?: boolean
+    month_name?: boolean
+  }, ExtArgs["result"]["copy_all_months"]>
+
+
+
+  export type copy_all_monthsSelectScalar = {
+    id?: boolean
+    month_no?: boolean
+    month_name?: boolean
+  }
+
+  export type copy_all_monthsOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "month_no" | "month_name", ExtArgs["result"]["copy_all_months"]>
+
+  export type $copy_all_monthsPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "copy_all_months"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: number
+      month_no: number
+      month_name: string
+    }, ExtArgs["result"]["copy_all_months"]>
+    composites: {}
+  }
+
+  type copy_all_monthsGetPayload<S extends boolean | null | undefined | copy_all_monthsDefaultArgs> = $Result.GetResult<Prisma.$copy_all_monthsPayload, S>
+
+  type copy_all_monthsCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<copy_all_monthsFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: Copy_all_monthsCountAggregateInputType | true
+    }
+
+  export interface copy_all_monthsDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['copy_all_months'], meta: { name: 'copy_all_months' } }
+    /**
+     * Find zero or one Copy_all_months that matches the filter.
+     * @param {copy_all_monthsFindUniqueArgs} args - Arguments to find a Copy_all_months
+     * @example
+     * // Get one Copy_all_months
+     * const copy_all_months = await prisma.copy_all_months.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends copy_all_monthsFindUniqueArgs>(args: SelectSubset<T, copy_all_monthsFindUniqueArgs<ExtArgs>>): Prisma__copy_all_monthsClient<$Result.GetResult<Prisma.$copy_all_monthsPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one Copy_all_months that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {copy_all_monthsFindUniqueOrThrowArgs} args - Arguments to find a Copy_all_months
+     * @example
+     * // Get one Copy_all_months
+     * const copy_all_months = await prisma.copy_all_months.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends copy_all_monthsFindUniqueOrThrowArgs>(args: SelectSubset<T, copy_all_monthsFindUniqueOrThrowArgs<ExtArgs>>): Prisma__copy_all_monthsClient<$Result.GetResult<Prisma.$copy_all_monthsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Copy_all_months that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_all_monthsFindFirstArgs} args - Arguments to find a Copy_all_months
+     * @example
+     * // Get one Copy_all_months
+     * const copy_all_months = await prisma.copy_all_months.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends copy_all_monthsFindFirstArgs>(args?: SelectSubset<T, copy_all_monthsFindFirstArgs<ExtArgs>>): Prisma__copy_all_monthsClient<$Result.GetResult<Prisma.$copy_all_monthsPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Copy_all_months that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_all_monthsFindFirstOrThrowArgs} args - Arguments to find a Copy_all_months
+     * @example
+     * // Get one Copy_all_months
+     * const copy_all_months = await prisma.copy_all_months.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends copy_all_monthsFindFirstOrThrowArgs>(args?: SelectSubset<T, copy_all_monthsFindFirstOrThrowArgs<ExtArgs>>): Prisma__copy_all_monthsClient<$Result.GetResult<Prisma.$copy_all_monthsPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more Copy_all_months that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_all_monthsFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Copy_all_months
+     * const copy_all_months = await prisma.copy_all_months.findMany()
+     * 
+     * // Get first 10 Copy_all_months
+     * const copy_all_months = await prisma.copy_all_months.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const copy_all_monthsWithIdOnly = await prisma.copy_all_months.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends copy_all_monthsFindManyArgs>(args?: SelectSubset<T, copy_all_monthsFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$copy_all_monthsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a Copy_all_months.
+     * @param {copy_all_monthsCreateArgs} args - Arguments to create a Copy_all_months.
+     * @example
+     * // Create one Copy_all_months
+     * const Copy_all_months = await prisma.copy_all_months.create({
+     *   data: {
+     *     // ... data to create a Copy_all_months
+     *   }
+     * })
+     * 
+     */
+    create<T extends copy_all_monthsCreateArgs>(args: SelectSubset<T, copy_all_monthsCreateArgs<ExtArgs>>): Prisma__copy_all_monthsClient<$Result.GetResult<Prisma.$copy_all_monthsPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many Copy_all_months.
+     * @param {copy_all_monthsCreateManyArgs} args - Arguments to create many Copy_all_months.
+     * @example
+     * // Create many Copy_all_months
+     * const copy_all_months = await prisma.copy_all_months.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends copy_all_monthsCreateManyArgs>(args?: SelectSubset<T, copy_all_monthsCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a Copy_all_months.
+     * @param {copy_all_monthsDeleteArgs} args - Arguments to delete one Copy_all_months.
+     * @example
+     * // Delete one Copy_all_months
+     * const Copy_all_months = await prisma.copy_all_months.delete({
+     *   where: {
+     *     // ... filter to delete one Copy_all_months
+     *   }
+     * })
+     * 
+     */
+    delete<T extends copy_all_monthsDeleteArgs>(args: SelectSubset<T, copy_all_monthsDeleteArgs<ExtArgs>>): Prisma__copy_all_monthsClient<$Result.GetResult<Prisma.$copy_all_monthsPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one Copy_all_months.
+     * @param {copy_all_monthsUpdateArgs} args - Arguments to update one Copy_all_months.
+     * @example
+     * // Update one Copy_all_months
+     * const copy_all_months = await prisma.copy_all_months.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends copy_all_monthsUpdateArgs>(args: SelectSubset<T, copy_all_monthsUpdateArgs<ExtArgs>>): Prisma__copy_all_monthsClient<$Result.GetResult<Prisma.$copy_all_monthsPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more Copy_all_months.
+     * @param {copy_all_monthsDeleteManyArgs} args - Arguments to filter Copy_all_months to delete.
+     * @example
+     * // Delete a few Copy_all_months
+     * const { count } = await prisma.copy_all_months.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends copy_all_monthsDeleteManyArgs>(args?: SelectSubset<T, copy_all_monthsDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Copy_all_months.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_all_monthsUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Copy_all_months
+     * const copy_all_months = await prisma.copy_all_months.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends copy_all_monthsUpdateManyArgs>(args: SelectSubset<T, copy_all_monthsUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one Copy_all_months.
+     * @param {copy_all_monthsUpsertArgs} args - Arguments to update or create a Copy_all_months.
+     * @example
+     * // Update or create a Copy_all_months
+     * const copy_all_months = await prisma.copy_all_months.upsert({
+     *   create: {
+     *     // ... data to create a Copy_all_months
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Copy_all_months we want to update
+     *   }
+     * })
+     */
+    upsert<T extends copy_all_monthsUpsertArgs>(args: SelectSubset<T, copy_all_monthsUpsertArgs<ExtArgs>>): Prisma__copy_all_monthsClient<$Result.GetResult<Prisma.$copy_all_monthsPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of Copy_all_months.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_all_monthsCountArgs} args - Arguments to filter Copy_all_months to count.
+     * @example
+     * // Count the number of Copy_all_months
+     * const count = await prisma.copy_all_months.count({
+     *   where: {
+     *     // ... the filter for the Copy_all_months we want to count
+     *   }
+     * })
+    **/
+    count<T extends copy_all_monthsCountArgs>(
+      args?: Subset<T, copy_all_monthsCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], Copy_all_monthsCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Copy_all_months.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {Copy_all_monthsAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends Copy_all_monthsAggregateArgs>(args: Subset<T, Copy_all_monthsAggregateArgs>): Prisma.PrismaPromise<GetCopy_all_monthsAggregateType<T>>
+
+    /**
+     * Group by Copy_all_months.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_all_monthsGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends copy_all_monthsGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: copy_all_monthsGroupByArgs['orderBy'] }
+        : { orderBy?: copy_all_monthsGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, copy_all_monthsGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetCopy_all_monthsGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the copy_all_months model
+   */
+  readonly fields: copy_all_monthsFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for copy_all_months.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__copy_all_monthsClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the copy_all_months model
+   */
+  interface copy_all_monthsFieldRefs {
+    readonly id: FieldRef<"copy_all_months", 'Int'>
+    readonly month_no: FieldRef<"copy_all_months", 'Int'>
+    readonly month_name: FieldRef<"copy_all_months", 'String'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * copy_all_months findUnique
+   */
+  export type copy_all_monthsFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_all_months
+     */
+    select?: copy_all_monthsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_all_months
+     */
+    omit?: copy_all_monthsOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_all_months to fetch.
+     */
+    where: copy_all_monthsWhereUniqueInput
+  }
+
+  /**
+   * copy_all_months findUniqueOrThrow
+   */
+  export type copy_all_monthsFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_all_months
+     */
+    select?: copy_all_monthsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_all_months
+     */
+    omit?: copy_all_monthsOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_all_months to fetch.
+     */
+    where: copy_all_monthsWhereUniqueInput
+  }
+
+  /**
+   * copy_all_months findFirst
+   */
+  export type copy_all_monthsFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_all_months
+     */
+    select?: copy_all_monthsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_all_months
+     */
+    omit?: copy_all_monthsOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_all_months to fetch.
+     */
+    where?: copy_all_monthsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of copy_all_months to fetch.
+     */
+    orderBy?: copy_all_monthsOrderByWithRelationInput | copy_all_monthsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for copy_all_months.
+     */
+    cursor?: copy_all_monthsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` copy_all_months from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` copy_all_months.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of copy_all_months.
+     */
+    distinct?: Copy_all_monthsScalarFieldEnum | Copy_all_monthsScalarFieldEnum[]
+  }
+
+  /**
+   * copy_all_months findFirstOrThrow
+   */
+  export type copy_all_monthsFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_all_months
+     */
+    select?: copy_all_monthsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_all_months
+     */
+    omit?: copy_all_monthsOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_all_months to fetch.
+     */
+    where?: copy_all_monthsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of copy_all_months to fetch.
+     */
+    orderBy?: copy_all_monthsOrderByWithRelationInput | copy_all_monthsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for copy_all_months.
+     */
+    cursor?: copy_all_monthsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` copy_all_months from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` copy_all_months.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of copy_all_months.
+     */
+    distinct?: Copy_all_monthsScalarFieldEnum | Copy_all_monthsScalarFieldEnum[]
+  }
+
+  /**
+   * copy_all_months findMany
+   */
+  export type copy_all_monthsFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_all_months
+     */
+    select?: copy_all_monthsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_all_months
+     */
+    omit?: copy_all_monthsOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_all_months to fetch.
+     */
+    where?: copy_all_monthsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of copy_all_months to fetch.
+     */
+    orderBy?: copy_all_monthsOrderByWithRelationInput | copy_all_monthsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing copy_all_months.
+     */
+    cursor?: copy_all_monthsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` copy_all_months from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` copy_all_months.
+     */
+    skip?: number
+    distinct?: Copy_all_monthsScalarFieldEnum | Copy_all_monthsScalarFieldEnum[]
+  }
+
+  /**
+   * copy_all_months create
+   */
+  export type copy_all_monthsCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_all_months
+     */
+    select?: copy_all_monthsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_all_months
+     */
+    omit?: copy_all_monthsOmit<ExtArgs> | null
+    /**
+     * The data needed to create a copy_all_months.
+     */
+    data: XOR<copy_all_monthsCreateInput, copy_all_monthsUncheckedCreateInput>
+  }
+
+  /**
+   * copy_all_months createMany
+   */
+  export type copy_all_monthsCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many copy_all_months.
+     */
+    data: copy_all_monthsCreateManyInput | copy_all_monthsCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * copy_all_months update
+   */
+  export type copy_all_monthsUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_all_months
+     */
+    select?: copy_all_monthsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_all_months
+     */
+    omit?: copy_all_monthsOmit<ExtArgs> | null
+    /**
+     * The data needed to update a copy_all_months.
+     */
+    data: XOR<copy_all_monthsUpdateInput, copy_all_monthsUncheckedUpdateInput>
+    /**
+     * Choose, which copy_all_months to update.
+     */
+    where: copy_all_monthsWhereUniqueInput
+  }
+
+  /**
+   * copy_all_months updateMany
+   */
+  export type copy_all_monthsUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update copy_all_months.
+     */
+    data: XOR<copy_all_monthsUpdateManyMutationInput, copy_all_monthsUncheckedUpdateManyInput>
+    /**
+     * Filter which copy_all_months to update
+     */
+    where?: copy_all_monthsWhereInput
+    /**
+     * Limit how many copy_all_months to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * copy_all_months upsert
+   */
+  export type copy_all_monthsUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_all_months
+     */
+    select?: copy_all_monthsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_all_months
+     */
+    omit?: copy_all_monthsOmit<ExtArgs> | null
+    /**
+     * The filter to search for the copy_all_months to update in case it exists.
+     */
+    where: copy_all_monthsWhereUniqueInput
+    /**
+     * In case the copy_all_months found by the `where` argument doesn't exist, create a new copy_all_months with this data.
+     */
+    create: XOR<copy_all_monthsCreateInput, copy_all_monthsUncheckedCreateInput>
+    /**
+     * In case the copy_all_months was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<copy_all_monthsUpdateInput, copy_all_monthsUncheckedUpdateInput>
+  }
+
+  /**
+   * copy_all_months delete
+   */
+  export type copy_all_monthsDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_all_months
+     */
+    select?: copy_all_monthsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_all_months
+     */
+    omit?: copy_all_monthsOmit<ExtArgs> | null
+    /**
+     * Filter which copy_all_months to delete.
+     */
+    where: copy_all_monthsWhereUniqueInput
+  }
+
+  /**
+   * copy_all_months deleteMany
+   */
+  export type copy_all_monthsDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which copy_all_months to delete
+     */
+    where?: copy_all_monthsWhereInput
+    /**
+     * Limit how many copy_all_months to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * copy_all_months without action
+   */
+  export type copy_all_monthsDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_all_months
+     */
+    select?: copy_all_monthsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_all_months
+     */
+    omit?: copy_all_monthsOmit<ExtArgs> | null
+  }
+
+
+  /**
+   * Model copy_cache
+   */
+
+  export type AggregateCopy_cache = {
+    _count: Copy_cacheCountAggregateOutputType | null
+    _avg: Copy_cacheAvgAggregateOutputType | null
+    _sum: Copy_cacheSumAggregateOutputType | null
+    _min: Copy_cacheMinAggregateOutputType | null
+    _max: Copy_cacheMaxAggregateOutputType | null
+  }
+
+  export type Copy_cacheAvgAggregateOutputType = {
+    expiration: number | null
+  }
+
+  export type Copy_cacheSumAggregateOutputType = {
+    expiration: number | null
+  }
+
+  export type Copy_cacheMinAggregateOutputType = {
+    key: string | null
+    value: string | null
+    expiration: number | null
+  }
+
+  export type Copy_cacheMaxAggregateOutputType = {
+    key: string | null
+    value: string | null
+    expiration: number | null
+  }
+
+  export type Copy_cacheCountAggregateOutputType = {
+    key: number
+    value: number
+    expiration: number
+    _all: number
+  }
+
+
+  export type Copy_cacheAvgAggregateInputType = {
+    expiration?: true
+  }
+
+  export type Copy_cacheSumAggregateInputType = {
+    expiration?: true
+  }
+
+  export type Copy_cacheMinAggregateInputType = {
+    key?: true
+    value?: true
+    expiration?: true
+  }
+
+  export type Copy_cacheMaxAggregateInputType = {
+    key?: true
+    value?: true
+    expiration?: true
+  }
+
+  export type Copy_cacheCountAggregateInputType = {
+    key?: true
+    value?: true
+    expiration?: true
+    _all?: true
+  }
+
+  export type Copy_cacheAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which copy_cache to aggregate.
+     */
+    where?: copy_cacheWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of copy_caches to fetch.
+     */
+    orderBy?: copy_cacheOrderByWithRelationInput | copy_cacheOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: copy_cacheWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` copy_caches from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` copy_caches.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned copy_caches
+    **/
+    _count?: true | Copy_cacheCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: Copy_cacheAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: Copy_cacheSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: Copy_cacheMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: Copy_cacheMaxAggregateInputType
+  }
+
+  export type GetCopy_cacheAggregateType<T extends Copy_cacheAggregateArgs> = {
+        [P in keyof T & keyof AggregateCopy_cache]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateCopy_cache[P]>
+      : GetScalarType<T[P], AggregateCopy_cache[P]>
+  }
+
+
+
+
+  export type copy_cacheGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: copy_cacheWhereInput
+    orderBy?: copy_cacheOrderByWithAggregationInput | copy_cacheOrderByWithAggregationInput[]
+    by: Copy_cacheScalarFieldEnum[] | Copy_cacheScalarFieldEnum
+    having?: copy_cacheScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: Copy_cacheCountAggregateInputType | true
+    _avg?: Copy_cacheAvgAggregateInputType
+    _sum?: Copy_cacheSumAggregateInputType
+    _min?: Copy_cacheMinAggregateInputType
+    _max?: Copy_cacheMaxAggregateInputType
+  }
+
+  export type Copy_cacheGroupByOutputType = {
+    key: string
+    value: string
+    expiration: number
+    _count: Copy_cacheCountAggregateOutputType | null
+    _avg: Copy_cacheAvgAggregateOutputType | null
+    _sum: Copy_cacheSumAggregateOutputType | null
+    _min: Copy_cacheMinAggregateOutputType | null
+    _max: Copy_cacheMaxAggregateOutputType | null
+  }
+
+  type GetCopy_cacheGroupByPayload<T extends copy_cacheGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<Copy_cacheGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof Copy_cacheGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], Copy_cacheGroupByOutputType[P]>
+            : GetScalarType<T[P], Copy_cacheGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type copy_cacheSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    key?: boolean
+    value?: boolean
+    expiration?: boolean
+  }, ExtArgs["result"]["copy_cache"]>
+
+
+
+  export type copy_cacheSelectScalar = {
+    key?: boolean
+    value?: boolean
+    expiration?: boolean
+  }
+
+  export type copy_cacheOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"key" | "value" | "expiration", ExtArgs["result"]["copy_cache"]>
+
+  export type $copy_cachePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "copy_cache"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      key: string
+      value: string
+      expiration: number
+    }, ExtArgs["result"]["copy_cache"]>
+    composites: {}
+  }
+
+  type copy_cacheGetPayload<S extends boolean | null | undefined | copy_cacheDefaultArgs> = $Result.GetResult<Prisma.$copy_cachePayload, S>
+
+  type copy_cacheCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<copy_cacheFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: Copy_cacheCountAggregateInputType | true
+    }
+
+  export interface copy_cacheDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['copy_cache'], meta: { name: 'copy_cache' } }
+    /**
+     * Find zero or one Copy_cache that matches the filter.
+     * @param {copy_cacheFindUniqueArgs} args - Arguments to find a Copy_cache
+     * @example
+     * // Get one Copy_cache
+     * const copy_cache = await prisma.copy_cache.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends copy_cacheFindUniqueArgs>(args: SelectSubset<T, copy_cacheFindUniqueArgs<ExtArgs>>): Prisma__copy_cacheClient<$Result.GetResult<Prisma.$copy_cachePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one Copy_cache that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {copy_cacheFindUniqueOrThrowArgs} args - Arguments to find a Copy_cache
+     * @example
+     * // Get one Copy_cache
+     * const copy_cache = await prisma.copy_cache.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends copy_cacheFindUniqueOrThrowArgs>(args: SelectSubset<T, copy_cacheFindUniqueOrThrowArgs<ExtArgs>>): Prisma__copy_cacheClient<$Result.GetResult<Prisma.$copy_cachePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Copy_cache that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_cacheFindFirstArgs} args - Arguments to find a Copy_cache
+     * @example
+     * // Get one Copy_cache
+     * const copy_cache = await prisma.copy_cache.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends copy_cacheFindFirstArgs>(args?: SelectSubset<T, copy_cacheFindFirstArgs<ExtArgs>>): Prisma__copy_cacheClient<$Result.GetResult<Prisma.$copy_cachePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Copy_cache that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_cacheFindFirstOrThrowArgs} args - Arguments to find a Copy_cache
+     * @example
+     * // Get one Copy_cache
+     * const copy_cache = await prisma.copy_cache.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends copy_cacheFindFirstOrThrowArgs>(args?: SelectSubset<T, copy_cacheFindFirstOrThrowArgs<ExtArgs>>): Prisma__copy_cacheClient<$Result.GetResult<Prisma.$copy_cachePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more Copy_caches that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_cacheFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Copy_caches
+     * const copy_caches = await prisma.copy_cache.findMany()
+     * 
+     * // Get first 10 Copy_caches
+     * const copy_caches = await prisma.copy_cache.findMany({ take: 10 })
+     * 
+     * // Only select the `key`
+     * const copy_cacheWithKeyOnly = await prisma.copy_cache.findMany({ select: { key: true } })
+     * 
+     */
+    findMany<T extends copy_cacheFindManyArgs>(args?: SelectSubset<T, copy_cacheFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$copy_cachePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a Copy_cache.
+     * @param {copy_cacheCreateArgs} args - Arguments to create a Copy_cache.
+     * @example
+     * // Create one Copy_cache
+     * const Copy_cache = await prisma.copy_cache.create({
+     *   data: {
+     *     // ... data to create a Copy_cache
+     *   }
+     * })
+     * 
+     */
+    create<T extends copy_cacheCreateArgs>(args: SelectSubset<T, copy_cacheCreateArgs<ExtArgs>>): Prisma__copy_cacheClient<$Result.GetResult<Prisma.$copy_cachePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many Copy_caches.
+     * @param {copy_cacheCreateManyArgs} args - Arguments to create many Copy_caches.
+     * @example
+     * // Create many Copy_caches
+     * const copy_cache = await prisma.copy_cache.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends copy_cacheCreateManyArgs>(args?: SelectSubset<T, copy_cacheCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a Copy_cache.
+     * @param {copy_cacheDeleteArgs} args - Arguments to delete one Copy_cache.
+     * @example
+     * // Delete one Copy_cache
+     * const Copy_cache = await prisma.copy_cache.delete({
+     *   where: {
+     *     // ... filter to delete one Copy_cache
+     *   }
+     * })
+     * 
+     */
+    delete<T extends copy_cacheDeleteArgs>(args: SelectSubset<T, copy_cacheDeleteArgs<ExtArgs>>): Prisma__copy_cacheClient<$Result.GetResult<Prisma.$copy_cachePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one Copy_cache.
+     * @param {copy_cacheUpdateArgs} args - Arguments to update one Copy_cache.
+     * @example
+     * // Update one Copy_cache
+     * const copy_cache = await prisma.copy_cache.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends copy_cacheUpdateArgs>(args: SelectSubset<T, copy_cacheUpdateArgs<ExtArgs>>): Prisma__copy_cacheClient<$Result.GetResult<Prisma.$copy_cachePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more Copy_caches.
+     * @param {copy_cacheDeleteManyArgs} args - Arguments to filter Copy_caches to delete.
+     * @example
+     * // Delete a few Copy_caches
+     * const { count } = await prisma.copy_cache.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends copy_cacheDeleteManyArgs>(args?: SelectSubset<T, copy_cacheDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Copy_caches.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_cacheUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Copy_caches
+     * const copy_cache = await prisma.copy_cache.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends copy_cacheUpdateManyArgs>(args: SelectSubset<T, copy_cacheUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one Copy_cache.
+     * @param {copy_cacheUpsertArgs} args - Arguments to update or create a Copy_cache.
+     * @example
+     * // Update or create a Copy_cache
+     * const copy_cache = await prisma.copy_cache.upsert({
+     *   create: {
+     *     // ... data to create a Copy_cache
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Copy_cache we want to update
+     *   }
+     * })
+     */
+    upsert<T extends copy_cacheUpsertArgs>(args: SelectSubset<T, copy_cacheUpsertArgs<ExtArgs>>): Prisma__copy_cacheClient<$Result.GetResult<Prisma.$copy_cachePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of Copy_caches.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_cacheCountArgs} args - Arguments to filter Copy_caches to count.
+     * @example
+     * // Count the number of Copy_caches
+     * const count = await prisma.copy_cache.count({
+     *   where: {
+     *     // ... the filter for the Copy_caches we want to count
+     *   }
+     * })
+    **/
+    count<T extends copy_cacheCountArgs>(
+      args?: Subset<T, copy_cacheCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], Copy_cacheCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Copy_cache.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {Copy_cacheAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends Copy_cacheAggregateArgs>(args: Subset<T, Copy_cacheAggregateArgs>): Prisma.PrismaPromise<GetCopy_cacheAggregateType<T>>
+
+    /**
+     * Group by Copy_cache.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_cacheGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends copy_cacheGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: copy_cacheGroupByArgs['orderBy'] }
+        : { orderBy?: copy_cacheGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, copy_cacheGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetCopy_cacheGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the copy_cache model
+   */
+  readonly fields: copy_cacheFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for copy_cache.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__copy_cacheClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the copy_cache model
+   */
+  interface copy_cacheFieldRefs {
+    readonly key: FieldRef<"copy_cache", 'String'>
+    readonly value: FieldRef<"copy_cache", 'String'>
+    readonly expiration: FieldRef<"copy_cache", 'Int'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * copy_cache findUnique
+   */
+  export type copy_cacheFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_cache
+     */
+    select?: copy_cacheSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_cache
+     */
+    omit?: copy_cacheOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_cache to fetch.
+     */
+    where: copy_cacheWhereUniqueInput
+  }
+
+  /**
+   * copy_cache findUniqueOrThrow
+   */
+  export type copy_cacheFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_cache
+     */
+    select?: copy_cacheSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_cache
+     */
+    omit?: copy_cacheOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_cache to fetch.
+     */
+    where: copy_cacheWhereUniqueInput
+  }
+
+  /**
+   * copy_cache findFirst
+   */
+  export type copy_cacheFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_cache
+     */
+    select?: copy_cacheSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_cache
+     */
+    omit?: copy_cacheOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_cache to fetch.
+     */
+    where?: copy_cacheWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of copy_caches to fetch.
+     */
+    orderBy?: copy_cacheOrderByWithRelationInput | copy_cacheOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for copy_caches.
+     */
+    cursor?: copy_cacheWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` copy_caches from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` copy_caches.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of copy_caches.
+     */
+    distinct?: Copy_cacheScalarFieldEnum | Copy_cacheScalarFieldEnum[]
+  }
+
+  /**
+   * copy_cache findFirstOrThrow
+   */
+  export type copy_cacheFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_cache
+     */
+    select?: copy_cacheSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_cache
+     */
+    omit?: copy_cacheOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_cache to fetch.
+     */
+    where?: copy_cacheWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of copy_caches to fetch.
+     */
+    orderBy?: copy_cacheOrderByWithRelationInput | copy_cacheOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for copy_caches.
+     */
+    cursor?: copy_cacheWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` copy_caches from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` copy_caches.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of copy_caches.
+     */
+    distinct?: Copy_cacheScalarFieldEnum | Copy_cacheScalarFieldEnum[]
+  }
+
+  /**
+   * copy_cache findMany
+   */
+  export type copy_cacheFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_cache
+     */
+    select?: copy_cacheSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_cache
+     */
+    omit?: copy_cacheOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_caches to fetch.
+     */
+    where?: copy_cacheWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of copy_caches to fetch.
+     */
+    orderBy?: copy_cacheOrderByWithRelationInput | copy_cacheOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing copy_caches.
+     */
+    cursor?: copy_cacheWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` copy_caches from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` copy_caches.
+     */
+    skip?: number
+    distinct?: Copy_cacheScalarFieldEnum | Copy_cacheScalarFieldEnum[]
+  }
+
+  /**
+   * copy_cache create
+   */
+  export type copy_cacheCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_cache
+     */
+    select?: copy_cacheSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_cache
+     */
+    omit?: copy_cacheOmit<ExtArgs> | null
+    /**
+     * The data needed to create a copy_cache.
+     */
+    data: XOR<copy_cacheCreateInput, copy_cacheUncheckedCreateInput>
+  }
+
+  /**
+   * copy_cache createMany
+   */
+  export type copy_cacheCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many copy_caches.
+     */
+    data: copy_cacheCreateManyInput | copy_cacheCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * copy_cache update
+   */
+  export type copy_cacheUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_cache
+     */
+    select?: copy_cacheSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_cache
+     */
+    omit?: copy_cacheOmit<ExtArgs> | null
+    /**
+     * The data needed to update a copy_cache.
+     */
+    data: XOR<copy_cacheUpdateInput, copy_cacheUncheckedUpdateInput>
+    /**
+     * Choose, which copy_cache to update.
+     */
+    where: copy_cacheWhereUniqueInput
+  }
+
+  /**
+   * copy_cache updateMany
+   */
+  export type copy_cacheUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update copy_caches.
+     */
+    data: XOR<copy_cacheUpdateManyMutationInput, copy_cacheUncheckedUpdateManyInput>
+    /**
+     * Filter which copy_caches to update
+     */
+    where?: copy_cacheWhereInput
+    /**
+     * Limit how many copy_caches to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * copy_cache upsert
+   */
+  export type copy_cacheUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_cache
+     */
+    select?: copy_cacheSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_cache
+     */
+    omit?: copy_cacheOmit<ExtArgs> | null
+    /**
+     * The filter to search for the copy_cache to update in case it exists.
+     */
+    where: copy_cacheWhereUniqueInput
+    /**
+     * In case the copy_cache found by the `where` argument doesn't exist, create a new copy_cache with this data.
+     */
+    create: XOR<copy_cacheCreateInput, copy_cacheUncheckedCreateInput>
+    /**
+     * In case the copy_cache was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<copy_cacheUpdateInput, copy_cacheUncheckedUpdateInput>
+  }
+
+  /**
+   * copy_cache delete
+   */
+  export type copy_cacheDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_cache
+     */
+    select?: copy_cacheSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_cache
+     */
+    omit?: copy_cacheOmit<ExtArgs> | null
+    /**
+     * Filter which copy_cache to delete.
+     */
+    where: copy_cacheWhereUniqueInput
+  }
+
+  /**
+   * copy_cache deleteMany
+   */
+  export type copy_cacheDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which copy_caches to delete
+     */
+    where?: copy_cacheWhereInput
+    /**
+     * Limit how many copy_caches to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * copy_cache without action
+   */
+  export type copy_cacheDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_cache
+     */
+    select?: copy_cacheSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_cache
+     */
+    omit?: copy_cacheOmit<ExtArgs> | null
+  }
+
+
+  /**
+   * Model copy_cache_locks
+   */
+
+  export type AggregateCopy_cache_locks = {
+    _count: Copy_cache_locksCountAggregateOutputType | null
+    _avg: Copy_cache_locksAvgAggregateOutputType | null
+    _sum: Copy_cache_locksSumAggregateOutputType | null
+    _min: Copy_cache_locksMinAggregateOutputType | null
+    _max: Copy_cache_locksMaxAggregateOutputType | null
+  }
+
+  export type Copy_cache_locksAvgAggregateOutputType = {
+    expiration: number | null
+  }
+
+  export type Copy_cache_locksSumAggregateOutputType = {
+    expiration: number | null
+  }
+
+  export type Copy_cache_locksMinAggregateOutputType = {
+    key: string | null
+    owner: string | null
+    expiration: number | null
+  }
+
+  export type Copy_cache_locksMaxAggregateOutputType = {
+    key: string | null
+    owner: string | null
+    expiration: number | null
+  }
+
+  export type Copy_cache_locksCountAggregateOutputType = {
+    key: number
+    owner: number
+    expiration: number
+    _all: number
+  }
+
+
+  export type Copy_cache_locksAvgAggregateInputType = {
+    expiration?: true
+  }
+
+  export type Copy_cache_locksSumAggregateInputType = {
+    expiration?: true
+  }
+
+  export type Copy_cache_locksMinAggregateInputType = {
+    key?: true
+    owner?: true
+    expiration?: true
+  }
+
+  export type Copy_cache_locksMaxAggregateInputType = {
+    key?: true
+    owner?: true
+    expiration?: true
+  }
+
+  export type Copy_cache_locksCountAggregateInputType = {
+    key?: true
+    owner?: true
+    expiration?: true
+    _all?: true
+  }
+
+  export type Copy_cache_locksAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which copy_cache_locks to aggregate.
+     */
+    where?: copy_cache_locksWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of copy_cache_locks to fetch.
+     */
+    orderBy?: copy_cache_locksOrderByWithRelationInput | copy_cache_locksOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: copy_cache_locksWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` copy_cache_locks from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` copy_cache_locks.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned copy_cache_locks
+    **/
+    _count?: true | Copy_cache_locksCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: Copy_cache_locksAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: Copy_cache_locksSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: Copy_cache_locksMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: Copy_cache_locksMaxAggregateInputType
+  }
+
+  export type GetCopy_cache_locksAggregateType<T extends Copy_cache_locksAggregateArgs> = {
+        [P in keyof T & keyof AggregateCopy_cache_locks]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateCopy_cache_locks[P]>
+      : GetScalarType<T[P], AggregateCopy_cache_locks[P]>
+  }
+
+
+
+
+  export type copy_cache_locksGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: copy_cache_locksWhereInput
+    orderBy?: copy_cache_locksOrderByWithAggregationInput | copy_cache_locksOrderByWithAggregationInput[]
+    by: Copy_cache_locksScalarFieldEnum[] | Copy_cache_locksScalarFieldEnum
+    having?: copy_cache_locksScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: Copy_cache_locksCountAggregateInputType | true
+    _avg?: Copy_cache_locksAvgAggregateInputType
+    _sum?: Copy_cache_locksSumAggregateInputType
+    _min?: Copy_cache_locksMinAggregateInputType
+    _max?: Copy_cache_locksMaxAggregateInputType
+  }
+
+  export type Copy_cache_locksGroupByOutputType = {
+    key: string
+    owner: string
+    expiration: number
+    _count: Copy_cache_locksCountAggregateOutputType | null
+    _avg: Copy_cache_locksAvgAggregateOutputType | null
+    _sum: Copy_cache_locksSumAggregateOutputType | null
+    _min: Copy_cache_locksMinAggregateOutputType | null
+    _max: Copy_cache_locksMaxAggregateOutputType | null
+  }
+
+  type GetCopy_cache_locksGroupByPayload<T extends copy_cache_locksGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<Copy_cache_locksGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof Copy_cache_locksGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], Copy_cache_locksGroupByOutputType[P]>
+            : GetScalarType<T[P], Copy_cache_locksGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type copy_cache_locksSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    key?: boolean
+    owner?: boolean
+    expiration?: boolean
+  }, ExtArgs["result"]["copy_cache_locks"]>
+
+
+
+  export type copy_cache_locksSelectScalar = {
+    key?: boolean
+    owner?: boolean
+    expiration?: boolean
+  }
+
+  export type copy_cache_locksOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"key" | "owner" | "expiration", ExtArgs["result"]["copy_cache_locks"]>
+
+  export type $copy_cache_locksPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "copy_cache_locks"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      key: string
+      owner: string
+      expiration: number
+    }, ExtArgs["result"]["copy_cache_locks"]>
+    composites: {}
+  }
+
+  type copy_cache_locksGetPayload<S extends boolean | null | undefined | copy_cache_locksDefaultArgs> = $Result.GetResult<Prisma.$copy_cache_locksPayload, S>
+
+  type copy_cache_locksCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<copy_cache_locksFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: Copy_cache_locksCountAggregateInputType | true
+    }
+
+  export interface copy_cache_locksDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['copy_cache_locks'], meta: { name: 'copy_cache_locks' } }
+    /**
+     * Find zero or one Copy_cache_locks that matches the filter.
+     * @param {copy_cache_locksFindUniqueArgs} args - Arguments to find a Copy_cache_locks
+     * @example
+     * // Get one Copy_cache_locks
+     * const copy_cache_locks = await prisma.copy_cache_locks.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends copy_cache_locksFindUniqueArgs>(args: SelectSubset<T, copy_cache_locksFindUniqueArgs<ExtArgs>>): Prisma__copy_cache_locksClient<$Result.GetResult<Prisma.$copy_cache_locksPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one Copy_cache_locks that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {copy_cache_locksFindUniqueOrThrowArgs} args - Arguments to find a Copy_cache_locks
+     * @example
+     * // Get one Copy_cache_locks
+     * const copy_cache_locks = await prisma.copy_cache_locks.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends copy_cache_locksFindUniqueOrThrowArgs>(args: SelectSubset<T, copy_cache_locksFindUniqueOrThrowArgs<ExtArgs>>): Prisma__copy_cache_locksClient<$Result.GetResult<Prisma.$copy_cache_locksPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Copy_cache_locks that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_cache_locksFindFirstArgs} args - Arguments to find a Copy_cache_locks
+     * @example
+     * // Get one Copy_cache_locks
+     * const copy_cache_locks = await prisma.copy_cache_locks.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends copy_cache_locksFindFirstArgs>(args?: SelectSubset<T, copy_cache_locksFindFirstArgs<ExtArgs>>): Prisma__copy_cache_locksClient<$Result.GetResult<Prisma.$copy_cache_locksPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Copy_cache_locks that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_cache_locksFindFirstOrThrowArgs} args - Arguments to find a Copy_cache_locks
+     * @example
+     * // Get one Copy_cache_locks
+     * const copy_cache_locks = await prisma.copy_cache_locks.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends copy_cache_locksFindFirstOrThrowArgs>(args?: SelectSubset<T, copy_cache_locksFindFirstOrThrowArgs<ExtArgs>>): Prisma__copy_cache_locksClient<$Result.GetResult<Prisma.$copy_cache_locksPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more Copy_cache_locks that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_cache_locksFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Copy_cache_locks
+     * const copy_cache_locks = await prisma.copy_cache_locks.findMany()
+     * 
+     * // Get first 10 Copy_cache_locks
+     * const copy_cache_locks = await prisma.copy_cache_locks.findMany({ take: 10 })
+     * 
+     * // Only select the `key`
+     * const copy_cache_locksWithKeyOnly = await prisma.copy_cache_locks.findMany({ select: { key: true } })
+     * 
+     */
+    findMany<T extends copy_cache_locksFindManyArgs>(args?: SelectSubset<T, copy_cache_locksFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$copy_cache_locksPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a Copy_cache_locks.
+     * @param {copy_cache_locksCreateArgs} args - Arguments to create a Copy_cache_locks.
+     * @example
+     * // Create one Copy_cache_locks
+     * const Copy_cache_locks = await prisma.copy_cache_locks.create({
+     *   data: {
+     *     // ... data to create a Copy_cache_locks
+     *   }
+     * })
+     * 
+     */
+    create<T extends copy_cache_locksCreateArgs>(args: SelectSubset<T, copy_cache_locksCreateArgs<ExtArgs>>): Prisma__copy_cache_locksClient<$Result.GetResult<Prisma.$copy_cache_locksPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many Copy_cache_locks.
+     * @param {copy_cache_locksCreateManyArgs} args - Arguments to create many Copy_cache_locks.
+     * @example
+     * // Create many Copy_cache_locks
+     * const copy_cache_locks = await prisma.copy_cache_locks.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends copy_cache_locksCreateManyArgs>(args?: SelectSubset<T, copy_cache_locksCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a Copy_cache_locks.
+     * @param {copy_cache_locksDeleteArgs} args - Arguments to delete one Copy_cache_locks.
+     * @example
+     * // Delete one Copy_cache_locks
+     * const Copy_cache_locks = await prisma.copy_cache_locks.delete({
+     *   where: {
+     *     // ... filter to delete one Copy_cache_locks
+     *   }
+     * })
+     * 
+     */
+    delete<T extends copy_cache_locksDeleteArgs>(args: SelectSubset<T, copy_cache_locksDeleteArgs<ExtArgs>>): Prisma__copy_cache_locksClient<$Result.GetResult<Prisma.$copy_cache_locksPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one Copy_cache_locks.
+     * @param {copy_cache_locksUpdateArgs} args - Arguments to update one Copy_cache_locks.
+     * @example
+     * // Update one Copy_cache_locks
+     * const copy_cache_locks = await prisma.copy_cache_locks.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends copy_cache_locksUpdateArgs>(args: SelectSubset<T, copy_cache_locksUpdateArgs<ExtArgs>>): Prisma__copy_cache_locksClient<$Result.GetResult<Prisma.$copy_cache_locksPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more Copy_cache_locks.
+     * @param {copy_cache_locksDeleteManyArgs} args - Arguments to filter Copy_cache_locks to delete.
+     * @example
+     * // Delete a few Copy_cache_locks
+     * const { count } = await prisma.copy_cache_locks.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends copy_cache_locksDeleteManyArgs>(args?: SelectSubset<T, copy_cache_locksDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Copy_cache_locks.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_cache_locksUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Copy_cache_locks
+     * const copy_cache_locks = await prisma.copy_cache_locks.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends copy_cache_locksUpdateManyArgs>(args: SelectSubset<T, copy_cache_locksUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one Copy_cache_locks.
+     * @param {copy_cache_locksUpsertArgs} args - Arguments to update or create a Copy_cache_locks.
+     * @example
+     * // Update or create a Copy_cache_locks
+     * const copy_cache_locks = await prisma.copy_cache_locks.upsert({
+     *   create: {
+     *     // ... data to create a Copy_cache_locks
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Copy_cache_locks we want to update
+     *   }
+     * })
+     */
+    upsert<T extends copy_cache_locksUpsertArgs>(args: SelectSubset<T, copy_cache_locksUpsertArgs<ExtArgs>>): Prisma__copy_cache_locksClient<$Result.GetResult<Prisma.$copy_cache_locksPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of Copy_cache_locks.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_cache_locksCountArgs} args - Arguments to filter Copy_cache_locks to count.
+     * @example
+     * // Count the number of Copy_cache_locks
+     * const count = await prisma.copy_cache_locks.count({
+     *   where: {
+     *     // ... the filter for the Copy_cache_locks we want to count
+     *   }
+     * })
+    **/
+    count<T extends copy_cache_locksCountArgs>(
+      args?: Subset<T, copy_cache_locksCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], Copy_cache_locksCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Copy_cache_locks.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {Copy_cache_locksAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends Copy_cache_locksAggregateArgs>(args: Subset<T, Copy_cache_locksAggregateArgs>): Prisma.PrismaPromise<GetCopy_cache_locksAggregateType<T>>
+
+    /**
+     * Group by Copy_cache_locks.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_cache_locksGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends copy_cache_locksGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: copy_cache_locksGroupByArgs['orderBy'] }
+        : { orderBy?: copy_cache_locksGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, copy_cache_locksGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetCopy_cache_locksGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the copy_cache_locks model
+   */
+  readonly fields: copy_cache_locksFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for copy_cache_locks.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__copy_cache_locksClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the copy_cache_locks model
+   */
+  interface copy_cache_locksFieldRefs {
+    readonly key: FieldRef<"copy_cache_locks", 'String'>
+    readonly owner: FieldRef<"copy_cache_locks", 'String'>
+    readonly expiration: FieldRef<"copy_cache_locks", 'Int'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * copy_cache_locks findUnique
+   */
+  export type copy_cache_locksFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_cache_locks
+     */
+    select?: copy_cache_locksSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_cache_locks
+     */
+    omit?: copy_cache_locksOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_cache_locks to fetch.
+     */
+    where: copy_cache_locksWhereUniqueInput
+  }
+
+  /**
+   * copy_cache_locks findUniqueOrThrow
+   */
+  export type copy_cache_locksFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_cache_locks
+     */
+    select?: copy_cache_locksSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_cache_locks
+     */
+    omit?: copy_cache_locksOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_cache_locks to fetch.
+     */
+    where: copy_cache_locksWhereUniqueInput
+  }
+
+  /**
+   * copy_cache_locks findFirst
+   */
+  export type copy_cache_locksFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_cache_locks
+     */
+    select?: copy_cache_locksSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_cache_locks
+     */
+    omit?: copy_cache_locksOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_cache_locks to fetch.
+     */
+    where?: copy_cache_locksWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of copy_cache_locks to fetch.
+     */
+    orderBy?: copy_cache_locksOrderByWithRelationInput | copy_cache_locksOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for copy_cache_locks.
+     */
+    cursor?: copy_cache_locksWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` copy_cache_locks from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` copy_cache_locks.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of copy_cache_locks.
+     */
+    distinct?: Copy_cache_locksScalarFieldEnum | Copy_cache_locksScalarFieldEnum[]
+  }
+
+  /**
+   * copy_cache_locks findFirstOrThrow
+   */
+  export type copy_cache_locksFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_cache_locks
+     */
+    select?: copy_cache_locksSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_cache_locks
+     */
+    omit?: copy_cache_locksOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_cache_locks to fetch.
+     */
+    where?: copy_cache_locksWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of copy_cache_locks to fetch.
+     */
+    orderBy?: copy_cache_locksOrderByWithRelationInput | copy_cache_locksOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for copy_cache_locks.
+     */
+    cursor?: copy_cache_locksWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` copy_cache_locks from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` copy_cache_locks.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of copy_cache_locks.
+     */
+    distinct?: Copy_cache_locksScalarFieldEnum | Copy_cache_locksScalarFieldEnum[]
+  }
+
+  /**
+   * copy_cache_locks findMany
+   */
+  export type copy_cache_locksFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_cache_locks
+     */
+    select?: copy_cache_locksSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_cache_locks
+     */
+    omit?: copy_cache_locksOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_cache_locks to fetch.
+     */
+    where?: copy_cache_locksWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of copy_cache_locks to fetch.
+     */
+    orderBy?: copy_cache_locksOrderByWithRelationInput | copy_cache_locksOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing copy_cache_locks.
+     */
+    cursor?: copy_cache_locksWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` copy_cache_locks from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` copy_cache_locks.
+     */
+    skip?: number
+    distinct?: Copy_cache_locksScalarFieldEnum | Copy_cache_locksScalarFieldEnum[]
+  }
+
+  /**
+   * copy_cache_locks create
+   */
+  export type copy_cache_locksCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_cache_locks
+     */
+    select?: copy_cache_locksSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_cache_locks
+     */
+    omit?: copy_cache_locksOmit<ExtArgs> | null
+    /**
+     * The data needed to create a copy_cache_locks.
+     */
+    data: XOR<copy_cache_locksCreateInput, copy_cache_locksUncheckedCreateInput>
+  }
+
+  /**
+   * copy_cache_locks createMany
+   */
+  export type copy_cache_locksCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many copy_cache_locks.
+     */
+    data: copy_cache_locksCreateManyInput | copy_cache_locksCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * copy_cache_locks update
+   */
+  export type copy_cache_locksUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_cache_locks
+     */
+    select?: copy_cache_locksSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_cache_locks
+     */
+    omit?: copy_cache_locksOmit<ExtArgs> | null
+    /**
+     * The data needed to update a copy_cache_locks.
+     */
+    data: XOR<copy_cache_locksUpdateInput, copy_cache_locksUncheckedUpdateInput>
+    /**
+     * Choose, which copy_cache_locks to update.
+     */
+    where: copy_cache_locksWhereUniqueInput
+  }
+
+  /**
+   * copy_cache_locks updateMany
+   */
+  export type copy_cache_locksUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update copy_cache_locks.
+     */
+    data: XOR<copy_cache_locksUpdateManyMutationInput, copy_cache_locksUncheckedUpdateManyInput>
+    /**
+     * Filter which copy_cache_locks to update
+     */
+    where?: copy_cache_locksWhereInput
+    /**
+     * Limit how many copy_cache_locks to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * copy_cache_locks upsert
+   */
+  export type copy_cache_locksUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_cache_locks
+     */
+    select?: copy_cache_locksSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_cache_locks
+     */
+    omit?: copy_cache_locksOmit<ExtArgs> | null
+    /**
+     * The filter to search for the copy_cache_locks to update in case it exists.
+     */
+    where: copy_cache_locksWhereUniqueInput
+    /**
+     * In case the copy_cache_locks found by the `where` argument doesn't exist, create a new copy_cache_locks with this data.
+     */
+    create: XOR<copy_cache_locksCreateInput, copy_cache_locksUncheckedCreateInput>
+    /**
+     * In case the copy_cache_locks was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<copy_cache_locksUpdateInput, copy_cache_locksUncheckedUpdateInput>
+  }
+
+  /**
+   * copy_cache_locks delete
+   */
+  export type copy_cache_locksDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_cache_locks
+     */
+    select?: copy_cache_locksSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_cache_locks
+     */
+    omit?: copy_cache_locksOmit<ExtArgs> | null
+    /**
+     * Filter which copy_cache_locks to delete.
+     */
+    where: copy_cache_locksWhereUniqueInput
+  }
+
+  /**
+   * copy_cache_locks deleteMany
+   */
+  export type copy_cache_locksDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which copy_cache_locks to delete
+     */
+    where?: copy_cache_locksWhereInput
+    /**
+     * Limit how many copy_cache_locks to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * copy_cache_locks without action
+   */
+  export type copy_cache_locksDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_cache_locks
+     */
+    select?: copy_cache_locksSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_cache_locks
+     */
+    omit?: copy_cache_locksOmit<ExtArgs> | null
+  }
+
+
+  /**
+   * Model copy_cron_status
+   */
+
+  export type AggregateCopy_cron_status = {
+    _count: Copy_cron_statusCountAggregateOutputType | null
+    _avg: Copy_cron_statusAvgAggregateOutputType | null
+    _sum: Copy_cron_statusSumAggregateOutputType | null
+    _min: Copy_cron_statusMinAggregateOutputType | null
+    _max: Copy_cron_statusMaxAggregateOutputType | null
+  }
+
+  export type Copy_cron_statusAvgAggregateOutputType = {
+    id: number | null
+  }
+
+  export type Copy_cron_statusSumAggregateOutputType = {
+    id: bigint | null
+  }
+
+  export type Copy_cron_statusMinAggregateOutputType = {
+    id: bigint | null
+    cron_name: string | null
+    cron_date: Date | null
+    updated_at: Date | null
+  }
+
+  export type Copy_cron_statusMaxAggregateOutputType = {
+    id: bigint | null
+    cron_name: string | null
+    cron_date: Date | null
+    updated_at: Date | null
+  }
+
+  export type Copy_cron_statusCountAggregateOutputType = {
+    id: number
+    cron_name: number
+    cron_date: number
+    updated_at: number
+    _all: number
+  }
+
+
+  export type Copy_cron_statusAvgAggregateInputType = {
+    id?: true
+  }
+
+  export type Copy_cron_statusSumAggregateInputType = {
+    id?: true
+  }
+
+  export type Copy_cron_statusMinAggregateInputType = {
+    id?: true
+    cron_name?: true
+    cron_date?: true
+    updated_at?: true
+  }
+
+  export type Copy_cron_statusMaxAggregateInputType = {
+    id?: true
+    cron_name?: true
+    cron_date?: true
+    updated_at?: true
+  }
+
+  export type Copy_cron_statusCountAggregateInputType = {
+    id?: true
+    cron_name?: true
+    cron_date?: true
+    updated_at?: true
+    _all?: true
+  }
+
+  export type Copy_cron_statusAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which copy_cron_status to aggregate.
+     */
+    where?: copy_cron_statusWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of copy_cron_statuses to fetch.
+     */
+    orderBy?: copy_cron_statusOrderByWithRelationInput | copy_cron_statusOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: copy_cron_statusWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` copy_cron_statuses from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` copy_cron_statuses.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned copy_cron_statuses
+    **/
+    _count?: true | Copy_cron_statusCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: Copy_cron_statusAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: Copy_cron_statusSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: Copy_cron_statusMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: Copy_cron_statusMaxAggregateInputType
+  }
+
+  export type GetCopy_cron_statusAggregateType<T extends Copy_cron_statusAggregateArgs> = {
+        [P in keyof T & keyof AggregateCopy_cron_status]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateCopy_cron_status[P]>
+      : GetScalarType<T[P], AggregateCopy_cron_status[P]>
+  }
+
+
+
+
+  export type copy_cron_statusGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: copy_cron_statusWhereInput
+    orderBy?: copy_cron_statusOrderByWithAggregationInput | copy_cron_statusOrderByWithAggregationInput[]
+    by: Copy_cron_statusScalarFieldEnum[] | Copy_cron_statusScalarFieldEnum
+    having?: copy_cron_statusScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: Copy_cron_statusCountAggregateInputType | true
+    _avg?: Copy_cron_statusAvgAggregateInputType
+    _sum?: Copy_cron_statusSumAggregateInputType
+    _min?: Copy_cron_statusMinAggregateInputType
+    _max?: Copy_cron_statusMaxAggregateInputType
+  }
+
+  export type Copy_cron_statusGroupByOutputType = {
+    id: bigint
+    cron_name: string | null
+    cron_date: Date | null
+    updated_at: Date | null
+    _count: Copy_cron_statusCountAggregateOutputType | null
+    _avg: Copy_cron_statusAvgAggregateOutputType | null
+    _sum: Copy_cron_statusSumAggregateOutputType | null
+    _min: Copy_cron_statusMinAggregateOutputType | null
+    _max: Copy_cron_statusMaxAggregateOutputType | null
+  }
+
+  type GetCopy_cron_statusGroupByPayload<T extends copy_cron_statusGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<Copy_cron_statusGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof Copy_cron_statusGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], Copy_cron_statusGroupByOutputType[P]>
+            : GetScalarType<T[P], Copy_cron_statusGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type copy_cron_statusSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    cron_name?: boolean
+    cron_date?: boolean
+    updated_at?: boolean
+  }, ExtArgs["result"]["copy_cron_status"]>
+
+
+
+  export type copy_cron_statusSelectScalar = {
+    id?: boolean
+    cron_name?: boolean
+    cron_date?: boolean
+    updated_at?: boolean
+  }
+
+  export type copy_cron_statusOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "cron_name" | "cron_date" | "updated_at", ExtArgs["result"]["copy_cron_status"]>
+
+  export type $copy_cron_statusPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "copy_cron_status"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: bigint
+      cron_name: string | null
+      cron_date: Date | null
+      updated_at: Date | null
+    }, ExtArgs["result"]["copy_cron_status"]>
+    composites: {}
+  }
+
+  type copy_cron_statusGetPayload<S extends boolean | null | undefined | copy_cron_statusDefaultArgs> = $Result.GetResult<Prisma.$copy_cron_statusPayload, S>
+
+  type copy_cron_statusCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<copy_cron_statusFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: Copy_cron_statusCountAggregateInputType | true
+    }
+
+  export interface copy_cron_statusDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['copy_cron_status'], meta: { name: 'copy_cron_status' } }
+    /**
+     * Find zero or one Copy_cron_status that matches the filter.
+     * @param {copy_cron_statusFindUniqueArgs} args - Arguments to find a Copy_cron_status
+     * @example
+     * // Get one Copy_cron_status
+     * const copy_cron_status = await prisma.copy_cron_status.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends copy_cron_statusFindUniqueArgs>(args: SelectSubset<T, copy_cron_statusFindUniqueArgs<ExtArgs>>): Prisma__copy_cron_statusClient<$Result.GetResult<Prisma.$copy_cron_statusPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one Copy_cron_status that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {copy_cron_statusFindUniqueOrThrowArgs} args - Arguments to find a Copy_cron_status
+     * @example
+     * // Get one Copy_cron_status
+     * const copy_cron_status = await prisma.copy_cron_status.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends copy_cron_statusFindUniqueOrThrowArgs>(args: SelectSubset<T, copy_cron_statusFindUniqueOrThrowArgs<ExtArgs>>): Prisma__copy_cron_statusClient<$Result.GetResult<Prisma.$copy_cron_statusPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Copy_cron_status that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_cron_statusFindFirstArgs} args - Arguments to find a Copy_cron_status
+     * @example
+     * // Get one Copy_cron_status
+     * const copy_cron_status = await prisma.copy_cron_status.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends copy_cron_statusFindFirstArgs>(args?: SelectSubset<T, copy_cron_statusFindFirstArgs<ExtArgs>>): Prisma__copy_cron_statusClient<$Result.GetResult<Prisma.$copy_cron_statusPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Copy_cron_status that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_cron_statusFindFirstOrThrowArgs} args - Arguments to find a Copy_cron_status
+     * @example
+     * // Get one Copy_cron_status
+     * const copy_cron_status = await prisma.copy_cron_status.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends copy_cron_statusFindFirstOrThrowArgs>(args?: SelectSubset<T, copy_cron_statusFindFirstOrThrowArgs<ExtArgs>>): Prisma__copy_cron_statusClient<$Result.GetResult<Prisma.$copy_cron_statusPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more Copy_cron_statuses that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_cron_statusFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Copy_cron_statuses
+     * const copy_cron_statuses = await prisma.copy_cron_status.findMany()
+     * 
+     * // Get first 10 Copy_cron_statuses
+     * const copy_cron_statuses = await prisma.copy_cron_status.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const copy_cron_statusWithIdOnly = await prisma.copy_cron_status.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends copy_cron_statusFindManyArgs>(args?: SelectSubset<T, copy_cron_statusFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$copy_cron_statusPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a Copy_cron_status.
+     * @param {copy_cron_statusCreateArgs} args - Arguments to create a Copy_cron_status.
+     * @example
+     * // Create one Copy_cron_status
+     * const Copy_cron_status = await prisma.copy_cron_status.create({
+     *   data: {
+     *     // ... data to create a Copy_cron_status
+     *   }
+     * })
+     * 
+     */
+    create<T extends copy_cron_statusCreateArgs>(args: SelectSubset<T, copy_cron_statusCreateArgs<ExtArgs>>): Prisma__copy_cron_statusClient<$Result.GetResult<Prisma.$copy_cron_statusPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many Copy_cron_statuses.
+     * @param {copy_cron_statusCreateManyArgs} args - Arguments to create many Copy_cron_statuses.
+     * @example
+     * // Create many Copy_cron_statuses
+     * const copy_cron_status = await prisma.copy_cron_status.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends copy_cron_statusCreateManyArgs>(args?: SelectSubset<T, copy_cron_statusCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a Copy_cron_status.
+     * @param {copy_cron_statusDeleteArgs} args - Arguments to delete one Copy_cron_status.
+     * @example
+     * // Delete one Copy_cron_status
+     * const Copy_cron_status = await prisma.copy_cron_status.delete({
+     *   where: {
+     *     // ... filter to delete one Copy_cron_status
+     *   }
+     * })
+     * 
+     */
+    delete<T extends copy_cron_statusDeleteArgs>(args: SelectSubset<T, copy_cron_statusDeleteArgs<ExtArgs>>): Prisma__copy_cron_statusClient<$Result.GetResult<Prisma.$copy_cron_statusPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one Copy_cron_status.
+     * @param {copy_cron_statusUpdateArgs} args - Arguments to update one Copy_cron_status.
+     * @example
+     * // Update one Copy_cron_status
+     * const copy_cron_status = await prisma.copy_cron_status.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends copy_cron_statusUpdateArgs>(args: SelectSubset<T, copy_cron_statusUpdateArgs<ExtArgs>>): Prisma__copy_cron_statusClient<$Result.GetResult<Prisma.$copy_cron_statusPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more Copy_cron_statuses.
+     * @param {copy_cron_statusDeleteManyArgs} args - Arguments to filter Copy_cron_statuses to delete.
+     * @example
+     * // Delete a few Copy_cron_statuses
+     * const { count } = await prisma.copy_cron_status.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends copy_cron_statusDeleteManyArgs>(args?: SelectSubset<T, copy_cron_statusDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Copy_cron_statuses.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_cron_statusUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Copy_cron_statuses
+     * const copy_cron_status = await prisma.copy_cron_status.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends copy_cron_statusUpdateManyArgs>(args: SelectSubset<T, copy_cron_statusUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one Copy_cron_status.
+     * @param {copy_cron_statusUpsertArgs} args - Arguments to update or create a Copy_cron_status.
+     * @example
+     * // Update or create a Copy_cron_status
+     * const copy_cron_status = await prisma.copy_cron_status.upsert({
+     *   create: {
+     *     // ... data to create a Copy_cron_status
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Copy_cron_status we want to update
+     *   }
+     * })
+     */
+    upsert<T extends copy_cron_statusUpsertArgs>(args: SelectSubset<T, copy_cron_statusUpsertArgs<ExtArgs>>): Prisma__copy_cron_statusClient<$Result.GetResult<Prisma.$copy_cron_statusPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of Copy_cron_statuses.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_cron_statusCountArgs} args - Arguments to filter Copy_cron_statuses to count.
+     * @example
+     * // Count the number of Copy_cron_statuses
+     * const count = await prisma.copy_cron_status.count({
+     *   where: {
+     *     // ... the filter for the Copy_cron_statuses we want to count
+     *   }
+     * })
+    **/
+    count<T extends copy_cron_statusCountArgs>(
+      args?: Subset<T, copy_cron_statusCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], Copy_cron_statusCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Copy_cron_status.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {Copy_cron_statusAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends Copy_cron_statusAggregateArgs>(args: Subset<T, Copy_cron_statusAggregateArgs>): Prisma.PrismaPromise<GetCopy_cron_statusAggregateType<T>>
+
+    /**
+     * Group by Copy_cron_status.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_cron_statusGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends copy_cron_statusGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: copy_cron_statusGroupByArgs['orderBy'] }
+        : { orderBy?: copy_cron_statusGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, copy_cron_statusGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetCopy_cron_statusGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the copy_cron_status model
+   */
+  readonly fields: copy_cron_statusFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for copy_cron_status.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__copy_cron_statusClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the copy_cron_status model
+   */
+  interface copy_cron_statusFieldRefs {
+    readonly id: FieldRef<"copy_cron_status", 'BigInt'>
+    readonly cron_name: FieldRef<"copy_cron_status", 'String'>
+    readonly cron_date: FieldRef<"copy_cron_status", 'DateTime'>
+    readonly updated_at: FieldRef<"copy_cron_status", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * copy_cron_status findUnique
+   */
+  export type copy_cron_statusFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_cron_status
+     */
+    select?: copy_cron_statusSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_cron_status
+     */
+    omit?: copy_cron_statusOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_cron_status to fetch.
+     */
+    where: copy_cron_statusWhereUniqueInput
+  }
+
+  /**
+   * copy_cron_status findUniqueOrThrow
+   */
+  export type copy_cron_statusFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_cron_status
+     */
+    select?: copy_cron_statusSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_cron_status
+     */
+    omit?: copy_cron_statusOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_cron_status to fetch.
+     */
+    where: copy_cron_statusWhereUniqueInput
+  }
+
+  /**
+   * copy_cron_status findFirst
+   */
+  export type copy_cron_statusFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_cron_status
+     */
+    select?: copy_cron_statusSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_cron_status
+     */
+    omit?: copy_cron_statusOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_cron_status to fetch.
+     */
+    where?: copy_cron_statusWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of copy_cron_statuses to fetch.
+     */
+    orderBy?: copy_cron_statusOrderByWithRelationInput | copy_cron_statusOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for copy_cron_statuses.
+     */
+    cursor?: copy_cron_statusWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` copy_cron_statuses from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` copy_cron_statuses.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of copy_cron_statuses.
+     */
+    distinct?: Copy_cron_statusScalarFieldEnum | Copy_cron_statusScalarFieldEnum[]
+  }
+
+  /**
+   * copy_cron_status findFirstOrThrow
+   */
+  export type copy_cron_statusFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_cron_status
+     */
+    select?: copy_cron_statusSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_cron_status
+     */
+    omit?: copy_cron_statusOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_cron_status to fetch.
+     */
+    where?: copy_cron_statusWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of copy_cron_statuses to fetch.
+     */
+    orderBy?: copy_cron_statusOrderByWithRelationInput | copy_cron_statusOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for copy_cron_statuses.
+     */
+    cursor?: copy_cron_statusWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` copy_cron_statuses from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` copy_cron_statuses.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of copy_cron_statuses.
+     */
+    distinct?: Copy_cron_statusScalarFieldEnum | Copy_cron_statusScalarFieldEnum[]
+  }
+
+  /**
+   * copy_cron_status findMany
+   */
+  export type copy_cron_statusFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_cron_status
+     */
+    select?: copy_cron_statusSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_cron_status
+     */
+    omit?: copy_cron_statusOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_cron_statuses to fetch.
+     */
+    where?: copy_cron_statusWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of copy_cron_statuses to fetch.
+     */
+    orderBy?: copy_cron_statusOrderByWithRelationInput | copy_cron_statusOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing copy_cron_statuses.
+     */
+    cursor?: copy_cron_statusWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` copy_cron_statuses from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` copy_cron_statuses.
+     */
+    skip?: number
+    distinct?: Copy_cron_statusScalarFieldEnum | Copy_cron_statusScalarFieldEnum[]
+  }
+
+  /**
+   * copy_cron_status create
+   */
+  export type copy_cron_statusCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_cron_status
+     */
+    select?: copy_cron_statusSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_cron_status
+     */
+    omit?: copy_cron_statusOmit<ExtArgs> | null
+    /**
+     * The data needed to create a copy_cron_status.
+     */
+    data?: XOR<copy_cron_statusCreateInput, copy_cron_statusUncheckedCreateInput>
+  }
+
+  /**
+   * copy_cron_status createMany
+   */
+  export type copy_cron_statusCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many copy_cron_statuses.
+     */
+    data: copy_cron_statusCreateManyInput | copy_cron_statusCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * copy_cron_status update
+   */
+  export type copy_cron_statusUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_cron_status
+     */
+    select?: copy_cron_statusSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_cron_status
+     */
+    omit?: copy_cron_statusOmit<ExtArgs> | null
+    /**
+     * The data needed to update a copy_cron_status.
+     */
+    data: XOR<copy_cron_statusUpdateInput, copy_cron_statusUncheckedUpdateInput>
+    /**
+     * Choose, which copy_cron_status to update.
+     */
+    where: copy_cron_statusWhereUniqueInput
+  }
+
+  /**
+   * copy_cron_status updateMany
+   */
+  export type copy_cron_statusUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update copy_cron_statuses.
+     */
+    data: XOR<copy_cron_statusUpdateManyMutationInput, copy_cron_statusUncheckedUpdateManyInput>
+    /**
+     * Filter which copy_cron_statuses to update
+     */
+    where?: copy_cron_statusWhereInput
+    /**
+     * Limit how many copy_cron_statuses to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * copy_cron_status upsert
+   */
+  export type copy_cron_statusUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_cron_status
+     */
+    select?: copy_cron_statusSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_cron_status
+     */
+    omit?: copy_cron_statusOmit<ExtArgs> | null
+    /**
+     * The filter to search for the copy_cron_status to update in case it exists.
+     */
+    where: copy_cron_statusWhereUniqueInput
+    /**
+     * In case the copy_cron_status found by the `where` argument doesn't exist, create a new copy_cron_status with this data.
+     */
+    create: XOR<copy_cron_statusCreateInput, copy_cron_statusUncheckedCreateInput>
+    /**
+     * In case the copy_cron_status was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<copy_cron_statusUpdateInput, copy_cron_statusUncheckedUpdateInput>
+  }
+
+  /**
+   * copy_cron_status delete
+   */
+  export type copy_cron_statusDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_cron_status
+     */
+    select?: copy_cron_statusSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_cron_status
+     */
+    omit?: copy_cron_statusOmit<ExtArgs> | null
+    /**
+     * Filter which copy_cron_status to delete.
+     */
+    where: copy_cron_statusWhereUniqueInput
+  }
+
+  /**
+   * copy_cron_status deleteMany
+   */
+  export type copy_cron_statusDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which copy_cron_statuses to delete
+     */
+    where?: copy_cron_statusWhereInput
+    /**
+     * Limit how many copy_cron_statuses to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * copy_cron_status without action
+   */
+  export type copy_cron_statusDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_cron_status
+     */
+    select?: copy_cron_statusSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_cron_status
+     */
+    omit?: copy_cron_statusOmit<ExtArgs> | null
+  }
+
+
+  /**
+   * Model copy_daily_issuer_cron_table
+   */
+
+  export type AggregateCopy_daily_issuer_cron_table = {
+    _count: Copy_daily_issuer_cron_tableCountAggregateOutputType | null
+    _avg: Copy_daily_issuer_cron_tableAvgAggregateOutputType | null
+    _sum: Copy_daily_issuer_cron_tableSumAggregateOutputType | null
+    _min: Copy_daily_issuer_cron_tableMinAggregateOutputType | null
+    _max: Copy_daily_issuer_cron_tableMaxAggregateOutputType | null
+  }
+
+  export type Copy_daily_issuer_cron_tableAvgAggregateOutputType = {
+    id: number | null
+    status: number | null
+  }
+
+  export type Copy_daily_issuer_cron_tableSumAggregateOutputType = {
+    id: bigint | null
+    status: number | null
+  }
+
+  export type Copy_daily_issuer_cron_tableMinAggregateOutputType = {
+    id: bigint | null
+    isin: string | null
+    allotment_date: Date | null
+    status: number | null
+    created_at: Date | null
+    updated_at: Date | null
+  }
+
+  export type Copy_daily_issuer_cron_tableMaxAggregateOutputType = {
+    id: bigint | null
+    isin: string | null
+    allotment_date: Date | null
+    status: number | null
+    created_at: Date | null
+    updated_at: Date | null
+  }
+
+  export type Copy_daily_issuer_cron_tableCountAggregateOutputType = {
+    id: number
+    isin: number
+    allotment_date: number
+    status: number
+    created_at: number
+    updated_at: number
+    _all: number
+  }
+
+
+  export type Copy_daily_issuer_cron_tableAvgAggregateInputType = {
+    id?: true
+    status?: true
+  }
+
+  export type Copy_daily_issuer_cron_tableSumAggregateInputType = {
+    id?: true
+    status?: true
+  }
+
+  export type Copy_daily_issuer_cron_tableMinAggregateInputType = {
+    id?: true
+    isin?: true
+    allotment_date?: true
+    status?: true
+    created_at?: true
+    updated_at?: true
+  }
+
+  export type Copy_daily_issuer_cron_tableMaxAggregateInputType = {
+    id?: true
+    isin?: true
+    allotment_date?: true
+    status?: true
+    created_at?: true
+    updated_at?: true
+  }
+
+  export type Copy_daily_issuer_cron_tableCountAggregateInputType = {
+    id?: true
+    isin?: true
+    allotment_date?: true
+    status?: true
+    created_at?: true
+    updated_at?: true
+    _all?: true
+  }
+
+  export type Copy_daily_issuer_cron_tableAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which copy_daily_issuer_cron_table to aggregate.
+     */
+    where?: copy_daily_issuer_cron_tableWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of copy_daily_issuer_cron_tables to fetch.
+     */
+    orderBy?: copy_daily_issuer_cron_tableOrderByWithRelationInput | copy_daily_issuer_cron_tableOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: copy_daily_issuer_cron_tableWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` copy_daily_issuer_cron_tables from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` copy_daily_issuer_cron_tables.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned copy_daily_issuer_cron_tables
+    **/
+    _count?: true | Copy_daily_issuer_cron_tableCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: Copy_daily_issuer_cron_tableAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: Copy_daily_issuer_cron_tableSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: Copy_daily_issuer_cron_tableMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: Copy_daily_issuer_cron_tableMaxAggregateInputType
+  }
+
+  export type GetCopy_daily_issuer_cron_tableAggregateType<T extends Copy_daily_issuer_cron_tableAggregateArgs> = {
+        [P in keyof T & keyof AggregateCopy_daily_issuer_cron_table]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateCopy_daily_issuer_cron_table[P]>
+      : GetScalarType<T[P], AggregateCopy_daily_issuer_cron_table[P]>
+  }
+
+
+
+
+  export type copy_daily_issuer_cron_tableGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: copy_daily_issuer_cron_tableWhereInput
+    orderBy?: copy_daily_issuer_cron_tableOrderByWithAggregationInput | copy_daily_issuer_cron_tableOrderByWithAggregationInput[]
+    by: Copy_daily_issuer_cron_tableScalarFieldEnum[] | Copy_daily_issuer_cron_tableScalarFieldEnum
+    having?: copy_daily_issuer_cron_tableScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: Copy_daily_issuer_cron_tableCountAggregateInputType | true
+    _avg?: Copy_daily_issuer_cron_tableAvgAggregateInputType
+    _sum?: Copy_daily_issuer_cron_tableSumAggregateInputType
+    _min?: Copy_daily_issuer_cron_tableMinAggregateInputType
+    _max?: Copy_daily_issuer_cron_tableMaxAggregateInputType
+  }
+
+  export type Copy_daily_issuer_cron_tableGroupByOutputType = {
+    id: bigint
+    isin: string | null
+    allotment_date: Date | null
+    status: number
+    created_at: Date | null
+    updated_at: Date | null
+    _count: Copy_daily_issuer_cron_tableCountAggregateOutputType | null
+    _avg: Copy_daily_issuer_cron_tableAvgAggregateOutputType | null
+    _sum: Copy_daily_issuer_cron_tableSumAggregateOutputType | null
+    _min: Copy_daily_issuer_cron_tableMinAggregateOutputType | null
+    _max: Copy_daily_issuer_cron_tableMaxAggregateOutputType | null
+  }
+
+  type GetCopy_daily_issuer_cron_tableGroupByPayload<T extends copy_daily_issuer_cron_tableGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<Copy_daily_issuer_cron_tableGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof Copy_daily_issuer_cron_tableGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], Copy_daily_issuer_cron_tableGroupByOutputType[P]>
+            : GetScalarType<T[P], Copy_daily_issuer_cron_tableGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type copy_daily_issuer_cron_tableSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    isin?: boolean
+    allotment_date?: boolean
+    status?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+  }, ExtArgs["result"]["copy_daily_issuer_cron_table"]>
+
+
+
+  export type copy_daily_issuer_cron_tableSelectScalar = {
+    id?: boolean
+    isin?: boolean
+    allotment_date?: boolean
+    status?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+  }
+
+  export type copy_daily_issuer_cron_tableOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "isin" | "allotment_date" | "status" | "created_at" | "updated_at", ExtArgs["result"]["copy_daily_issuer_cron_table"]>
+
+  export type $copy_daily_issuer_cron_tablePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "copy_daily_issuer_cron_table"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: bigint
+      isin: string | null
+      allotment_date: Date | null
+      status: number
+      created_at: Date | null
+      updated_at: Date | null
+    }, ExtArgs["result"]["copy_daily_issuer_cron_table"]>
+    composites: {}
+  }
+
+  type copy_daily_issuer_cron_tableGetPayload<S extends boolean | null | undefined | copy_daily_issuer_cron_tableDefaultArgs> = $Result.GetResult<Prisma.$copy_daily_issuer_cron_tablePayload, S>
+
+  type copy_daily_issuer_cron_tableCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<copy_daily_issuer_cron_tableFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: Copy_daily_issuer_cron_tableCountAggregateInputType | true
+    }
+
+  export interface copy_daily_issuer_cron_tableDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['copy_daily_issuer_cron_table'], meta: { name: 'copy_daily_issuer_cron_table' } }
+    /**
+     * Find zero or one Copy_daily_issuer_cron_table that matches the filter.
+     * @param {copy_daily_issuer_cron_tableFindUniqueArgs} args - Arguments to find a Copy_daily_issuer_cron_table
+     * @example
+     * // Get one Copy_daily_issuer_cron_table
+     * const copy_daily_issuer_cron_table = await prisma.copy_daily_issuer_cron_table.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends copy_daily_issuer_cron_tableFindUniqueArgs>(args: SelectSubset<T, copy_daily_issuer_cron_tableFindUniqueArgs<ExtArgs>>): Prisma__copy_daily_issuer_cron_tableClient<$Result.GetResult<Prisma.$copy_daily_issuer_cron_tablePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one Copy_daily_issuer_cron_table that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {copy_daily_issuer_cron_tableFindUniqueOrThrowArgs} args - Arguments to find a Copy_daily_issuer_cron_table
+     * @example
+     * // Get one Copy_daily_issuer_cron_table
+     * const copy_daily_issuer_cron_table = await prisma.copy_daily_issuer_cron_table.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends copy_daily_issuer_cron_tableFindUniqueOrThrowArgs>(args: SelectSubset<T, copy_daily_issuer_cron_tableFindUniqueOrThrowArgs<ExtArgs>>): Prisma__copy_daily_issuer_cron_tableClient<$Result.GetResult<Prisma.$copy_daily_issuer_cron_tablePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Copy_daily_issuer_cron_table that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_daily_issuer_cron_tableFindFirstArgs} args - Arguments to find a Copy_daily_issuer_cron_table
+     * @example
+     * // Get one Copy_daily_issuer_cron_table
+     * const copy_daily_issuer_cron_table = await prisma.copy_daily_issuer_cron_table.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends copy_daily_issuer_cron_tableFindFirstArgs>(args?: SelectSubset<T, copy_daily_issuer_cron_tableFindFirstArgs<ExtArgs>>): Prisma__copy_daily_issuer_cron_tableClient<$Result.GetResult<Prisma.$copy_daily_issuer_cron_tablePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Copy_daily_issuer_cron_table that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_daily_issuer_cron_tableFindFirstOrThrowArgs} args - Arguments to find a Copy_daily_issuer_cron_table
+     * @example
+     * // Get one Copy_daily_issuer_cron_table
+     * const copy_daily_issuer_cron_table = await prisma.copy_daily_issuer_cron_table.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends copy_daily_issuer_cron_tableFindFirstOrThrowArgs>(args?: SelectSubset<T, copy_daily_issuer_cron_tableFindFirstOrThrowArgs<ExtArgs>>): Prisma__copy_daily_issuer_cron_tableClient<$Result.GetResult<Prisma.$copy_daily_issuer_cron_tablePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more Copy_daily_issuer_cron_tables that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_daily_issuer_cron_tableFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Copy_daily_issuer_cron_tables
+     * const copy_daily_issuer_cron_tables = await prisma.copy_daily_issuer_cron_table.findMany()
+     * 
+     * // Get first 10 Copy_daily_issuer_cron_tables
+     * const copy_daily_issuer_cron_tables = await prisma.copy_daily_issuer_cron_table.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const copy_daily_issuer_cron_tableWithIdOnly = await prisma.copy_daily_issuer_cron_table.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends copy_daily_issuer_cron_tableFindManyArgs>(args?: SelectSubset<T, copy_daily_issuer_cron_tableFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$copy_daily_issuer_cron_tablePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a Copy_daily_issuer_cron_table.
+     * @param {copy_daily_issuer_cron_tableCreateArgs} args - Arguments to create a Copy_daily_issuer_cron_table.
+     * @example
+     * // Create one Copy_daily_issuer_cron_table
+     * const Copy_daily_issuer_cron_table = await prisma.copy_daily_issuer_cron_table.create({
+     *   data: {
+     *     // ... data to create a Copy_daily_issuer_cron_table
+     *   }
+     * })
+     * 
+     */
+    create<T extends copy_daily_issuer_cron_tableCreateArgs>(args: SelectSubset<T, copy_daily_issuer_cron_tableCreateArgs<ExtArgs>>): Prisma__copy_daily_issuer_cron_tableClient<$Result.GetResult<Prisma.$copy_daily_issuer_cron_tablePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many Copy_daily_issuer_cron_tables.
+     * @param {copy_daily_issuer_cron_tableCreateManyArgs} args - Arguments to create many Copy_daily_issuer_cron_tables.
+     * @example
+     * // Create many Copy_daily_issuer_cron_tables
+     * const copy_daily_issuer_cron_table = await prisma.copy_daily_issuer_cron_table.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends copy_daily_issuer_cron_tableCreateManyArgs>(args?: SelectSubset<T, copy_daily_issuer_cron_tableCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a Copy_daily_issuer_cron_table.
+     * @param {copy_daily_issuer_cron_tableDeleteArgs} args - Arguments to delete one Copy_daily_issuer_cron_table.
+     * @example
+     * // Delete one Copy_daily_issuer_cron_table
+     * const Copy_daily_issuer_cron_table = await prisma.copy_daily_issuer_cron_table.delete({
+     *   where: {
+     *     // ... filter to delete one Copy_daily_issuer_cron_table
+     *   }
+     * })
+     * 
+     */
+    delete<T extends copy_daily_issuer_cron_tableDeleteArgs>(args: SelectSubset<T, copy_daily_issuer_cron_tableDeleteArgs<ExtArgs>>): Prisma__copy_daily_issuer_cron_tableClient<$Result.GetResult<Prisma.$copy_daily_issuer_cron_tablePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one Copy_daily_issuer_cron_table.
+     * @param {copy_daily_issuer_cron_tableUpdateArgs} args - Arguments to update one Copy_daily_issuer_cron_table.
+     * @example
+     * // Update one Copy_daily_issuer_cron_table
+     * const copy_daily_issuer_cron_table = await prisma.copy_daily_issuer_cron_table.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends copy_daily_issuer_cron_tableUpdateArgs>(args: SelectSubset<T, copy_daily_issuer_cron_tableUpdateArgs<ExtArgs>>): Prisma__copy_daily_issuer_cron_tableClient<$Result.GetResult<Prisma.$copy_daily_issuer_cron_tablePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more Copy_daily_issuer_cron_tables.
+     * @param {copy_daily_issuer_cron_tableDeleteManyArgs} args - Arguments to filter Copy_daily_issuer_cron_tables to delete.
+     * @example
+     * // Delete a few Copy_daily_issuer_cron_tables
+     * const { count } = await prisma.copy_daily_issuer_cron_table.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends copy_daily_issuer_cron_tableDeleteManyArgs>(args?: SelectSubset<T, copy_daily_issuer_cron_tableDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Copy_daily_issuer_cron_tables.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_daily_issuer_cron_tableUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Copy_daily_issuer_cron_tables
+     * const copy_daily_issuer_cron_table = await prisma.copy_daily_issuer_cron_table.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends copy_daily_issuer_cron_tableUpdateManyArgs>(args: SelectSubset<T, copy_daily_issuer_cron_tableUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one Copy_daily_issuer_cron_table.
+     * @param {copy_daily_issuer_cron_tableUpsertArgs} args - Arguments to update or create a Copy_daily_issuer_cron_table.
+     * @example
+     * // Update or create a Copy_daily_issuer_cron_table
+     * const copy_daily_issuer_cron_table = await prisma.copy_daily_issuer_cron_table.upsert({
+     *   create: {
+     *     // ... data to create a Copy_daily_issuer_cron_table
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Copy_daily_issuer_cron_table we want to update
+     *   }
+     * })
+     */
+    upsert<T extends copy_daily_issuer_cron_tableUpsertArgs>(args: SelectSubset<T, copy_daily_issuer_cron_tableUpsertArgs<ExtArgs>>): Prisma__copy_daily_issuer_cron_tableClient<$Result.GetResult<Prisma.$copy_daily_issuer_cron_tablePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of Copy_daily_issuer_cron_tables.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_daily_issuer_cron_tableCountArgs} args - Arguments to filter Copy_daily_issuer_cron_tables to count.
+     * @example
+     * // Count the number of Copy_daily_issuer_cron_tables
+     * const count = await prisma.copy_daily_issuer_cron_table.count({
+     *   where: {
+     *     // ... the filter for the Copy_daily_issuer_cron_tables we want to count
+     *   }
+     * })
+    **/
+    count<T extends copy_daily_issuer_cron_tableCountArgs>(
+      args?: Subset<T, copy_daily_issuer_cron_tableCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], Copy_daily_issuer_cron_tableCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Copy_daily_issuer_cron_table.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {Copy_daily_issuer_cron_tableAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends Copy_daily_issuer_cron_tableAggregateArgs>(args: Subset<T, Copy_daily_issuer_cron_tableAggregateArgs>): Prisma.PrismaPromise<GetCopy_daily_issuer_cron_tableAggregateType<T>>
+
+    /**
+     * Group by Copy_daily_issuer_cron_table.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_daily_issuer_cron_tableGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends copy_daily_issuer_cron_tableGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: copy_daily_issuer_cron_tableGroupByArgs['orderBy'] }
+        : { orderBy?: copy_daily_issuer_cron_tableGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, copy_daily_issuer_cron_tableGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetCopy_daily_issuer_cron_tableGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the copy_daily_issuer_cron_table model
+   */
+  readonly fields: copy_daily_issuer_cron_tableFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for copy_daily_issuer_cron_table.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__copy_daily_issuer_cron_tableClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the copy_daily_issuer_cron_table model
+   */
+  interface copy_daily_issuer_cron_tableFieldRefs {
+    readonly id: FieldRef<"copy_daily_issuer_cron_table", 'BigInt'>
+    readonly isin: FieldRef<"copy_daily_issuer_cron_table", 'String'>
+    readonly allotment_date: FieldRef<"copy_daily_issuer_cron_table", 'DateTime'>
+    readonly status: FieldRef<"copy_daily_issuer_cron_table", 'Int'>
+    readonly created_at: FieldRef<"copy_daily_issuer_cron_table", 'DateTime'>
+    readonly updated_at: FieldRef<"copy_daily_issuer_cron_table", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * copy_daily_issuer_cron_table findUnique
+   */
+  export type copy_daily_issuer_cron_tableFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_daily_issuer_cron_table
+     */
+    select?: copy_daily_issuer_cron_tableSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_daily_issuer_cron_table
+     */
+    omit?: copy_daily_issuer_cron_tableOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_daily_issuer_cron_table to fetch.
+     */
+    where: copy_daily_issuer_cron_tableWhereUniqueInput
+  }
+
+  /**
+   * copy_daily_issuer_cron_table findUniqueOrThrow
+   */
+  export type copy_daily_issuer_cron_tableFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_daily_issuer_cron_table
+     */
+    select?: copy_daily_issuer_cron_tableSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_daily_issuer_cron_table
+     */
+    omit?: copy_daily_issuer_cron_tableOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_daily_issuer_cron_table to fetch.
+     */
+    where: copy_daily_issuer_cron_tableWhereUniqueInput
+  }
+
+  /**
+   * copy_daily_issuer_cron_table findFirst
+   */
+  export type copy_daily_issuer_cron_tableFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_daily_issuer_cron_table
+     */
+    select?: copy_daily_issuer_cron_tableSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_daily_issuer_cron_table
+     */
+    omit?: copy_daily_issuer_cron_tableOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_daily_issuer_cron_table to fetch.
+     */
+    where?: copy_daily_issuer_cron_tableWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of copy_daily_issuer_cron_tables to fetch.
+     */
+    orderBy?: copy_daily_issuer_cron_tableOrderByWithRelationInput | copy_daily_issuer_cron_tableOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for copy_daily_issuer_cron_tables.
+     */
+    cursor?: copy_daily_issuer_cron_tableWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` copy_daily_issuer_cron_tables from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` copy_daily_issuer_cron_tables.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of copy_daily_issuer_cron_tables.
+     */
+    distinct?: Copy_daily_issuer_cron_tableScalarFieldEnum | Copy_daily_issuer_cron_tableScalarFieldEnum[]
+  }
+
+  /**
+   * copy_daily_issuer_cron_table findFirstOrThrow
+   */
+  export type copy_daily_issuer_cron_tableFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_daily_issuer_cron_table
+     */
+    select?: copy_daily_issuer_cron_tableSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_daily_issuer_cron_table
+     */
+    omit?: copy_daily_issuer_cron_tableOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_daily_issuer_cron_table to fetch.
+     */
+    where?: copy_daily_issuer_cron_tableWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of copy_daily_issuer_cron_tables to fetch.
+     */
+    orderBy?: copy_daily_issuer_cron_tableOrderByWithRelationInput | copy_daily_issuer_cron_tableOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for copy_daily_issuer_cron_tables.
+     */
+    cursor?: copy_daily_issuer_cron_tableWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` copy_daily_issuer_cron_tables from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` copy_daily_issuer_cron_tables.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of copy_daily_issuer_cron_tables.
+     */
+    distinct?: Copy_daily_issuer_cron_tableScalarFieldEnum | Copy_daily_issuer_cron_tableScalarFieldEnum[]
+  }
+
+  /**
+   * copy_daily_issuer_cron_table findMany
+   */
+  export type copy_daily_issuer_cron_tableFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_daily_issuer_cron_table
+     */
+    select?: copy_daily_issuer_cron_tableSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_daily_issuer_cron_table
+     */
+    omit?: copy_daily_issuer_cron_tableOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_daily_issuer_cron_tables to fetch.
+     */
+    where?: copy_daily_issuer_cron_tableWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of copy_daily_issuer_cron_tables to fetch.
+     */
+    orderBy?: copy_daily_issuer_cron_tableOrderByWithRelationInput | copy_daily_issuer_cron_tableOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing copy_daily_issuer_cron_tables.
+     */
+    cursor?: copy_daily_issuer_cron_tableWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` copy_daily_issuer_cron_tables from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` copy_daily_issuer_cron_tables.
+     */
+    skip?: number
+    distinct?: Copy_daily_issuer_cron_tableScalarFieldEnum | Copy_daily_issuer_cron_tableScalarFieldEnum[]
+  }
+
+  /**
+   * copy_daily_issuer_cron_table create
+   */
+  export type copy_daily_issuer_cron_tableCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_daily_issuer_cron_table
+     */
+    select?: copy_daily_issuer_cron_tableSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_daily_issuer_cron_table
+     */
+    omit?: copy_daily_issuer_cron_tableOmit<ExtArgs> | null
+    /**
+     * The data needed to create a copy_daily_issuer_cron_table.
+     */
+    data?: XOR<copy_daily_issuer_cron_tableCreateInput, copy_daily_issuer_cron_tableUncheckedCreateInput>
+  }
+
+  /**
+   * copy_daily_issuer_cron_table createMany
+   */
+  export type copy_daily_issuer_cron_tableCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many copy_daily_issuer_cron_tables.
+     */
+    data: copy_daily_issuer_cron_tableCreateManyInput | copy_daily_issuer_cron_tableCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * copy_daily_issuer_cron_table update
+   */
+  export type copy_daily_issuer_cron_tableUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_daily_issuer_cron_table
+     */
+    select?: copy_daily_issuer_cron_tableSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_daily_issuer_cron_table
+     */
+    omit?: copy_daily_issuer_cron_tableOmit<ExtArgs> | null
+    /**
+     * The data needed to update a copy_daily_issuer_cron_table.
+     */
+    data: XOR<copy_daily_issuer_cron_tableUpdateInput, copy_daily_issuer_cron_tableUncheckedUpdateInput>
+    /**
+     * Choose, which copy_daily_issuer_cron_table to update.
+     */
+    where: copy_daily_issuer_cron_tableWhereUniqueInput
+  }
+
+  /**
+   * copy_daily_issuer_cron_table updateMany
+   */
+  export type copy_daily_issuer_cron_tableUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update copy_daily_issuer_cron_tables.
+     */
+    data: XOR<copy_daily_issuer_cron_tableUpdateManyMutationInput, copy_daily_issuer_cron_tableUncheckedUpdateManyInput>
+    /**
+     * Filter which copy_daily_issuer_cron_tables to update
+     */
+    where?: copy_daily_issuer_cron_tableWhereInput
+    /**
+     * Limit how many copy_daily_issuer_cron_tables to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * copy_daily_issuer_cron_table upsert
+   */
+  export type copy_daily_issuer_cron_tableUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_daily_issuer_cron_table
+     */
+    select?: copy_daily_issuer_cron_tableSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_daily_issuer_cron_table
+     */
+    omit?: copy_daily_issuer_cron_tableOmit<ExtArgs> | null
+    /**
+     * The filter to search for the copy_daily_issuer_cron_table to update in case it exists.
+     */
+    where: copy_daily_issuer_cron_tableWhereUniqueInput
+    /**
+     * In case the copy_daily_issuer_cron_table found by the `where` argument doesn't exist, create a new copy_daily_issuer_cron_table with this data.
+     */
+    create: XOR<copy_daily_issuer_cron_tableCreateInput, copy_daily_issuer_cron_tableUncheckedCreateInput>
+    /**
+     * In case the copy_daily_issuer_cron_table was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<copy_daily_issuer_cron_tableUpdateInput, copy_daily_issuer_cron_tableUncheckedUpdateInput>
+  }
+
+  /**
+   * copy_daily_issuer_cron_table delete
+   */
+  export type copy_daily_issuer_cron_tableDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_daily_issuer_cron_table
+     */
+    select?: copy_daily_issuer_cron_tableSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_daily_issuer_cron_table
+     */
+    omit?: copy_daily_issuer_cron_tableOmit<ExtArgs> | null
+    /**
+     * Filter which copy_daily_issuer_cron_table to delete.
+     */
+    where: copy_daily_issuer_cron_tableWhereUniqueInput
+  }
+
+  /**
+   * copy_daily_issuer_cron_table deleteMany
+   */
+  export type copy_daily_issuer_cron_tableDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which copy_daily_issuer_cron_tables to delete
+     */
+    where?: copy_daily_issuer_cron_tableWhereInput
+    /**
+     * Limit how many copy_daily_issuer_cron_tables to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * copy_daily_issuer_cron_table without action
+   */
+  export type copy_daily_issuer_cron_tableDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_daily_issuer_cron_table
+     */
+    select?: copy_daily_issuer_cron_tableSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_daily_issuer_cron_table
+     */
+    omit?: copy_daily_issuer_cron_tableOmit<ExtArgs> | null
+  }
+
+
+  /**
+   * Model copy_failed_jobs
+   */
+
+  export type AggregateCopy_failed_jobs = {
+    _count: Copy_failed_jobsCountAggregateOutputType | null
+    _avg: Copy_failed_jobsAvgAggregateOutputType | null
+    _sum: Copy_failed_jobsSumAggregateOutputType | null
+    _min: Copy_failed_jobsMinAggregateOutputType | null
+    _max: Copy_failed_jobsMaxAggregateOutputType | null
+  }
+
+  export type Copy_failed_jobsAvgAggregateOutputType = {
+    id: number | null
+  }
+
+  export type Copy_failed_jobsSumAggregateOutputType = {
+    id: bigint | null
+  }
+
+  export type Copy_failed_jobsMinAggregateOutputType = {
+    id: bigint | null
+    uuid: string | null
+    connection: string | null
+    queue: string | null
+    payload: string | null
+    exception: string | null
+    failed_at: Date | null
+  }
+
+  export type Copy_failed_jobsMaxAggregateOutputType = {
+    id: bigint | null
+    uuid: string | null
+    connection: string | null
+    queue: string | null
+    payload: string | null
+    exception: string | null
+    failed_at: Date | null
+  }
+
+  export type Copy_failed_jobsCountAggregateOutputType = {
+    id: number
+    uuid: number
+    connection: number
+    queue: number
+    payload: number
+    exception: number
+    failed_at: number
+    _all: number
+  }
+
+
+  export type Copy_failed_jobsAvgAggregateInputType = {
+    id?: true
+  }
+
+  export type Copy_failed_jobsSumAggregateInputType = {
+    id?: true
+  }
+
+  export type Copy_failed_jobsMinAggregateInputType = {
+    id?: true
+    uuid?: true
+    connection?: true
+    queue?: true
+    payload?: true
+    exception?: true
+    failed_at?: true
+  }
+
+  export type Copy_failed_jobsMaxAggregateInputType = {
+    id?: true
+    uuid?: true
+    connection?: true
+    queue?: true
+    payload?: true
+    exception?: true
+    failed_at?: true
+  }
+
+  export type Copy_failed_jobsCountAggregateInputType = {
+    id?: true
+    uuid?: true
+    connection?: true
+    queue?: true
+    payload?: true
+    exception?: true
+    failed_at?: true
+    _all?: true
+  }
+
+  export type Copy_failed_jobsAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which copy_failed_jobs to aggregate.
+     */
+    where?: copy_failed_jobsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of copy_failed_jobs to fetch.
+     */
+    orderBy?: copy_failed_jobsOrderByWithRelationInput | copy_failed_jobsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: copy_failed_jobsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` copy_failed_jobs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` copy_failed_jobs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned copy_failed_jobs
+    **/
+    _count?: true | Copy_failed_jobsCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: Copy_failed_jobsAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: Copy_failed_jobsSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: Copy_failed_jobsMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: Copy_failed_jobsMaxAggregateInputType
+  }
+
+  export type GetCopy_failed_jobsAggregateType<T extends Copy_failed_jobsAggregateArgs> = {
+        [P in keyof T & keyof AggregateCopy_failed_jobs]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateCopy_failed_jobs[P]>
+      : GetScalarType<T[P], AggregateCopy_failed_jobs[P]>
+  }
+
+
+
+
+  export type copy_failed_jobsGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: copy_failed_jobsWhereInput
+    orderBy?: copy_failed_jobsOrderByWithAggregationInput | copy_failed_jobsOrderByWithAggregationInput[]
+    by: Copy_failed_jobsScalarFieldEnum[] | Copy_failed_jobsScalarFieldEnum
+    having?: copy_failed_jobsScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: Copy_failed_jobsCountAggregateInputType | true
+    _avg?: Copy_failed_jobsAvgAggregateInputType
+    _sum?: Copy_failed_jobsSumAggregateInputType
+    _min?: Copy_failed_jobsMinAggregateInputType
+    _max?: Copy_failed_jobsMaxAggregateInputType
+  }
+
+  export type Copy_failed_jobsGroupByOutputType = {
+    id: bigint
+    uuid: string
+    connection: string
+    queue: string
+    payload: string
+    exception: string
+    failed_at: Date
+    _count: Copy_failed_jobsCountAggregateOutputType | null
+    _avg: Copy_failed_jobsAvgAggregateOutputType | null
+    _sum: Copy_failed_jobsSumAggregateOutputType | null
+    _min: Copy_failed_jobsMinAggregateOutputType | null
+    _max: Copy_failed_jobsMaxAggregateOutputType | null
+  }
+
+  type GetCopy_failed_jobsGroupByPayload<T extends copy_failed_jobsGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<Copy_failed_jobsGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof Copy_failed_jobsGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], Copy_failed_jobsGroupByOutputType[P]>
+            : GetScalarType<T[P], Copy_failed_jobsGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type copy_failed_jobsSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    uuid?: boolean
+    connection?: boolean
+    queue?: boolean
+    payload?: boolean
+    exception?: boolean
+    failed_at?: boolean
+  }, ExtArgs["result"]["copy_failed_jobs"]>
+
+
+
+  export type copy_failed_jobsSelectScalar = {
+    id?: boolean
+    uuid?: boolean
+    connection?: boolean
+    queue?: boolean
+    payload?: boolean
+    exception?: boolean
+    failed_at?: boolean
+  }
+
+  export type copy_failed_jobsOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "uuid" | "connection" | "queue" | "payload" | "exception" | "failed_at", ExtArgs["result"]["copy_failed_jobs"]>
+
+  export type $copy_failed_jobsPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "copy_failed_jobs"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: bigint
+      uuid: string
+      connection: string
+      queue: string
+      payload: string
+      exception: string
+      failed_at: Date
+    }, ExtArgs["result"]["copy_failed_jobs"]>
+    composites: {}
+  }
+
+  type copy_failed_jobsGetPayload<S extends boolean | null | undefined | copy_failed_jobsDefaultArgs> = $Result.GetResult<Prisma.$copy_failed_jobsPayload, S>
+
+  type copy_failed_jobsCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<copy_failed_jobsFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: Copy_failed_jobsCountAggregateInputType | true
+    }
+
+  export interface copy_failed_jobsDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['copy_failed_jobs'], meta: { name: 'copy_failed_jobs' } }
+    /**
+     * Find zero or one Copy_failed_jobs that matches the filter.
+     * @param {copy_failed_jobsFindUniqueArgs} args - Arguments to find a Copy_failed_jobs
+     * @example
+     * // Get one Copy_failed_jobs
+     * const copy_failed_jobs = await prisma.copy_failed_jobs.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends copy_failed_jobsFindUniqueArgs>(args: SelectSubset<T, copy_failed_jobsFindUniqueArgs<ExtArgs>>): Prisma__copy_failed_jobsClient<$Result.GetResult<Prisma.$copy_failed_jobsPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one Copy_failed_jobs that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {copy_failed_jobsFindUniqueOrThrowArgs} args - Arguments to find a Copy_failed_jobs
+     * @example
+     * // Get one Copy_failed_jobs
+     * const copy_failed_jobs = await prisma.copy_failed_jobs.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends copy_failed_jobsFindUniqueOrThrowArgs>(args: SelectSubset<T, copy_failed_jobsFindUniqueOrThrowArgs<ExtArgs>>): Prisma__copy_failed_jobsClient<$Result.GetResult<Prisma.$copy_failed_jobsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Copy_failed_jobs that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_failed_jobsFindFirstArgs} args - Arguments to find a Copy_failed_jobs
+     * @example
+     * // Get one Copy_failed_jobs
+     * const copy_failed_jobs = await prisma.copy_failed_jobs.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends copy_failed_jobsFindFirstArgs>(args?: SelectSubset<T, copy_failed_jobsFindFirstArgs<ExtArgs>>): Prisma__copy_failed_jobsClient<$Result.GetResult<Prisma.$copy_failed_jobsPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Copy_failed_jobs that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_failed_jobsFindFirstOrThrowArgs} args - Arguments to find a Copy_failed_jobs
+     * @example
+     * // Get one Copy_failed_jobs
+     * const copy_failed_jobs = await prisma.copy_failed_jobs.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends copy_failed_jobsFindFirstOrThrowArgs>(args?: SelectSubset<T, copy_failed_jobsFindFirstOrThrowArgs<ExtArgs>>): Prisma__copy_failed_jobsClient<$Result.GetResult<Prisma.$copy_failed_jobsPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more Copy_failed_jobs that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_failed_jobsFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Copy_failed_jobs
+     * const copy_failed_jobs = await prisma.copy_failed_jobs.findMany()
+     * 
+     * // Get first 10 Copy_failed_jobs
+     * const copy_failed_jobs = await prisma.copy_failed_jobs.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const copy_failed_jobsWithIdOnly = await prisma.copy_failed_jobs.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends copy_failed_jobsFindManyArgs>(args?: SelectSubset<T, copy_failed_jobsFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$copy_failed_jobsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a Copy_failed_jobs.
+     * @param {copy_failed_jobsCreateArgs} args - Arguments to create a Copy_failed_jobs.
+     * @example
+     * // Create one Copy_failed_jobs
+     * const Copy_failed_jobs = await prisma.copy_failed_jobs.create({
+     *   data: {
+     *     // ... data to create a Copy_failed_jobs
+     *   }
+     * })
+     * 
+     */
+    create<T extends copy_failed_jobsCreateArgs>(args: SelectSubset<T, copy_failed_jobsCreateArgs<ExtArgs>>): Prisma__copy_failed_jobsClient<$Result.GetResult<Prisma.$copy_failed_jobsPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many Copy_failed_jobs.
+     * @param {copy_failed_jobsCreateManyArgs} args - Arguments to create many Copy_failed_jobs.
+     * @example
+     * // Create many Copy_failed_jobs
+     * const copy_failed_jobs = await prisma.copy_failed_jobs.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends copy_failed_jobsCreateManyArgs>(args?: SelectSubset<T, copy_failed_jobsCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a Copy_failed_jobs.
+     * @param {copy_failed_jobsDeleteArgs} args - Arguments to delete one Copy_failed_jobs.
+     * @example
+     * // Delete one Copy_failed_jobs
+     * const Copy_failed_jobs = await prisma.copy_failed_jobs.delete({
+     *   where: {
+     *     // ... filter to delete one Copy_failed_jobs
+     *   }
+     * })
+     * 
+     */
+    delete<T extends copy_failed_jobsDeleteArgs>(args: SelectSubset<T, copy_failed_jobsDeleteArgs<ExtArgs>>): Prisma__copy_failed_jobsClient<$Result.GetResult<Prisma.$copy_failed_jobsPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one Copy_failed_jobs.
+     * @param {copy_failed_jobsUpdateArgs} args - Arguments to update one Copy_failed_jobs.
+     * @example
+     * // Update one Copy_failed_jobs
+     * const copy_failed_jobs = await prisma.copy_failed_jobs.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends copy_failed_jobsUpdateArgs>(args: SelectSubset<T, copy_failed_jobsUpdateArgs<ExtArgs>>): Prisma__copy_failed_jobsClient<$Result.GetResult<Prisma.$copy_failed_jobsPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more Copy_failed_jobs.
+     * @param {copy_failed_jobsDeleteManyArgs} args - Arguments to filter Copy_failed_jobs to delete.
+     * @example
+     * // Delete a few Copy_failed_jobs
+     * const { count } = await prisma.copy_failed_jobs.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends copy_failed_jobsDeleteManyArgs>(args?: SelectSubset<T, copy_failed_jobsDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Copy_failed_jobs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_failed_jobsUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Copy_failed_jobs
+     * const copy_failed_jobs = await prisma.copy_failed_jobs.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends copy_failed_jobsUpdateManyArgs>(args: SelectSubset<T, copy_failed_jobsUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one Copy_failed_jobs.
+     * @param {copy_failed_jobsUpsertArgs} args - Arguments to update or create a Copy_failed_jobs.
+     * @example
+     * // Update or create a Copy_failed_jobs
+     * const copy_failed_jobs = await prisma.copy_failed_jobs.upsert({
+     *   create: {
+     *     // ... data to create a Copy_failed_jobs
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Copy_failed_jobs we want to update
+     *   }
+     * })
+     */
+    upsert<T extends copy_failed_jobsUpsertArgs>(args: SelectSubset<T, copy_failed_jobsUpsertArgs<ExtArgs>>): Prisma__copy_failed_jobsClient<$Result.GetResult<Prisma.$copy_failed_jobsPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of Copy_failed_jobs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_failed_jobsCountArgs} args - Arguments to filter Copy_failed_jobs to count.
+     * @example
+     * // Count the number of Copy_failed_jobs
+     * const count = await prisma.copy_failed_jobs.count({
+     *   where: {
+     *     // ... the filter for the Copy_failed_jobs we want to count
+     *   }
+     * })
+    **/
+    count<T extends copy_failed_jobsCountArgs>(
+      args?: Subset<T, copy_failed_jobsCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], Copy_failed_jobsCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Copy_failed_jobs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {Copy_failed_jobsAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends Copy_failed_jobsAggregateArgs>(args: Subset<T, Copy_failed_jobsAggregateArgs>): Prisma.PrismaPromise<GetCopy_failed_jobsAggregateType<T>>
+
+    /**
+     * Group by Copy_failed_jobs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_failed_jobsGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends copy_failed_jobsGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: copy_failed_jobsGroupByArgs['orderBy'] }
+        : { orderBy?: copy_failed_jobsGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, copy_failed_jobsGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetCopy_failed_jobsGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the copy_failed_jobs model
+   */
+  readonly fields: copy_failed_jobsFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for copy_failed_jobs.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__copy_failed_jobsClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the copy_failed_jobs model
+   */
+  interface copy_failed_jobsFieldRefs {
+    readonly id: FieldRef<"copy_failed_jobs", 'BigInt'>
+    readonly uuid: FieldRef<"copy_failed_jobs", 'String'>
+    readonly connection: FieldRef<"copy_failed_jobs", 'String'>
+    readonly queue: FieldRef<"copy_failed_jobs", 'String'>
+    readonly payload: FieldRef<"copy_failed_jobs", 'String'>
+    readonly exception: FieldRef<"copy_failed_jobs", 'String'>
+    readonly failed_at: FieldRef<"copy_failed_jobs", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * copy_failed_jobs findUnique
+   */
+  export type copy_failed_jobsFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_failed_jobs
+     */
+    select?: copy_failed_jobsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_failed_jobs
+     */
+    omit?: copy_failed_jobsOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_failed_jobs to fetch.
+     */
+    where: copy_failed_jobsWhereUniqueInput
+  }
+
+  /**
+   * copy_failed_jobs findUniqueOrThrow
+   */
+  export type copy_failed_jobsFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_failed_jobs
+     */
+    select?: copy_failed_jobsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_failed_jobs
+     */
+    omit?: copy_failed_jobsOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_failed_jobs to fetch.
+     */
+    where: copy_failed_jobsWhereUniqueInput
+  }
+
+  /**
+   * copy_failed_jobs findFirst
+   */
+  export type copy_failed_jobsFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_failed_jobs
+     */
+    select?: copy_failed_jobsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_failed_jobs
+     */
+    omit?: copy_failed_jobsOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_failed_jobs to fetch.
+     */
+    where?: copy_failed_jobsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of copy_failed_jobs to fetch.
+     */
+    orderBy?: copy_failed_jobsOrderByWithRelationInput | copy_failed_jobsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for copy_failed_jobs.
+     */
+    cursor?: copy_failed_jobsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` copy_failed_jobs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` copy_failed_jobs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of copy_failed_jobs.
+     */
+    distinct?: Copy_failed_jobsScalarFieldEnum | Copy_failed_jobsScalarFieldEnum[]
+  }
+
+  /**
+   * copy_failed_jobs findFirstOrThrow
+   */
+  export type copy_failed_jobsFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_failed_jobs
+     */
+    select?: copy_failed_jobsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_failed_jobs
+     */
+    omit?: copy_failed_jobsOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_failed_jobs to fetch.
+     */
+    where?: copy_failed_jobsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of copy_failed_jobs to fetch.
+     */
+    orderBy?: copy_failed_jobsOrderByWithRelationInput | copy_failed_jobsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for copy_failed_jobs.
+     */
+    cursor?: copy_failed_jobsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` copy_failed_jobs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` copy_failed_jobs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of copy_failed_jobs.
+     */
+    distinct?: Copy_failed_jobsScalarFieldEnum | Copy_failed_jobsScalarFieldEnum[]
+  }
+
+  /**
+   * copy_failed_jobs findMany
+   */
+  export type copy_failed_jobsFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_failed_jobs
+     */
+    select?: copy_failed_jobsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_failed_jobs
+     */
+    omit?: copy_failed_jobsOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_failed_jobs to fetch.
+     */
+    where?: copy_failed_jobsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of copy_failed_jobs to fetch.
+     */
+    orderBy?: copy_failed_jobsOrderByWithRelationInput | copy_failed_jobsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing copy_failed_jobs.
+     */
+    cursor?: copy_failed_jobsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` copy_failed_jobs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` copy_failed_jobs.
+     */
+    skip?: number
+    distinct?: Copy_failed_jobsScalarFieldEnum | Copy_failed_jobsScalarFieldEnum[]
+  }
+
+  /**
+   * copy_failed_jobs create
+   */
+  export type copy_failed_jobsCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_failed_jobs
+     */
+    select?: copy_failed_jobsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_failed_jobs
+     */
+    omit?: copy_failed_jobsOmit<ExtArgs> | null
+    /**
+     * The data needed to create a copy_failed_jobs.
+     */
+    data: XOR<copy_failed_jobsCreateInput, copy_failed_jobsUncheckedCreateInput>
+  }
+
+  /**
+   * copy_failed_jobs createMany
+   */
+  export type copy_failed_jobsCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many copy_failed_jobs.
+     */
+    data: copy_failed_jobsCreateManyInput | copy_failed_jobsCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * copy_failed_jobs update
+   */
+  export type copy_failed_jobsUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_failed_jobs
+     */
+    select?: copy_failed_jobsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_failed_jobs
+     */
+    omit?: copy_failed_jobsOmit<ExtArgs> | null
+    /**
+     * The data needed to update a copy_failed_jobs.
+     */
+    data: XOR<copy_failed_jobsUpdateInput, copy_failed_jobsUncheckedUpdateInput>
+    /**
+     * Choose, which copy_failed_jobs to update.
+     */
+    where: copy_failed_jobsWhereUniqueInput
+  }
+
+  /**
+   * copy_failed_jobs updateMany
+   */
+  export type copy_failed_jobsUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update copy_failed_jobs.
+     */
+    data: XOR<copy_failed_jobsUpdateManyMutationInput, copy_failed_jobsUncheckedUpdateManyInput>
+    /**
+     * Filter which copy_failed_jobs to update
+     */
+    where?: copy_failed_jobsWhereInput
+    /**
+     * Limit how many copy_failed_jobs to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * copy_failed_jobs upsert
+   */
+  export type copy_failed_jobsUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_failed_jobs
+     */
+    select?: copy_failed_jobsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_failed_jobs
+     */
+    omit?: copy_failed_jobsOmit<ExtArgs> | null
+    /**
+     * The filter to search for the copy_failed_jobs to update in case it exists.
+     */
+    where: copy_failed_jobsWhereUniqueInput
+    /**
+     * In case the copy_failed_jobs found by the `where` argument doesn't exist, create a new copy_failed_jobs with this data.
+     */
+    create: XOR<copy_failed_jobsCreateInput, copy_failed_jobsUncheckedCreateInput>
+    /**
+     * In case the copy_failed_jobs was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<copy_failed_jobsUpdateInput, copy_failed_jobsUncheckedUpdateInput>
+  }
+
+  /**
+   * copy_failed_jobs delete
+   */
+  export type copy_failed_jobsDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_failed_jobs
+     */
+    select?: copy_failed_jobsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_failed_jobs
+     */
+    omit?: copy_failed_jobsOmit<ExtArgs> | null
+    /**
+     * Filter which copy_failed_jobs to delete.
+     */
+    where: copy_failed_jobsWhereUniqueInput
+  }
+
+  /**
+   * copy_failed_jobs deleteMany
+   */
+  export type copy_failed_jobsDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which copy_failed_jobs to delete
+     */
+    where?: copy_failed_jobsWhereInput
+    /**
+     * Limit how many copy_failed_jobs to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * copy_failed_jobs without action
+   */
+  export type copy_failed_jobsDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_failed_jobs
+     */
+    select?: copy_failed_jobsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_failed_jobs
+     */
+    omit?: copy_failed_jobsOmit<ExtArgs> | null
+  }
+
+
+  /**
+   * Model copy_incorporatedate_cron
+   */
+
+  export type AggregateCopy_incorporatedate_cron = {
+    _count: Copy_incorporatedate_cronCountAggregateOutputType | null
+    _avg: Copy_incorporatedate_cronAvgAggregateOutputType | null
+    _sum: Copy_incorporatedate_cronSumAggregateOutputType | null
+    _min: Copy_incorporatedate_cronMinAggregateOutputType | null
+    _max: Copy_incorporatedate_cronMaxAggregateOutputType | null
+  }
+
+  export type Copy_incorporatedate_cronAvgAggregateOutputType = {
+    id: number | null
+    status: number | null
+  }
+
+  export type Copy_incorporatedate_cronSumAggregateOutputType = {
+    id: bigint | null
+    status: number | null
+  }
+
+  export type Copy_incorporatedate_cronMinAggregateOutputType = {
+    id: bigint | null
+    isin: string | null
+    allotment_date: Date | null
+    status: number | null
+    created_at: Date | null
+    updated_at: Date | null
+  }
+
+  export type Copy_incorporatedate_cronMaxAggregateOutputType = {
+    id: bigint | null
+    isin: string | null
+    allotment_date: Date | null
+    status: number | null
+    created_at: Date | null
+    updated_at: Date | null
+  }
+
+  export type Copy_incorporatedate_cronCountAggregateOutputType = {
+    id: number
+    isin: number
+    allotment_date: number
+    status: number
+    created_at: number
+    updated_at: number
+    _all: number
+  }
+
+
+  export type Copy_incorporatedate_cronAvgAggregateInputType = {
+    id?: true
+    status?: true
+  }
+
+  export type Copy_incorporatedate_cronSumAggregateInputType = {
+    id?: true
+    status?: true
+  }
+
+  export type Copy_incorporatedate_cronMinAggregateInputType = {
+    id?: true
+    isin?: true
+    allotment_date?: true
+    status?: true
+    created_at?: true
+    updated_at?: true
+  }
+
+  export type Copy_incorporatedate_cronMaxAggregateInputType = {
+    id?: true
+    isin?: true
+    allotment_date?: true
+    status?: true
+    created_at?: true
+    updated_at?: true
+  }
+
+  export type Copy_incorporatedate_cronCountAggregateInputType = {
+    id?: true
+    isin?: true
+    allotment_date?: true
+    status?: true
+    created_at?: true
+    updated_at?: true
+    _all?: true
+  }
+
+  export type Copy_incorporatedate_cronAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which copy_incorporatedate_cron to aggregate.
+     */
+    where?: copy_incorporatedate_cronWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of copy_incorporatedate_crons to fetch.
+     */
+    orderBy?: copy_incorporatedate_cronOrderByWithRelationInput | copy_incorporatedate_cronOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: copy_incorporatedate_cronWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` copy_incorporatedate_crons from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` copy_incorporatedate_crons.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned copy_incorporatedate_crons
+    **/
+    _count?: true | Copy_incorporatedate_cronCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: Copy_incorporatedate_cronAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: Copy_incorporatedate_cronSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: Copy_incorporatedate_cronMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: Copy_incorporatedate_cronMaxAggregateInputType
+  }
+
+  export type GetCopy_incorporatedate_cronAggregateType<T extends Copy_incorporatedate_cronAggregateArgs> = {
+        [P in keyof T & keyof AggregateCopy_incorporatedate_cron]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateCopy_incorporatedate_cron[P]>
+      : GetScalarType<T[P], AggregateCopy_incorporatedate_cron[P]>
+  }
+
+
+
+
+  export type copy_incorporatedate_cronGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: copy_incorporatedate_cronWhereInput
+    orderBy?: copy_incorporatedate_cronOrderByWithAggregationInput | copy_incorporatedate_cronOrderByWithAggregationInput[]
+    by: Copy_incorporatedate_cronScalarFieldEnum[] | Copy_incorporatedate_cronScalarFieldEnum
+    having?: copy_incorporatedate_cronScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: Copy_incorporatedate_cronCountAggregateInputType | true
+    _avg?: Copy_incorporatedate_cronAvgAggregateInputType
+    _sum?: Copy_incorporatedate_cronSumAggregateInputType
+    _min?: Copy_incorporatedate_cronMinAggregateInputType
+    _max?: Copy_incorporatedate_cronMaxAggregateInputType
+  }
+
+  export type Copy_incorporatedate_cronGroupByOutputType = {
+    id: bigint
+    isin: string | null
+    allotment_date: Date | null
+    status: number
+    created_at: Date | null
+    updated_at: Date | null
+    _count: Copy_incorporatedate_cronCountAggregateOutputType | null
+    _avg: Copy_incorporatedate_cronAvgAggregateOutputType | null
+    _sum: Copy_incorporatedate_cronSumAggregateOutputType | null
+    _min: Copy_incorporatedate_cronMinAggregateOutputType | null
+    _max: Copy_incorporatedate_cronMaxAggregateOutputType | null
+  }
+
+  type GetCopy_incorporatedate_cronGroupByPayload<T extends copy_incorporatedate_cronGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<Copy_incorporatedate_cronGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof Copy_incorporatedate_cronGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], Copy_incorporatedate_cronGroupByOutputType[P]>
+            : GetScalarType<T[P], Copy_incorporatedate_cronGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type copy_incorporatedate_cronSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    isin?: boolean
+    allotment_date?: boolean
+    status?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+  }, ExtArgs["result"]["copy_incorporatedate_cron"]>
+
+
+
+  export type copy_incorporatedate_cronSelectScalar = {
+    id?: boolean
+    isin?: boolean
+    allotment_date?: boolean
+    status?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+  }
+
+  export type copy_incorporatedate_cronOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "isin" | "allotment_date" | "status" | "created_at" | "updated_at", ExtArgs["result"]["copy_incorporatedate_cron"]>
+
+  export type $copy_incorporatedate_cronPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "copy_incorporatedate_cron"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: bigint
+      isin: string | null
+      allotment_date: Date | null
+      status: number
+      created_at: Date | null
+      updated_at: Date | null
+    }, ExtArgs["result"]["copy_incorporatedate_cron"]>
+    composites: {}
+  }
+
+  type copy_incorporatedate_cronGetPayload<S extends boolean | null | undefined | copy_incorporatedate_cronDefaultArgs> = $Result.GetResult<Prisma.$copy_incorporatedate_cronPayload, S>
+
+  type copy_incorporatedate_cronCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<copy_incorporatedate_cronFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: Copy_incorporatedate_cronCountAggregateInputType | true
+    }
+
+  export interface copy_incorporatedate_cronDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['copy_incorporatedate_cron'], meta: { name: 'copy_incorporatedate_cron' } }
+    /**
+     * Find zero or one Copy_incorporatedate_cron that matches the filter.
+     * @param {copy_incorporatedate_cronFindUniqueArgs} args - Arguments to find a Copy_incorporatedate_cron
+     * @example
+     * // Get one Copy_incorporatedate_cron
+     * const copy_incorporatedate_cron = await prisma.copy_incorporatedate_cron.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends copy_incorporatedate_cronFindUniqueArgs>(args: SelectSubset<T, copy_incorporatedate_cronFindUniqueArgs<ExtArgs>>): Prisma__copy_incorporatedate_cronClient<$Result.GetResult<Prisma.$copy_incorporatedate_cronPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one Copy_incorporatedate_cron that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {copy_incorporatedate_cronFindUniqueOrThrowArgs} args - Arguments to find a Copy_incorporatedate_cron
+     * @example
+     * // Get one Copy_incorporatedate_cron
+     * const copy_incorporatedate_cron = await prisma.copy_incorporatedate_cron.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends copy_incorporatedate_cronFindUniqueOrThrowArgs>(args: SelectSubset<T, copy_incorporatedate_cronFindUniqueOrThrowArgs<ExtArgs>>): Prisma__copy_incorporatedate_cronClient<$Result.GetResult<Prisma.$copy_incorporatedate_cronPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Copy_incorporatedate_cron that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_incorporatedate_cronFindFirstArgs} args - Arguments to find a Copy_incorporatedate_cron
+     * @example
+     * // Get one Copy_incorporatedate_cron
+     * const copy_incorporatedate_cron = await prisma.copy_incorporatedate_cron.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends copy_incorporatedate_cronFindFirstArgs>(args?: SelectSubset<T, copy_incorporatedate_cronFindFirstArgs<ExtArgs>>): Prisma__copy_incorporatedate_cronClient<$Result.GetResult<Prisma.$copy_incorporatedate_cronPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Copy_incorporatedate_cron that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_incorporatedate_cronFindFirstOrThrowArgs} args - Arguments to find a Copy_incorporatedate_cron
+     * @example
+     * // Get one Copy_incorporatedate_cron
+     * const copy_incorporatedate_cron = await prisma.copy_incorporatedate_cron.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends copy_incorporatedate_cronFindFirstOrThrowArgs>(args?: SelectSubset<T, copy_incorporatedate_cronFindFirstOrThrowArgs<ExtArgs>>): Prisma__copy_incorporatedate_cronClient<$Result.GetResult<Prisma.$copy_incorporatedate_cronPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more Copy_incorporatedate_crons that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_incorporatedate_cronFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Copy_incorporatedate_crons
+     * const copy_incorporatedate_crons = await prisma.copy_incorporatedate_cron.findMany()
+     * 
+     * // Get first 10 Copy_incorporatedate_crons
+     * const copy_incorporatedate_crons = await prisma.copy_incorporatedate_cron.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const copy_incorporatedate_cronWithIdOnly = await prisma.copy_incorporatedate_cron.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends copy_incorporatedate_cronFindManyArgs>(args?: SelectSubset<T, copy_incorporatedate_cronFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$copy_incorporatedate_cronPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a Copy_incorporatedate_cron.
+     * @param {copy_incorporatedate_cronCreateArgs} args - Arguments to create a Copy_incorporatedate_cron.
+     * @example
+     * // Create one Copy_incorporatedate_cron
+     * const Copy_incorporatedate_cron = await prisma.copy_incorporatedate_cron.create({
+     *   data: {
+     *     // ... data to create a Copy_incorporatedate_cron
+     *   }
+     * })
+     * 
+     */
+    create<T extends copy_incorporatedate_cronCreateArgs>(args: SelectSubset<T, copy_incorporatedate_cronCreateArgs<ExtArgs>>): Prisma__copy_incorporatedate_cronClient<$Result.GetResult<Prisma.$copy_incorporatedate_cronPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many Copy_incorporatedate_crons.
+     * @param {copy_incorporatedate_cronCreateManyArgs} args - Arguments to create many Copy_incorporatedate_crons.
+     * @example
+     * // Create many Copy_incorporatedate_crons
+     * const copy_incorporatedate_cron = await prisma.copy_incorporatedate_cron.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends copy_incorporatedate_cronCreateManyArgs>(args?: SelectSubset<T, copy_incorporatedate_cronCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a Copy_incorporatedate_cron.
+     * @param {copy_incorporatedate_cronDeleteArgs} args - Arguments to delete one Copy_incorporatedate_cron.
+     * @example
+     * // Delete one Copy_incorporatedate_cron
+     * const Copy_incorporatedate_cron = await prisma.copy_incorporatedate_cron.delete({
+     *   where: {
+     *     // ... filter to delete one Copy_incorporatedate_cron
+     *   }
+     * })
+     * 
+     */
+    delete<T extends copy_incorporatedate_cronDeleteArgs>(args: SelectSubset<T, copy_incorporatedate_cronDeleteArgs<ExtArgs>>): Prisma__copy_incorporatedate_cronClient<$Result.GetResult<Prisma.$copy_incorporatedate_cronPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one Copy_incorporatedate_cron.
+     * @param {copy_incorporatedate_cronUpdateArgs} args - Arguments to update one Copy_incorporatedate_cron.
+     * @example
+     * // Update one Copy_incorporatedate_cron
+     * const copy_incorporatedate_cron = await prisma.copy_incorporatedate_cron.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends copy_incorporatedate_cronUpdateArgs>(args: SelectSubset<T, copy_incorporatedate_cronUpdateArgs<ExtArgs>>): Prisma__copy_incorporatedate_cronClient<$Result.GetResult<Prisma.$copy_incorporatedate_cronPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more Copy_incorporatedate_crons.
+     * @param {copy_incorporatedate_cronDeleteManyArgs} args - Arguments to filter Copy_incorporatedate_crons to delete.
+     * @example
+     * // Delete a few Copy_incorporatedate_crons
+     * const { count } = await prisma.copy_incorporatedate_cron.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends copy_incorporatedate_cronDeleteManyArgs>(args?: SelectSubset<T, copy_incorporatedate_cronDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Copy_incorporatedate_crons.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_incorporatedate_cronUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Copy_incorporatedate_crons
+     * const copy_incorporatedate_cron = await prisma.copy_incorporatedate_cron.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends copy_incorporatedate_cronUpdateManyArgs>(args: SelectSubset<T, copy_incorporatedate_cronUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one Copy_incorporatedate_cron.
+     * @param {copy_incorporatedate_cronUpsertArgs} args - Arguments to update or create a Copy_incorporatedate_cron.
+     * @example
+     * // Update or create a Copy_incorporatedate_cron
+     * const copy_incorporatedate_cron = await prisma.copy_incorporatedate_cron.upsert({
+     *   create: {
+     *     // ... data to create a Copy_incorporatedate_cron
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Copy_incorporatedate_cron we want to update
+     *   }
+     * })
+     */
+    upsert<T extends copy_incorporatedate_cronUpsertArgs>(args: SelectSubset<T, copy_incorporatedate_cronUpsertArgs<ExtArgs>>): Prisma__copy_incorporatedate_cronClient<$Result.GetResult<Prisma.$copy_incorporatedate_cronPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of Copy_incorporatedate_crons.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_incorporatedate_cronCountArgs} args - Arguments to filter Copy_incorporatedate_crons to count.
+     * @example
+     * // Count the number of Copy_incorporatedate_crons
+     * const count = await prisma.copy_incorporatedate_cron.count({
+     *   where: {
+     *     // ... the filter for the Copy_incorporatedate_crons we want to count
+     *   }
+     * })
+    **/
+    count<T extends copy_incorporatedate_cronCountArgs>(
+      args?: Subset<T, copy_incorporatedate_cronCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], Copy_incorporatedate_cronCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Copy_incorporatedate_cron.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {Copy_incorporatedate_cronAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends Copy_incorporatedate_cronAggregateArgs>(args: Subset<T, Copy_incorporatedate_cronAggregateArgs>): Prisma.PrismaPromise<GetCopy_incorporatedate_cronAggregateType<T>>
+
+    /**
+     * Group by Copy_incorporatedate_cron.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_incorporatedate_cronGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends copy_incorporatedate_cronGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: copy_incorporatedate_cronGroupByArgs['orderBy'] }
+        : { orderBy?: copy_incorporatedate_cronGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, copy_incorporatedate_cronGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetCopy_incorporatedate_cronGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the copy_incorporatedate_cron model
+   */
+  readonly fields: copy_incorporatedate_cronFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for copy_incorporatedate_cron.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__copy_incorporatedate_cronClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the copy_incorporatedate_cron model
+   */
+  interface copy_incorporatedate_cronFieldRefs {
+    readonly id: FieldRef<"copy_incorporatedate_cron", 'BigInt'>
+    readonly isin: FieldRef<"copy_incorporatedate_cron", 'String'>
+    readonly allotment_date: FieldRef<"copy_incorporatedate_cron", 'DateTime'>
+    readonly status: FieldRef<"copy_incorporatedate_cron", 'Int'>
+    readonly created_at: FieldRef<"copy_incorporatedate_cron", 'DateTime'>
+    readonly updated_at: FieldRef<"copy_incorporatedate_cron", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * copy_incorporatedate_cron findUnique
+   */
+  export type copy_incorporatedate_cronFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_incorporatedate_cron
+     */
+    select?: copy_incorporatedate_cronSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_incorporatedate_cron
+     */
+    omit?: copy_incorporatedate_cronOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_incorporatedate_cron to fetch.
+     */
+    where: copy_incorporatedate_cronWhereUniqueInput
+  }
+
+  /**
+   * copy_incorporatedate_cron findUniqueOrThrow
+   */
+  export type copy_incorporatedate_cronFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_incorporatedate_cron
+     */
+    select?: copy_incorporatedate_cronSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_incorporatedate_cron
+     */
+    omit?: copy_incorporatedate_cronOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_incorporatedate_cron to fetch.
+     */
+    where: copy_incorporatedate_cronWhereUniqueInput
+  }
+
+  /**
+   * copy_incorporatedate_cron findFirst
+   */
+  export type copy_incorporatedate_cronFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_incorporatedate_cron
+     */
+    select?: copy_incorporatedate_cronSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_incorporatedate_cron
+     */
+    omit?: copy_incorporatedate_cronOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_incorporatedate_cron to fetch.
+     */
+    where?: copy_incorporatedate_cronWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of copy_incorporatedate_crons to fetch.
+     */
+    orderBy?: copy_incorporatedate_cronOrderByWithRelationInput | copy_incorporatedate_cronOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for copy_incorporatedate_crons.
+     */
+    cursor?: copy_incorporatedate_cronWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` copy_incorporatedate_crons from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` copy_incorporatedate_crons.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of copy_incorporatedate_crons.
+     */
+    distinct?: Copy_incorporatedate_cronScalarFieldEnum | Copy_incorporatedate_cronScalarFieldEnum[]
+  }
+
+  /**
+   * copy_incorporatedate_cron findFirstOrThrow
+   */
+  export type copy_incorporatedate_cronFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_incorporatedate_cron
+     */
+    select?: copy_incorporatedate_cronSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_incorporatedate_cron
+     */
+    omit?: copy_incorporatedate_cronOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_incorporatedate_cron to fetch.
+     */
+    where?: copy_incorporatedate_cronWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of copy_incorporatedate_crons to fetch.
+     */
+    orderBy?: copy_incorporatedate_cronOrderByWithRelationInput | copy_incorporatedate_cronOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for copy_incorporatedate_crons.
+     */
+    cursor?: copy_incorporatedate_cronWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` copy_incorporatedate_crons from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` copy_incorporatedate_crons.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of copy_incorporatedate_crons.
+     */
+    distinct?: Copy_incorporatedate_cronScalarFieldEnum | Copy_incorporatedate_cronScalarFieldEnum[]
+  }
+
+  /**
+   * copy_incorporatedate_cron findMany
+   */
+  export type copy_incorporatedate_cronFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_incorporatedate_cron
+     */
+    select?: copy_incorporatedate_cronSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_incorporatedate_cron
+     */
+    omit?: copy_incorporatedate_cronOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_incorporatedate_crons to fetch.
+     */
+    where?: copy_incorporatedate_cronWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of copy_incorporatedate_crons to fetch.
+     */
+    orderBy?: copy_incorporatedate_cronOrderByWithRelationInput | copy_incorporatedate_cronOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing copy_incorporatedate_crons.
+     */
+    cursor?: copy_incorporatedate_cronWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` copy_incorporatedate_crons from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` copy_incorporatedate_crons.
+     */
+    skip?: number
+    distinct?: Copy_incorporatedate_cronScalarFieldEnum | Copy_incorporatedate_cronScalarFieldEnum[]
+  }
+
+  /**
+   * copy_incorporatedate_cron create
+   */
+  export type copy_incorporatedate_cronCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_incorporatedate_cron
+     */
+    select?: copy_incorporatedate_cronSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_incorporatedate_cron
+     */
+    omit?: copy_incorporatedate_cronOmit<ExtArgs> | null
+    /**
+     * The data needed to create a copy_incorporatedate_cron.
+     */
+    data?: XOR<copy_incorporatedate_cronCreateInput, copy_incorporatedate_cronUncheckedCreateInput>
+  }
+
+  /**
+   * copy_incorporatedate_cron createMany
+   */
+  export type copy_incorporatedate_cronCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many copy_incorporatedate_crons.
+     */
+    data: copy_incorporatedate_cronCreateManyInput | copy_incorporatedate_cronCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * copy_incorporatedate_cron update
+   */
+  export type copy_incorporatedate_cronUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_incorporatedate_cron
+     */
+    select?: copy_incorporatedate_cronSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_incorporatedate_cron
+     */
+    omit?: copy_incorporatedate_cronOmit<ExtArgs> | null
+    /**
+     * The data needed to update a copy_incorporatedate_cron.
+     */
+    data: XOR<copy_incorporatedate_cronUpdateInput, copy_incorporatedate_cronUncheckedUpdateInput>
+    /**
+     * Choose, which copy_incorporatedate_cron to update.
+     */
+    where: copy_incorporatedate_cronWhereUniqueInput
+  }
+
+  /**
+   * copy_incorporatedate_cron updateMany
+   */
+  export type copy_incorporatedate_cronUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update copy_incorporatedate_crons.
+     */
+    data: XOR<copy_incorporatedate_cronUpdateManyMutationInput, copy_incorporatedate_cronUncheckedUpdateManyInput>
+    /**
+     * Filter which copy_incorporatedate_crons to update
+     */
+    where?: copy_incorporatedate_cronWhereInput
+    /**
+     * Limit how many copy_incorporatedate_crons to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * copy_incorporatedate_cron upsert
+   */
+  export type copy_incorporatedate_cronUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_incorporatedate_cron
+     */
+    select?: copy_incorporatedate_cronSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_incorporatedate_cron
+     */
+    omit?: copy_incorporatedate_cronOmit<ExtArgs> | null
+    /**
+     * The filter to search for the copy_incorporatedate_cron to update in case it exists.
+     */
+    where: copy_incorporatedate_cronWhereUniqueInput
+    /**
+     * In case the copy_incorporatedate_cron found by the `where` argument doesn't exist, create a new copy_incorporatedate_cron with this data.
+     */
+    create: XOR<copy_incorporatedate_cronCreateInput, copy_incorporatedate_cronUncheckedCreateInput>
+    /**
+     * In case the copy_incorporatedate_cron was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<copy_incorporatedate_cronUpdateInput, copy_incorporatedate_cronUncheckedUpdateInput>
+  }
+
+  /**
+   * copy_incorporatedate_cron delete
+   */
+  export type copy_incorporatedate_cronDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_incorporatedate_cron
+     */
+    select?: copy_incorporatedate_cronSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_incorporatedate_cron
+     */
+    omit?: copy_incorporatedate_cronOmit<ExtArgs> | null
+    /**
+     * Filter which copy_incorporatedate_cron to delete.
+     */
+    where: copy_incorporatedate_cronWhereUniqueInput
+  }
+
+  /**
+   * copy_incorporatedate_cron deleteMany
+   */
+  export type copy_incorporatedate_cronDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which copy_incorporatedate_crons to delete
+     */
+    where?: copy_incorporatedate_cronWhereInput
+    /**
+     * Limit how many copy_incorporatedate_crons to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * copy_incorporatedate_cron without action
+   */
+  export type copy_incorporatedate_cronDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_incorporatedate_cron
+     */
+    select?: copy_incorporatedate_cronSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_incorporatedate_cron
+     */
+    omit?: copy_incorporatedate_cronOmit<ExtArgs> | null
+  }
+
+
+  /**
+   * Model copy_isin_re_issuance
+   */
+
+  export type AggregateCopy_isin_re_issuance = {
+    _count: Copy_isin_re_issuanceCountAggregateOutputType | null
+    _avg: Copy_isin_re_issuanceAvgAggregateOutputType | null
+    _sum: Copy_isin_re_issuanceSumAggregateOutputType | null
+    _min: Copy_isin_re_issuanceMinAggregateOutputType | null
+    _max: Copy_isin_re_issuanceMaxAggregateOutputType | null
+  }
+
+  export type Copy_isin_re_issuanceAvgAggregateOutputType = {
+    id: number | null
+    isin_id: number | null
+    issuer_master_id: number | null
+    issue_size: Decimal | null
+    face_value: number | null
+    business_sector: number | null
+    mode_issue: number | null
+    seniority: number | null
+    tax_free: number | null
+    secured_flag: number | null
+    is_visible: number | null
+    is_updated: number | null
+    is_main: number | null
+  }
+
+  export type Copy_isin_re_issuanceSumAggregateOutputType = {
+    id: bigint | null
+    isin_id: bigint | null
+    issuer_master_id: bigint | null
+    issue_size: Decimal | null
+    face_value: number | null
+    business_sector: number | null
+    mode_issue: number | null
+    seniority: number | null
+    tax_free: number | null
+    secured_flag: number | null
+    is_visible: number | null
+    is_updated: number | null
+    is_main: number | null
+  }
+
+  export type Copy_isin_re_issuanceMinAggregateOutputType = {
+    id: bigint | null
+    isin_id: bigint | null
+    isin: string | null
+    issuer_master_id: bigint | null
+    allotment_date: Date | null
+    issue_size: Decimal | null
+    face_value: number | null
+    maturity_date: Date | null
+    business_sector: number | null
+    security_name: string | null
+    security_class: string | null
+    mode_issue: number | null
+    seniority: number | null
+    tax_free: number | null
+    secured_flag: number | null
+    is_visible: number | null
+    is_updated: number | null
+    is_main: number | null
+    created_at: Date | null
+    updated_at: Date | null
+  }
+
+  export type Copy_isin_re_issuanceMaxAggregateOutputType = {
+    id: bigint | null
+    isin_id: bigint | null
+    isin: string | null
+    issuer_master_id: bigint | null
+    allotment_date: Date | null
+    issue_size: Decimal | null
+    face_value: number | null
+    maturity_date: Date | null
+    business_sector: number | null
+    security_name: string | null
+    security_class: string | null
+    mode_issue: number | null
+    seniority: number | null
+    tax_free: number | null
+    secured_flag: number | null
+    is_visible: number | null
+    is_updated: number | null
+    is_main: number | null
+    created_at: Date | null
+    updated_at: Date | null
+  }
+
+  export type Copy_isin_re_issuanceCountAggregateOutputType = {
+    id: number
+    isin_id: number
+    isin: number
+    issuer_master_id: number
+    allotment_date: number
+    issue_size: number
+    face_value: number
+    maturity_date: number
+    business_sector: number
+    security_name: number
+    security_class: number
+    mode_issue: number
+    seniority: number
+    tax_free: number
+    secured_flag: number
+    is_visible: number
+    is_updated: number
+    is_main: number
+    created_at: number
+    updated_at: number
+    _all: number
+  }
+
+
+  export type Copy_isin_re_issuanceAvgAggregateInputType = {
+    id?: true
+    isin_id?: true
+    issuer_master_id?: true
+    issue_size?: true
+    face_value?: true
+    business_sector?: true
+    mode_issue?: true
+    seniority?: true
+    tax_free?: true
+    secured_flag?: true
+    is_visible?: true
+    is_updated?: true
+    is_main?: true
+  }
+
+  export type Copy_isin_re_issuanceSumAggregateInputType = {
+    id?: true
+    isin_id?: true
+    issuer_master_id?: true
+    issue_size?: true
+    face_value?: true
+    business_sector?: true
+    mode_issue?: true
+    seniority?: true
+    tax_free?: true
+    secured_flag?: true
+    is_visible?: true
+    is_updated?: true
+    is_main?: true
+  }
+
+  export type Copy_isin_re_issuanceMinAggregateInputType = {
+    id?: true
+    isin_id?: true
+    isin?: true
+    issuer_master_id?: true
+    allotment_date?: true
+    issue_size?: true
+    face_value?: true
+    maturity_date?: true
+    business_sector?: true
+    security_name?: true
+    security_class?: true
+    mode_issue?: true
+    seniority?: true
+    tax_free?: true
+    secured_flag?: true
+    is_visible?: true
+    is_updated?: true
+    is_main?: true
+    created_at?: true
+    updated_at?: true
+  }
+
+  export type Copy_isin_re_issuanceMaxAggregateInputType = {
+    id?: true
+    isin_id?: true
+    isin?: true
+    issuer_master_id?: true
+    allotment_date?: true
+    issue_size?: true
+    face_value?: true
+    maturity_date?: true
+    business_sector?: true
+    security_name?: true
+    security_class?: true
+    mode_issue?: true
+    seniority?: true
+    tax_free?: true
+    secured_flag?: true
+    is_visible?: true
+    is_updated?: true
+    is_main?: true
+    created_at?: true
+    updated_at?: true
+  }
+
+  export type Copy_isin_re_issuanceCountAggregateInputType = {
+    id?: true
+    isin_id?: true
+    isin?: true
+    issuer_master_id?: true
+    allotment_date?: true
+    issue_size?: true
+    face_value?: true
+    maturity_date?: true
+    business_sector?: true
+    security_name?: true
+    security_class?: true
+    mode_issue?: true
+    seniority?: true
+    tax_free?: true
+    secured_flag?: true
+    is_visible?: true
+    is_updated?: true
+    is_main?: true
+    created_at?: true
+    updated_at?: true
+    _all?: true
+  }
+
+  export type Copy_isin_re_issuanceAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which copy_isin_re_issuance to aggregate.
+     */
+    where?: copy_isin_re_issuanceWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of copy_isin_re_issuances to fetch.
+     */
+    orderBy?: copy_isin_re_issuanceOrderByWithRelationInput | copy_isin_re_issuanceOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: copy_isin_re_issuanceWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` copy_isin_re_issuances from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` copy_isin_re_issuances.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned copy_isin_re_issuances
+    **/
+    _count?: true | Copy_isin_re_issuanceCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: Copy_isin_re_issuanceAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: Copy_isin_re_issuanceSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: Copy_isin_re_issuanceMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: Copy_isin_re_issuanceMaxAggregateInputType
+  }
+
+  export type GetCopy_isin_re_issuanceAggregateType<T extends Copy_isin_re_issuanceAggregateArgs> = {
+        [P in keyof T & keyof AggregateCopy_isin_re_issuance]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateCopy_isin_re_issuance[P]>
+      : GetScalarType<T[P], AggregateCopy_isin_re_issuance[P]>
+  }
+
+
+
+
+  export type copy_isin_re_issuanceGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: copy_isin_re_issuanceWhereInput
+    orderBy?: copy_isin_re_issuanceOrderByWithAggregationInput | copy_isin_re_issuanceOrderByWithAggregationInput[]
+    by: Copy_isin_re_issuanceScalarFieldEnum[] | Copy_isin_re_issuanceScalarFieldEnum
+    having?: copy_isin_re_issuanceScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: Copy_isin_re_issuanceCountAggregateInputType | true
+    _avg?: Copy_isin_re_issuanceAvgAggregateInputType
+    _sum?: Copy_isin_re_issuanceSumAggregateInputType
+    _min?: Copy_isin_re_issuanceMinAggregateInputType
+    _max?: Copy_isin_re_issuanceMaxAggregateInputType
+  }
+
+  export type Copy_isin_re_issuanceGroupByOutputType = {
+    id: bigint
+    isin_id: bigint
+    isin: string
+    issuer_master_id: bigint
+    allotment_date: Date
+    issue_size: Decimal
+    face_value: number | null
+    maturity_date: Date | null
+    business_sector: number | null
+    security_name: string | null
+    security_class: string | null
+    mode_issue: number | null
+    seniority: number | null
+    tax_free: number | null
+    secured_flag: number | null
+    is_visible: number
+    is_updated: number
+    is_main: number
+    created_at: Date | null
+    updated_at: Date | null
+    _count: Copy_isin_re_issuanceCountAggregateOutputType | null
+    _avg: Copy_isin_re_issuanceAvgAggregateOutputType | null
+    _sum: Copy_isin_re_issuanceSumAggregateOutputType | null
+    _min: Copy_isin_re_issuanceMinAggregateOutputType | null
+    _max: Copy_isin_re_issuanceMaxAggregateOutputType | null
+  }
+
+  type GetCopy_isin_re_issuanceGroupByPayload<T extends copy_isin_re_issuanceGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<Copy_isin_re_issuanceGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof Copy_isin_re_issuanceGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], Copy_isin_re_issuanceGroupByOutputType[P]>
+            : GetScalarType<T[P], Copy_isin_re_issuanceGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type copy_isin_re_issuanceSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    isin_id?: boolean
+    isin?: boolean
+    issuer_master_id?: boolean
+    allotment_date?: boolean
+    issue_size?: boolean
+    face_value?: boolean
+    maturity_date?: boolean
+    business_sector?: boolean
+    security_name?: boolean
+    security_class?: boolean
+    mode_issue?: boolean
+    seniority?: boolean
+    tax_free?: boolean
+    secured_flag?: boolean
+    is_visible?: boolean
+    is_updated?: boolean
+    is_main?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+  }, ExtArgs["result"]["copy_isin_re_issuance"]>
+
+
+
+  export type copy_isin_re_issuanceSelectScalar = {
+    id?: boolean
+    isin_id?: boolean
+    isin?: boolean
+    issuer_master_id?: boolean
+    allotment_date?: boolean
+    issue_size?: boolean
+    face_value?: boolean
+    maturity_date?: boolean
+    business_sector?: boolean
+    security_name?: boolean
+    security_class?: boolean
+    mode_issue?: boolean
+    seniority?: boolean
+    tax_free?: boolean
+    secured_flag?: boolean
+    is_visible?: boolean
+    is_updated?: boolean
+    is_main?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+  }
+
+  export type copy_isin_re_issuanceOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "isin_id" | "isin" | "issuer_master_id" | "allotment_date" | "issue_size" | "face_value" | "maturity_date" | "business_sector" | "security_name" | "security_class" | "mode_issue" | "seniority" | "tax_free" | "secured_flag" | "is_visible" | "is_updated" | "is_main" | "created_at" | "updated_at", ExtArgs["result"]["copy_isin_re_issuance"]>
+
+  export type $copy_isin_re_issuancePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "copy_isin_re_issuance"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: bigint
+      isin_id: bigint
+      isin: string
+      issuer_master_id: bigint
+      allotment_date: Date
+      issue_size: Prisma.Decimal
+      face_value: number | null
+      maturity_date: Date | null
+      business_sector: number | null
+      security_name: string | null
+      security_class: string | null
+      mode_issue: number | null
+      seniority: number | null
+      tax_free: number | null
+      secured_flag: number | null
+      is_visible: number
+      is_updated: number
+      is_main: number
+      created_at: Date | null
+      updated_at: Date | null
+    }, ExtArgs["result"]["copy_isin_re_issuance"]>
+    composites: {}
+  }
+
+  type copy_isin_re_issuanceGetPayload<S extends boolean | null | undefined | copy_isin_re_issuanceDefaultArgs> = $Result.GetResult<Prisma.$copy_isin_re_issuancePayload, S>
+
+  type copy_isin_re_issuanceCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<copy_isin_re_issuanceFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: Copy_isin_re_issuanceCountAggregateInputType | true
+    }
+
+  export interface copy_isin_re_issuanceDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['copy_isin_re_issuance'], meta: { name: 'copy_isin_re_issuance' } }
+    /**
+     * Find zero or one Copy_isin_re_issuance that matches the filter.
+     * @param {copy_isin_re_issuanceFindUniqueArgs} args - Arguments to find a Copy_isin_re_issuance
+     * @example
+     * // Get one Copy_isin_re_issuance
+     * const copy_isin_re_issuance = await prisma.copy_isin_re_issuance.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends copy_isin_re_issuanceFindUniqueArgs>(args: SelectSubset<T, copy_isin_re_issuanceFindUniqueArgs<ExtArgs>>): Prisma__copy_isin_re_issuanceClient<$Result.GetResult<Prisma.$copy_isin_re_issuancePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one Copy_isin_re_issuance that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {copy_isin_re_issuanceFindUniqueOrThrowArgs} args - Arguments to find a Copy_isin_re_issuance
+     * @example
+     * // Get one Copy_isin_re_issuance
+     * const copy_isin_re_issuance = await prisma.copy_isin_re_issuance.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends copy_isin_re_issuanceFindUniqueOrThrowArgs>(args: SelectSubset<T, copy_isin_re_issuanceFindUniqueOrThrowArgs<ExtArgs>>): Prisma__copy_isin_re_issuanceClient<$Result.GetResult<Prisma.$copy_isin_re_issuancePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Copy_isin_re_issuance that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_isin_re_issuanceFindFirstArgs} args - Arguments to find a Copy_isin_re_issuance
+     * @example
+     * // Get one Copy_isin_re_issuance
+     * const copy_isin_re_issuance = await prisma.copy_isin_re_issuance.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends copy_isin_re_issuanceFindFirstArgs>(args?: SelectSubset<T, copy_isin_re_issuanceFindFirstArgs<ExtArgs>>): Prisma__copy_isin_re_issuanceClient<$Result.GetResult<Prisma.$copy_isin_re_issuancePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Copy_isin_re_issuance that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_isin_re_issuanceFindFirstOrThrowArgs} args - Arguments to find a Copy_isin_re_issuance
+     * @example
+     * // Get one Copy_isin_re_issuance
+     * const copy_isin_re_issuance = await prisma.copy_isin_re_issuance.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends copy_isin_re_issuanceFindFirstOrThrowArgs>(args?: SelectSubset<T, copy_isin_re_issuanceFindFirstOrThrowArgs<ExtArgs>>): Prisma__copy_isin_re_issuanceClient<$Result.GetResult<Prisma.$copy_isin_re_issuancePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more Copy_isin_re_issuances that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_isin_re_issuanceFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Copy_isin_re_issuances
+     * const copy_isin_re_issuances = await prisma.copy_isin_re_issuance.findMany()
+     * 
+     * // Get first 10 Copy_isin_re_issuances
+     * const copy_isin_re_issuances = await prisma.copy_isin_re_issuance.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const copy_isin_re_issuanceWithIdOnly = await prisma.copy_isin_re_issuance.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends copy_isin_re_issuanceFindManyArgs>(args?: SelectSubset<T, copy_isin_re_issuanceFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$copy_isin_re_issuancePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a Copy_isin_re_issuance.
+     * @param {copy_isin_re_issuanceCreateArgs} args - Arguments to create a Copy_isin_re_issuance.
+     * @example
+     * // Create one Copy_isin_re_issuance
+     * const Copy_isin_re_issuance = await prisma.copy_isin_re_issuance.create({
+     *   data: {
+     *     // ... data to create a Copy_isin_re_issuance
+     *   }
+     * })
+     * 
+     */
+    create<T extends copy_isin_re_issuanceCreateArgs>(args: SelectSubset<T, copy_isin_re_issuanceCreateArgs<ExtArgs>>): Prisma__copy_isin_re_issuanceClient<$Result.GetResult<Prisma.$copy_isin_re_issuancePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many Copy_isin_re_issuances.
+     * @param {copy_isin_re_issuanceCreateManyArgs} args - Arguments to create many Copy_isin_re_issuances.
+     * @example
+     * // Create many Copy_isin_re_issuances
+     * const copy_isin_re_issuance = await prisma.copy_isin_re_issuance.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends copy_isin_re_issuanceCreateManyArgs>(args?: SelectSubset<T, copy_isin_re_issuanceCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a Copy_isin_re_issuance.
+     * @param {copy_isin_re_issuanceDeleteArgs} args - Arguments to delete one Copy_isin_re_issuance.
+     * @example
+     * // Delete one Copy_isin_re_issuance
+     * const Copy_isin_re_issuance = await prisma.copy_isin_re_issuance.delete({
+     *   where: {
+     *     // ... filter to delete one Copy_isin_re_issuance
+     *   }
+     * })
+     * 
+     */
+    delete<T extends copy_isin_re_issuanceDeleteArgs>(args: SelectSubset<T, copy_isin_re_issuanceDeleteArgs<ExtArgs>>): Prisma__copy_isin_re_issuanceClient<$Result.GetResult<Prisma.$copy_isin_re_issuancePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one Copy_isin_re_issuance.
+     * @param {copy_isin_re_issuanceUpdateArgs} args - Arguments to update one Copy_isin_re_issuance.
+     * @example
+     * // Update one Copy_isin_re_issuance
+     * const copy_isin_re_issuance = await prisma.copy_isin_re_issuance.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends copy_isin_re_issuanceUpdateArgs>(args: SelectSubset<T, copy_isin_re_issuanceUpdateArgs<ExtArgs>>): Prisma__copy_isin_re_issuanceClient<$Result.GetResult<Prisma.$copy_isin_re_issuancePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more Copy_isin_re_issuances.
+     * @param {copy_isin_re_issuanceDeleteManyArgs} args - Arguments to filter Copy_isin_re_issuances to delete.
+     * @example
+     * // Delete a few Copy_isin_re_issuances
+     * const { count } = await prisma.copy_isin_re_issuance.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends copy_isin_re_issuanceDeleteManyArgs>(args?: SelectSubset<T, copy_isin_re_issuanceDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Copy_isin_re_issuances.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_isin_re_issuanceUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Copy_isin_re_issuances
+     * const copy_isin_re_issuance = await prisma.copy_isin_re_issuance.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends copy_isin_re_issuanceUpdateManyArgs>(args: SelectSubset<T, copy_isin_re_issuanceUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one Copy_isin_re_issuance.
+     * @param {copy_isin_re_issuanceUpsertArgs} args - Arguments to update or create a Copy_isin_re_issuance.
+     * @example
+     * // Update or create a Copy_isin_re_issuance
+     * const copy_isin_re_issuance = await prisma.copy_isin_re_issuance.upsert({
+     *   create: {
+     *     // ... data to create a Copy_isin_re_issuance
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Copy_isin_re_issuance we want to update
+     *   }
+     * })
+     */
+    upsert<T extends copy_isin_re_issuanceUpsertArgs>(args: SelectSubset<T, copy_isin_re_issuanceUpsertArgs<ExtArgs>>): Prisma__copy_isin_re_issuanceClient<$Result.GetResult<Prisma.$copy_isin_re_issuancePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of Copy_isin_re_issuances.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_isin_re_issuanceCountArgs} args - Arguments to filter Copy_isin_re_issuances to count.
+     * @example
+     * // Count the number of Copy_isin_re_issuances
+     * const count = await prisma.copy_isin_re_issuance.count({
+     *   where: {
+     *     // ... the filter for the Copy_isin_re_issuances we want to count
+     *   }
+     * })
+    **/
+    count<T extends copy_isin_re_issuanceCountArgs>(
+      args?: Subset<T, copy_isin_re_issuanceCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], Copy_isin_re_issuanceCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Copy_isin_re_issuance.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {Copy_isin_re_issuanceAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends Copy_isin_re_issuanceAggregateArgs>(args: Subset<T, Copy_isin_re_issuanceAggregateArgs>): Prisma.PrismaPromise<GetCopy_isin_re_issuanceAggregateType<T>>
+
+    /**
+     * Group by Copy_isin_re_issuance.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_isin_re_issuanceGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends copy_isin_re_issuanceGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: copy_isin_re_issuanceGroupByArgs['orderBy'] }
+        : { orderBy?: copy_isin_re_issuanceGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, copy_isin_re_issuanceGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetCopy_isin_re_issuanceGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the copy_isin_re_issuance model
+   */
+  readonly fields: copy_isin_re_issuanceFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for copy_isin_re_issuance.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__copy_isin_re_issuanceClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the copy_isin_re_issuance model
+   */
+  interface copy_isin_re_issuanceFieldRefs {
+    readonly id: FieldRef<"copy_isin_re_issuance", 'BigInt'>
+    readonly isin_id: FieldRef<"copy_isin_re_issuance", 'BigInt'>
+    readonly isin: FieldRef<"copy_isin_re_issuance", 'String'>
+    readonly issuer_master_id: FieldRef<"copy_isin_re_issuance", 'BigInt'>
+    readonly allotment_date: FieldRef<"copy_isin_re_issuance", 'DateTime'>
+    readonly issue_size: FieldRef<"copy_isin_re_issuance", 'Decimal'>
+    readonly face_value: FieldRef<"copy_isin_re_issuance", 'Float'>
+    readonly maturity_date: FieldRef<"copy_isin_re_issuance", 'DateTime'>
+    readonly business_sector: FieldRef<"copy_isin_re_issuance", 'Int'>
+    readonly security_name: FieldRef<"copy_isin_re_issuance", 'String'>
+    readonly security_class: FieldRef<"copy_isin_re_issuance", 'String'>
+    readonly mode_issue: FieldRef<"copy_isin_re_issuance", 'Int'>
+    readonly seniority: FieldRef<"copy_isin_re_issuance", 'Int'>
+    readonly tax_free: FieldRef<"copy_isin_re_issuance", 'Float'>
+    readonly secured_flag: FieldRef<"copy_isin_re_issuance", 'Int'>
+    readonly is_visible: FieldRef<"copy_isin_re_issuance", 'Int'>
+    readonly is_updated: FieldRef<"copy_isin_re_issuance", 'Int'>
+    readonly is_main: FieldRef<"copy_isin_re_issuance", 'Int'>
+    readonly created_at: FieldRef<"copy_isin_re_issuance", 'DateTime'>
+    readonly updated_at: FieldRef<"copy_isin_re_issuance", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * copy_isin_re_issuance findUnique
+   */
+  export type copy_isin_re_issuanceFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_isin_re_issuance
+     */
+    select?: copy_isin_re_issuanceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_isin_re_issuance
+     */
+    omit?: copy_isin_re_issuanceOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_isin_re_issuance to fetch.
+     */
+    where: copy_isin_re_issuanceWhereUniqueInput
+  }
+
+  /**
+   * copy_isin_re_issuance findUniqueOrThrow
+   */
+  export type copy_isin_re_issuanceFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_isin_re_issuance
+     */
+    select?: copy_isin_re_issuanceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_isin_re_issuance
+     */
+    omit?: copy_isin_re_issuanceOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_isin_re_issuance to fetch.
+     */
+    where: copy_isin_re_issuanceWhereUniqueInput
+  }
+
+  /**
+   * copy_isin_re_issuance findFirst
+   */
+  export type copy_isin_re_issuanceFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_isin_re_issuance
+     */
+    select?: copy_isin_re_issuanceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_isin_re_issuance
+     */
+    omit?: copy_isin_re_issuanceOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_isin_re_issuance to fetch.
+     */
+    where?: copy_isin_re_issuanceWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of copy_isin_re_issuances to fetch.
+     */
+    orderBy?: copy_isin_re_issuanceOrderByWithRelationInput | copy_isin_re_issuanceOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for copy_isin_re_issuances.
+     */
+    cursor?: copy_isin_re_issuanceWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` copy_isin_re_issuances from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` copy_isin_re_issuances.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of copy_isin_re_issuances.
+     */
+    distinct?: Copy_isin_re_issuanceScalarFieldEnum | Copy_isin_re_issuanceScalarFieldEnum[]
+  }
+
+  /**
+   * copy_isin_re_issuance findFirstOrThrow
+   */
+  export type copy_isin_re_issuanceFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_isin_re_issuance
+     */
+    select?: copy_isin_re_issuanceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_isin_re_issuance
+     */
+    omit?: copy_isin_re_issuanceOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_isin_re_issuance to fetch.
+     */
+    where?: copy_isin_re_issuanceWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of copy_isin_re_issuances to fetch.
+     */
+    orderBy?: copy_isin_re_issuanceOrderByWithRelationInput | copy_isin_re_issuanceOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for copy_isin_re_issuances.
+     */
+    cursor?: copy_isin_re_issuanceWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` copy_isin_re_issuances from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` copy_isin_re_issuances.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of copy_isin_re_issuances.
+     */
+    distinct?: Copy_isin_re_issuanceScalarFieldEnum | Copy_isin_re_issuanceScalarFieldEnum[]
+  }
+
+  /**
+   * copy_isin_re_issuance findMany
+   */
+  export type copy_isin_re_issuanceFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_isin_re_issuance
+     */
+    select?: copy_isin_re_issuanceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_isin_re_issuance
+     */
+    omit?: copy_isin_re_issuanceOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_isin_re_issuances to fetch.
+     */
+    where?: copy_isin_re_issuanceWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of copy_isin_re_issuances to fetch.
+     */
+    orderBy?: copy_isin_re_issuanceOrderByWithRelationInput | copy_isin_re_issuanceOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing copy_isin_re_issuances.
+     */
+    cursor?: copy_isin_re_issuanceWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` copy_isin_re_issuances from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` copy_isin_re_issuances.
+     */
+    skip?: number
+    distinct?: Copy_isin_re_issuanceScalarFieldEnum | Copy_isin_re_issuanceScalarFieldEnum[]
+  }
+
+  /**
+   * copy_isin_re_issuance create
+   */
+  export type copy_isin_re_issuanceCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_isin_re_issuance
+     */
+    select?: copy_isin_re_issuanceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_isin_re_issuance
+     */
+    omit?: copy_isin_re_issuanceOmit<ExtArgs> | null
+    /**
+     * The data needed to create a copy_isin_re_issuance.
+     */
+    data: XOR<copy_isin_re_issuanceCreateInput, copy_isin_re_issuanceUncheckedCreateInput>
+  }
+
+  /**
+   * copy_isin_re_issuance createMany
+   */
+  export type copy_isin_re_issuanceCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many copy_isin_re_issuances.
+     */
+    data: copy_isin_re_issuanceCreateManyInput | copy_isin_re_issuanceCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * copy_isin_re_issuance update
+   */
+  export type copy_isin_re_issuanceUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_isin_re_issuance
+     */
+    select?: copy_isin_re_issuanceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_isin_re_issuance
+     */
+    omit?: copy_isin_re_issuanceOmit<ExtArgs> | null
+    /**
+     * The data needed to update a copy_isin_re_issuance.
+     */
+    data: XOR<copy_isin_re_issuanceUpdateInput, copy_isin_re_issuanceUncheckedUpdateInput>
+    /**
+     * Choose, which copy_isin_re_issuance to update.
+     */
+    where: copy_isin_re_issuanceWhereUniqueInput
+  }
+
+  /**
+   * copy_isin_re_issuance updateMany
+   */
+  export type copy_isin_re_issuanceUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update copy_isin_re_issuances.
+     */
+    data: XOR<copy_isin_re_issuanceUpdateManyMutationInput, copy_isin_re_issuanceUncheckedUpdateManyInput>
+    /**
+     * Filter which copy_isin_re_issuances to update
+     */
+    where?: copy_isin_re_issuanceWhereInput
+    /**
+     * Limit how many copy_isin_re_issuances to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * copy_isin_re_issuance upsert
+   */
+  export type copy_isin_re_issuanceUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_isin_re_issuance
+     */
+    select?: copy_isin_re_issuanceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_isin_re_issuance
+     */
+    omit?: copy_isin_re_issuanceOmit<ExtArgs> | null
+    /**
+     * The filter to search for the copy_isin_re_issuance to update in case it exists.
+     */
+    where: copy_isin_re_issuanceWhereUniqueInput
+    /**
+     * In case the copy_isin_re_issuance found by the `where` argument doesn't exist, create a new copy_isin_re_issuance with this data.
+     */
+    create: XOR<copy_isin_re_issuanceCreateInput, copy_isin_re_issuanceUncheckedCreateInput>
+    /**
+     * In case the copy_isin_re_issuance was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<copy_isin_re_issuanceUpdateInput, copy_isin_re_issuanceUncheckedUpdateInput>
+  }
+
+  /**
+   * copy_isin_re_issuance delete
+   */
+  export type copy_isin_re_issuanceDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_isin_re_issuance
+     */
+    select?: copy_isin_re_issuanceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_isin_re_issuance
+     */
+    omit?: copy_isin_re_issuanceOmit<ExtArgs> | null
+    /**
+     * Filter which copy_isin_re_issuance to delete.
+     */
+    where: copy_isin_re_issuanceWhereUniqueInput
+  }
+
+  /**
+   * copy_isin_re_issuance deleteMany
+   */
+  export type copy_isin_re_issuanceDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which copy_isin_re_issuances to delete
+     */
+    where?: copy_isin_re_issuanceWhereInput
+    /**
+     * Limit how many copy_isin_re_issuances to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * copy_isin_re_issuance without action
+   */
+  export type copy_isin_re_issuanceDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_isin_re_issuance
+     */
+    select?: copy_isin_re_issuanceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_isin_re_issuance
+     */
+    omit?: copy_isin_re_issuanceOmit<ExtArgs> | null
+  }
+
+
+  /**
+   * Model copy_isin_re_issuance_details
+   */
+
+  export type AggregateCopy_isin_re_issuance_details = {
+    _count: Copy_isin_re_issuance_detailsCountAggregateOutputType | null
+    _avg: Copy_isin_re_issuance_detailsAvgAggregateOutputType | null
+    _sum: Copy_isin_re_issuance_detailsSumAggregateOutputType | null
+    _min: Copy_isin_re_issuance_detailsMinAggregateOutputType | null
+    _max: Copy_isin_re_issuance_detailsMaxAggregateOutputType | null
+  }
+
+  export type Copy_isin_re_issuance_detailsAvgAggregateOutputType = {
+    id: number | null
+    re_issuance_id: number | null
+    face_value: Decimal | null
+    price: Decimal | null
+    spread: Decimal | null
+    yield: Decimal | null
+    base_issue_size: Decimal | null
+    green_shoe_option: Decimal | null
+    amount_raised: Decimal | null
+    coupon: Decimal | null
+    coupon_frequency: number | null
+    anchor_amount: Decimal | null
+    number_of_anchor_investors: number | null
+    total_qib_bidding: Decimal | null
+    total_qib_amount_accepted: Decimal | null
+    total_non_qib_bidding: Decimal | null
+    total_non_qib_amount_accepted: Decimal | null
+    cutoff_yield_price: Decimal | null
+    weighted_average_cutoff_yield_price: Decimal | null
+    updated_by: number | null
+  }
+
+  export type Copy_isin_re_issuance_detailsSumAggregateOutputType = {
+    id: bigint | null
+    re_issuance_id: bigint | null
+    face_value: Decimal | null
+    price: Decimal | null
+    spread: Decimal | null
+    yield: Decimal | null
+    base_issue_size: Decimal | null
+    green_shoe_option: Decimal | null
+    amount_raised: Decimal | null
+    coupon: Decimal | null
+    coupon_frequency: number | null
+    anchor_amount: Decimal | null
+    number_of_anchor_investors: number | null
+    total_qib_bidding: Decimal | null
+    total_qib_amount_accepted: Decimal | null
+    total_non_qib_bidding: Decimal | null
+    total_non_qib_amount_accepted: Decimal | null
+    cutoff_yield_price: Decimal | null
+    weighted_average_cutoff_yield_price: Decimal | null
+    updated_by: number | null
+  }
+
+  export type Copy_isin_re_issuance_detailsMinAggregateOutputType = {
+    id: bigint | null
+    re_issuance_id: bigint | null
+    bidding_date: Date | null
+    issuer_name: string | null
+    isin: string | null
+    issue_description: string | null
+    type_of_issuance: string | null
+    allotment_date: Date | null
+    face_value: Decimal | null
+    credit_rating: string | null
+    type_of_book_bidding: $Enums.copy_isin_re_issuance_details_type_of_book_bidding | null
+    price: Decimal | null
+    spread: Decimal | null
+    yield: Decimal | null
+    manner_of_allotment: string | null
+    manner_of_settlement: string | null
+    link_of_gid_ppm: string | null
+    link_of_kid_term_sheet: string | null
+    base_issue_size: Decimal | null
+    green_shoe_option: Decimal | null
+    amount_raised: Decimal | null
+    coupon: Decimal | null
+    coupon_frequency: number | null
+    successful_bidders_category: string | null
+    type_of_bidding: string | null
+    secured_unsecured: $Enums.copy_isin_re_issuance_details_secured_unsecured | null
+    tenor: string | null
+    maturity_type: string | null
+    interest_payment_type: string | null
+    anchor_amount: Decimal | null
+    number_of_anchor_investors: number | null
+    total_qib_bidding: Decimal | null
+    total_qib_amount_accepted: Decimal | null
+    total_non_qib_bidding: Decimal | null
+    total_non_qib_amount_accepted: Decimal | null
+    cutoff_yield_price: Decimal | null
+    weighted_average_cutoff_yield_price: Decimal | null
+    issuance_done_through_bidding_process: string | null
+    updated_by: number | null
+    created_at: Date | null
+    updated_at: Date | null
+  }
+
+  export type Copy_isin_re_issuance_detailsMaxAggregateOutputType = {
+    id: bigint | null
+    re_issuance_id: bigint | null
+    bidding_date: Date | null
+    issuer_name: string | null
+    isin: string | null
+    issue_description: string | null
+    type_of_issuance: string | null
+    allotment_date: Date | null
+    face_value: Decimal | null
+    credit_rating: string | null
+    type_of_book_bidding: $Enums.copy_isin_re_issuance_details_type_of_book_bidding | null
+    price: Decimal | null
+    spread: Decimal | null
+    yield: Decimal | null
+    manner_of_allotment: string | null
+    manner_of_settlement: string | null
+    link_of_gid_ppm: string | null
+    link_of_kid_term_sheet: string | null
+    base_issue_size: Decimal | null
+    green_shoe_option: Decimal | null
+    amount_raised: Decimal | null
+    coupon: Decimal | null
+    coupon_frequency: number | null
+    successful_bidders_category: string | null
+    type_of_bidding: string | null
+    secured_unsecured: $Enums.copy_isin_re_issuance_details_secured_unsecured | null
+    tenor: string | null
+    maturity_type: string | null
+    interest_payment_type: string | null
+    anchor_amount: Decimal | null
+    number_of_anchor_investors: number | null
+    total_qib_bidding: Decimal | null
+    total_qib_amount_accepted: Decimal | null
+    total_non_qib_bidding: Decimal | null
+    total_non_qib_amount_accepted: Decimal | null
+    cutoff_yield_price: Decimal | null
+    weighted_average_cutoff_yield_price: Decimal | null
+    issuance_done_through_bidding_process: string | null
+    updated_by: number | null
+    created_at: Date | null
+    updated_at: Date | null
+  }
+
+  export type Copy_isin_re_issuance_detailsCountAggregateOutputType = {
+    id: number
+    re_issuance_id: number
+    bidding_date: number
+    issuer_name: number
+    isin: number
+    issue_description: number
+    type_of_issuance: number
+    allotment_date: number
+    face_value: number
+    credit_rating: number
+    type_of_book_bidding: number
+    price: number
+    spread: number
+    yield: number
+    manner_of_allotment: number
+    manner_of_settlement: number
+    link_of_gid_ppm: number
+    link_of_kid_term_sheet: number
+    base_issue_size: number
+    green_shoe_option: number
+    amount_raised: number
+    coupon: number
+    coupon_frequency: number
+    successful_bidders_category: number
+    type_of_bidding: number
+    secured_unsecured: number
+    tenor: number
+    maturity_type: number
+    interest_payment_type: number
+    anchor_amount: number
+    number_of_anchor_investors: number
+    total_qib_bidding: number
+    total_qib_amount_accepted: number
+    total_non_qib_bidding: number
+    total_non_qib_amount_accepted: number
+    cutoff_yield_price: number
+    weighted_average_cutoff_yield_price: number
+    issuance_done_through_bidding_process: number
+    updated_by: number
+    created_at: number
+    updated_at: number
+    _all: number
+  }
+
+
+  export type Copy_isin_re_issuance_detailsAvgAggregateInputType = {
+    id?: true
+    re_issuance_id?: true
+    face_value?: true
+    price?: true
+    spread?: true
+    yield?: true
+    base_issue_size?: true
+    green_shoe_option?: true
+    amount_raised?: true
+    coupon?: true
+    coupon_frequency?: true
+    anchor_amount?: true
+    number_of_anchor_investors?: true
+    total_qib_bidding?: true
+    total_qib_amount_accepted?: true
+    total_non_qib_bidding?: true
+    total_non_qib_amount_accepted?: true
+    cutoff_yield_price?: true
+    weighted_average_cutoff_yield_price?: true
+    updated_by?: true
+  }
+
+  export type Copy_isin_re_issuance_detailsSumAggregateInputType = {
+    id?: true
+    re_issuance_id?: true
+    face_value?: true
+    price?: true
+    spread?: true
+    yield?: true
+    base_issue_size?: true
+    green_shoe_option?: true
+    amount_raised?: true
+    coupon?: true
+    coupon_frequency?: true
+    anchor_amount?: true
+    number_of_anchor_investors?: true
+    total_qib_bidding?: true
+    total_qib_amount_accepted?: true
+    total_non_qib_bidding?: true
+    total_non_qib_amount_accepted?: true
+    cutoff_yield_price?: true
+    weighted_average_cutoff_yield_price?: true
+    updated_by?: true
+  }
+
+  export type Copy_isin_re_issuance_detailsMinAggregateInputType = {
+    id?: true
+    re_issuance_id?: true
+    bidding_date?: true
+    issuer_name?: true
+    isin?: true
+    issue_description?: true
+    type_of_issuance?: true
+    allotment_date?: true
+    face_value?: true
+    credit_rating?: true
+    type_of_book_bidding?: true
+    price?: true
+    spread?: true
+    yield?: true
+    manner_of_allotment?: true
+    manner_of_settlement?: true
+    link_of_gid_ppm?: true
+    link_of_kid_term_sheet?: true
+    base_issue_size?: true
+    green_shoe_option?: true
+    amount_raised?: true
+    coupon?: true
+    coupon_frequency?: true
+    successful_bidders_category?: true
+    type_of_bidding?: true
+    secured_unsecured?: true
+    tenor?: true
+    maturity_type?: true
+    interest_payment_type?: true
+    anchor_amount?: true
+    number_of_anchor_investors?: true
+    total_qib_bidding?: true
+    total_qib_amount_accepted?: true
+    total_non_qib_bidding?: true
+    total_non_qib_amount_accepted?: true
+    cutoff_yield_price?: true
+    weighted_average_cutoff_yield_price?: true
+    issuance_done_through_bidding_process?: true
+    updated_by?: true
+    created_at?: true
+    updated_at?: true
+  }
+
+  export type Copy_isin_re_issuance_detailsMaxAggregateInputType = {
+    id?: true
+    re_issuance_id?: true
+    bidding_date?: true
+    issuer_name?: true
+    isin?: true
+    issue_description?: true
+    type_of_issuance?: true
+    allotment_date?: true
+    face_value?: true
+    credit_rating?: true
+    type_of_book_bidding?: true
+    price?: true
+    spread?: true
+    yield?: true
+    manner_of_allotment?: true
+    manner_of_settlement?: true
+    link_of_gid_ppm?: true
+    link_of_kid_term_sheet?: true
+    base_issue_size?: true
+    green_shoe_option?: true
+    amount_raised?: true
+    coupon?: true
+    coupon_frequency?: true
+    successful_bidders_category?: true
+    type_of_bidding?: true
+    secured_unsecured?: true
+    tenor?: true
+    maturity_type?: true
+    interest_payment_type?: true
+    anchor_amount?: true
+    number_of_anchor_investors?: true
+    total_qib_bidding?: true
+    total_qib_amount_accepted?: true
+    total_non_qib_bidding?: true
+    total_non_qib_amount_accepted?: true
+    cutoff_yield_price?: true
+    weighted_average_cutoff_yield_price?: true
+    issuance_done_through_bidding_process?: true
+    updated_by?: true
+    created_at?: true
+    updated_at?: true
+  }
+
+  export type Copy_isin_re_issuance_detailsCountAggregateInputType = {
+    id?: true
+    re_issuance_id?: true
+    bidding_date?: true
+    issuer_name?: true
+    isin?: true
+    issue_description?: true
+    type_of_issuance?: true
+    allotment_date?: true
+    face_value?: true
+    credit_rating?: true
+    type_of_book_bidding?: true
+    price?: true
+    spread?: true
+    yield?: true
+    manner_of_allotment?: true
+    manner_of_settlement?: true
+    link_of_gid_ppm?: true
+    link_of_kid_term_sheet?: true
+    base_issue_size?: true
+    green_shoe_option?: true
+    amount_raised?: true
+    coupon?: true
+    coupon_frequency?: true
+    successful_bidders_category?: true
+    type_of_bidding?: true
+    secured_unsecured?: true
+    tenor?: true
+    maturity_type?: true
+    interest_payment_type?: true
+    anchor_amount?: true
+    number_of_anchor_investors?: true
+    total_qib_bidding?: true
+    total_qib_amount_accepted?: true
+    total_non_qib_bidding?: true
+    total_non_qib_amount_accepted?: true
+    cutoff_yield_price?: true
+    weighted_average_cutoff_yield_price?: true
+    issuance_done_through_bidding_process?: true
+    updated_by?: true
+    created_at?: true
+    updated_at?: true
+    _all?: true
+  }
+
+  export type Copy_isin_re_issuance_detailsAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which copy_isin_re_issuance_details to aggregate.
+     */
+    where?: copy_isin_re_issuance_detailsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of copy_isin_re_issuance_details to fetch.
+     */
+    orderBy?: copy_isin_re_issuance_detailsOrderByWithRelationInput | copy_isin_re_issuance_detailsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: copy_isin_re_issuance_detailsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` copy_isin_re_issuance_details from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` copy_isin_re_issuance_details.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned copy_isin_re_issuance_details
+    **/
+    _count?: true | Copy_isin_re_issuance_detailsCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: Copy_isin_re_issuance_detailsAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: Copy_isin_re_issuance_detailsSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: Copy_isin_re_issuance_detailsMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: Copy_isin_re_issuance_detailsMaxAggregateInputType
+  }
+
+  export type GetCopy_isin_re_issuance_detailsAggregateType<T extends Copy_isin_re_issuance_detailsAggregateArgs> = {
+        [P in keyof T & keyof AggregateCopy_isin_re_issuance_details]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateCopy_isin_re_issuance_details[P]>
+      : GetScalarType<T[P], AggregateCopy_isin_re_issuance_details[P]>
+  }
+
+
+
+
+  export type copy_isin_re_issuance_detailsGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: copy_isin_re_issuance_detailsWhereInput
+    orderBy?: copy_isin_re_issuance_detailsOrderByWithAggregationInput | copy_isin_re_issuance_detailsOrderByWithAggregationInput[]
+    by: Copy_isin_re_issuance_detailsScalarFieldEnum[] | Copy_isin_re_issuance_detailsScalarFieldEnum
+    having?: copy_isin_re_issuance_detailsScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: Copy_isin_re_issuance_detailsCountAggregateInputType | true
+    _avg?: Copy_isin_re_issuance_detailsAvgAggregateInputType
+    _sum?: Copy_isin_re_issuance_detailsSumAggregateInputType
+    _min?: Copy_isin_re_issuance_detailsMinAggregateInputType
+    _max?: Copy_isin_re_issuance_detailsMaxAggregateInputType
+  }
+
+  export type Copy_isin_re_issuance_detailsGroupByOutputType = {
+    id: bigint
+    re_issuance_id: bigint
+    bidding_date: Date | null
+    issuer_name: string | null
+    isin: string | null
+    issue_description: string | null
+    type_of_issuance: string | null
+    allotment_date: Date | null
+    face_value: Decimal | null
+    credit_rating: string | null
+    type_of_book_bidding: $Enums.copy_isin_re_issuance_details_type_of_book_bidding | null
+    price: Decimal | null
+    spread: Decimal | null
+    yield: Decimal | null
+    manner_of_allotment: string | null
+    manner_of_settlement: string | null
+    link_of_gid_ppm: string | null
+    link_of_kid_term_sheet: string | null
+    base_issue_size: Decimal | null
+    green_shoe_option: Decimal | null
+    amount_raised: Decimal | null
+    coupon: Decimal | null
+    coupon_frequency: number | null
+    successful_bidders_category: string | null
+    type_of_bidding: string | null
+    secured_unsecured: $Enums.copy_isin_re_issuance_details_secured_unsecured | null
+    tenor: string | null
+    maturity_type: string | null
+    interest_payment_type: string | null
+    anchor_amount: Decimal | null
+    number_of_anchor_investors: number | null
+    total_qib_bidding: Decimal | null
+    total_qib_amount_accepted: Decimal | null
+    total_non_qib_bidding: Decimal | null
+    total_non_qib_amount_accepted: Decimal | null
+    cutoff_yield_price: Decimal | null
+    weighted_average_cutoff_yield_price: Decimal | null
+    issuance_done_through_bidding_process: string | null
+    updated_by: number | null
+    created_at: Date | null
+    updated_at: Date | null
+    _count: Copy_isin_re_issuance_detailsCountAggregateOutputType | null
+    _avg: Copy_isin_re_issuance_detailsAvgAggregateOutputType | null
+    _sum: Copy_isin_re_issuance_detailsSumAggregateOutputType | null
+    _min: Copy_isin_re_issuance_detailsMinAggregateOutputType | null
+    _max: Copy_isin_re_issuance_detailsMaxAggregateOutputType | null
+  }
+
+  type GetCopy_isin_re_issuance_detailsGroupByPayload<T extends copy_isin_re_issuance_detailsGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<Copy_isin_re_issuance_detailsGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof Copy_isin_re_issuance_detailsGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], Copy_isin_re_issuance_detailsGroupByOutputType[P]>
+            : GetScalarType<T[P], Copy_isin_re_issuance_detailsGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type copy_isin_re_issuance_detailsSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    re_issuance_id?: boolean
+    bidding_date?: boolean
+    issuer_name?: boolean
+    isin?: boolean
+    issue_description?: boolean
+    type_of_issuance?: boolean
+    allotment_date?: boolean
+    face_value?: boolean
+    credit_rating?: boolean
+    type_of_book_bidding?: boolean
+    price?: boolean
+    spread?: boolean
+    yield?: boolean
+    manner_of_allotment?: boolean
+    manner_of_settlement?: boolean
+    link_of_gid_ppm?: boolean
+    link_of_kid_term_sheet?: boolean
+    base_issue_size?: boolean
+    green_shoe_option?: boolean
+    amount_raised?: boolean
+    coupon?: boolean
+    coupon_frequency?: boolean
+    successful_bidders_category?: boolean
+    type_of_bidding?: boolean
+    secured_unsecured?: boolean
+    tenor?: boolean
+    maturity_type?: boolean
+    interest_payment_type?: boolean
+    anchor_amount?: boolean
+    number_of_anchor_investors?: boolean
+    total_qib_bidding?: boolean
+    total_qib_amount_accepted?: boolean
+    total_non_qib_bidding?: boolean
+    total_non_qib_amount_accepted?: boolean
+    cutoff_yield_price?: boolean
+    weighted_average_cutoff_yield_price?: boolean
+    issuance_done_through_bidding_process?: boolean
+    updated_by?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+  }, ExtArgs["result"]["copy_isin_re_issuance_details"]>
+
+
+
+  export type copy_isin_re_issuance_detailsSelectScalar = {
+    id?: boolean
+    re_issuance_id?: boolean
+    bidding_date?: boolean
+    issuer_name?: boolean
+    isin?: boolean
+    issue_description?: boolean
+    type_of_issuance?: boolean
+    allotment_date?: boolean
+    face_value?: boolean
+    credit_rating?: boolean
+    type_of_book_bidding?: boolean
+    price?: boolean
+    spread?: boolean
+    yield?: boolean
+    manner_of_allotment?: boolean
+    manner_of_settlement?: boolean
+    link_of_gid_ppm?: boolean
+    link_of_kid_term_sheet?: boolean
+    base_issue_size?: boolean
+    green_shoe_option?: boolean
+    amount_raised?: boolean
+    coupon?: boolean
+    coupon_frequency?: boolean
+    successful_bidders_category?: boolean
+    type_of_bidding?: boolean
+    secured_unsecured?: boolean
+    tenor?: boolean
+    maturity_type?: boolean
+    interest_payment_type?: boolean
+    anchor_amount?: boolean
+    number_of_anchor_investors?: boolean
+    total_qib_bidding?: boolean
+    total_qib_amount_accepted?: boolean
+    total_non_qib_bidding?: boolean
+    total_non_qib_amount_accepted?: boolean
+    cutoff_yield_price?: boolean
+    weighted_average_cutoff_yield_price?: boolean
+    issuance_done_through_bidding_process?: boolean
+    updated_by?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+  }
+
+  export type copy_isin_re_issuance_detailsOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "re_issuance_id" | "bidding_date" | "issuer_name" | "isin" | "issue_description" | "type_of_issuance" | "allotment_date" | "face_value" | "credit_rating" | "type_of_book_bidding" | "price" | "spread" | "yield" | "manner_of_allotment" | "manner_of_settlement" | "link_of_gid_ppm" | "link_of_kid_term_sheet" | "base_issue_size" | "green_shoe_option" | "amount_raised" | "coupon" | "coupon_frequency" | "successful_bidders_category" | "type_of_bidding" | "secured_unsecured" | "tenor" | "maturity_type" | "interest_payment_type" | "anchor_amount" | "number_of_anchor_investors" | "total_qib_bidding" | "total_qib_amount_accepted" | "total_non_qib_bidding" | "total_non_qib_amount_accepted" | "cutoff_yield_price" | "weighted_average_cutoff_yield_price" | "issuance_done_through_bidding_process" | "updated_by" | "created_at" | "updated_at", ExtArgs["result"]["copy_isin_re_issuance_details"]>
+
+  export type $copy_isin_re_issuance_detailsPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "copy_isin_re_issuance_details"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: bigint
+      re_issuance_id: bigint
+      bidding_date: Date | null
+      issuer_name: string | null
+      isin: string | null
+      issue_description: string | null
+      type_of_issuance: string | null
+      allotment_date: Date | null
+      face_value: Prisma.Decimal | null
+      credit_rating: string | null
+      type_of_book_bidding: $Enums.copy_isin_re_issuance_details_type_of_book_bidding | null
+      price: Prisma.Decimal | null
+      spread: Prisma.Decimal | null
+      yield: Prisma.Decimal | null
+      manner_of_allotment: string | null
+      manner_of_settlement: string | null
+      link_of_gid_ppm: string | null
+      link_of_kid_term_sheet: string | null
+      base_issue_size: Prisma.Decimal | null
+      green_shoe_option: Prisma.Decimal | null
+      amount_raised: Prisma.Decimal | null
+      coupon: Prisma.Decimal | null
+      coupon_frequency: number | null
+      successful_bidders_category: string | null
+      type_of_bidding: string | null
+      secured_unsecured: $Enums.copy_isin_re_issuance_details_secured_unsecured | null
+      tenor: string | null
+      maturity_type: string | null
+      interest_payment_type: string | null
+      anchor_amount: Prisma.Decimal | null
+      number_of_anchor_investors: number | null
+      total_qib_bidding: Prisma.Decimal | null
+      total_qib_amount_accepted: Prisma.Decimal | null
+      total_non_qib_bidding: Prisma.Decimal | null
+      total_non_qib_amount_accepted: Prisma.Decimal | null
+      cutoff_yield_price: Prisma.Decimal | null
+      weighted_average_cutoff_yield_price: Prisma.Decimal | null
+      issuance_done_through_bidding_process: string | null
+      updated_by: number | null
+      created_at: Date | null
+      updated_at: Date | null
+    }, ExtArgs["result"]["copy_isin_re_issuance_details"]>
+    composites: {}
+  }
+
+  type copy_isin_re_issuance_detailsGetPayload<S extends boolean | null | undefined | copy_isin_re_issuance_detailsDefaultArgs> = $Result.GetResult<Prisma.$copy_isin_re_issuance_detailsPayload, S>
+
+  type copy_isin_re_issuance_detailsCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<copy_isin_re_issuance_detailsFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: Copy_isin_re_issuance_detailsCountAggregateInputType | true
+    }
+
+  export interface copy_isin_re_issuance_detailsDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['copy_isin_re_issuance_details'], meta: { name: 'copy_isin_re_issuance_details' } }
+    /**
+     * Find zero or one Copy_isin_re_issuance_details that matches the filter.
+     * @param {copy_isin_re_issuance_detailsFindUniqueArgs} args - Arguments to find a Copy_isin_re_issuance_details
+     * @example
+     * // Get one Copy_isin_re_issuance_details
+     * const copy_isin_re_issuance_details = await prisma.copy_isin_re_issuance_details.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends copy_isin_re_issuance_detailsFindUniqueArgs>(args: SelectSubset<T, copy_isin_re_issuance_detailsFindUniqueArgs<ExtArgs>>): Prisma__copy_isin_re_issuance_detailsClient<$Result.GetResult<Prisma.$copy_isin_re_issuance_detailsPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one Copy_isin_re_issuance_details that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {copy_isin_re_issuance_detailsFindUniqueOrThrowArgs} args - Arguments to find a Copy_isin_re_issuance_details
+     * @example
+     * // Get one Copy_isin_re_issuance_details
+     * const copy_isin_re_issuance_details = await prisma.copy_isin_re_issuance_details.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends copy_isin_re_issuance_detailsFindUniqueOrThrowArgs>(args: SelectSubset<T, copy_isin_re_issuance_detailsFindUniqueOrThrowArgs<ExtArgs>>): Prisma__copy_isin_re_issuance_detailsClient<$Result.GetResult<Prisma.$copy_isin_re_issuance_detailsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Copy_isin_re_issuance_details that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_isin_re_issuance_detailsFindFirstArgs} args - Arguments to find a Copy_isin_re_issuance_details
+     * @example
+     * // Get one Copy_isin_re_issuance_details
+     * const copy_isin_re_issuance_details = await prisma.copy_isin_re_issuance_details.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends copy_isin_re_issuance_detailsFindFirstArgs>(args?: SelectSubset<T, copy_isin_re_issuance_detailsFindFirstArgs<ExtArgs>>): Prisma__copy_isin_re_issuance_detailsClient<$Result.GetResult<Prisma.$copy_isin_re_issuance_detailsPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Copy_isin_re_issuance_details that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_isin_re_issuance_detailsFindFirstOrThrowArgs} args - Arguments to find a Copy_isin_re_issuance_details
+     * @example
+     * // Get one Copy_isin_re_issuance_details
+     * const copy_isin_re_issuance_details = await prisma.copy_isin_re_issuance_details.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends copy_isin_re_issuance_detailsFindFirstOrThrowArgs>(args?: SelectSubset<T, copy_isin_re_issuance_detailsFindFirstOrThrowArgs<ExtArgs>>): Prisma__copy_isin_re_issuance_detailsClient<$Result.GetResult<Prisma.$copy_isin_re_issuance_detailsPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more Copy_isin_re_issuance_details that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_isin_re_issuance_detailsFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Copy_isin_re_issuance_details
+     * const copy_isin_re_issuance_details = await prisma.copy_isin_re_issuance_details.findMany()
+     * 
+     * // Get first 10 Copy_isin_re_issuance_details
+     * const copy_isin_re_issuance_details = await prisma.copy_isin_re_issuance_details.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const copy_isin_re_issuance_detailsWithIdOnly = await prisma.copy_isin_re_issuance_details.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends copy_isin_re_issuance_detailsFindManyArgs>(args?: SelectSubset<T, copy_isin_re_issuance_detailsFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$copy_isin_re_issuance_detailsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a Copy_isin_re_issuance_details.
+     * @param {copy_isin_re_issuance_detailsCreateArgs} args - Arguments to create a Copy_isin_re_issuance_details.
+     * @example
+     * // Create one Copy_isin_re_issuance_details
+     * const Copy_isin_re_issuance_details = await prisma.copy_isin_re_issuance_details.create({
+     *   data: {
+     *     // ... data to create a Copy_isin_re_issuance_details
+     *   }
+     * })
+     * 
+     */
+    create<T extends copy_isin_re_issuance_detailsCreateArgs>(args: SelectSubset<T, copy_isin_re_issuance_detailsCreateArgs<ExtArgs>>): Prisma__copy_isin_re_issuance_detailsClient<$Result.GetResult<Prisma.$copy_isin_re_issuance_detailsPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many Copy_isin_re_issuance_details.
+     * @param {copy_isin_re_issuance_detailsCreateManyArgs} args - Arguments to create many Copy_isin_re_issuance_details.
+     * @example
+     * // Create many Copy_isin_re_issuance_details
+     * const copy_isin_re_issuance_details = await prisma.copy_isin_re_issuance_details.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends copy_isin_re_issuance_detailsCreateManyArgs>(args?: SelectSubset<T, copy_isin_re_issuance_detailsCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a Copy_isin_re_issuance_details.
+     * @param {copy_isin_re_issuance_detailsDeleteArgs} args - Arguments to delete one Copy_isin_re_issuance_details.
+     * @example
+     * // Delete one Copy_isin_re_issuance_details
+     * const Copy_isin_re_issuance_details = await prisma.copy_isin_re_issuance_details.delete({
+     *   where: {
+     *     // ... filter to delete one Copy_isin_re_issuance_details
+     *   }
+     * })
+     * 
+     */
+    delete<T extends copy_isin_re_issuance_detailsDeleteArgs>(args: SelectSubset<T, copy_isin_re_issuance_detailsDeleteArgs<ExtArgs>>): Prisma__copy_isin_re_issuance_detailsClient<$Result.GetResult<Prisma.$copy_isin_re_issuance_detailsPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one Copy_isin_re_issuance_details.
+     * @param {copy_isin_re_issuance_detailsUpdateArgs} args - Arguments to update one Copy_isin_re_issuance_details.
+     * @example
+     * // Update one Copy_isin_re_issuance_details
+     * const copy_isin_re_issuance_details = await prisma.copy_isin_re_issuance_details.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends copy_isin_re_issuance_detailsUpdateArgs>(args: SelectSubset<T, copy_isin_re_issuance_detailsUpdateArgs<ExtArgs>>): Prisma__copy_isin_re_issuance_detailsClient<$Result.GetResult<Prisma.$copy_isin_re_issuance_detailsPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more Copy_isin_re_issuance_details.
+     * @param {copy_isin_re_issuance_detailsDeleteManyArgs} args - Arguments to filter Copy_isin_re_issuance_details to delete.
+     * @example
+     * // Delete a few Copy_isin_re_issuance_details
+     * const { count } = await prisma.copy_isin_re_issuance_details.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends copy_isin_re_issuance_detailsDeleteManyArgs>(args?: SelectSubset<T, copy_isin_re_issuance_detailsDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Copy_isin_re_issuance_details.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_isin_re_issuance_detailsUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Copy_isin_re_issuance_details
+     * const copy_isin_re_issuance_details = await prisma.copy_isin_re_issuance_details.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends copy_isin_re_issuance_detailsUpdateManyArgs>(args: SelectSubset<T, copy_isin_re_issuance_detailsUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one Copy_isin_re_issuance_details.
+     * @param {copy_isin_re_issuance_detailsUpsertArgs} args - Arguments to update or create a Copy_isin_re_issuance_details.
+     * @example
+     * // Update or create a Copy_isin_re_issuance_details
+     * const copy_isin_re_issuance_details = await prisma.copy_isin_re_issuance_details.upsert({
+     *   create: {
+     *     // ... data to create a Copy_isin_re_issuance_details
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Copy_isin_re_issuance_details we want to update
+     *   }
+     * })
+     */
+    upsert<T extends copy_isin_re_issuance_detailsUpsertArgs>(args: SelectSubset<T, copy_isin_re_issuance_detailsUpsertArgs<ExtArgs>>): Prisma__copy_isin_re_issuance_detailsClient<$Result.GetResult<Prisma.$copy_isin_re_issuance_detailsPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of Copy_isin_re_issuance_details.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_isin_re_issuance_detailsCountArgs} args - Arguments to filter Copy_isin_re_issuance_details to count.
+     * @example
+     * // Count the number of Copy_isin_re_issuance_details
+     * const count = await prisma.copy_isin_re_issuance_details.count({
+     *   where: {
+     *     // ... the filter for the Copy_isin_re_issuance_details we want to count
+     *   }
+     * })
+    **/
+    count<T extends copy_isin_re_issuance_detailsCountArgs>(
+      args?: Subset<T, copy_isin_re_issuance_detailsCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], Copy_isin_re_issuance_detailsCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Copy_isin_re_issuance_details.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {Copy_isin_re_issuance_detailsAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends Copy_isin_re_issuance_detailsAggregateArgs>(args: Subset<T, Copy_isin_re_issuance_detailsAggregateArgs>): Prisma.PrismaPromise<GetCopy_isin_re_issuance_detailsAggregateType<T>>
+
+    /**
+     * Group by Copy_isin_re_issuance_details.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {copy_isin_re_issuance_detailsGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends copy_isin_re_issuance_detailsGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: copy_isin_re_issuance_detailsGroupByArgs['orderBy'] }
+        : { orderBy?: copy_isin_re_issuance_detailsGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, copy_isin_re_issuance_detailsGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetCopy_isin_re_issuance_detailsGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the copy_isin_re_issuance_details model
+   */
+  readonly fields: copy_isin_re_issuance_detailsFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for copy_isin_re_issuance_details.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__copy_isin_re_issuance_detailsClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the copy_isin_re_issuance_details model
+   */
+  interface copy_isin_re_issuance_detailsFieldRefs {
+    readonly id: FieldRef<"copy_isin_re_issuance_details", 'BigInt'>
+    readonly re_issuance_id: FieldRef<"copy_isin_re_issuance_details", 'BigInt'>
+    readonly bidding_date: FieldRef<"copy_isin_re_issuance_details", 'DateTime'>
+    readonly issuer_name: FieldRef<"copy_isin_re_issuance_details", 'String'>
+    readonly isin: FieldRef<"copy_isin_re_issuance_details", 'String'>
+    readonly issue_description: FieldRef<"copy_isin_re_issuance_details", 'String'>
+    readonly type_of_issuance: FieldRef<"copy_isin_re_issuance_details", 'String'>
+    readonly allotment_date: FieldRef<"copy_isin_re_issuance_details", 'DateTime'>
+    readonly face_value: FieldRef<"copy_isin_re_issuance_details", 'Decimal'>
+    readonly credit_rating: FieldRef<"copy_isin_re_issuance_details", 'String'>
+    readonly type_of_book_bidding: FieldRef<"copy_isin_re_issuance_details", 'copy_isin_re_issuance_details_type_of_book_bidding'>
+    readonly price: FieldRef<"copy_isin_re_issuance_details", 'Decimal'>
+    readonly spread: FieldRef<"copy_isin_re_issuance_details", 'Decimal'>
+    readonly yield: FieldRef<"copy_isin_re_issuance_details", 'Decimal'>
+    readonly manner_of_allotment: FieldRef<"copy_isin_re_issuance_details", 'String'>
+    readonly manner_of_settlement: FieldRef<"copy_isin_re_issuance_details", 'String'>
+    readonly link_of_gid_ppm: FieldRef<"copy_isin_re_issuance_details", 'String'>
+    readonly link_of_kid_term_sheet: FieldRef<"copy_isin_re_issuance_details", 'String'>
+    readonly base_issue_size: FieldRef<"copy_isin_re_issuance_details", 'Decimal'>
+    readonly green_shoe_option: FieldRef<"copy_isin_re_issuance_details", 'Decimal'>
+    readonly amount_raised: FieldRef<"copy_isin_re_issuance_details", 'Decimal'>
+    readonly coupon: FieldRef<"copy_isin_re_issuance_details", 'Decimal'>
+    readonly coupon_frequency: FieldRef<"copy_isin_re_issuance_details", 'Int'>
+    readonly successful_bidders_category: FieldRef<"copy_isin_re_issuance_details", 'String'>
+    readonly type_of_bidding: FieldRef<"copy_isin_re_issuance_details", 'String'>
+    readonly secured_unsecured: FieldRef<"copy_isin_re_issuance_details", 'copy_isin_re_issuance_details_secured_unsecured'>
+    readonly tenor: FieldRef<"copy_isin_re_issuance_details", 'String'>
+    readonly maturity_type: FieldRef<"copy_isin_re_issuance_details", 'String'>
+    readonly interest_payment_type: FieldRef<"copy_isin_re_issuance_details", 'String'>
+    readonly anchor_amount: FieldRef<"copy_isin_re_issuance_details", 'Decimal'>
+    readonly number_of_anchor_investors: FieldRef<"copy_isin_re_issuance_details", 'Int'>
+    readonly total_qib_bidding: FieldRef<"copy_isin_re_issuance_details", 'Decimal'>
+    readonly total_qib_amount_accepted: FieldRef<"copy_isin_re_issuance_details", 'Decimal'>
+    readonly total_non_qib_bidding: FieldRef<"copy_isin_re_issuance_details", 'Decimal'>
+    readonly total_non_qib_amount_accepted: FieldRef<"copy_isin_re_issuance_details", 'Decimal'>
+    readonly cutoff_yield_price: FieldRef<"copy_isin_re_issuance_details", 'Decimal'>
+    readonly weighted_average_cutoff_yield_price: FieldRef<"copy_isin_re_issuance_details", 'Decimal'>
+    readonly issuance_done_through_bidding_process: FieldRef<"copy_isin_re_issuance_details", 'String'>
+    readonly updated_by: FieldRef<"copy_isin_re_issuance_details", 'Int'>
+    readonly created_at: FieldRef<"copy_isin_re_issuance_details", 'DateTime'>
+    readonly updated_at: FieldRef<"copy_isin_re_issuance_details", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * copy_isin_re_issuance_details findUnique
+   */
+  export type copy_isin_re_issuance_detailsFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_isin_re_issuance_details
+     */
+    select?: copy_isin_re_issuance_detailsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_isin_re_issuance_details
+     */
+    omit?: copy_isin_re_issuance_detailsOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_isin_re_issuance_details to fetch.
+     */
+    where: copy_isin_re_issuance_detailsWhereUniqueInput
+  }
+
+  /**
+   * copy_isin_re_issuance_details findUniqueOrThrow
+   */
+  export type copy_isin_re_issuance_detailsFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_isin_re_issuance_details
+     */
+    select?: copy_isin_re_issuance_detailsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_isin_re_issuance_details
+     */
+    omit?: copy_isin_re_issuance_detailsOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_isin_re_issuance_details to fetch.
+     */
+    where: copy_isin_re_issuance_detailsWhereUniqueInput
+  }
+
+  /**
+   * copy_isin_re_issuance_details findFirst
+   */
+  export type copy_isin_re_issuance_detailsFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_isin_re_issuance_details
+     */
+    select?: copy_isin_re_issuance_detailsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_isin_re_issuance_details
+     */
+    omit?: copy_isin_re_issuance_detailsOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_isin_re_issuance_details to fetch.
+     */
+    where?: copy_isin_re_issuance_detailsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of copy_isin_re_issuance_details to fetch.
+     */
+    orderBy?: copy_isin_re_issuance_detailsOrderByWithRelationInput | copy_isin_re_issuance_detailsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for copy_isin_re_issuance_details.
+     */
+    cursor?: copy_isin_re_issuance_detailsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` copy_isin_re_issuance_details from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` copy_isin_re_issuance_details.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of copy_isin_re_issuance_details.
+     */
+    distinct?: Copy_isin_re_issuance_detailsScalarFieldEnum | Copy_isin_re_issuance_detailsScalarFieldEnum[]
+  }
+
+  /**
+   * copy_isin_re_issuance_details findFirstOrThrow
+   */
+  export type copy_isin_re_issuance_detailsFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_isin_re_issuance_details
+     */
+    select?: copy_isin_re_issuance_detailsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_isin_re_issuance_details
+     */
+    omit?: copy_isin_re_issuance_detailsOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_isin_re_issuance_details to fetch.
+     */
+    where?: copy_isin_re_issuance_detailsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of copy_isin_re_issuance_details to fetch.
+     */
+    orderBy?: copy_isin_re_issuance_detailsOrderByWithRelationInput | copy_isin_re_issuance_detailsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for copy_isin_re_issuance_details.
+     */
+    cursor?: copy_isin_re_issuance_detailsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` copy_isin_re_issuance_details from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` copy_isin_re_issuance_details.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of copy_isin_re_issuance_details.
+     */
+    distinct?: Copy_isin_re_issuance_detailsScalarFieldEnum | Copy_isin_re_issuance_detailsScalarFieldEnum[]
+  }
+
+  /**
+   * copy_isin_re_issuance_details findMany
+   */
+  export type copy_isin_re_issuance_detailsFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_isin_re_issuance_details
+     */
+    select?: copy_isin_re_issuance_detailsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_isin_re_issuance_details
+     */
+    omit?: copy_isin_re_issuance_detailsOmit<ExtArgs> | null
+    /**
+     * Filter, which copy_isin_re_issuance_details to fetch.
+     */
+    where?: copy_isin_re_issuance_detailsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of copy_isin_re_issuance_details to fetch.
+     */
+    orderBy?: copy_isin_re_issuance_detailsOrderByWithRelationInput | copy_isin_re_issuance_detailsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing copy_isin_re_issuance_details.
+     */
+    cursor?: copy_isin_re_issuance_detailsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` copy_isin_re_issuance_details from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` copy_isin_re_issuance_details.
+     */
+    skip?: number
+    distinct?: Copy_isin_re_issuance_detailsScalarFieldEnum | Copy_isin_re_issuance_detailsScalarFieldEnum[]
+  }
+
+  /**
+   * copy_isin_re_issuance_details create
+   */
+  export type copy_isin_re_issuance_detailsCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_isin_re_issuance_details
+     */
+    select?: copy_isin_re_issuance_detailsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_isin_re_issuance_details
+     */
+    omit?: copy_isin_re_issuance_detailsOmit<ExtArgs> | null
+    /**
+     * The data needed to create a copy_isin_re_issuance_details.
+     */
+    data: XOR<copy_isin_re_issuance_detailsCreateInput, copy_isin_re_issuance_detailsUncheckedCreateInput>
+  }
+
+  /**
+   * copy_isin_re_issuance_details createMany
+   */
+  export type copy_isin_re_issuance_detailsCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many copy_isin_re_issuance_details.
+     */
+    data: copy_isin_re_issuance_detailsCreateManyInput | copy_isin_re_issuance_detailsCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * copy_isin_re_issuance_details update
+   */
+  export type copy_isin_re_issuance_detailsUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_isin_re_issuance_details
+     */
+    select?: copy_isin_re_issuance_detailsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_isin_re_issuance_details
+     */
+    omit?: copy_isin_re_issuance_detailsOmit<ExtArgs> | null
+    /**
+     * The data needed to update a copy_isin_re_issuance_details.
+     */
+    data: XOR<copy_isin_re_issuance_detailsUpdateInput, copy_isin_re_issuance_detailsUncheckedUpdateInput>
+    /**
+     * Choose, which copy_isin_re_issuance_details to update.
+     */
+    where: copy_isin_re_issuance_detailsWhereUniqueInput
+  }
+
+  /**
+   * copy_isin_re_issuance_details updateMany
+   */
+  export type copy_isin_re_issuance_detailsUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update copy_isin_re_issuance_details.
+     */
+    data: XOR<copy_isin_re_issuance_detailsUpdateManyMutationInput, copy_isin_re_issuance_detailsUncheckedUpdateManyInput>
+    /**
+     * Filter which copy_isin_re_issuance_details to update
+     */
+    where?: copy_isin_re_issuance_detailsWhereInput
+    /**
+     * Limit how many copy_isin_re_issuance_details to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * copy_isin_re_issuance_details upsert
+   */
+  export type copy_isin_re_issuance_detailsUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_isin_re_issuance_details
+     */
+    select?: copy_isin_re_issuance_detailsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_isin_re_issuance_details
+     */
+    omit?: copy_isin_re_issuance_detailsOmit<ExtArgs> | null
+    /**
+     * The filter to search for the copy_isin_re_issuance_details to update in case it exists.
+     */
+    where: copy_isin_re_issuance_detailsWhereUniqueInput
+    /**
+     * In case the copy_isin_re_issuance_details found by the `where` argument doesn't exist, create a new copy_isin_re_issuance_details with this data.
+     */
+    create: XOR<copy_isin_re_issuance_detailsCreateInput, copy_isin_re_issuance_detailsUncheckedCreateInput>
+    /**
+     * In case the copy_isin_re_issuance_details was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<copy_isin_re_issuance_detailsUpdateInput, copy_isin_re_issuance_detailsUncheckedUpdateInput>
+  }
+
+  /**
+   * copy_isin_re_issuance_details delete
+   */
+  export type copy_isin_re_issuance_detailsDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_isin_re_issuance_details
+     */
+    select?: copy_isin_re_issuance_detailsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_isin_re_issuance_details
+     */
+    omit?: copy_isin_re_issuance_detailsOmit<ExtArgs> | null
+    /**
+     * Filter which copy_isin_re_issuance_details to delete.
+     */
+    where: copy_isin_re_issuance_detailsWhereUniqueInput
+  }
+
+  /**
+   * copy_isin_re_issuance_details deleteMany
+   */
+  export type copy_isin_re_issuance_detailsDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which copy_isin_re_issuance_details to delete
+     */
+    where?: copy_isin_re_issuance_detailsWhereInput
+    /**
+     * Limit how many copy_isin_re_issuance_details to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * copy_isin_re_issuance_details without action
+   */
+  export type copy_isin_re_issuance_detailsDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the copy_isin_re_issuance_details
+     */
+    select?: copy_isin_re_issuance_detailsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the copy_isin_re_issuance_details
+     */
+    omit?: copy_isin_re_issuance_detailsOmit<ExtArgs> | null
   }
 
 
@@ -75181,8 +84842,6 @@ export namespace Prisma {
     issuer_master_id: 'issuer_master_id',
     allotment_date: 'allotment_date',
     issue_size: 'issue_size',
-    nsdl_issue_size: 'nsdl_issue_size',
-    source: 'source',
     face_value: 'face_value',
     maturity_date: 'maturity_date',
     business_sector: 'business_sector',
@@ -75249,7 +84908,56 @@ export namespace Prisma {
   export type Isin_re_issuance_detailsScalarFieldEnum = (typeof Isin_re_issuance_detailsScalarFieldEnum)[keyof typeof Isin_re_issuance_detailsScalarFieldEnum]
 
 
-  export const Isin_recordsScalarFieldEnum: {
+  export const Copy_admin_settingScalarFieldEnum: {
+    id: 'id',
+    name: 'name',
+    type: 'type',
+    is_active: 'is_active',
+    created_at: 'created_at',
+    updated_at: 'updated_at'
+  };
+
+  export type Copy_admin_settingScalarFieldEnum = (typeof Copy_admin_settingScalarFieldEnum)[keyof typeof Copy_admin_settingScalarFieldEnum]
+
+
+  export const Copy_all_monthsScalarFieldEnum: {
+    id: 'id',
+    month_no: 'month_no',
+    month_name: 'month_name'
+  };
+
+  export type Copy_all_monthsScalarFieldEnum = (typeof Copy_all_monthsScalarFieldEnum)[keyof typeof Copy_all_monthsScalarFieldEnum]
+
+
+  export const Copy_cacheScalarFieldEnum: {
+    key: 'key',
+    value: 'value',
+    expiration: 'expiration'
+  };
+
+  export type Copy_cacheScalarFieldEnum = (typeof Copy_cacheScalarFieldEnum)[keyof typeof Copy_cacheScalarFieldEnum]
+
+
+  export const Copy_cache_locksScalarFieldEnum: {
+    key: 'key',
+    owner: 'owner',
+    expiration: 'expiration'
+  };
+
+  export type Copy_cache_locksScalarFieldEnum = (typeof Copy_cache_locksScalarFieldEnum)[keyof typeof Copy_cache_locksScalarFieldEnum]
+
+
+  export const Copy_cron_statusScalarFieldEnum: {
+    id: 'id',
+    cron_name: 'cron_name',
+    cron_date: 'cron_date',
+    updated_at: 'updated_at'
+  };
+
+  export type Copy_cron_statusScalarFieldEnum = (typeof Copy_cron_statusScalarFieldEnum)[keyof typeof Copy_cron_statusScalarFieldEnum]
+
+
+  export const Copy_daily_issuer_cron_tableScalarFieldEnum: {
     id: 'id',
     isin: 'isin',
     allotment_date: 'allotment_date',
@@ -75258,7 +84966,105 @@ export namespace Prisma {
     updated_at: 'updated_at'
   };
 
-  export type Isin_recordsScalarFieldEnum = (typeof Isin_recordsScalarFieldEnum)[keyof typeof Isin_recordsScalarFieldEnum]
+  export type Copy_daily_issuer_cron_tableScalarFieldEnum = (typeof Copy_daily_issuer_cron_tableScalarFieldEnum)[keyof typeof Copy_daily_issuer_cron_tableScalarFieldEnum]
+
+
+  export const Copy_failed_jobsScalarFieldEnum: {
+    id: 'id',
+    uuid: 'uuid',
+    connection: 'connection',
+    queue: 'queue',
+    payload: 'payload',
+    exception: 'exception',
+    failed_at: 'failed_at'
+  };
+
+  export type Copy_failed_jobsScalarFieldEnum = (typeof Copy_failed_jobsScalarFieldEnum)[keyof typeof Copy_failed_jobsScalarFieldEnum]
+
+
+  export const Copy_incorporatedate_cronScalarFieldEnum: {
+    id: 'id',
+    isin: 'isin',
+    allotment_date: 'allotment_date',
+    status: 'status',
+    created_at: 'created_at',
+    updated_at: 'updated_at'
+  };
+
+  export type Copy_incorporatedate_cronScalarFieldEnum = (typeof Copy_incorporatedate_cronScalarFieldEnum)[keyof typeof Copy_incorporatedate_cronScalarFieldEnum]
+
+
+  export const Copy_isin_re_issuanceScalarFieldEnum: {
+    id: 'id',
+    isin_id: 'isin_id',
+    isin: 'isin',
+    issuer_master_id: 'issuer_master_id',
+    allotment_date: 'allotment_date',
+    issue_size: 'issue_size',
+    face_value: 'face_value',
+    maturity_date: 'maturity_date',
+    business_sector: 'business_sector',
+    security_name: 'security_name',
+    security_class: 'security_class',
+    mode_issue: 'mode_issue',
+    seniority: 'seniority',
+    tax_free: 'tax_free',
+    secured_flag: 'secured_flag',
+    is_visible: 'is_visible',
+    is_updated: 'is_updated',
+    is_main: 'is_main',
+    created_at: 'created_at',
+    updated_at: 'updated_at'
+  };
+
+  export type Copy_isin_re_issuanceScalarFieldEnum = (typeof Copy_isin_re_issuanceScalarFieldEnum)[keyof typeof Copy_isin_re_issuanceScalarFieldEnum]
+
+
+  export const Copy_isin_re_issuance_detailsScalarFieldEnum: {
+    id: 'id',
+    re_issuance_id: 're_issuance_id',
+    bidding_date: 'bidding_date',
+    issuer_name: 'issuer_name',
+    isin: 'isin',
+    issue_description: 'issue_description',
+    type_of_issuance: 'type_of_issuance',
+    allotment_date: 'allotment_date',
+    face_value: 'face_value',
+    credit_rating: 'credit_rating',
+    type_of_book_bidding: 'type_of_book_bidding',
+    price: 'price',
+    spread: 'spread',
+    yield: 'yield',
+    manner_of_allotment: 'manner_of_allotment',
+    manner_of_settlement: 'manner_of_settlement',
+    link_of_gid_ppm: 'link_of_gid_ppm',
+    link_of_kid_term_sheet: 'link_of_kid_term_sheet',
+    base_issue_size: 'base_issue_size',
+    green_shoe_option: 'green_shoe_option',
+    amount_raised: 'amount_raised',
+    coupon: 'coupon',
+    coupon_frequency: 'coupon_frequency',
+    successful_bidders_category: 'successful_bidders_category',
+    type_of_bidding: 'type_of_bidding',
+    secured_unsecured: 'secured_unsecured',
+    tenor: 'tenor',
+    maturity_type: 'maturity_type',
+    interest_payment_type: 'interest_payment_type',
+    anchor_amount: 'anchor_amount',
+    number_of_anchor_investors: 'number_of_anchor_investors',
+    total_qib_bidding: 'total_qib_bidding',
+    total_qib_amount_accepted: 'total_qib_amount_accepted',
+    total_non_qib_bidding: 'total_non_qib_bidding',
+    total_non_qib_amount_accepted: 'total_non_qib_amount_accepted',
+    cutoff_yield_price: 'cutoff_yield_price',
+    weighted_average_cutoff_yield_price: 'weighted_average_cutoff_yield_price',
+    issuance_done_through_bidding_process: 'issuance_done_through_bidding_process',
+    updated_by: 'updated_by',
+    created_at: 'created_at',
+    updated_at: 'updated_at'
+  };
+
+  export type Copy_isin_re_issuance_detailsScalarFieldEnum = (typeof Copy_isin_re_issuance_detailsScalarFieldEnum)[keyof typeof Copy_isin_re_issuance_detailsScalarFieldEnum]
 
 
   export const SortOrder: {
@@ -75835,7 +85641,6 @@ export namespace Prisma {
 
   export const isin_re_issuanceOrderByRelevanceFieldEnum: {
     isin: 'isin',
-    source: 'source',
     security_name: 'security_name',
     security_class: 'security_class'
   };
@@ -75864,11 +85669,96 @@ export namespace Prisma {
   export type isin_re_issuance_detailsOrderByRelevanceFieldEnum = (typeof isin_re_issuance_detailsOrderByRelevanceFieldEnum)[keyof typeof isin_re_issuance_detailsOrderByRelevanceFieldEnum]
 
 
-  export const isin_recordsOrderByRelevanceFieldEnum: {
+  export const copy_admin_settingOrderByRelevanceFieldEnum: {
+    name: 'name'
+  };
+
+  export type copy_admin_settingOrderByRelevanceFieldEnum = (typeof copy_admin_settingOrderByRelevanceFieldEnum)[keyof typeof copy_admin_settingOrderByRelevanceFieldEnum]
+
+
+  export const copy_all_monthsOrderByRelevanceFieldEnum: {
+    month_name: 'month_name'
+  };
+
+  export type copy_all_monthsOrderByRelevanceFieldEnum = (typeof copy_all_monthsOrderByRelevanceFieldEnum)[keyof typeof copy_all_monthsOrderByRelevanceFieldEnum]
+
+
+  export const copy_cacheOrderByRelevanceFieldEnum: {
+    key: 'key',
+    value: 'value'
+  };
+
+  export type copy_cacheOrderByRelevanceFieldEnum = (typeof copy_cacheOrderByRelevanceFieldEnum)[keyof typeof copy_cacheOrderByRelevanceFieldEnum]
+
+
+  export const copy_cache_locksOrderByRelevanceFieldEnum: {
+    key: 'key',
+    owner: 'owner'
+  };
+
+  export type copy_cache_locksOrderByRelevanceFieldEnum = (typeof copy_cache_locksOrderByRelevanceFieldEnum)[keyof typeof copy_cache_locksOrderByRelevanceFieldEnum]
+
+
+  export const copy_cron_statusOrderByRelevanceFieldEnum: {
+    cron_name: 'cron_name'
+  };
+
+  export type copy_cron_statusOrderByRelevanceFieldEnum = (typeof copy_cron_statusOrderByRelevanceFieldEnum)[keyof typeof copy_cron_statusOrderByRelevanceFieldEnum]
+
+
+  export const copy_daily_issuer_cron_tableOrderByRelevanceFieldEnum: {
     isin: 'isin'
   };
 
-  export type isin_recordsOrderByRelevanceFieldEnum = (typeof isin_recordsOrderByRelevanceFieldEnum)[keyof typeof isin_recordsOrderByRelevanceFieldEnum]
+  export type copy_daily_issuer_cron_tableOrderByRelevanceFieldEnum = (typeof copy_daily_issuer_cron_tableOrderByRelevanceFieldEnum)[keyof typeof copy_daily_issuer_cron_tableOrderByRelevanceFieldEnum]
+
+
+  export const copy_failed_jobsOrderByRelevanceFieldEnum: {
+    uuid: 'uuid',
+    connection: 'connection',
+    queue: 'queue',
+    payload: 'payload',
+    exception: 'exception'
+  };
+
+  export type copy_failed_jobsOrderByRelevanceFieldEnum = (typeof copy_failed_jobsOrderByRelevanceFieldEnum)[keyof typeof copy_failed_jobsOrderByRelevanceFieldEnum]
+
+
+  export const copy_incorporatedate_cronOrderByRelevanceFieldEnum: {
+    isin: 'isin'
+  };
+
+  export type copy_incorporatedate_cronOrderByRelevanceFieldEnum = (typeof copy_incorporatedate_cronOrderByRelevanceFieldEnum)[keyof typeof copy_incorporatedate_cronOrderByRelevanceFieldEnum]
+
+
+  export const copy_isin_re_issuanceOrderByRelevanceFieldEnum: {
+    isin: 'isin',
+    security_name: 'security_name',
+    security_class: 'security_class'
+  };
+
+  export type copy_isin_re_issuanceOrderByRelevanceFieldEnum = (typeof copy_isin_re_issuanceOrderByRelevanceFieldEnum)[keyof typeof copy_isin_re_issuanceOrderByRelevanceFieldEnum]
+
+
+  export const copy_isin_re_issuance_detailsOrderByRelevanceFieldEnum: {
+    issuer_name: 'issuer_name',
+    isin: 'isin',
+    issue_description: 'issue_description',
+    type_of_issuance: 'type_of_issuance',
+    credit_rating: 'credit_rating',
+    manner_of_allotment: 'manner_of_allotment',
+    manner_of_settlement: 'manner_of_settlement',
+    link_of_gid_ppm: 'link_of_gid_ppm',
+    link_of_kid_term_sheet: 'link_of_kid_term_sheet',
+    successful_bidders_category: 'successful_bidders_category',
+    type_of_bidding: 'type_of_bidding',
+    tenor: 'tenor',
+    maturity_type: 'maturity_type',
+    interest_payment_type: 'interest_payment_type',
+    issuance_done_through_bidding_process: 'issuance_done_through_bidding_process'
+  };
+
+  export type copy_isin_re_issuance_detailsOrderByRelevanceFieldEnum = (typeof copy_isin_re_issuance_detailsOrderByRelevanceFieldEnum)[keyof typeof copy_isin_re_issuance_detailsOrderByRelevanceFieldEnum]
 
 
   /**
@@ -75943,6 +85833,20 @@ export namespace Prisma {
    * Reference to a field of type 'isin_re_issuance_details_secured_unsecured'
    */
   export type Enumisin_re_issuance_details_secured_unsecuredFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'isin_re_issuance_details_secured_unsecured'>
+    
+
+
+  /**
+   * Reference to a field of type 'copy_isin_re_issuance_details_type_of_book_bidding'
+   */
+  export type Enumcopy_isin_re_issuance_details_type_of_book_biddingFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'copy_isin_re_issuance_details_type_of_book_bidding'>
+    
+
+
+  /**
+   * Reference to a field of type 'copy_isin_re_issuance_details_secured_unsecured'
+   */
+  export type Enumcopy_isin_re_issuance_details_secured_unsecuredFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'copy_isin_re_issuance_details_secured_unsecured'>
     
   /**
    * Deep Input Types
@@ -81426,8 +91330,6 @@ export namespace Prisma {
     issuer_master_id?: BigIntFilter<"isin_re_issuance"> | bigint | number
     allotment_date?: DateTimeFilter<"isin_re_issuance"> | Date | string
     issue_size?: DecimalFilter<"isin_re_issuance"> | Decimal | DecimalJsLike | number | string
-    nsdl_issue_size?: DecimalNullableFilter<"isin_re_issuance"> | Decimal | DecimalJsLike | number | string | null
-    source?: StringNullableFilter<"isin_re_issuance"> | string | null
     face_value?: FloatNullableFilter<"isin_re_issuance"> | number | null
     maturity_date?: DateTimeNullableFilter<"isin_re_issuance"> | Date | string | null
     business_sector?: IntNullableFilter<"isin_re_issuance"> | number | null
@@ -81451,8 +91353,6 @@ export namespace Prisma {
     issuer_master_id?: SortOrder
     allotment_date?: SortOrder
     issue_size?: SortOrder
-    nsdl_issue_size?: SortOrderInput | SortOrder
-    source?: SortOrderInput | SortOrder
     face_value?: SortOrderInput | SortOrder
     maturity_date?: SortOrderInput | SortOrder
     business_sector?: SortOrderInput | SortOrder
@@ -81480,8 +91380,6 @@ export namespace Prisma {
     issuer_master_id?: BigIntFilter<"isin_re_issuance"> | bigint | number
     allotment_date?: DateTimeFilter<"isin_re_issuance"> | Date | string
     issue_size?: DecimalFilter<"isin_re_issuance"> | Decimal | DecimalJsLike | number | string
-    nsdl_issue_size?: DecimalNullableFilter<"isin_re_issuance"> | Decimal | DecimalJsLike | number | string | null
-    source?: StringNullableFilter<"isin_re_issuance"> | string | null
     face_value?: FloatNullableFilter<"isin_re_issuance"> | number | null
     maturity_date?: DateTimeNullableFilter<"isin_re_issuance"> | Date | string | null
     business_sector?: IntNullableFilter<"isin_re_issuance"> | number | null
@@ -81505,8 +91403,6 @@ export namespace Prisma {
     issuer_master_id?: SortOrder
     allotment_date?: SortOrder
     issue_size?: SortOrder
-    nsdl_issue_size?: SortOrderInput | SortOrder
-    source?: SortOrderInput | SortOrder
     face_value?: SortOrderInput | SortOrder
     maturity_date?: SortOrderInput | SortOrder
     business_sector?: SortOrderInput | SortOrder
@@ -81538,8 +91434,6 @@ export namespace Prisma {
     issuer_master_id?: BigIntWithAggregatesFilter<"isin_re_issuance"> | bigint | number
     allotment_date?: DateTimeWithAggregatesFilter<"isin_re_issuance"> | Date | string
     issue_size?: DecimalWithAggregatesFilter<"isin_re_issuance"> | Decimal | DecimalJsLike | number | string
-    nsdl_issue_size?: DecimalNullableWithAggregatesFilter<"isin_re_issuance"> | Decimal | DecimalJsLike | number | string | null
-    source?: StringNullableWithAggregatesFilter<"isin_re_issuance"> | string | null
     face_value?: FloatNullableWithAggregatesFilter<"isin_re_issuance"> | number | null
     maturity_date?: DateTimeNullableWithAggregatesFilter<"isin_re_issuance"> | Date | string | null
     business_sector?: IntNullableWithAggregatesFilter<"isin_re_issuance"> | number | null
@@ -81791,64 +91685,799 @@ export namespace Prisma {
     updated_at?: DateTimeNullableWithAggregatesFilter<"isin_re_issuance_details"> | Date | string | null
   }
 
-  export type isin_recordsWhereInput = {
-    AND?: isin_recordsWhereInput | isin_recordsWhereInput[]
-    OR?: isin_recordsWhereInput[]
-    NOT?: isin_recordsWhereInput | isin_recordsWhereInput[]
-    id?: IntFilter<"isin_records"> | number
-    isin?: StringNullableFilter<"isin_records"> | string | null
-    allotment_date?: DateTimeNullableFilter<"isin_records"> | Date | string | null
-    status?: BoolFilter<"isin_records"> | boolean
-    created_at?: DateTimeFilter<"isin_records"> | Date | string
-    updated_at?: DateTimeNullableFilter<"isin_records"> | Date | string | null
+  export type copy_admin_settingWhereInput = {
+    AND?: copy_admin_settingWhereInput | copy_admin_settingWhereInput[]
+    OR?: copy_admin_settingWhereInput[]
+    NOT?: copy_admin_settingWhereInput | copy_admin_settingWhereInput[]
+    id?: BigIntFilter<"copy_admin_setting"> | bigint | number
+    name?: StringNullableFilter<"copy_admin_setting"> | string | null
+    type?: IntFilter<"copy_admin_setting"> | number
+    is_active?: IntFilter<"copy_admin_setting"> | number
+    created_at?: DateTimeNullableFilter<"copy_admin_setting"> | Date | string | null
+    updated_at?: DateTimeNullableFilter<"copy_admin_setting"> | Date | string | null
   }
 
-  export type isin_recordsOrderByWithRelationInput = {
+  export type copy_admin_settingOrderByWithRelationInput = {
     id?: SortOrder
-    isin?: SortOrderInput | SortOrder
-    allotment_date?: SortOrderInput | SortOrder
-    status?: SortOrder
-    created_at?: SortOrder
+    name?: SortOrderInput | SortOrder
+    type?: SortOrder
+    is_active?: SortOrder
+    created_at?: SortOrderInput | SortOrder
     updated_at?: SortOrderInput | SortOrder
-    _relevance?: isin_recordsOrderByRelevanceInput
+    _relevance?: copy_admin_settingOrderByRelevanceInput
   }
 
-  export type isin_recordsWhereUniqueInput = Prisma.AtLeast<{
-    id?: number
-    AND?: isin_recordsWhereInput | isin_recordsWhereInput[]
-    OR?: isin_recordsWhereInput[]
-    NOT?: isin_recordsWhereInput | isin_recordsWhereInput[]
-    isin?: StringNullableFilter<"isin_records"> | string | null
-    allotment_date?: DateTimeNullableFilter<"isin_records"> | Date | string | null
-    status?: BoolFilter<"isin_records"> | boolean
-    created_at?: DateTimeFilter<"isin_records"> | Date | string
-    updated_at?: DateTimeNullableFilter<"isin_records"> | Date | string | null
+  export type copy_admin_settingWhereUniqueInput = Prisma.AtLeast<{
+    id?: bigint | number
+    AND?: copy_admin_settingWhereInput | copy_admin_settingWhereInput[]
+    OR?: copy_admin_settingWhereInput[]
+    NOT?: copy_admin_settingWhereInput | copy_admin_settingWhereInput[]
+    name?: StringNullableFilter<"copy_admin_setting"> | string | null
+    type?: IntFilter<"copy_admin_setting"> | number
+    is_active?: IntFilter<"copy_admin_setting"> | number
+    created_at?: DateTimeNullableFilter<"copy_admin_setting"> | Date | string | null
+    updated_at?: DateTimeNullableFilter<"copy_admin_setting"> | Date | string | null
   }, "id">
 
-  export type isin_recordsOrderByWithAggregationInput = {
+  export type copy_admin_settingOrderByWithAggregationInput = {
+    id?: SortOrder
+    name?: SortOrderInput | SortOrder
+    type?: SortOrder
+    is_active?: SortOrder
+    created_at?: SortOrderInput | SortOrder
+    updated_at?: SortOrderInput | SortOrder
+    _count?: copy_admin_settingCountOrderByAggregateInput
+    _avg?: copy_admin_settingAvgOrderByAggregateInput
+    _max?: copy_admin_settingMaxOrderByAggregateInput
+    _min?: copy_admin_settingMinOrderByAggregateInput
+    _sum?: copy_admin_settingSumOrderByAggregateInput
+  }
+
+  export type copy_admin_settingScalarWhereWithAggregatesInput = {
+    AND?: copy_admin_settingScalarWhereWithAggregatesInput | copy_admin_settingScalarWhereWithAggregatesInput[]
+    OR?: copy_admin_settingScalarWhereWithAggregatesInput[]
+    NOT?: copy_admin_settingScalarWhereWithAggregatesInput | copy_admin_settingScalarWhereWithAggregatesInput[]
+    id?: BigIntWithAggregatesFilter<"copy_admin_setting"> | bigint | number
+    name?: StringNullableWithAggregatesFilter<"copy_admin_setting"> | string | null
+    type?: IntWithAggregatesFilter<"copy_admin_setting"> | number
+    is_active?: IntWithAggregatesFilter<"copy_admin_setting"> | number
+    created_at?: DateTimeNullableWithAggregatesFilter<"copy_admin_setting"> | Date | string | null
+    updated_at?: DateTimeNullableWithAggregatesFilter<"copy_admin_setting"> | Date | string | null
+  }
+
+  export type copy_all_monthsWhereInput = {
+    AND?: copy_all_monthsWhereInput | copy_all_monthsWhereInput[]
+    OR?: copy_all_monthsWhereInput[]
+    NOT?: copy_all_monthsWhereInput | copy_all_monthsWhereInput[]
+    id?: IntFilter<"copy_all_months"> | number
+    month_no?: IntFilter<"copy_all_months"> | number
+    month_name?: StringFilter<"copy_all_months"> | string
+  }
+
+  export type copy_all_monthsOrderByWithRelationInput = {
+    id?: SortOrder
+    month_no?: SortOrder
+    month_name?: SortOrder
+    _relevance?: copy_all_monthsOrderByRelevanceInput
+  }
+
+  export type copy_all_monthsWhereUniqueInput = Prisma.AtLeast<{
+    id?: number
+    AND?: copy_all_monthsWhereInput | copy_all_monthsWhereInput[]
+    OR?: copy_all_monthsWhereInput[]
+    NOT?: copy_all_monthsWhereInput | copy_all_monthsWhereInput[]
+    month_no?: IntFilter<"copy_all_months"> | number
+    month_name?: StringFilter<"copy_all_months"> | string
+  }, "id">
+
+  export type copy_all_monthsOrderByWithAggregationInput = {
+    id?: SortOrder
+    month_no?: SortOrder
+    month_name?: SortOrder
+    _count?: copy_all_monthsCountOrderByAggregateInput
+    _avg?: copy_all_monthsAvgOrderByAggregateInput
+    _max?: copy_all_monthsMaxOrderByAggregateInput
+    _min?: copy_all_monthsMinOrderByAggregateInput
+    _sum?: copy_all_monthsSumOrderByAggregateInput
+  }
+
+  export type copy_all_monthsScalarWhereWithAggregatesInput = {
+    AND?: copy_all_monthsScalarWhereWithAggregatesInput | copy_all_monthsScalarWhereWithAggregatesInput[]
+    OR?: copy_all_monthsScalarWhereWithAggregatesInput[]
+    NOT?: copy_all_monthsScalarWhereWithAggregatesInput | copy_all_monthsScalarWhereWithAggregatesInput[]
+    id?: IntWithAggregatesFilter<"copy_all_months"> | number
+    month_no?: IntWithAggregatesFilter<"copy_all_months"> | number
+    month_name?: StringWithAggregatesFilter<"copy_all_months"> | string
+  }
+
+  export type copy_cacheWhereInput = {
+    AND?: copy_cacheWhereInput | copy_cacheWhereInput[]
+    OR?: copy_cacheWhereInput[]
+    NOT?: copy_cacheWhereInput | copy_cacheWhereInput[]
+    key?: StringFilter<"copy_cache"> | string
+    value?: StringFilter<"copy_cache"> | string
+    expiration?: IntFilter<"copy_cache"> | number
+  }
+
+  export type copy_cacheOrderByWithRelationInput = {
+    key?: SortOrder
+    value?: SortOrder
+    expiration?: SortOrder
+    _relevance?: copy_cacheOrderByRelevanceInput
+  }
+
+  export type copy_cacheWhereUniqueInput = Prisma.AtLeast<{
+    key?: string
+    AND?: copy_cacheWhereInput | copy_cacheWhereInput[]
+    OR?: copy_cacheWhereInput[]
+    NOT?: copy_cacheWhereInput | copy_cacheWhereInput[]
+    value?: StringFilter<"copy_cache"> | string
+    expiration?: IntFilter<"copy_cache"> | number
+  }, "key">
+
+  export type copy_cacheOrderByWithAggregationInput = {
+    key?: SortOrder
+    value?: SortOrder
+    expiration?: SortOrder
+    _count?: copy_cacheCountOrderByAggregateInput
+    _avg?: copy_cacheAvgOrderByAggregateInput
+    _max?: copy_cacheMaxOrderByAggregateInput
+    _min?: copy_cacheMinOrderByAggregateInput
+    _sum?: copy_cacheSumOrderByAggregateInput
+  }
+
+  export type copy_cacheScalarWhereWithAggregatesInput = {
+    AND?: copy_cacheScalarWhereWithAggregatesInput | copy_cacheScalarWhereWithAggregatesInput[]
+    OR?: copy_cacheScalarWhereWithAggregatesInput[]
+    NOT?: copy_cacheScalarWhereWithAggregatesInput | copy_cacheScalarWhereWithAggregatesInput[]
+    key?: StringWithAggregatesFilter<"copy_cache"> | string
+    value?: StringWithAggregatesFilter<"copy_cache"> | string
+    expiration?: IntWithAggregatesFilter<"copy_cache"> | number
+  }
+
+  export type copy_cache_locksWhereInput = {
+    AND?: copy_cache_locksWhereInput | copy_cache_locksWhereInput[]
+    OR?: copy_cache_locksWhereInput[]
+    NOT?: copy_cache_locksWhereInput | copy_cache_locksWhereInput[]
+    key?: StringFilter<"copy_cache_locks"> | string
+    owner?: StringFilter<"copy_cache_locks"> | string
+    expiration?: IntFilter<"copy_cache_locks"> | number
+  }
+
+  export type copy_cache_locksOrderByWithRelationInput = {
+    key?: SortOrder
+    owner?: SortOrder
+    expiration?: SortOrder
+    _relevance?: copy_cache_locksOrderByRelevanceInput
+  }
+
+  export type copy_cache_locksWhereUniqueInput = Prisma.AtLeast<{
+    key?: string
+    AND?: copy_cache_locksWhereInput | copy_cache_locksWhereInput[]
+    OR?: copy_cache_locksWhereInput[]
+    NOT?: copy_cache_locksWhereInput | copy_cache_locksWhereInput[]
+    owner?: StringFilter<"copy_cache_locks"> | string
+    expiration?: IntFilter<"copy_cache_locks"> | number
+  }, "key">
+
+  export type copy_cache_locksOrderByWithAggregationInput = {
+    key?: SortOrder
+    owner?: SortOrder
+    expiration?: SortOrder
+    _count?: copy_cache_locksCountOrderByAggregateInput
+    _avg?: copy_cache_locksAvgOrderByAggregateInput
+    _max?: copy_cache_locksMaxOrderByAggregateInput
+    _min?: copy_cache_locksMinOrderByAggregateInput
+    _sum?: copy_cache_locksSumOrderByAggregateInput
+  }
+
+  export type copy_cache_locksScalarWhereWithAggregatesInput = {
+    AND?: copy_cache_locksScalarWhereWithAggregatesInput | copy_cache_locksScalarWhereWithAggregatesInput[]
+    OR?: copy_cache_locksScalarWhereWithAggregatesInput[]
+    NOT?: copy_cache_locksScalarWhereWithAggregatesInput | copy_cache_locksScalarWhereWithAggregatesInput[]
+    key?: StringWithAggregatesFilter<"copy_cache_locks"> | string
+    owner?: StringWithAggregatesFilter<"copy_cache_locks"> | string
+    expiration?: IntWithAggregatesFilter<"copy_cache_locks"> | number
+  }
+
+  export type copy_cron_statusWhereInput = {
+    AND?: copy_cron_statusWhereInput | copy_cron_statusWhereInput[]
+    OR?: copy_cron_statusWhereInput[]
+    NOT?: copy_cron_statusWhereInput | copy_cron_statusWhereInput[]
+    id?: BigIntFilter<"copy_cron_status"> | bigint | number
+    cron_name?: StringNullableFilter<"copy_cron_status"> | string | null
+    cron_date?: DateTimeNullableFilter<"copy_cron_status"> | Date | string | null
+    updated_at?: DateTimeNullableFilter<"copy_cron_status"> | Date | string | null
+  }
+
+  export type copy_cron_statusOrderByWithRelationInput = {
+    id?: SortOrder
+    cron_name?: SortOrderInput | SortOrder
+    cron_date?: SortOrderInput | SortOrder
+    updated_at?: SortOrderInput | SortOrder
+    _relevance?: copy_cron_statusOrderByRelevanceInput
+  }
+
+  export type copy_cron_statusWhereUniqueInput = Prisma.AtLeast<{
+    id?: bigint | number
+    AND?: copy_cron_statusWhereInput | copy_cron_statusWhereInput[]
+    OR?: copy_cron_statusWhereInput[]
+    NOT?: copy_cron_statusWhereInput | copy_cron_statusWhereInput[]
+    cron_name?: StringNullableFilter<"copy_cron_status"> | string | null
+    cron_date?: DateTimeNullableFilter<"copy_cron_status"> | Date | string | null
+    updated_at?: DateTimeNullableFilter<"copy_cron_status"> | Date | string | null
+  }, "id">
+
+  export type copy_cron_statusOrderByWithAggregationInput = {
+    id?: SortOrder
+    cron_name?: SortOrderInput | SortOrder
+    cron_date?: SortOrderInput | SortOrder
+    updated_at?: SortOrderInput | SortOrder
+    _count?: copy_cron_statusCountOrderByAggregateInput
+    _avg?: copy_cron_statusAvgOrderByAggregateInput
+    _max?: copy_cron_statusMaxOrderByAggregateInput
+    _min?: copy_cron_statusMinOrderByAggregateInput
+    _sum?: copy_cron_statusSumOrderByAggregateInput
+  }
+
+  export type copy_cron_statusScalarWhereWithAggregatesInput = {
+    AND?: copy_cron_statusScalarWhereWithAggregatesInput | copy_cron_statusScalarWhereWithAggregatesInput[]
+    OR?: copy_cron_statusScalarWhereWithAggregatesInput[]
+    NOT?: copy_cron_statusScalarWhereWithAggregatesInput | copy_cron_statusScalarWhereWithAggregatesInput[]
+    id?: BigIntWithAggregatesFilter<"copy_cron_status"> | bigint | number
+    cron_name?: StringNullableWithAggregatesFilter<"copy_cron_status"> | string | null
+    cron_date?: DateTimeNullableWithAggregatesFilter<"copy_cron_status"> | Date | string | null
+    updated_at?: DateTimeNullableWithAggregatesFilter<"copy_cron_status"> | Date | string | null
+  }
+
+  export type copy_daily_issuer_cron_tableWhereInput = {
+    AND?: copy_daily_issuer_cron_tableWhereInput | copy_daily_issuer_cron_tableWhereInput[]
+    OR?: copy_daily_issuer_cron_tableWhereInput[]
+    NOT?: copy_daily_issuer_cron_tableWhereInput | copy_daily_issuer_cron_tableWhereInput[]
+    id?: BigIntFilter<"copy_daily_issuer_cron_table"> | bigint | number
+    isin?: StringNullableFilter<"copy_daily_issuer_cron_table"> | string | null
+    allotment_date?: DateTimeNullableFilter<"copy_daily_issuer_cron_table"> | Date | string | null
+    status?: IntFilter<"copy_daily_issuer_cron_table"> | number
+    created_at?: DateTimeNullableFilter<"copy_daily_issuer_cron_table"> | Date | string | null
+    updated_at?: DateTimeNullableFilter<"copy_daily_issuer_cron_table"> | Date | string | null
+  }
+
+  export type copy_daily_issuer_cron_tableOrderByWithRelationInput = {
     id?: SortOrder
     isin?: SortOrderInput | SortOrder
     allotment_date?: SortOrderInput | SortOrder
     status?: SortOrder
-    created_at?: SortOrder
+    created_at?: SortOrderInput | SortOrder
     updated_at?: SortOrderInput | SortOrder
-    _count?: isin_recordsCountOrderByAggregateInput
-    _avg?: isin_recordsAvgOrderByAggregateInput
-    _max?: isin_recordsMaxOrderByAggregateInput
-    _min?: isin_recordsMinOrderByAggregateInput
-    _sum?: isin_recordsSumOrderByAggregateInput
+    _relevance?: copy_daily_issuer_cron_tableOrderByRelevanceInput
   }
 
-  export type isin_recordsScalarWhereWithAggregatesInput = {
-    AND?: isin_recordsScalarWhereWithAggregatesInput | isin_recordsScalarWhereWithAggregatesInput[]
-    OR?: isin_recordsScalarWhereWithAggregatesInput[]
-    NOT?: isin_recordsScalarWhereWithAggregatesInput | isin_recordsScalarWhereWithAggregatesInput[]
-    id?: IntWithAggregatesFilter<"isin_records"> | number
-    isin?: StringNullableWithAggregatesFilter<"isin_records"> | string | null
-    allotment_date?: DateTimeNullableWithAggregatesFilter<"isin_records"> | Date | string | null
-    status?: BoolWithAggregatesFilter<"isin_records"> | boolean
-    created_at?: DateTimeWithAggregatesFilter<"isin_records"> | Date | string
-    updated_at?: DateTimeNullableWithAggregatesFilter<"isin_records"> | Date | string | null
+  export type copy_daily_issuer_cron_tableWhereUniqueInput = Prisma.AtLeast<{
+    id?: bigint | number
+    AND?: copy_daily_issuer_cron_tableWhereInput | copy_daily_issuer_cron_tableWhereInput[]
+    OR?: copy_daily_issuer_cron_tableWhereInput[]
+    NOT?: copy_daily_issuer_cron_tableWhereInput | copy_daily_issuer_cron_tableWhereInput[]
+    isin?: StringNullableFilter<"copy_daily_issuer_cron_table"> | string | null
+    allotment_date?: DateTimeNullableFilter<"copy_daily_issuer_cron_table"> | Date | string | null
+    status?: IntFilter<"copy_daily_issuer_cron_table"> | number
+    created_at?: DateTimeNullableFilter<"copy_daily_issuer_cron_table"> | Date | string | null
+    updated_at?: DateTimeNullableFilter<"copy_daily_issuer_cron_table"> | Date | string | null
+  }, "id">
+
+  export type copy_daily_issuer_cron_tableOrderByWithAggregationInput = {
+    id?: SortOrder
+    isin?: SortOrderInput | SortOrder
+    allotment_date?: SortOrderInput | SortOrder
+    status?: SortOrder
+    created_at?: SortOrderInput | SortOrder
+    updated_at?: SortOrderInput | SortOrder
+    _count?: copy_daily_issuer_cron_tableCountOrderByAggregateInput
+    _avg?: copy_daily_issuer_cron_tableAvgOrderByAggregateInput
+    _max?: copy_daily_issuer_cron_tableMaxOrderByAggregateInput
+    _min?: copy_daily_issuer_cron_tableMinOrderByAggregateInput
+    _sum?: copy_daily_issuer_cron_tableSumOrderByAggregateInput
+  }
+
+  export type copy_daily_issuer_cron_tableScalarWhereWithAggregatesInput = {
+    AND?: copy_daily_issuer_cron_tableScalarWhereWithAggregatesInput | copy_daily_issuer_cron_tableScalarWhereWithAggregatesInput[]
+    OR?: copy_daily_issuer_cron_tableScalarWhereWithAggregatesInput[]
+    NOT?: copy_daily_issuer_cron_tableScalarWhereWithAggregatesInput | copy_daily_issuer_cron_tableScalarWhereWithAggregatesInput[]
+    id?: BigIntWithAggregatesFilter<"copy_daily_issuer_cron_table"> | bigint | number
+    isin?: StringNullableWithAggregatesFilter<"copy_daily_issuer_cron_table"> | string | null
+    allotment_date?: DateTimeNullableWithAggregatesFilter<"copy_daily_issuer_cron_table"> | Date | string | null
+    status?: IntWithAggregatesFilter<"copy_daily_issuer_cron_table"> | number
+    created_at?: DateTimeNullableWithAggregatesFilter<"copy_daily_issuer_cron_table"> | Date | string | null
+    updated_at?: DateTimeNullableWithAggregatesFilter<"copy_daily_issuer_cron_table"> | Date | string | null
+  }
+
+  export type copy_failed_jobsWhereInput = {
+    AND?: copy_failed_jobsWhereInput | copy_failed_jobsWhereInput[]
+    OR?: copy_failed_jobsWhereInput[]
+    NOT?: copy_failed_jobsWhereInput | copy_failed_jobsWhereInput[]
+    id?: BigIntFilter<"copy_failed_jobs"> | bigint | number
+    uuid?: StringFilter<"copy_failed_jobs"> | string
+    connection?: StringFilter<"copy_failed_jobs"> | string
+    queue?: StringFilter<"copy_failed_jobs"> | string
+    payload?: StringFilter<"copy_failed_jobs"> | string
+    exception?: StringFilter<"copy_failed_jobs"> | string
+    failed_at?: DateTimeFilter<"copy_failed_jobs"> | Date | string
+  }
+
+  export type copy_failed_jobsOrderByWithRelationInput = {
+    id?: SortOrder
+    uuid?: SortOrder
+    connection?: SortOrder
+    queue?: SortOrder
+    payload?: SortOrder
+    exception?: SortOrder
+    failed_at?: SortOrder
+    _relevance?: copy_failed_jobsOrderByRelevanceInput
+  }
+
+  export type copy_failed_jobsWhereUniqueInput = Prisma.AtLeast<{
+    id?: bigint | number
+    uuid?: string
+    AND?: copy_failed_jobsWhereInput | copy_failed_jobsWhereInput[]
+    OR?: copy_failed_jobsWhereInput[]
+    NOT?: copy_failed_jobsWhereInput | copy_failed_jobsWhereInput[]
+    connection?: StringFilter<"copy_failed_jobs"> | string
+    queue?: StringFilter<"copy_failed_jobs"> | string
+    payload?: StringFilter<"copy_failed_jobs"> | string
+    exception?: StringFilter<"copy_failed_jobs"> | string
+    failed_at?: DateTimeFilter<"copy_failed_jobs"> | Date | string
+  }, "id" | "uuid">
+
+  export type copy_failed_jobsOrderByWithAggregationInput = {
+    id?: SortOrder
+    uuid?: SortOrder
+    connection?: SortOrder
+    queue?: SortOrder
+    payload?: SortOrder
+    exception?: SortOrder
+    failed_at?: SortOrder
+    _count?: copy_failed_jobsCountOrderByAggregateInput
+    _avg?: copy_failed_jobsAvgOrderByAggregateInput
+    _max?: copy_failed_jobsMaxOrderByAggregateInput
+    _min?: copy_failed_jobsMinOrderByAggregateInput
+    _sum?: copy_failed_jobsSumOrderByAggregateInput
+  }
+
+  export type copy_failed_jobsScalarWhereWithAggregatesInput = {
+    AND?: copy_failed_jobsScalarWhereWithAggregatesInput | copy_failed_jobsScalarWhereWithAggregatesInput[]
+    OR?: copy_failed_jobsScalarWhereWithAggregatesInput[]
+    NOT?: copy_failed_jobsScalarWhereWithAggregatesInput | copy_failed_jobsScalarWhereWithAggregatesInput[]
+    id?: BigIntWithAggregatesFilter<"copy_failed_jobs"> | bigint | number
+    uuid?: StringWithAggregatesFilter<"copy_failed_jobs"> | string
+    connection?: StringWithAggregatesFilter<"copy_failed_jobs"> | string
+    queue?: StringWithAggregatesFilter<"copy_failed_jobs"> | string
+    payload?: StringWithAggregatesFilter<"copy_failed_jobs"> | string
+    exception?: StringWithAggregatesFilter<"copy_failed_jobs"> | string
+    failed_at?: DateTimeWithAggregatesFilter<"copy_failed_jobs"> | Date | string
+  }
+
+  export type copy_incorporatedate_cronWhereInput = {
+    AND?: copy_incorporatedate_cronWhereInput | copy_incorporatedate_cronWhereInput[]
+    OR?: copy_incorporatedate_cronWhereInput[]
+    NOT?: copy_incorporatedate_cronWhereInput | copy_incorporatedate_cronWhereInput[]
+    id?: BigIntFilter<"copy_incorporatedate_cron"> | bigint | number
+    isin?: StringNullableFilter<"copy_incorporatedate_cron"> | string | null
+    allotment_date?: DateTimeNullableFilter<"copy_incorporatedate_cron"> | Date | string | null
+    status?: IntFilter<"copy_incorporatedate_cron"> | number
+    created_at?: DateTimeNullableFilter<"copy_incorporatedate_cron"> | Date | string | null
+    updated_at?: DateTimeNullableFilter<"copy_incorporatedate_cron"> | Date | string | null
+  }
+
+  export type copy_incorporatedate_cronOrderByWithRelationInput = {
+    id?: SortOrder
+    isin?: SortOrderInput | SortOrder
+    allotment_date?: SortOrderInput | SortOrder
+    status?: SortOrder
+    created_at?: SortOrderInput | SortOrder
+    updated_at?: SortOrderInput | SortOrder
+    _relevance?: copy_incorporatedate_cronOrderByRelevanceInput
+  }
+
+  export type copy_incorporatedate_cronWhereUniqueInput = Prisma.AtLeast<{
+    id?: bigint | number
+    AND?: copy_incorporatedate_cronWhereInput | copy_incorporatedate_cronWhereInput[]
+    OR?: copy_incorporatedate_cronWhereInput[]
+    NOT?: copy_incorporatedate_cronWhereInput | copy_incorporatedate_cronWhereInput[]
+    isin?: StringNullableFilter<"copy_incorporatedate_cron"> | string | null
+    allotment_date?: DateTimeNullableFilter<"copy_incorporatedate_cron"> | Date | string | null
+    status?: IntFilter<"copy_incorporatedate_cron"> | number
+    created_at?: DateTimeNullableFilter<"copy_incorporatedate_cron"> | Date | string | null
+    updated_at?: DateTimeNullableFilter<"copy_incorporatedate_cron"> | Date | string | null
+  }, "id">
+
+  export type copy_incorporatedate_cronOrderByWithAggregationInput = {
+    id?: SortOrder
+    isin?: SortOrderInput | SortOrder
+    allotment_date?: SortOrderInput | SortOrder
+    status?: SortOrder
+    created_at?: SortOrderInput | SortOrder
+    updated_at?: SortOrderInput | SortOrder
+    _count?: copy_incorporatedate_cronCountOrderByAggregateInput
+    _avg?: copy_incorporatedate_cronAvgOrderByAggregateInput
+    _max?: copy_incorporatedate_cronMaxOrderByAggregateInput
+    _min?: copy_incorporatedate_cronMinOrderByAggregateInput
+    _sum?: copy_incorporatedate_cronSumOrderByAggregateInput
+  }
+
+  export type copy_incorporatedate_cronScalarWhereWithAggregatesInput = {
+    AND?: copy_incorporatedate_cronScalarWhereWithAggregatesInput | copy_incorporatedate_cronScalarWhereWithAggregatesInput[]
+    OR?: copy_incorporatedate_cronScalarWhereWithAggregatesInput[]
+    NOT?: copy_incorporatedate_cronScalarWhereWithAggregatesInput | copy_incorporatedate_cronScalarWhereWithAggregatesInput[]
+    id?: BigIntWithAggregatesFilter<"copy_incorporatedate_cron"> | bigint | number
+    isin?: StringNullableWithAggregatesFilter<"copy_incorporatedate_cron"> | string | null
+    allotment_date?: DateTimeNullableWithAggregatesFilter<"copy_incorporatedate_cron"> | Date | string | null
+    status?: IntWithAggregatesFilter<"copy_incorporatedate_cron"> | number
+    created_at?: DateTimeNullableWithAggregatesFilter<"copy_incorporatedate_cron"> | Date | string | null
+    updated_at?: DateTimeNullableWithAggregatesFilter<"copy_incorporatedate_cron"> | Date | string | null
+  }
+
+  export type copy_isin_re_issuanceWhereInput = {
+    AND?: copy_isin_re_issuanceWhereInput | copy_isin_re_issuanceWhereInput[]
+    OR?: copy_isin_re_issuanceWhereInput[]
+    NOT?: copy_isin_re_issuanceWhereInput | copy_isin_re_issuanceWhereInput[]
+    id?: BigIntFilter<"copy_isin_re_issuance"> | bigint | number
+    isin_id?: BigIntFilter<"copy_isin_re_issuance"> | bigint | number
+    isin?: StringFilter<"copy_isin_re_issuance"> | string
+    issuer_master_id?: BigIntFilter<"copy_isin_re_issuance"> | bigint | number
+    allotment_date?: DateTimeFilter<"copy_isin_re_issuance"> | Date | string
+    issue_size?: DecimalFilter<"copy_isin_re_issuance"> | Decimal | DecimalJsLike | number | string
+    face_value?: FloatNullableFilter<"copy_isin_re_issuance"> | number | null
+    maturity_date?: DateTimeNullableFilter<"copy_isin_re_issuance"> | Date | string | null
+    business_sector?: IntNullableFilter<"copy_isin_re_issuance"> | number | null
+    security_name?: StringNullableFilter<"copy_isin_re_issuance"> | string | null
+    security_class?: StringNullableFilter<"copy_isin_re_issuance"> | string | null
+    mode_issue?: IntNullableFilter<"copy_isin_re_issuance"> | number | null
+    seniority?: IntNullableFilter<"copy_isin_re_issuance"> | number | null
+    tax_free?: FloatNullableFilter<"copy_isin_re_issuance"> | number | null
+    secured_flag?: IntNullableFilter<"copy_isin_re_issuance"> | number | null
+    is_visible?: IntFilter<"copy_isin_re_issuance"> | number
+    is_updated?: IntFilter<"copy_isin_re_issuance"> | number
+    is_main?: IntFilter<"copy_isin_re_issuance"> | number
+    created_at?: DateTimeNullableFilter<"copy_isin_re_issuance"> | Date | string | null
+    updated_at?: DateTimeNullableFilter<"copy_isin_re_issuance"> | Date | string | null
+  }
+
+  export type copy_isin_re_issuanceOrderByWithRelationInput = {
+    id?: SortOrder
+    isin_id?: SortOrder
+    isin?: SortOrder
+    issuer_master_id?: SortOrder
+    allotment_date?: SortOrder
+    issue_size?: SortOrder
+    face_value?: SortOrderInput | SortOrder
+    maturity_date?: SortOrderInput | SortOrder
+    business_sector?: SortOrderInput | SortOrder
+    security_name?: SortOrderInput | SortOrder
+    security_class?: SortOrderInput | SortOrder
+    mode_issue?: SortOrderInput | SortOrder
+    seniority?: SortOrderInput | SortOrder
+    tax_free?: SortOrderInput | SortOrder
+    secured_flag?: SortOrderInput | SortOrder
+    is_visible?: SortOrder
+    is_updated?: SortOrder
+    is_main?: SortOrder
+    created_at?: SortOrderInput | SortOrder
+    updated_at?: SortOrderInput | SortOrder
+    _relevance?: copy_isin_re_issuanceOrderByRelevanceInput
+  }
+
+  export type copy_isin_re_issuanceWhereUniqueInput = Prisma.AtLeast<{
+    id?: bigint | number
+    AND?: copy_isin_re_issuanceWhereInput | copy_isin_re_issuanceWhereInput[]
+    OR?: copy_isin_re_issuanceWhereInput[]
+    NOT?: copy_isin_re_issuanceWhereInput | copy_isin_re_issuanceWhereInput[]
+    isin_id?: BigIntFilter<"copy_isin_re_issuance"> | bigint | number
+    isin?: StringFilter<"copy_isin_re_issuance"> | string
+    issuer_master_id?: BigIntFilter<"copy_isin_re_issuance"> | bigint | number
+    allotment_date?: DateTimeFilter<"copy_isin_re_issuance"> | Date | string
+    issue_size?: DecimalFilter<"copy_isin_re_issuance"> | Decimal | DecimalJsLike | number | string
+    face_value?: FloatNullableFilter<"copy_isin_re_issuance"> | number | null
+    maturity_date?: DateTimeNullableFilter<"copy_isin_re_issuance"> | Date | string | null
+    business_sector?: IntNullableFilter<"copy_isin_re_issuance"> | number | null
+    security_name?: StringNullableFilter<"copy_isin_re_issuance"> | string | null
+    security_class?: StringNullableFilter<"copy_isin_re_issuance"> | string | null
+    mode_issue?: IntNullableFilter<"copy_isin_re_issuance"> | number | null
+    seniority?: IntNullableFilter<"copy_isin_re_issuance"> | number | null
+    tax_free?: FloatNullableFilter<"copy_isin_re_issuance"> | number | null
+    secured_flag?: IntNullableFilter<"copy_isin_re_issuance"> | number | null
+    is_visible?: IntFilter<"copy_isin_re_issuance"> | number
+    is_updated?: IntFilter<"copy_isin_re_issuance"> | number
+    is_main?: IntFilter<"copy_isin_re_issuance"> | number
+    created_at?: DateTimeNullableFilter<"copy_isin_re_issuance"> | Date | string | null
+    updated_at?: DateTimeNullableFilter<"copy_isin_re_issuance"> | Date | string | null
+  }, "id">
+
+  export type copy_isin_re_issuanceOrderByWithAggregationInput = {
+    id?: SortOrder
+    isin_id?: SortOrder
+    isin?: SortOrder
+    issuer_master_id?: SortOrder
+    allotment_date?: SortOrder
+    issue_size?: SortOrder
+    face_value?: SortOrderInput | SortOrder
+    maturity_date?: SortOrderInput | SortOrder
+    business_sector?: SortOrderInput | SortOrder
+    security_name?: SortOrderInput | SortOrder
+    security_class?: SortOrderInput | SortOrder
+    mode_issue?: SortOrderInput | SortOrder
+    seniority?: SortOrderInput | SortOrder
+    tax_free?: SortOrderInput | SortOrder
+    secured_flag?: SortOrderInput | SortOrder
+    is_visible?: SortOrder
+    is_updated?: SortOrder
+    is_main?: SortOrder
+    created_at?: SortOrderInput | SortOrder
+    updated_at?: SortOrderInput | SortOrder
+    _count?: copy_isin_re_issuanceCountOrderByAggregateInput
+    _avg?: copy_isin_re_issuanceAvgOrderByAggregateInput
+    _max?: copy_isin_re_issuanceMaxOrderByAggregateInput
+    _min?: copy_isin_re_issuanceMinOrderByAggregateInput
+    _sum?: copy_isin_re_issuanceSumOrderByAggregateInput
+  }
+
+  export type copy_isin_re_issuanceScalarWhereWithAggregatesInput = {
+    AND?: copy_isin_re_issuanceScalarWhereWithAggregatesInput | copy_isin_re_issuanceScalarWhereWithAggregatesInput[]
+    OR?: copy_isin_re_issuanceScalarWhereWithAggregatesInput[]
+    NOT?: copy_isin_re_issuanceScalarWhereWithAggregatesInput | copy_isin_re_issuanceScalarWhereWithAggregatesInput[]
+    id?: BigIntWithAggregatesFilter<"copy_isin_re_issuance"> | bigint | number
+    isin_id?: BigIntWithAggregatesFilter<"copy_isin_re_issuance"> | bigint | number
+    isin?: StringWithAggregatesFilter<"copy_isin_re_issuance"> | string
+    issuer_master_id?: BigIntWithAggregatesFilter<"copy_isin_re_issuance"> | bigint | number
+    allotment_date?: DateTimeWithAggregatesFilter<"copy_isin_re_issuance"> | Date | string
+    issue_size?: DecimalWithAggregatesFilter<"copy_isin_re_issuance"> | Decimal | DecimalJsLike | number | string
+    face_value?: FloatNullableWithAggregatesFilter<"copy_isin_re_issuance"> | number | null
+    maturity_date?: DateTimeNullableWithAggregatesFilter<"copy_isin_re_issuance"> | Date | string | null
+    business_sector?: IntNullableWithAggregatesFilter<"copy_isin_re_issuance"> | number | null
+    security_name?: StringNullableWithAggregatesFilter<"copy_isin_re_issuance"> | string | null
+    security_class?: StringNullableWithAggregatesFilter<"copy_isin_re_issuance"> | string | null
+    mode_issue?: IntNullableWithAggregatesFilter<"copy_isin_re_issuance"> | number | null
+    seniority?: IntNullableWithAggregatesFilter<"copy_isin_re_issuance"> | number | null
+    tax_free?: FloatNullableWithAggregatesFilter<"copy_isin_re_issuance"> | number | null
+    secured_flag?: IntNullableWithAggregatesFilter<"copy_isin_re_issuance"> | number | null
+    is_visible?: IntWithAggregatesFilter<"copy_isin_re_issuance"> | number
+    is_updated?: IntWithAggregatesFilter<"copy_isin_re_issuance"> | number
+    is_main?: IntWithAggregatesFilter<"copy_isin_re_issuance"> | number
+    created_at?: DateTimeNullableWithAggregatesFilter<"copy_isin_re_issuance"> | Date | string | null
+    updated_at?: DateTimeNullableWithAggregatesFilter<"copy_isin_re_issuance"> | Date | string | null
+  }
+
+  export type copy_isin_re_issuance_detailsWhereInput = {
+    AND?: copy_isin_re_issuance_detailsWhereInput | copy_isin_re_issuance_detailsWhereInput[]
+    OR?: copy_isin_re_issuance_detailsWhereInput[]
+    NOT?: copy_isin_re_issuance_detailsWhereInput | copy_isin_re_issuance_detailsWhereInput[]
+    id?: BigIntFilter<"copy_isin_re_issuance_details"> | bigint | number
+    re_issuance_id?: BigIntFilter<"copy_isin_re_issuance_details"> | bigint | number
+    bidding_date?: DateTimeNullableFilter<"copy_isin_re_issuance_details"> | Date | string | null
+    issuer_name?: StringNullableFilter<"copy_isin_re_issuance_details"> | string | null
+    isin?: StringNullableFilter<"copy_isin_re_issuance_details"> | string | null
+    issue_description?: StringNullableFilter<"copy_isin_re_issuance_details"> | string | null
+    type_of_issuance?: StringNullableFilter<"copy_isin_re_issuance_details"> | string | null
+    allotment_date?: DateTimeNullableFilter<"copy_isin_re_issuance_details"> | Date | string | null
+    face_value?: DecimalNullableFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    credit_rating?: StringNullableFilter<"copy_isin_re_issuance_details"> | string | null
+    type_of_book_bidding?: Enumcopy_isin_re_issuance_details_type_of_book_biddingNullableFilter<"copy_isin_re_issuance_details"> | $Enums.copy_isin_re_issuance_details_type_of_book_bidding | null
+    price?: DecimalNullableFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    spread?: DecimalNullableFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    yield?: DecimalNullableFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    manner_of_allotment?: StringNullableFilter<"copy_isin_re_issuance_details"> | string | null
+    manner_of_settlement?: StringNullableFilter<"copy_isin_re_issuance_details"> | string | null
+    link_of_gid_ppm?: StringNullableFilter<"copy_isin_re_issuance_details"> | string | null
+    link_of_kid_term_sheet?: StringNullableFilter<"copy_isin_re_issuance_details"> | string | null
+    base_issue_size?: DecimalNullableFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    green_shoe_option?: DecimalNullableFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    amount_raised?: DecimalNullableFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    coupon?: DecimalNullableFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    coupon_frequency?: IntNullableFilter<"copy_isin_re_issuance_details"> | number | null
+    successful_bidders_category?: StringNullableFilter<"copy_isin_re_issuance_details"> | string | null
+    type_of_bidding?: StringNullableFilter<"copy_isin_re_issuance_details"> | string | null
+    secured_unsecured?: Enumcopy_isin_re_issuance_details_secured_unsecuredNullableFilter<"copy_isin_re_issuance_details"> | $Enums.copy_isin_re_issuance_details_secured_unsecured | null
+    tenor?: StringNullableFilter<"copy_isin_re_issuance_details"> | string | null
+    maturity_type?: StringNullableFilter<"copy_isin_re_issuance_details"> | string | null
+    interest_payment_type?: StringNullableFilter<"copy_isin_re_issuance_details"> | string | null
+    anchor_amount?: DecimalNullableFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    number_of_anchor_investors?: IntNullableFilter<"copy_isin_re_issuance_details"> | number | null
+    total_qib_bidding?: DecimalNullableFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    total_qib_amount_accepted?: DecimalNullableFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    total_non_qib_bidding?: DecimalNullableFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    total_non_qib_amount_accepted?: DecimalNullableFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    cutoff_yield_price?: DecimalNullableFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    weighted_average_cutoff_yield_price?: DecimalNullableFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    issuance_done_through_bidding_process?: StringNullableFilter<"copy_isin_re_issuance_details"> | string | null
+    updated_by?: IntNullableFilter<"copy_isin_re_issuance_details"> | number | null
+    created_at?: DateTimeNullableFilter<"copy_isin_re_issuance_details"> | Date | string | null
+    updated_at?: DateTimeNullableFilter<"copy_isin_re_issuance_details"> | Date | string | null
+  }
+
+  export type copy_isin_re_issuance_detailsOrderByWithRelationInput = {
+    id?: SortOrder
+    re_issuance_id?: SortOrder
+    bidding_date?: SortOrderInput | SortOrder
+    issuer_name?: SortOrderInput | SortOrder
+    isin?: SortOrderInput | SortOrder
+    issue_description?: SortOrderInput | SortOrder
+    type_of_issuance?: SortOrderInput | SortOrder
+    allotment_date?: SortOrderInput | SortOrder
+    face_value?: SortOrderInput | SortOrder
+    credit_rating?: SortOrderInput | SortOrder
+    type_of_book_bidding?: SortOrderInput | SortOrder
+    price?: SortOrderInput | SortOrder
+    spread?: SortOrderInput | SortOrder
+    yield?: SortOrderInput | SortOrder
+    manner_of_allotment?: SortOrderInput | SortOrder
+    manner_of_settlement?: SortOrderInput | SortOrder
+    link_of_gid_ppm?: SortOrderInput | SortOrder
+    link_of_kid_term_sheet?: SortOrderInput | SortOrder
+    base_issue_size?: SortOrderInput | SortOrder
+    green_shoe_option?: SortOrderInput | SortOrder
+    amount_raised?: SortOrderInput | SortOrder
+    coupon?: SortOrderInput | SortOrder
+    coupon_frequency?: SortOrderInput | SortOrder
+    successful_bidders_category?: SortOrderInput | SortOrder
+    type_of_bidding?: SortOrderInput | SortOrder
+    secured_unsecured?: SortOrderInput | SortOrder
+    tenor?: SortOrderInput | SortOrder
+    maturity_type?: SortOrderInput | SortOrder
+    interest_payment_type?: SortOrderInput | SortOrder
+    anchor_amount?: SortOrderInput | SortOrder
+    number_of_anchor_investors?: SortOrderInput | SortOrder
+    total_qib_bidding?: SortOrderInput | SortOrder
+    total_qib_amount_accepted?: SortOrderInput | SortOrder
+    total_non_qib_bidding?: SortOrderInput | SortOrder
+    total_non_qib_amount_accepted?: SortOrderInput | SortOrder
+    cutoff_yield_price?: SortOrderInput | SortOrder
+    weighted_average_cutoff_yield_price?: SortOrderInput | SortOrder
+    issuance_done_through_bidding_process?: SortOrderInput | SortOrder
+    updated_by?: SortOrderInput | SortOrder
+    created_at?: SortOrderInput | SortOrder
+    updated_at?: SortOrderInput | SortOrder
+    _relevance?: copy_isin_re_issuance_detailsOrderByRelevanceInput
+  }
+
+  export type copy_isin_re_issuance_detailsWhereUniqueInput = Prisma.AtLeast<{
+    id?: bigint | number
+    AND?: copy_isin_re_issuance_detailsWhereInput | copy_isin_re_issuance_detailsWhereInput[]
+    OR?: copy_isin_re_issuance_detailsWhereInput[]
+    NOT?: copy_isin_re_issuance_detailsWhereInput | copy_isin_re_issuance_detailsWhereInput[]
+    re_issuance_id?: BigIntFilter<"copy_isin_re_issuance_details"> | bigint | number
+    bidding_date?: DateTimeNullableFilter<"copy_isin_re_issuance_details"> | Date | string | null
+    issuer_name?: StringNullableFilter<"copy_isin_re_issuance_details"> | string | null
+    isin?: StringNullableFilter<"copy_isin_re_issuance_details"> | string | null
+    issue_description?: StringNullableFilter<"copy_isin_re_issuance_details"> | string | null
+    type_of_issuance?: StringNullableFilter<"copy_isin_re_issuance_details"> | string | null
+    allotment_date?: DateTimeNullableFilter<"copy_isin_re_issuance_details"> | Date | string | null
+    face_value?: DecimalNullableFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    credit_rating?: StringNullableFilter<"copy_isin_re_issuance_details"> | string | null
+    type_of_book_bidding?: Enumcopy_isin_re_issuance_details_type_of_book_biddingNullableFilter<"copy_isin_re_issuance_details"> | $Enums.copy_isin_re_issuance_details_type_of_book_bidding | null
+    price?: DecimalNullableFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    spread?: DecimalNullableFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    yield?: DecimalNullableFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    manner_of_allotment?: StringNullableFilter<"copy_isin_re_issuance_details"> | string | null
+    manner_of_settlement?: StringNullableFilter<"copy_isin_re_issuance_details"> | string | null
+    link_of_gid_ppm?: StringNullableFilter<"copy_isin_re_issuance_details"> | string | null
+    link_of_kid_term_sheet?: StringNullableFilter<"copy_isin_re_issuance_details"> | string | null
+    base_issue_size?: DecimalNullableFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    green_shoe_option?: DecimalNullableFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    amount_raised?: DecimalNullableFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    coupon?: DecimalNullableFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    coupon_frequency?: IntNullableFilter<"copy_isin_re_issuance_details"> | number | null
+    successful_bidders_category?: StringNullableFilter<"copy_isin_re_issuance_details"> | string | null
+    type_of_bidding?: StringNullableFilter<"copy_isin_re_issuance_details"> | string | null
+    secured_unsecured?: Enumcopy_isin_re_issuance_details_secured_unsecuredNullableFilter<"copy_isin_re_issuance_details"> | $Enums.copy_isin_re_issuance_details_secured_unsecured | null
+    tenor?: StringNullableFilter<"copy_isin_re_issuance_details"> | string | null
+    maturity_type?: StringNullableFilter<"copy_isin_re_issuance_details"> | string | null
+    interest_payment_type?: StringNullableFilter<"copy_isin_re_issuance_details"> | string | null
+    anchor_amount?: DecimalNullableFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    number_of_anchor_investors?: IntNullableFilter<"copy_isin_re_issuance_details"> | number | null
+    total_qib_bidding?: DecimalNullableFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    total_qib_amount_accepted?: DecimalNullableFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    total_non_qib_bidding?: DecimalNullableFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    total_non_qib_amount_accepted?: DecimalNullableFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    cutoff_yield_price?: DecimalNullableFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    weighted_average_cutoff_yield_price?: DecimalNullableFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    issuance_done_through_bidding_process?: StringNullableFilter<"copy_isin_re_issuance_details"> | string | null
+    updated_by?: IntNullableFilter<"copy_isin_re_issuance_details"> | number | null
+    created_at?: DateTimeNullableFilter<"copy_isin_re_issuance_details"> | Date | string | null
+    updated_at?: DateTimeNullableFilter<"copy_isin_re_issuance_details"> | Date | string | null
+  }, "id">
+
+  export type copy_isin_re_issuance_detailsOrderByWithAggregationInput = {
+    id?: SortOrder
+    re_issuance_id?: SortOrder
+    bidding_date?: SortOrderInput | SortOrder
+    issuer_name?: SortOrderInput | SortOrder
+    isin?: SortOrderInput | SortOrder
+    issue_description?: SortOrderInput | SortOrder
+    type_of_issuance?: SortOrderInput | SortOrder
+    allotment_date?: SortOrderInput | SortOrder
+    face_value?: SortOrderInput | SortOrder
+    credit_rating?: SortOrderInput | SortOrder
+    type_of_book_bidding?: SortOrderInput | SortOrder
+    price?: SortOrderInput | SortOrder
+    spread?: SortOrderInput | SortOrder
+    yield?: SortOrderInput | SortOrder
+    manner_of_allotment?: SortOrderInput | SortOrder
+    manner_of_settlement?: SortOrderInput | SortOrder
+    link_of_gid_ppm?: SortOrderInput | SortOrder
+    link_of_kid_term_sheet?: SortOrderInput | SortOrder
+    base_issue_size?: SortOrderInput | SortOrder
+    green_shoe_option?: SortOrderInput | SortOrder
+    amount_raised?: SortOrderInput | SortOrder
+    coupon?: SortOrderInput | SortOrder
+    coupon_frequency?: SortOrderInput | SortOrder
+    successful_bidders_category?: SortOrderInput | SortOrder
+    type_of_bidding?: SortOrderInput | SortOrder
+    secured_unsecured?: SortOrderInput | SortOrder
+    tenor?: SortOrderInput | SortOrder
+    maturity_type?: SortOrderInput | SortOrder
+    interest_payment_type?: SortOrderInput | SortOrder
+    anchor_amount?: SortOrderInput | SortOrder
+    number_of_anchor_investors?: SortOrderInput | SortOrder
+    total_qib_bidding?: SortOrderInput | SortOrder
+    total_qib_amount_accepted?: SortOrderInput | SortOrder
+    total_non_qib_bidding?: SortOrderInput | SortOrder
+    total_non_qib_amount_accepted?: SortOrderInput | SortOrder
+    cutoff_yield_price?: SortOrderInput | SortOrder
+    weighted_average_cutoff_yield_price?: SortOrderInput | SortOrder
+    issuance_done_through_bidding_process?: SortOrderInput | SortOrder
+    updated_by?: SortOrderInput | SortOrder
+    created_at?: SortOrderInput | SortOrder
+    updated_at?: SortOrderInput | SortOrder
+    _count?: copy_isin_re_issuance_detailsCountOrderByAggregateInput
+    _avg?: copy_isin_re_issuance_detailsAvgOrderByAggregateInput
+    _max?: copy_isin_re_issuance_detailsMaxOrderByAggregateInput
+    _min?: copy_isin_re_issuance_detailsMinOrderByAggregateInput
+    _sum?: copy_isin_re_issuance_detailsSumOrderByAggregateInput
+  }
+
+  export type copy_isin_re_issuance_detailsScalarWhereWithAggregatesInput = {
+    AND?: copy_isin_re_issuance_detailsScalarWhereWithAggregatesInput | copy_isin_re_issuance_detailsScalarWhereWithAggregatesInput[]
+    OR?: copy_isin_re_issuance_detailsScalarWhereWithAggregatesInput[]
+    NOT?: copy_isin_re_issuance_detailsScalarWhereWithAggregatesInput | copy_isin_re_issuance_detailsScalarWhereWithAggregatesInput[]
+    id?: BigIntWithAggregatesFilter<"copy_isin_re_issuance_details"> | bigint | number
+    re_issuance_id?: BigIntWithAggregatesFilter<"copy_isin_re_issuance_details"> | bigint | number
+    bidding_date?: DateTimeNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | Date | string | null
+    issuer_name?: StringNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | string | null
+    isin?: StringNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | string | null
+    issue_description?: StringNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | string | null
+    type_of_issuance?: StringNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | string | null
+    allotment_date?: DateTimeNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | Date | string | null
+    face_value?: DecimalNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    credit_rating?: StringNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | string | null
+    type_of_book_bidding?: Enumcopy_isin_re_issuance_details_type_of_book_biddingNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | $Enums.copy_isin_re_issuance_details_type_of_book_bidding | null
+    price?: DecimalNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    spread?: DecimalNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    yield?: DecimalNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    manner_of_allotment?: StringNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | string | null
+    manner_of_settlement?: StringNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | string | null
+    link_of_gid_ppm?: StringNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | string | null
+    link_of_kid_term_sheet?: StringNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | string | null
+    base_issue_size?: DecimalNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    green_shoe_option?: DecimalNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    amount_raised?: DecimalNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    coupon?: DecimalNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    coupon_frequency?: IntNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | number | null
+    successful_bidders_category?: StringNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | string | null
+    type_of_bidding?: StringNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | string | null
+    secured_unsecured?: Enumcopy_isin_re_issuance_details_secured_unsecuredNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | $Enums.copy_isin_re_issuance_details_secured_unsecured | null
+    tenor?: StringNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | string | null
+    maturity_type?: StringNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | string | null
+    interest_payment_type?: StringNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | string | null
+    anchor_amount?: DecimalNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    number_of_anchor_investors?: IntNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | number | null
+    total_qib_bidding?: DecimalNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    total_qib_amount_accepted?: DecimalNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    total_non_qib_bidding?: DecimalNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    total_non_qib_amount_accepted?: DecimalNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    cutoff_yield_price?: DecimalNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    weighted_average_cutoff_yield_price?: DecimalNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | Decimal | DecimalJsLike | number | string | null
+    issuance_done_through_bidding_process?: StringNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | string | null
+    updated_by?: IntNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | number | null
+    created_at?: DateTimeNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | Date | string | null
+    updated_at?: DateTimeNullableWithAggregatesFilter<"copy_isin_re_issuance_details"> | Date | string | null
   }
 
   export type admin_settingCreateInput = {
@@ -88160,8 +98789,6 @@ export namespace Prisma {
     issuer_master_id: bigint | number
     allotment_date: Date | string
     issue_size: Decimal | DecimalJsLike | number | string
-    nsdl_issue_size?: Decimal | DecimalJsLike | number | string | null
-    source?: string | null
     face_value?: number | null
     maturity_date?: Date | string | null
     business_sector?: number | null
@@ -88185,8 +98812,6 @@ export namespace Prisma {
     issuer_master_id: bigint | number
     allotment_date: Date | string
     issue_size: Decimal | DecimalJsLike | number | string
-    nsdl_issue_size?: Decimal | DecimalJsLike | number | string | null
-    source?: string | null
     face_value?: number | null
     maturity_date?: Date | string | null
     business_sector?: number | null
@@ -88210,8 +98835,6 @@ export namespace Prisma {
     issuer_master_id?: BigIntFieldUpdateOperationsInput | bigint | number
     allotment_date?: DateTimeFieldUpdateOperationsInput | Date | string
     issue_size?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
-    nsdl_issue_size?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
-    source?: NullableStringFieldUpdateOperationsInput | string | null
     face_value?: NullableFloatFieldUpdateOperationsInput | number | null
     maturity_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     business_sector?: NullableIntFieldUpdateOperationsInput | number | null
@@ -88235,8 +98858,6 @@ export namespace Prisma {
     issuer_master_id?: BigIntFieldUpdateOperationsInput | bigint | number
     allotment_date?: DateTimeFieldUpdateOperationsInput | Date | string
     issue_size?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
-    nsdl_issue_size?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
-    source?: NullableStringFieldUpdateOperationsInput | string | null
     face_value?: NullableFloatFieldUpdateOperationsInput | number | null
     maturity_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     business_sector?: NullableIntFieldUpdateOperationsInput | number | null
@@ -88260,8 +98881,6 @@ export namespace Prisma {
     issuer_master_id: bigint | number
     allotment_date: Date | string
     issue_size: Decimal | DecimalJsLike | number | string
-    nsdl_issue_size?: Decimal | DecimalJsLike | number | string | null
-    source?: string | null
     face_value?: number | null
     maturity_date?: Date | string | null
     business_sector?: number | null
@@ -88285,8 +98904,6 @@ export namespace Prisma {
     issuer_master_id?: BigIntFieldUpdateOperationsInput | bigint | number
     allotment_date?: DateTimeFieldUpdateOperationsInput | Date | string
     issue_size?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
-    nsdl_issue_size?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
-    source?: NullableStringFieldUpdateOperationsInput | string | null
     face_value?: NullableFloatFieldUpdateOperationsInput | number | null
     maturity_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     business_sector?: NullableIntFieldUpdateOperationsInput | number | null
@@ -88310,8 +98927,6 @@ export namespace Prisma {
     issuer_master_id?: BigIntFieldUpdateOperationsInput | bigint | number
     allotment_date?: DateTimeFieldUpdateOperationsInput | Date | string
     issue_size?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
-    nsdl_issue_size?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
-    source?: NullableStringFieldUpdateOperationsInput | string | null
     face_value?: NullableFloatFieldUpdateOperationsInput | number | null
     maturity_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     business_sector?: NullableIntFieldUpdateOperationsInput | number | null
@@ -88636,63 +99251,903 @@ export namespace Prisma {
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
-  export type isin_recordsCreateInput = {
-    isin?: string | null
-    allotment_date?: Date | string | null
-    status?: boolean
-    created_at?: Date | string
+  export type copy_admin_settingCreateInput = {
+    id?: bigint | number
+    name?: string | null
+    type?: number
+    is_active?: number
+    created_at?: Date | string | null
     updated_at?: Date | string | null
   }
 
-  export type isin_recordsUncheckedCreateInput = {
+  export type copy_admin_settingUncheckedCreateInput = {
+    id?: bigint | number
+    name?: string | null
+    type?: number
+    is_active?: number
+    created_at?: Date | string | null
+    updated_at?: Date | string | null
+  }
+
+  export type copy_admin_settingUpdateInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    type?: IntFieldUpdateOperationsInput | number
+    is_active?: IntFieldUpdateOperationsInput | number
+    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type copy_admin_settingUncheckedUpdateInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    type?: IntFieldUpdateOperationsInput | number
+    is_active?: IntFieldUpdateOperationsInput | number
+    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type copy_admin_settingCreateManyInput = {
+    id?: bigint | number
+    name?: string | null
+    type?: number
+    is_active?: number
+    created_at?: Date | string | null
+    updated_at?: Date | string | null
+  }
+
+  export type copy_admin_settingUpdateManyMutationInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    type?: IntFieldUpdateOperationsInput | number
+    is_active?: IntFieldUpdateOperationsInput | number
+    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type copy_admin_settingUncheckedUpdateManyInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    type?: IntFieldUpdateOperationsInput | number
+    is_active?: IntFieldUpdateOperationsInput | number
+    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type copy_all_monthsCreateInput = {
+    month_no: number
+    month_name: string
+  }
+
+  export type copy_all_monthsUncheckedCreateInput = {
     id?: number
-    isin?: string | null
-    allotment_date?: Date | string | null
-    status?: boolean
-    created_at?: Date | string
-    updated_at?: Date | string | null
+    month_no: number
+    month_name: string
   }
 
-  export type isin_recordsUpdateInput = {
-    isin?: NullableStringFieldUpdateOperationsInput | string | null
-    allotment_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    status?: BoolFieldUpdateOperationsInput | boolean
-    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
-    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  export type copy_all_monthsUpdateInput = {
+    month_no?: IntFieldUpdateOperationsInput | number
+    month_name?: StringFieldUpdateOperationsInput | string
   }
 
-  export type isin_recordsUncheckedUpdateInput = {
+  export type copy_all_monthsUncheckedUpdateInput = {
     id?: IntFieldUpdateOperationsInput | number
-    isin?: NullableStringFieldUpdateOperationsInput | string | null
-    allotment_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    status?: BoolFieldUpdateOperationsInput | boolean
-    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
-    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    month_no?: IntFieldUpdateOperationsInput | number
+    month_name?: StringFieldUpdateOperationsInput | string
   }
 
-  export type isin_recordsCreateManyInput = {
+  export type copy_all_monthsCreateManyInput = {
     id?: number
-    isin?: string | null
-    allotment_date?: Date | string | null
-    status?: boolean
-    created_at?: Date | string
+    month_no: number
+    month_name: string
+  }
+
+  export type copy_all_monthsUpdateManyMutationInput = {
+    month_no?: IntFieldUpdateOperationsInput | number
+    month_name?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type copy_all_monthsUncheckedUpdateManyInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    month_no?: IntFieldUpdateOperationsInput | number
+    month_name?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type copy_cacheCreateInput = {
+    key: string
+    value: string
+    expiration: number
+  }
+
+  export type copy_cacheUncheckedCreateInput = {
+    key: string
+    value: string
+    expiration: number
+  }
+
+  export type copy_cacheUpdateInput = {
+    key?: StringFieldUpdateOperationsInput | string
+    value?: StringFieldUpdateOperationsInput | string
+    expiration?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type copy_cacheUncheckedUpdateInput = {
+    key?: StringFieldUpdateOperationsInput | string
+    value?: StringFieldUpdateOperationsInput | string
+    expiration?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type copy_cacheCreateManyInput = {
+    key: string
+    value: string
+    expiration: number
+  }
+
+  export type copy_cacheUpdateManyMutationInput = {
+    key?: StringFieldUpdateOperationsInput | string
+    value?: StringFieldUpdateOperationsInput | string
+    expiration?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type copy_cacheUncheckedUpdateManyInput = {
+    key?: StringFieldUpdateOperationsInput | string
+    value?: StringFieldUpdateOperationsInput | string
+    expiration?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type copy_cache_locksCreateInput = {
+    key: string
+    owner: string
+    expiration: number
+  }
+
+  export type copy_cache_locksUncheckedCreateInput = {
+    key: string
+    owner: string
+    expiration: number
+  }
+
+  export type copy_cache_locksUpdateInput = {
+    key?: StringFieldUpdateOperationsInput | string
+    owner?: StringFieldUpdateOperationsInput | string
+    expiration?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type copy_cache_locksUncheckedUpdateInput = {
+    key?: StringFieldUpdateOperationsInput | string
+    owner?: StringFieldUpdateOperationsInput | string
+    expiration?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type copy_cache_locksCreateManyInput = {
+    key: string
+    owner: string
+    expiration: number
+  }
+
+  export type copy_cache_locksUpdateManyMutationInput = {
+    key?: StringFieldUpdateOperationsInput | string
+    owner?: StringFieldUpdateOperationsInput | string
+    expiration?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type copy_cache_locksUncheckedUpdateManyInput = {
+    key?: StringFieldUpdateOperationsInput | string
+    owner?: StringFieldUpdateOperationsInput | string
+    expiration?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type copy_cron_statusCreateInput = {
+    id?: bigint | number
+    cron_name?: string | null
+    cron_date?: Date | string | null
     updated_at?: Date | string | null
   }
 
-  export type isin_recordsUpdateManyMutationInput = {
-    isin?: NullableStringFieldUpdateOperationsInput | string | null
-    allotment_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    status?: BoolFieldUpdateOperationsInput | boolean
-    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  export type copy_cron_statusUncheckedCreateInput = {
+    id?: bigint | number
+    cron_name?: string | null
+    cron_date?: Date | string | null
+    updated_at?: Date | string | null
+  }
+
+  export type copy_cron_statusUpdateInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    cron_name?: NullableStringFieldUpdateOperationsInput | string | null
+    cron_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
-  export type isin_recordsUncheckedUpdateManyInput = {
-    id?: IntFieldUpdateOperationsInput | number
+  export type copy_cron_statusUncheckedUpdateInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    cron_name?: NullableStringFieldUpdateOperationsInput | string | null
+    cron_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type copy_cron_statusCreateManyInput = {
+    id?: bigint | number
+    cron_name?: string | null
+    cron_date?: Date | string | null
+    updated_at?: Date | string | null
+  }
+
+  export type copy_cron_statusUpdateManyMutationInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    cron_name?: NullableStringFieldUpdateOperationsInput | string | null
+    cron_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type copy_cron_statusUncheckedUpdateManyInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    cron_name?: NullableStringFieldUpdateOperationsInput | string | null
+    cron_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type copy_daily_issuer_cron_tableCreateInput = {
+    id?: bigint | number
+    isin?: string | null
+    allotment_date?: Date | string | null
+    status?: number
+    created_at?: Date | string | null
+    updated_at?: Date | string | null
+  }
+
+  export type copy_daily_issuer_cron_tableUncheckedCreateInput = {
+    id?: bigint | number
+    isin?: string | null
+    allotment_date?: Date | string | null
+    status?: number
+    created_at?: Date | string | null
+    updated_at?: Date | string | null
+  }
+
+  export type copy_daily_issuer_cron_tableUpdateInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
     isin?: NullableStringFieldUpdateOperationsInput | string | null
     allotment_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    status?: BoolFieldUpdateOperationsInput | boolean
-    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    status?: IntFieldUpdateOperationsInput | number
+    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type copy_daily_issuer_cron_tableUncheckedUpdateInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    isin?: NullableStringFieldUpdateOperationsInput | string | null
+    allotment_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: IntFieldUpdateOperationsInput | number
+    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type copy_daily_issuer_cron_tableCreateManyInput = {
+    id?: bigint | number
+    isin?: string | null
+    allotment_date?: Date | string | null
+    status?: number
+    created_at?: Date | string | null
+    updated_at?: Date | string | null
+  }
+
+  export type copy_daily_issuer_cron_tableUpdateManyMutationInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    isin?: NullableStringFieldUpdateOperationsInput | string | null
+    allotment_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: IntFieldUpdateOperationsInput | number
+    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type copy_daily_issuer_cron_tableUncheckedUpdateManyInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    isin?: NullableStringFieldUpdateOperationsInput | string | null
+    allotment_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: IntFieldUpdateOperationsInput | number
+    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type copy_failed_jobsCreateInput = {
+    id?: bigint | number
+    uuid: string
+    connection: string
+    queue: string
+    payload: string
+    exception: string
+    failed_at?: Date | string
+  }
+
+  export type copy_failed_jobsUncheckedCreateInput = {
+    id?: bigint | number
+    uuid: string
+    connection: string
+    queue: string
+    payload: string
+    exception: string
+    failed_at?: Date | string
+  }
+
+  export type copy_failed_jobsUpdateInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    uuid?: StringFieldUpdateOperationsInput | string
+    connection?: StringFieldUpdateOperationsInput | string
+    queue?: StringFieldUpdateOperationsInput | string
+    payload?: StringFieldUpdateOperationsInput | string
+    exception?: StringFieldUpdateOperationsInput | string
+    failed_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type copy_failed_jobsUncheckedUpdateInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    uuid?: StringFieldUpdateOperationsInput | string
+    connection?: StringFieldUpdateOperationsInput | string
+    queue?: StringFieldUpdateOperationsInput | string
+    payload?: StringFieldUpdateOperationsInput | string
+    exception?: StringFieldUpdateOperationsInput | string
+    failed_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type copy_failed_jobsCreateManyInput = {
+    id?: bigint | number
+    uuid: string
+    connection: string
+    queue: string
+    payload: string
+    exception: string
+    failed_at?: Date | string
+  }
+
+  export type copy_failed_jobsUpdateManyMutationInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    uuid?: StringFieldUpdateOperationsInput | string
+    connection?: StringFieldUpdateOperationsInput | string
+    queue?: StringFieldUpdateOperationsInput | string
+    payload?: StringFieldUpdateOperationsInput | string
+    exception?: StringFieldUpdateOperationsInput | string
+    failed_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type copy_failed_jobsUncheckedUpdateManyInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    uuid?: StringFieldUpdateOperationsInput | string
+    connection?: StringFieldUpdateOperationsInput | string
+    queue?: StringFieldUpdateOperationsInput | string
+    payload?: StringFieldUpdateOperationsInput | string
+    exception?: StringFieldUpdateOperationsInput | string
+    failed_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type copy_incorporatedate_cronCreateInput = {
+    id?: bigint | number
+    isin?: string | null
+    allotment_date?: Date | string | null
+    status?: number
+    created_at?: Date | string | null
+    updated_at?: Date | string | null
+  }
+
+  export type copy_incorporatedate_cronUncheckedCreateInput = {
+    id?: bigint | number
+    isin?: string | null
+    allotment_date?: Date | string | null
+    status?: number
+    created_at?: Date | string | null
+    updated_at?: Date | string | null
+  }
+
+  export type copy_incorporatedate_cronUpdateInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    isin?: NullableStringFieldUpdateOperationsInput | string | null
+    allotment_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: IntFieldUpdateOperationsInput | number
+    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type copy_incorporatedate_cronUncheckedUpdateInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    isin?: NullableStringFieldUpdateOperationsInput | string | null
+    allotment_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: IntFieldUpdateOperationsInput | number
+    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type copy_incorporatedate_cronCreateManyInput = {
+    id?: bigint | number
+    isin?: string | null
+    allotment_date?: Date | string | null
+    status?: number
+    created_at?: Date | string | null
+    updated_at?: Date | string | null
+  }
+
+  export type copy_incorporatedate_cronUpdateManyMutationInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    isin?: NullableStringFieldUpdateOperationsInput | string | null
+    allotment_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: IntFieldUpdateOperationsInput | number
+    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type copy_incorporatedate_cronUncheckedUpdateManyInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    isin?: NullableStringFieldUpdateOperationsInput | string | null
+    allotment_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: IntFieldUpdateOperationsInput | number
+    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type copy_isin_re_issuanceCreateInput = {
+    id?: bigint | number
+    isin_id: bigint | number
+    isin: string
+    issuer_master_id: bigint | number
+    allotment_date: Date | string
+    issue_size: Decimal | DecimalJsLike | number | string
+    face_value?: number | null
+    maturity_date?: Date | string | null
+    business_sector?: number | null
+    security_name?: string | null
+    security_class?: string | null
+    mode_issue?: number | null
+    seniority?: number | null
+    tax_free?: number | null
+    secured_flag?: number | null
+    is_visible?: number
+    is_updated?: number
+    is_main?: number
+    created_at?: Date | string | null
+    updated_at?: Date | string | null
+  }
+
+  export type copy_isin_re_issuanceUncheckedCreateInput = {
+    id?: bigint | number
+    isin_id: bigint | number
+    isin: string
+    issuer_master_id: bigint | number
+    allotment_date: Date | string
+    issue_size: Decimal | DecimalJsLike | number | string
+    face_value?: number | null
+    maturity_date?: Date | string | null
+    business_sector?: number | null
+    security_name?: string | null
+    security_class?: string | null
+    mode_issue?: number | null
+    seniority?: number | null
+    tax_free?: number | null
+    secured_flag?: number | null
+    is_visible?: number
+    is_updated?: number
+    is_main?: number
+    created_at?: Date | string | null
+    updated_at?: Date | string | null
+  }
+
+  export type copy_isin_re_issuanceUpdateInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    isin_id?: BigIntFieldUpdateOperationsInput | bigint | number
+    isin?: StringFieldUpdateOperationsInput | string
+    issuer_master_id?: BigIntFieldUpdateOperationsInput | bigint | number
+    allotment_date?: DateTimeFieldUpdateOperationsInput | Date | string
+    issue_size?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    face_value?: NullableFloatFieldUpdateOperationsInput | number | null
+    maturity_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    business_sector?: NullableIntFieldUpdateOperationsInput | number | null
+    security_name?: NullableStringFieldUpdateOperationsInput | string | null
+    security_class?: NullableStringFieldUpdateOperationsInput | string | null
+    mode_issue?: NullableIntFieldUpdateOperationsInput | number | null
+    seniority?: NullableIntFieldUpdateOperationsInput | number | null
+    tax_free?: NullableFloatFieldUpdateOperationsInput | number | null
+    secured_flag?: NullableIntFieldUpdateOperationsInput | number | null
+    is_visible?: IntFieldUpdateOperationsInput | number
+    is_updated?: IntFieldUpdateOperationsInput | number
+    is_main?: IntFieldUpdateOperationsInput | number
+    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type copy_isin_re_issuanceUncheckedUpdateInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    isin_id?: BigIntFieldUpdateOperationsInput | bigint | number
+    isin?: StringFieldUpdateOperationsInput | string
+    issuer_master_id?: BigIntFieldUpdateOperationsInput | bigint | number
+    allotment_date?: DateTimeFieldUpdateOperationsInput | Date | string
+    issue_size?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    face_value?: NullableFloatFieldUpdateOperationsInput | number | null
+    maturity_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    business_sector?: NullableIntFieldUpdateOperationsInput | number | null
+    security_name?: NullableStringFieldUpdateOperationsInput | string | null
+    security_class?: NullableStringFieldUpdateOperationsInput | string | null
+    mode_issue?: NullableIntFieldUpdateOperationsInput | number | null
+    seniority?: NullableIntFieldUpdateOperationsInput | number | null
+    tax_free?: NullableFloatFieldUpdateOperationsInput | number | null
+    secured_flag?: NullableIntFieldUpdateOperationsInput | number | null
+    is_visible?: IntFieldUpdateOperationsInput | number
+    is_updated?: IntFieldUpdateOperationsInput | number
+    is_main?: IntFieldUpdateOperationsInput | number
+    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type copy_isin_re_issuanceCreateManyInput = {
+    id?: bigint | number
+    isin_id: bigint | number
+    isin: string
+    issuer_master_id: bigint | number
+    allotment_date: Date | string
+    issue_size: Decimal | DecimalJsLike | number | string
+    face_value?: number | null
+    maturity_date?: Date | string | null
+    business_sector?: number | null
+    security_name?: string | null
+    security_class?: string | null
+    mode_issue?: number | null
+    seniority?: number | null
+    tax_free?: number | null
+    secured_flag?: number | null
+    is_visible?: number
+    is_updated?: number
+    is_main?: number
+    created_at?: Date | string | null
+    updated_at?: Date | string | null
+  }
+
+  export type copy_isin_re_issuanceUpdateManyMutationInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    isin_id?: BigIntFieldUpdateOperationsInput | bigint | number
+    isin?: StringFieldUpdateOperationsInput | string
+    issuer_master_id?: BigIntFieldUpdateOperationsInput | bigint | number
+    allotment_date?: DateTimeFieldUpdateOperationsInput | Date | string
+    issue_size?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    face_value?: NullableFloatFieldUpdateOperationsInput | number | null
+    maturity_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    business_sector?: NullableIntFieldUpdateOperationsInput | number | null
+    security_name?: NullableStringFieldUpdateOperationsInput | string | null
+    security_class?: NullableStringFieldUpdateOperationsInput | string | null
+    mode_issue?: NullableIntFieldUpdateOperationsInput | number | null
+    seniority?: NullableIntFieldUpdateOperationsInput | number | null
+    tax_free?: NullableFloatFieldUpdateOperationsInput | number | null
+    secured_flag?: NullableIntFieldUpdateOperationsInput | number | null
+    is_visible?: IntFieldUpdateOperationsInput | number
+    is_updated?: IntFieldUpdateOperationsInput | number
+    is_main?: IntFieldUpdateOperationsInput | number
+    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type copy_isin_re_issuanceUncheckedUpdateManyInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    isin_id?: BigIntFieldUpdateOperationsInput | bigint | number
+    isin?: StringFieldUpdateOperationsInput | string
+    issuer_master_id?: BigIntFieldUpdateOperationsInput | bigint | number
+    allotment_date?: DateTimeFieldUpdateOperationsInput | Date | string
+    issue_size?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    face_value?: NullableFloatFieldUpdateOperationsInput | number | null
+    maturity_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    business_sector?: NullableIntFieldUpdateOperationsInput | number | null
+    security_name?: NullableStringFieldUpdateOperationsInput | string | null
+    security_class?: NullableStringFieldUpdateOperationsInput | string | null
+    mode_issue?: NullableIntFieldUpdateOperationsInput | number | null
+    seniority?: NullableIntFieldUpdateOperationsInput | number | null
+    tax_free?: NullableFloatFieldUpdateOperationsInput | number | null
+    secured_flag?: NullableIntFieldUpdateOperationsInput | number | null
+    is_visible?: IntFieldUpdateOperationsInput | number
+    is_updated?: IntFieldUpdateOperationsInput | number
+    is_main?: IntFieldUpdateOperationsInput | number
+    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type copy_isin_re_issuance_detailsCreateInput = {
+    id?: bigint | number
+    re_issuance_id: bigint | number
+    bidding_date?: Date | string | null
+    issuer_name?: string | null
+    isin?: string | null
+    issue_description?: string | null
+    type_of_issuance?: string | null
+    allotment_date?: Date | string | null
+    face_value?: Decimal | DecimalJsLike | number | string | null
+    credit_rating?: string | null
+    type_of_book_bidding?: $Enums.copy_isin_re_issuance_details_type_of_book_bidding | null
+    price?: Decimal | DecimalJsLike | number | string | null
+    spread?: Decimal | DecimalJsLike | number | string | null
+    yield?: Decimal | DecimalJsLike | number | string | null
+    manner_of_allotment?: string | null
+    manner_of_settlement?: string | null
+    link_of_gid_ppm?: string | null
+    link_of_kid_term_sheet?: string | null
+    base_issue_size?: Decimal | DecimalJsLike | number | string | null
+    green_shoe_option?: Decimal | DecimalJsLike | number | string | null
+    amount_raised?: Decimal | DecimalJsLike | number | string | null
+    coupon?: Decimal | DecimalJsLike | number | string | null
+    coupon_frequency?: number | null
+    successful_bidders_category?: string | null
+    type_of_bidding?: string | null
+    secured_unsecured?: $Enums.copy_isin_re_issuance_details_secured_unsecured | null
+    tenor?: string | null
+    maturity_type?: string | null
+    interest_payment_type?: string | null
+    anchor_amount?: Decimal | DecimalJsLike | number | string | null
+    number_of_anchor_investors?: number | null
+    total_qib_bidding?: Decimal | DecimalJsLike | number | string | null
+    total_qib_amount_accepted?: Decimal | DecimalJsLike | number | string | null
+    total_non_qib_bidding?: Decimal | DecimalJsLike | number | string | null
+    total_non_qib_amount_accepted?: Decimal | DecimalJsLike | number | string | null
+    cutoff_yield_price?: Decimal | DecimalJsLike | number | string | null
+    weighted_average_cutoff_yield_price?: Decimal | DecimalJsLike | number | string | null
+    issuance_done_through_bidding_process?: string | null
+    updated_by?: number | null
+    created_at?: Date | string | null
+    updated_at?: Date | string | null
+  }
+
+  export type copy_isin_re_issuance_detailsUncheckedCreateInput = {
+    id?: bigint | number
+    re_issuance_id: bigint | number
+    bidding_date?: Date | string | null
+    issuer_name?: string | null
+    isin?: string | null
+    issue_description?: string | null
+    type_of_issuance?: string | null
+    allotment_date?: Date | string | null
+    face_value?: Decimal | DecimalJsLike | number | string | null
+    credit_rating?: string | null
+    type_of_book_bidding?: $Enums.copy_isin_re_issuance_details_type_of_book_bidding | null
+    price?: Decimal | DecimalJsLike | number | string | null
+    spread?: Decimal | DecimalJsLike | number | string | null
+    yield?: Decimal | DecimalJsLike | number | string | null
+    manner_of_allotment?: string | null
+    manner_of_settlement?: string | null
+    link_of_gid_ppm?: string | null
+    link_of_kid_term_sheet?: string | null
+    base_issue_size?: Decimal | DecimalJsLike | number | string | null
+    green_shoe_option?: Decimal | DecimalJsLike | number | string | null
+    amount_raised?: Decimal | DecimalJsLike | number | string | null
+    coupon?: Decimal | DecimalJsLike | number | string | null
+    coupon_frequency?: number | null
+    successful_bidders_category?: string | null
+    type_of_bidding?: string | null
+    secured_unsecured?: $Enums.copy_isin_re_issuance_details_secured_unsecured | null
+    tenor?: string | null
+    maturity_type?: string | null
+    interest_payment_type?: string | null
+    anchor_amount?: Decimal | DecimalJsLike | number | string | null
+    number_of_anchor_investors?: number | null
+    total_qib_bidding?: Decimal | DecimalJsLike | number | string | null
+    total_qib_amount_accepted?: Decimal | DecimalJsLike | number | string | null
+    total_non_qib_bidding?: Decimal | DecimalJsLike | number | string | null
+    total_non_qib_amount_accepted?: Decimal | DecimalJsLike | number | string | null
+    cutoff_yield_price?: Decimal | DecimalJsLike | number | string | null
+    weighted_average_cutoff_yield_price?: Decimal | DecimalJsLike | number | string | null
+    issuance_done_through_bidding_process?: string | null
+    updated_by?: number | null
+    created_at?: Date | string | null
+    updated_at?: Date | string | null
+  }
+
+  export type copy_isin_re_issuance_detailsUpdateInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    re_issuance_id?: BigIntFieldUpdateOperationsInput | bigint | number
+    bidding_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    issuer_name?: NullableStringFieldUpdateOperationsInput | string | null
+    isin?: NullableStringFieldUpdateOperationsInput | string | null
+    issue_description?: NullableStringFieldUpdateOperationsInput | string | null
+    type_of_issuance?: NullableStringFieldUpdateOperationsInput | string | null
+    allotment_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    face_value?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    credit_rating?: NullableStringFieldUpdateOperationsInput | string | null
+    type_of_book_bidding?: NullableEnumcopy_isin_re_issuance_details_type_of_book_biddingFieldUpdateOperationsInput | $Enums.copy_isin_re_issuance_details_type_of_book_bidding | null
+    price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    spread?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    yield?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    manner_of_allotment?: NullableStringFieldUpdateOperationsInput | string | null
+    manner_of_settlement?: NullableStringFieldUpdateOperationsInput | string | null
+    link_of_gid_ppm?: NullableStringFieldUpdateOperationsInput | string | null
+    link_of_kid_term_sheet?: NullableStringFieldUpdateOperationsInput | string | null
+    base_issue_size?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    green_shoe_option?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    amount_raised?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    coupon?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    coupon_frequency?: NullableIntFieldUpdateOperationsInput | number | null
+    successful_bidders_category?: NullableStringFieldUpdateOperationsInput | string | null
+    type_of_bidding?: NullableStringFieldUpdateOperationsInput | string | null
+    secured_unsecured?: NullableEnumcopy_isin_re_issuance_details_secured_unsecuredFieldUpdateOperationsInput | $Enums.copy_isin_re_issuance_details_secured_unsecured | null
+    tenor?: NullableStringFieldUpdateOperationsInput | string | null
+    maturity_type?: NullableStringFieldUpdateOperationsInput | string | null
+    interest_payment_type?: NullableStringFieldUpdateOperationsInput | string | null
+    anchor_amount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    number_of_anchor_investors?: NullableIntFieldUpdateOperationsInput | number | null
+    total_qib_bidding?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    total_qib_amount_accepted?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    total_non_qib_bidding?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    total_non_qib_amount_accepted?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    cutoff_yield_price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    weighted_average_cutoff_yield_price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    issuance_done_through_bidding_process?: NullableStringFieldUpdateOperationsInput | string | null
+    updated_by?: NullableIntFieldUpdateOperationsInput | number | null
+    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type copy_isin_re_issuance_detailsUncheckedUpdateInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    re_issuance_id?: BigIntFieldUpdateOperationsInput | bigint | number
+    bidding_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    issuer_name?: NullableStringFieldUpdateOperationsInput | string | null
+    isin?: NullableStringFieldUpdateOperationsInput | string | null
+    issue_description?: NullableStringFieldUpdateOperationsInput | string | null
+    type_of_issuance?: NullableStringFieldUpdateOperationsInput | string | null
+    allotment_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    face_value?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    credit_rating?: NullableStringFieldUpdateOperationsInput | string | null
+    type_of_book_bidding?: NullableEnumcopy_isin_re_issuance_details_type_of_book_biddingFieldUpdateOperationsInput | $Enums.copy_isin_re_issuance_details_type_of_book_bidding | null
+    price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    spread?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    yield?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    manner_of_allotment?: NullableStringFieldUpdateOperationsInput | string | null
+    manner_of_settlement?: NullableStringFieldUpdateOperationsInput | string | null
+    link_of_gid_ppm?: NullableStringFieldUpdateOperationsInput | string | null
+    link_of_kid_term_sheet?: NullableStringFieldUpdateOperationsInput | string | null
+    base_issue_size?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    green_shoe_option?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    amount_raised?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    coupon?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    coupon_frequency?: NullableIntFieldUpdateOperationsInput | number | null
+    successful_bidders_category?: NullableStringFieldUpdateOperationsInput | string | null
+    type_of_bidding?: NullableStringFieldUpdateOperationsInput | string | null
+    secured_unsecured?: NullableEnumcopy_isin_re_issuance_details_secured_unsecuredFieldUpdateOperationsInput | $Enums.copy_isin_re_issuance_details_secured_unsecured | null
+    tenor?: NullableStringFieldUpdateOperationsInput | string | null
+    maturity_type?: NullableStringFieldUpdateOperationsInput | string | null
+    interest_payment_type?: NullableStringFieldUpdateOperationsInput | string | null
+    anchor_amount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    number_of_anchor_investors?: NullableIntFieldUpdateOperationsInput | number | null
+    total_qib_bidding?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    total_qib_amount_accepted?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    total_non_qib_bidding?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    total_non_qib_amount_accepted?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    cutoff_yield_price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    weighted_average_cutoff_yield_price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    issuance_done_through_bidding_process?: NullableStringFieldUpdateOperationsInput | string | null
+    updated_by?: NullableIntFieldUpdateOperationsInput | number | null
+    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type copy_isin_re_issuance_detailsCreateManyInput = {
+    id?: bigint | number
+    re_issuance_id: bigint | number
+    bidding_date?: Date | string | null
+    issuer_name?: string | null
+    isin?: string | null
+    issue_description?: string | null
+    type_of_issuance?: string | null
+    allotment_date?: Date | string | null
+    face_value?: Decimal | DecimalJsLike | number | string | null
+    credit_rating?: string | null
+    type_of_book_bidding?: $Enums.copy_isin_re_issuance_details_type_of_book_bidding | null
+    price?: Decimal | DecimalJsLike | number | string | null
+    spread?: Decimal | DecimalJsLike | number | string | null
+    yield?: Decimal | DecimalJsLike | number | string | null
+    manner_of_allotment?: string | null
+    manner_of_settlement?: string | null
+    link_of_gid_ppm?: string | null
+    link_of_kid_term_sheet?: string | null
+    base_issue_size?: Decimal | DecimalJsLike | number | string | null
+    green_shoe_option?: Decimal | DecimalJsLike | number | string | null
+    amount_raised?: Decimal | DecimalJsLike | number | string | null
+    coupon?: Decimal | DecimalJsLike | number | string | null
+    coupon_frequency?: number | null
+    successful_bidders_category?: string | null
+    type_of_bidding?: string | null
+    secured_unsecured?: $Enums.copy_isin_re_issuance_details_secured_unsecured | null
+    tenor?: string | null
+    maturity_type?: string | null
+    interest_payment_type?: string | null
+    anchor_amount?: Decimal | DecimalJsLike | number | string | null
+    number_of_anchor_investors?: number | null
+    total_qib_bidding?: Decimal | DecimalJsLike | number | string | null
+    total_qib_amount_accepted?: Decimal | DecimalJsLike | number | string | null
+    total_non_qib_bidding?: Decimal | DecimalJsLike | number | string | null
+    total_non_qib_amount_accepted?: Decimal | DecimalJsLike | number | string | null
+    cutoff_yield_price?: Decimal | DecimalJsLike | number | string | null
+    weighted_average_cutoff_yield_price?: Decimal | DecimalJsLike | number | string | null
+    issuance_done_through_bidding_process?: string | null
+    updated_by?: number | null
+    created_at?: Date | string | null
+    updated_at?: Date | string | null
+  }
+
+  export type copy_isin_re_issuance_detailsUpdateManyMutationInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    re_issuance_id?: BigIntFieldUpdateOperationsInput | bigint | number
+    bidding_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    issuer_name?: NullableStringFieldUpdateOperationsInput | string | null
+    isin?: NullableStringFieldUpdateOperationsInput | string | null
+    issue_description?: NullableStringFieldUpdateOperationsInput | string | null
+    type_of_issuance?: NullableStringFieldUpdateOperationsInput | string | null
+    allotment_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    face_value?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    credit_rating?: NullableStringFieldUpdateOperationsInput | string | null
+    type_of_book_bidding?: NullableEnumcopy_isin_re_issuance_details_type_of_book_biddingFieldUpdateOperationsInput | $Enums.copy_isin_re_issuance_details_type_of_book_bidding | null
+    price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    spread?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    yield?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    manner_of_allotment?: NullableStringFieldUpdateOperationsInput | string | null
+    manner_of_settlement?: NullableStringFieldUpdateOperationsInput | string | null
+    link_of_gid_ppm?: NullableStringFieldUpdateOperationsInput | string | null
+    link_of_kid_term_sheet?: NullableStringFieldUpdateOperationsInput | string | null
+    base_issue_size?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    green_shoe_option?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    amount_raised?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    coupon?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    coupon_frequency?: NullableIntFieldUpdateOperationsInput | number | null
+    successful_bidders_category?: NullableStringFieldUpdateOperationsInput | string | null
+    type_of_bidding?: NullableStringFieldUpdateOperationsInput | string | null
+    secured_unsecured?: NullableEnumcopy_isin_re_issuance_details_secured_unsecuredFieldUpdateOperationsInput | $Enums.copy_isin_re_issuance_details_secured_unsecured | null
+    tenor?: NullableStringFieldUpdateOperationsInput | string | null
+    maturity_type?: NullableStringFieldUpdateOperationsInput | string | null
+    interest_payment_type?: NullableStringFieldUpdateOperationsInput | string | null
+    anchor_amount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    number_of_anchor_investors?: NullableIntFieldUpdateOperationsInput | number | null
+    total_qib_bidding?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    total_qib_amount_accepted?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    total_non_qib_bidding?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    total_non_qib_amount_accepted?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    cutoff_yield_price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    weighted_average_cutoff_yield_price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    issuance_done_through_bidding_process?: NullableStringFieldUpdateOperationsInput | string | null
+    updated_by?: NullableIntFieldUpdateOperationsInput | number | null
+    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type copy_isin_re_issuance_detailsUncheckedUpdateManyInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    re_issuance_id?: BigIntFieldUpdateOperationsInput | bigint | number
+    bidding_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    issuer_name?: NullableStringFieldUpdateOperationsInput | string | null
+    isin?: NullableStringFieldUpdateOperationsInput | string | null
+    issue_description?: NullableStringFieldUpdateOperationsInput | string | null
+    type_of_issuance?: NullableStringFieldUpdateOperationsInput | string | null
+    allotment_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    face_value?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    credit_rating?: NullableStringFieldUpdateOperationsInput | string | null
+    type_of_book_bidding?: NullableEnumcopy_isin_re_issuance_details_type_of_book_biddingFieldUpdateOperationsInput | $Enums.copy_isin_re_issuance_details_type_of_book_bidding | null
+    price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    spread?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    yield?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    manner_of_allotment?: NullableStringFieldUpdateOperationsInput | string | null
+    manner_of_settlement?: NullableStringFieldUpdateOperationsInput | string | null
+    link_of_gid_ppm?: NullableStringFieldUpdateOperationsInput | string | null
+    link_of_kid_term_sheet?: NullableStringFieldUpdateOperationsInput | string | null
+    base_issue_size?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    green_shoe_option?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    amount_raised?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    coupon?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    coupon_frequency?: NullableIntFieldUpdateOperationsInput | number | null
+    successful_bidders_category?: NullableStringFieldUpdateOperationsInput | string | null
+    type_of_bidding?: NullableStringFieldUpdateOperationsInput | string | null
+    secured_unsecured?: NullableEnumcopy_isin_re_issuance_details_secured_unsecuredFieldUpdateOperationsInput | $Enums.copy_isin_re_issuance_details_secured_unsecured | null
+    tenor?: NullableStringFieldUpdateOperationsInput | string | null
+    maturity_type?: NullableStringFieldUpdateOperationsInput | string | null
+    interest_payment_type?: NullableStringFieldUpdateOperationsInput | string | null
+    anchor_amount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    number_of_anchor_investors?: NullableIntFieldUpdateOperationsInput | number | null
+    total_qib_bidding?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    total_qib_amount_accepted?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    total_non_qib_bidding?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    total_non_qib_amount_accepted?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    cutoff_yield_price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    weighted_average_cutoff_yield_price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    issuance_done_through_bidding_process?: NullableStringFieldUpdateOperationsInput | string | null
+    updated_by?: NullableIntFieldUpdateOperationsInput | number | null
+    created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updated_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
@@ -93249,17 +104704,6 @@ export namespace Prisma {
     not?: NestedDecimalFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
   }
 
-  export type DecimalNullableFilter<$PrismaModel = never> = {
-    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
-    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | null
-    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | null
-    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    not?: NestedDecimalNullableFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
-  }
-
   export type isin_re_issuanceOrderByRelevanceInput = {
     fields: isin_re_issuanceOrderByRelevanceFieldEnum | isin_re_issuanceOrderByRelevanceFieldEnum[]
     sort: SortOrder
@@ -93273,8 +104717,6 @@ export namespace Prisma {
     issuer_master_id?: SortOrder
     allotment_date?: SortOrder
     issue_size?: SortOrder
-    nsdl_issue_size?: SortOrder
-    source?: SortOrder
     face_value?: SortOrder
     maturity_date?: SortOrder
     business_sector?: SortOrder
@@ -93296,7 +104738,6 @@ export namespace Prisma {
     isin_id?: SortOrder
     issuer_master_id?: SortOrder
     issue_size?: SortOrder
-    nsdl_issue_size?: SortOrder
     face_value?: SortOrder
     business_sector?: SortOrder
     mode_issue?: SortOrder
@@ -93315,8 +104756,6 @@ export namespace Prisma {
     issuer_master_id?: SortOrder
     allotment_date?: SortOrder
     issue_size?: SortOrder
-    nsdl_issue_size?: SortOrder
-    source?: SortOrder
     face_value?: SortOrder
     maturity_date?: SortOrder
     business_sector?: SortOrder
@@ -93340,8 +104779,6 @@ export namespace Prisma {
     issuer_master_id?: SortOrder
     allotment_date?: SortOrder
     issue_size?: SortOrder
-    nsdl_issue_size?: SortOrder
-    source?: SortOrder
     face_value?: SortOrder
     maturity_date?: SortOrder
     business_sector?: SortOrder
@@ -93363,7 +104800,6 @@ export namespace Prisma {
     isin_id?: SortOrder
     issuer_master_id?: SortOrder
     issue_size?: SortOrder
-    nsdl_issue_size?: SortOrder
     face_value?: SortOrder
     business_sector?: SortOrder
     mode_issue?: SortOrder
@@ -93391,7 +104827,7 @@ export namespace Prisma {
     _max?: NestedDecimalFilter<$PrismaModel>
   }
 
-  export type DecimalNullableWithAggregatesFilter<$PrismaModel = never> = {
+  export type DecimalNullableFilter<$PrismaModel = never> = {
     equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
     in?: Decimal[] | DecimalJsLike[] | number[] | string[] | null
     notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | null
@@ -93399,12 +104835,7 @@ export namespace Prisma {
     lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
     gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
     gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    not?: NestedDecimalNullableWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _avg?: NestedDecimalNullableFilter<$PrismaModel>
-    _sum?: NestedDecimalNullableFilter<$PrismaModel>
-    _min?: NestedDecimalNullableFilter<$PrismaModel>
-    _max?: NestedDecimalNullableFilter<$PrismaModel>
+    not?: NestedDecimalNullableFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
   }
 
   export type Enumisin_re_issuance_details_type_of_book_biddingNullableFilter<$PrismaModel = never> = {
@@ -93605,6 +105036,22 @@ export namespace Prisma {
     updated_by?: SortOrder
   }
 
+  export type DecimalNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | null
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | null
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalNullableWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedDecimalNullableFilter<$PrismaModel>
+    _sum?: NestedDecimalNullableFilter<$PrismaModel>
+    _min?: NestedDecimalNullableFilter<$PrismaModel>
+    _max?: NestedDecimalNullableFilter<$PrismaModel>
+  }
+
   export type Enumisin_re_issuance_details_type_of_book_biddingNullableWithAggregatesFilter<$PrismaModel = never> = {
     equals?: $Enums.isin_re_issuance_details_type_of_book_bidding | Enumisin_re_issuance_details_type_of_book_biddingFieldRefInput<$PrismaModel> | null
     in?: $Enums.isin_re_issuance_details_type_of_book_bidding[] | null
@@ -93625,13 +105072,191 @@ export namespace Prisma {
     _max?: NestedEnumisin_re_issuance_details_secured_unsecuredNullableFilter<$PrismaModel>
   }
 
-  export type isin_recordsOrderByRelevanceInput = {
-    fields: isin_recordsOrderByRelevanceFieldEnum | isin_recordsOrderByRelevanceFieldEnum[]
+  export type copy_admin_settingOrderByRelevanceInput = {
+    fields: copy_admin_settingOrderByRelevanceFieldEnum | copy_admin_settingOrderByRelevanceFieldEnum[]
     sort: SortOrder
     search: string
   }
 
-  export type isin_recordsCountOrderByAggregateInput = {
+  export type copy_admin_settingCountOrderByAggregateInput = {
+    id?: SortOrder
+    name?: SortOrder
+    type?: SortOrder
+    is_active?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type copy_admin_settingAvgOrderByAggregateInput = {
+    id?: SortOrder
+    type?: SortOrder
+    is_active?: SortOrder
+  }
+
+  export type copy_admin_settingMaxOrderByAggregateInput = {
+    id?: SortOrder
+    name?: SortOrder
+    type?: SortOrder
+    is_active?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type copy_admin_settingMinOrderByAggregateInput = {
+    id?: SortOrder
+    name?: SortOrder
+    type?: SortOrder
+    is_active?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type copy_admin_settingSumOrderByAggregateInput = {
+    id?: SortOrder
+    type?: SortOrder
+    is_active?: SortOrder
+  }
+
+  export type copy_all_monthsOrderByRelevanceInput = {
+    fields: copy_all_monthsOrderByRelevanceFieldEnum | copy_all_monthsOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type copy_all_monthsCountOrderByAggregateInput = {
+    id?: SortOrder
+    month_no?: SortOrder
+    month_name?: SortOrder
+  }
+
+  export type copy_all_monthsAvgOrderByAggregateInput = {
+    id?: SortOrder
+    month_no?: SortOrder
+  }
+
+  export type copy_all_monthsMaxOrderByAggregateInput = {
+    id?: SortOrder
+    month_no?: SortOrder
+    month_name?: SortOrder
+  }
+
+  export type copy_all_monthsMinOrderByAggregateInput = {
+    id?: SortOrder
+    month_no?: SortOrder
+    month_name?: SortOrder
+  }
+
+  export type copy_all_monthsSumOrderByAggregateInput = {
+    id?: SortOrder
+    month_no?: SortOrder
+  }
+
+  export type copy_cacheOrderByRelevanceInput = {
+    fields: copy_cacheOrderByRelevanceFieldEnum | copy_cacheOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type copy_cacheCountOrderByAggregateInput = {
+    key?: SortOrder
+    value?: SortOrder
+    expiration?: SortOrder
+  }
+
+  export type copy_cacheAvgOrderByAggregateInput = {
+    expiration?: SortOrder
+  }
+
+  export type copy_cacheMaxOrderByAggregateInput = {
+    key?: SortOrder
+    value?: SortOrder
+    expiration?: SortOrder
+  }
+
+  export type copy_cacheMinOrderByAggregateInput = {
+    key?: SortOrder
+    value?: SortOrder
+    expiration?: SortOrder
+  }
+
+  export type copy_cacheSumOrderByAggregateInput = {
+    expiration?: SortOrder
+  }
+
+  export type copy_cache_locksOrderByRelevanceInput = {
+    fields: copy_cache_locksOrderByRelevanceFieldEnum | copy_cache_locksOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type copy_cache_locksCountOrderByAggregateInput = {
+    key?: SortOrder
+    owner?: SortOrder
+    expiration?: SortOrder
+  }
+
+  export type copy_cache_locksAvgOrderByAggregateInput = {
+    expiration?: SortOrder
+  }
+
+  export type copy_cache_locksMaxOrderByAggregateInput = {
+    key?: SortOrder
+    owner?: SortOrder
+    expiration?: SortOrder
+  }
+
+  export type copy_cache_locksMinOrderByAggregateInput = {
+    key?: SortOrder
+    owner?: SortOrder
+    expiration?: SortOrder
+  }
+
+  export type copy_cache_locksSumOrderByAggregateInput = {
+    expiration?: SortOrder
+  }
+
+  export type copy_cron_statusOrderByRelevanceInput = {
+    fields: copy_cron_statusOrderByRelevanceFieldEnum | copy_cron_statusOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type copy_cron_statusCountOrderByAggregateInput = {
+    id?: SortOrder
+    cron_name?: SortOrder
+    cron_date?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type copy_cron_statusAvgOrderByAggregateInput = {
+    id?: SortOrder
+  }
+
+  export type copy_cron_statusMaxOrderByAggregateInput = {
+    id?: SortOrder
+    cron_name?: SortOrder
+    cron_date?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type copy_cron_statusMinOrderByAggregateInput = {
+    id?: SortOrder
+    cron_name?: SortOrder
+    cron_date?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type copy_cron_statusSumOrderByAggregateInput = {
+    id?: SortOrder
+  }
+
+  export type copy_daily_issuer_cron_tableOrderByRelevanceInput = {
+    fields: copy_daily_issuer_cron_tableOrderByRelevanceFieldEnum | copy_daily_issuer_cron_tableOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type copy_daily_issuer_cron_tableCountOrderByAggregateInput = {
     id?: SortOrder
     isin?: SortOrder
     allotment_date?: SortOrder
@@ -93640,11 +105265,12 @@ export namespace Prisma {
     updated_at?: SortOrder
   }
 
-  export type isin_recordsAvgOrderByAggregateInput = {
+  export type copy_daily_issuer_cron_tableAvgOrderByAggregateInput = {
     id?: SortOrder
+    status?: SortOrder
   }
 
-  export type isin_recordsMaxOrderByAggregateInput = {
+  export type copy_daily_issuer_cron_tableMaxOrderByAggregateInput = {
     id?: SortOrder
     isin?: SortOrder
     allotment_date?: SortOrder
@@ -93653,7 +105279,7 @@ export namespace Prisma {
     updated_at?: SortOrder
   }
 
-  export type isin_recordsMinOrderByAggregateInput = {
+  export type copy_daily_issuer_cron_tableMinOrderByAggregateInput = {
     id?: SortOrder
     isin?: SortOrder
     allotment_date?: SortOrder
@@ -93662,8 +105288,421 @@ export namespace Prisma {
     updated_at?: SortOrder
   }
 
-  export type isin_recordsSumOrderByAggregateInput = {
+  export type copy_daily_issuer_cron_tableSumOrderByAggregateInput = {
     id?: SortOrder
+    status?: SortOrder
+  }
+
+  export type copy_failed_jobsOrderByRelevanceInput = {
+    fields: copy_failed_jobsOrderByRelevanceFieldEnum | copy_failed_jobsOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type copy_failed_jobsCountOrderByAggregateInput = {
+    id?: SortOrder
+    uuid?: SortOrder
+    connection?: SortOrder
+    queue?: SortOrder
+    payload?: SortOrder
+    exception?: SortOrder
+    failed_at?: SortOrder
+  }
+
+  export type copy_failed_jobsAvgOrderByAggregateInput = {
+    id?: SortOrder
+  }
+
+  export type copy_failed_jobsMaxOrderByAggregateInput = {
+    id?: SortOrder
+    uuid?: SortOrder
+    connection?: SortOrder
+    queue?: SortOrder
+    payload?: SortOrder
+    exception?: SortOrder
+    failed_at?: SortOrder
+  }
+
+  export type copy_failed_jobsMinOrderByAggregateInput = {
+    id?: SortOrder
+    uuid?: SortOrder
+    connection?: SortOrder
+    queue?: SortOrder
+    payload?: SortOrder
+    exception?: SortOrder
+    failed_at?: SortOrder
+  }
+
+  export type copy_failed_jobsSumOrderByAggregateInput = {
+    id?: SortOrder
+  }
+
+  export type copy_incorporatedate_cronOrderByRelevanceInput = {
+    fields: copy_incorporatedate_cronOrderByRelevanceFieldEnum | copy_incorporatedate_cronOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type copy_incorporatedate_cronCountOrderByAggregateInput = {
+    id?: SortOrder
+    isin?: SortOrder
+    allotment_date?: SortOrder
+    status?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type copy_incorporatedate_cronAvgOrderByAggregateInput = {
+    id?: SortOrder
+    status?: SortOrder
+  }
+
+  export type copy_incorporatedate_cronMaxOrderByAggregateInput = {
+    id?: SortOrder
+    isin?: SortOrder
+    allotment_date?: SortOrder
+    status?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type copy_incorporatedate_cronMinOrderByAggregateInput = {
+    id?: SortOrder
+    isin?: SortOrder
+    allotment_date?: SortOrder
+    status?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type copy_incorporatedate_cronSumOrderByAggregateInput = {
+    id?: SortOrder
+    status?: SortOrder
+  }
+
+  export type copy_isin_re_issuanceOrderByRelevanceInput = {
+    fields: copy_isin_re_issuanceOrderByRelevanceFieldEnum | copy_isin_re_issuanceOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type copy_isin_re_issuanceCountOrderByAggregateInput = {
+    id?: SortOrder
+    isin_id?: SortOrder
+    isin?: SortOrder
+    issuer_master_id?: SortOrder
+    allotment_date?: SortOrder
+    issue_size?: SortOrder
+    face_value?: SortOrder
+    maturity_date?: SortOrder
+    business_sector?: SortOrder
+    security_name?: SortOrder
+    security_class?: SortOrder
+    mode_issue?: SortOrder
+    seniority?: SortOrder
+    tax_free?: SortOrder
+    secured_flag?: SortOrder
+    is_visible?: SortOrder
+    is_updated?: SortOrder
+    is_main?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type copy_isin_re_issuanceAvgOrderByAggregateInput = {
+    id?: SortOrder
+    isin_id?: SortOrder
+    issuer_master_id?: SortOrder
+    issue_size?: SortOrder
+    face_value?: SortOrder
+    business_sector?: SortOrder
+    mode_issue?: SortOrder
+    seniority?: SortOrder
+    tax_free?: SortOrder
+    secured_flag?: SortOrder
+    is_visible?: SortOrder
+    is_updated?: SortOrder
+    is_main?: SortOrder
+  }
+
+  export type copy_isin_re_issuanceMaxOrderByAggregateInput = {
+    id?: SortOrder
+    isin_id?: SortOrder
+    isin?: SortOrder
+    issuer_master_id?: SortOrder
+    allotment_date?: SortOrder
+    issue_size?: SortOrder
+    face_value?: SortOrder
+    maturity_date?: SortOrder
+    business_sector?: SortOrder
+    security_name?: SortOrder
+    security_class?: SortOrder
+    mode_issue?: SortOrder
+    seniority?: SortOrder
+    tax_free?: SortOrder
+    secured_flag?: SortOrder
+    is_visible?: SortOrder
+    is_updated?: SortOrder
+    is_main?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type copy_isin_re_issuanceMinOrderByAggregateInput = {
+    id?: SortOrder
+    isin_id?: SortOrder
+    isin?: SortOrder
+    issuer_master_id?: SortOrder
+    allotment_date?: SortOrder
+    issue_size?: SortOrder
+    face_value?: SortOrder
+    maturity_date?: SortOrder
+    business_sector?: SortOrder
+    security_name?: SortOrder
+    security_class?: SortOrder
+    mode_issue?: SortOrder
+    seniority?: SortOrder
+    tax_free?: SortOrder
+    secured_flag?: SortOrder
+    is_visible?: SortOrder
+    is_updated?: SortOrder
+    is_main?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type copy_isin_re_issuanceSumOrderByAggregateInput = {
+    id?: SortOrder
+    isin_id?: SortOrder
+    issuer_master_id?: SortOrder
+    issue_size?: SortOrder
+    face_value?: SortOrder
+    business_sector?: SortOrder
+    mode_issue?: SortOrder
+    seniority?: SortOrder
+    tax_free?: SortOrder
+    secured_flag?: SortOrder
+    is_visible?: SortOrder
+    is_updated?: SortOrder
+    is_main?: SortOrder
+  }
+
+  export type Enumcopy_isin_re_issuance_details_type_of_book_biddingNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.copy_isin_re_issuance_details_type_of_book_bidding | Enumcopy_isin_re_issuance_details_type_of_book_biddingFieldRefInput<$PrismaModel> | null
+    in?: $Enums.copy_isin_re_issuance_details_type_of_book_bidding[] | null
+    notIn?: $Enums.copy_isin_re_issuance_details_type_of_book_bidding[] | null
+    not?: NestedEnumcopy_isin_re_issuance_details_type_of_book_biddingNullableFilter<$PrismaModel> | $Enums.copy_isin_re_issuance_details_type_of_book_bidding | null
+  }
+
+  export type Enumcopy_isin_re_issuance_details_secured_unsecuredNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.copy_isin_re_issuance_details_secured_unsecured | Enumcopy_isin_re_issuance_details_secured_unsecuredFieldRefInput<$PrismaModel> | null
+    in?: $Enums.copy_isin_re_issuance_details_secured_unsecured[] | null
+    notIn?: $Enums.copy_isin_re_issuance_details_secured_unsecured[] | null
+    not?: NestedEnumcopy_isin_re_issuance_details_secured_unsecuredNullableFilter<$PrismaModel> | $Enums.copy_isin_re_issuance_details_secured_unsecured | null
+  }
+
+  export type copy_isin_re_issuance_detailsOrderByRelevanceInput = {
+    fields: copy_isin_re_issuance_detailsOrderByRelevanceFieldEnum | copy_isin_re_issuance_detailsOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type copy_isin_re_issuance_detailsCountOrderByAggregateInput = {
+    id?: SortOrder
+    re_issuance_id?: SortOrder
+    bidding_date?: SortOrder
+    issuer_name?: SortOrder
+    isin?: SortOrder
+    issue_description?: SortOrder
+    type_of_issuance?: SortOrder
+    allotment_date?: SortOrder
+    face_value?: SortOrder
+    credit_rating?: SortOrder
+    type_of_book_bidding?: SortOrder
+    price?: SortOrder
+    spread?: SortOrder
+    yield?: SortOrder
+    manner_of_allotment?: SortOrder
+    manner_of_settlement?: SortOrder
+    link_of_gid_ppm?: SortOrder
+    link_of_kid_term_sheet?: SortOrder
+    base_issue_size?: SortOrder
+    green_shoe_option?: SortOrder
+    amount_raised?: SortOrder
+    coupon?: SortOrder
+    coupon_frequency?: SortOrder
+    successful_bidders_category?: SortOrder
+    type_of_bidding?: SortOrder
+    secured_unsecured?: SortOrder
+    tenor?: SortOrder
+    maturity_type?: SortOrder
+    interest_payment_type?: SortOrder
+    anchor_amount?: SortOrder
+    number_of_anchor_investors?: SortOrder
+    total_qib_bidding?: SortOrder
+    total_qib_amount_accepted?: SortOrder
+    total_non_qib_bidding?: SortOrder
+    total_non_qib_amount_accepted?: SortOrder
+    cutoff_yield_price?: SortOrder
+    weighted_average_cutoff_yield_price?: SortOrder
+    issuance_done_through_bidding_process?: SortOrder
+    updated_by?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type copy_isin_re_issuance_detailsAvgOrderByAggregateInput = {
+    id?: SortOrder
+    re_issuance_id?: SortOrder
+    face_value?: SortOrder
+    price?: SortOrder
+    spread?: SortOrder
+    yield?: SortOrder
+    base_issue_size?: SortOrder
+    green_shoe_option?: SortOrder
+    amount_raised?: SortOrder
+    coupon?: SortOrder
+    coupon_frequency?: SortOrder
+    anchor_amount?: SortOrder
+    number_of_anchor_investors?: SortOrder
+    total_qib_bidding?: SortOrder
+    total_qib_amount_accepted?: SortOrder
+    total_non_qib_bidding?: SortOrder
+    total_non_qib_amount_accepted?: SortOrder
+    cutoff_yield_price?: SortOrder
+    weighted_average_cutoff_yield_price?: SortOrder
+    updated_by?: SortOrder
+  }
+
+  export type copy_isin_re_issuance_detailsMaxOrderByAggregateInput = {
+    id?: SortOrder
+    re_issuance_id?: SortOrder
+    bidding_date?: SortOrder
+    issuer_name?: SortOrder
+    isin?: SortOrder
+    issue_description?: SortOrder
+    type_of_issuance?: SortOrder
+    allotment_date?: SortOrder
+    face_value?: SortOrder
+    credit_rating?: SortOrder
+    type_of_book_bidding?: SortOrder
+    price?: SortOrder
+    spread?: SortOrder
+    yield?: SortOrder
+    manner_of_allotment?: SortOrder
+    manner_of_settlement?: SortOrder
+    link_of_gid_ppm?: SortOrder
+    link_of_kid_term_sheet?: SortOrder
+    base_issue_size?: SortOrder
+    green_shoe_option?: SortOrder
+    amount_raised?: SortOrder
+    coupon?: SortOrder
+    coupon_frequency?: SortOrder
+    successful_bidders_category?: SortOrder
+    type_of_bidding?: SortOrder
+    secured_unsecured?: SortOrder
+    tenor?: SortOrder
+    maturity_type?: SortOrder
+    interest_payment_type?: SortOrder
+    anchor_amount?: SortOrder
+    number_of_anchor_investors?: SortOrder
+    total_qib_bidding?: SortOrder
+    total_qib_amount_accepted?: SortOrder
+    total_non_qib_bidding?: SortOrder
+    total_non_qib_amount_accepted?: SortOrder
+    cutoff_yield_price?: SortOrder
+    weighted_average_cutoff_yield_price?: SortOrder
+    issuance_done_through_bidding_process?: SortOrder
+    updated_by?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type copy_isin_re_issuance_detailsMinOrderByAggregateInput = {
+    id?: SortOrder
+    re_issuance_id?: SortOrder
+    bidding_date?: SortOrder
+    issuer_name?: SortOrder
+    isin?: SortOrder
+    issue_description?: SortOrder
+    type_of_issuance?: SortOrder
+    allotment_date?: SortOrder
+    face_value?: SortOrder
+    credit_rating?: SortOrder
+    type_of_book_bidding?: SortOrder
+    price?: SortOrder
+    spread?: SortOrder
+    yield?: SortOrder
+    manner_of_allotment?: SortOrder
+    manner_of_settlement?: SortOrder
+    link_of_gid_ppm?: SortOrder
+    link_of_kid_term_sheet?: SortOrder
+    base_issue_size?: SortOrder
+    green_shoe_option?: SortOrder
+    amount_raised?: SortOrder
+    coupon?: SortOrder
+    coupon_frequency?: SortOrder
+    successful_bidders_category?: SortOrder
+    type_of_bidding?: SortOrder
+    secured_unsecured?: SortOrder
+    tenor?: SortOrder
+    maturity_type?: SortOrder
+    interest_payment_type?: SortOrder
+    anchor_amount?: SortOrder
+    number_of_anchor_investors?: SortOrder
+    total_qib_bidding?: SortOrder
+    total_qib_amount_accepted?: SortOrder
+    total_non_qib_bidding?: SortOrder
+    total_non_qib_amount_accepted?: SortOrder
+    cutoff_yield_price?: SortOrder
+    weighted_average_cutoff_yield_price?: SortOrder
+    issuance_done_through_bidding_process?: SortOrder
+    updated_by?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type copy_isin_re_issuance_detailsSumOrderByAggregateInput = {
+    id?: SortOrder
+    re_issuance_id?: SortOrder
+    face_value?: SortOrder
+    price?: SortOrder
+    spread?: SortOrder
+    yield?: SortOrder
+    base_issue_size?: SortOrder
+    green_shoe_option?: SortOrder
+    amount_raised?: SortOrder
+    coupon?: SortOrder
+    coupon_frequency?: SortOrder
+    anchor_amount?: SortOrder
+    number_of_anchor_investors?: SortOrder
+    total_qib_bidding?: SortOrder
+    total_qib_amount_accepted?: SortOrder
+    total_non_qib_bidding?: SortOrder
+    total_non_qib_amount_accepted?: SortOrder
+    cutoff_yield_price?: SortOrder
+    weighted_average_cutoff_yield_price?: SortOrder
+    updated_by?: SortOrder
+  }
+
+  export type Enumcopy_isin_re_issuance_details_type_of_book_biddingNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.copy_isin_re_issuance_details_type_of_book_bidding | Enumcopy_isin_re_issuance_details_type_of_book_biddingFieldRefInput<$PrismaModel> | null
+    in?: $Enums.copy_isin_re_issuance_details_type_of_book_bidding[] | null
+    notIn?: $Enums.copy_isin_re_issuance_details_type_of_book_bidding[] | null
+    not?: NestedEnumcopy_isin_re_issuance_details_type_of_book_biddingNullableWithAggregatesFilter<$PrismaModel> | $Enums.copy_isin_re_issuance_details_type_of_book_bidding | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumcopy_isin_re_issuance_details_type_of_book_biddingNullableFilter<$PrismaModel>
+    _max?: NestedEnumcopy_isin_re_issuance_details_type_of_book_biddingNullableFilter<$PrismaModel>
+  }
+
+  export type Enumcopy_isin_re_issuance_details_secured_unsecuredNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.copy_isin_re_issuance_details_secured_unsecured | Enumcopy_isin_re_issuance_details_secured_unsecuredFieldRefInput<$PrismaModel> | null
+    in?: $Enums.copy_isin_re_issuance_details_secured_unsecured[] | null
+    notIn?: $Enums.copy_isin_re_issuance_details_secured_unsecured[] | null
+    not?: NestedEnumcopy_isin_re_issuance_details_secured_unsecuredNullableWithAggregatesFilter<$PrismaModel> | $Enums.copy_isin_re_issuance_details_secured_unsecured | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumcopy_isin_re_issuance_details_secured_unsecuredNullableFilter<$PrismaModel>
+    _max?: NestedEnumcopy_isin_re_issuance_details_secured_unsecuredNullableFilter<$PrismaModel>
   }
 
   export type BigIntFieldUpdateOperationsInput = {
@@ -93752,6 +105791,14 @@ export namespace Prisma {
 
   export type NullableEnumisin_re_issuance_details_secured_unsecuredFieldUpdateOperationsInput = {
     set?: $Enums.isin_re_issuance_details_secured_unsecured | null
+  }
+
+  export type NullableEnumcopy_isin_re_issuance_details_type_of_book_biddingFieldUpdateOperationsInput = {
+    set?: $Enums.copy_isin_re_issuance_details_type_of_book_bidding | null
+  }
+
+  export type NullableEnumcopy_isin_re_issuance_details_secured_unsecuredFieldUpdateOperationsInput = {
+    set?: $Enums.copy_isin_re_issuance_details_secured_unsecured | null
   }
 
   export type NestedBigIntFilter<$PrismaModel = never> = {
@@ -94057,17 +106104,6 @@ export namespace Prisma {
     not?: NestedDecimalFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
   }
 
-  export type NestedDecimalNullableFilter<$PrismaModel = never> = {
-    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
-    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | null
-    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | null
-    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    not?: NestedDecimalNullableFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
-  }
-
   export type NestedDecimalWithAggregatesFilter<$PrismaModel = never> = {
     equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
     in?: Decimal[] | DecimalJsLike[] | number[] | string[]
@@ -94084,7 +106120,7 @@ export namespace Prisma {
     _max?: NestedDecimalFilter<$PrismaModel>
   }
 
-  export type NestedDecimalNullableWithAggregatesFilter<$PrismaModel = never> = {
+  export type NestedDecimalNullableFilter<$PrismaModel = never> = {
     equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
     in?: Decimal[] | DecimalJsLike[] | number[] | string[] | null
     notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | null
@@ -94092,12 +106128,7 @@ export namespace Prisma {
     lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
     gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
     gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    not?: NestedDecimalNullableWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _avg?: NestedDecimalNullableFilter<$PrismaModel>
-    _sum?: NestedDecimalNullableFilter<$PrismaModel>
-    _min?: NestedDecimalNullableFilter<$PrismaModel>
-    _max?: NestedDecimalNullableFilter<$PrismaModel>
+    not?: NestedDecimalNullableFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
   }
 
   export type NestedEnumisin_re_issuance_details_type_of_book_biddingNullableFilter<$PrismaModel = never> = {
@@ -94112,6 +106143,22 @@ export namespace Prisma {
     in?: $Enums.isin_re_issuance_details_secured_unsecured[] | null
     notIn?: $Enums.isin_re_issuance_details_secured_unsecured[] | null
     not?: NestedEnumisin_re_issuance_details_secured_unsecuredNullableFilter<$PrismaModel> | $Enums.isin_re_issuance_details_secured_unsecured | null
+  }
+
+  export type NestedDecimalNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | null
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | null
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalNullableWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedDecimalNullableFilter<$PrismaModel>
+    _sum?: NestedDecimalNullableFilter<$PrismaModel>
+    _min?: NestedDecimalNullableFilter<$PrismaModel>
+    _max?: NestedDecimalNullableFilter<$PrismaModel>
   }
 
   export type NestedEnumisin_re_issuance_details_type_of_book_biddingNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -94132,6 +106179,40 @@ export namespace Prisma {
     _count?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedEnumisin_re_issuance_details_secured_unsecuredNullableFilter<$PrismaModel>
     _max?: NestedEnumisin_re_issuance_details_secured_unsecuredNullableFilter<$PrismaModel>
+  }
+
+  export type NestedEnumcopy_isin_re_issuance_details_type_of_book_biddingNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.copy_isin_re_issuance_details_type_of_book_bidding | Enumcopy_isin_re_issuance_details_type_of_book_biddingFieldRefInput<$PrismaModel> | null
+    in?: $Enums.copy_isin_re_issuance_details_type_of_book_bidding[] | null
+    notIn?: $Enums.copy_isin_re_issuance_details_type_of_book_bidding[] | null
+    not?: NestedEnumcopy_isin_re_issuance_details_type_of_book_biddingNullableFilter<$PrismaModel> | $Enums.copy_isin_re_issuance_details_type_of_book_bidding | null
+  }
+
+  export type NestedEnumcopy_isin_re_issuance_details_secured_unsecuredNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.copy_isin_re_issuance_details_secured_unsecured | Enumcopy_isin_re_issuance_details_secured_unsecuredFieldRefInput<$PrismaModel> | null
+    in?: $Enums.copy_isin_re_issuance_details_secured_unsecured[] | null
+    notIn?: $Enums.copy_isin_re_issuance_details_secured_unsecured[] | null
+    not?: NestedEnumcopy_isin_re_issuance_details_secured_unsecuredNullableFilter<$PrismaModel> | $Enums.copy_isin_re_issuance_details_secured_unsecured | null
+  }
+
+  export type NestedEnumcopy_isin_re_issuance_details_type_of_book_biddingNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.copy_isin_re_issuance_details_type_of_book_bidding | Enumcopy_isin_re_issuance_details_type_of_book_biddingFieldRefInput<$PrismaModel> | null
+    in?: $Enums.copy_isin_re_issuance_details_type_of_book_bidding[] | null
+    notIn?: $Enums.copy_isin_re_issuance_details_type_of_book_bidding[] | null
+    not?: NestedEnumcopy_isin_re_issuance_details_type_of_book_biddingNullableWithAggregatesFilter<$PrismaModel> | $Enums.copy_isin_re_issuance_details_type_of_book_bidding | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumcopy_isin_re_issuance_details_type_of_book_biddingNullableFilter<$PrismaModel>
+    _max?: NestedEnumcopy_isin_re_issuance_details_type_of_book_biddingNullableFilter<$PrismaModel>
+  }
+
+  export type NestedEnumcopy_isin_re_issuance_details_secured_unsecuredNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.copy_isin_re_issuance_details_secured_unsecured | Enumcopy_isin_re_issuance_details_secured_unsecuredFieldRefInput<$PrismaModel> | null
+    in?: $Enums.copy_isin_re_issuance_details_secured_unsecured[] | null
+    notIn?: $Enums.copy_isin_re_issuance_details_secured_unsecured[] | null
+    not?: NestedEnumcopy_isin_re_issuance_details_secured_unsecuredNullableWithAggregatesFilter<$PrismaModel> | $Enums.copy_isin_re_issuance_details_secured_unsecured | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumcopy_isin_re_issuance_details_secured_unsecuredNullableFilter<$PrismaModel>
+    _max?: NestedEnumcopy_isin_re_issuance_details_secured_unsecuredNullableFilter<$PrismaModel>
   }
 
 

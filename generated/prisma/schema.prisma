@@ -82,8 +82,6 @@ model issuer_arranger {
   arranger_id BigInt
   smt_status  String? @db.VarChar(255)
 
-  @@index([arranger_id], map: "issuer_arranger_arranger_id_index")
-  @@index([issuer_id], map: "issuer_arranger_issuer_id_index")
   @@ignore
 }
 
@@ -160,8 +158,6 @@ model issuer_trustee {
   issuer_id  BigInt
   trustee_id BigInt
 
-  @@index([issuer_id], map: "issuer_trustee_issuer_id_index")
-  @@index([trustee_id], map: "issuer_trustee_trustee_id_index")
   @@ignore
 }
 
@@ -1120,8 +1116,6 @@ model isin_re_issuance {
   issuer_master_id BigInt    @db.UnsignedBigInt
   allotment_date   DateTime  @db.Date
   issue_size       Decimal   @db.Decimal(18, 2)
-  nsdl_issue_size  Decimal?  @db.Decimal(18, 2)
-  source           String?   @db.VarChar(255)
   face_value       Float?    @db.Float
   maturity_date    DateTime? @db.Date
   business_sector  Int?
@@ -1187,13 +1181,187 @@ model isin_re_issuance_details {
   @@index([re_issuance_id], map: "isin_re_issuance_details_re_issuance_id_index")
 }
 
-model isin_records {
-  id             Int       @id @default(autoincrement())
+model copy_admin_setting {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  name       String?   @db.VarChar(255)
+  type       Int       @default(1) @db.TinyInt
+  is_active  Int       @default(0) @db.TinyInt
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+}
+
+model copy_all_months {
+  id         Int    @id @default(autoincrement())
+  month_no   Int
+  month_name String @db.VarChar(25)
+}
+
+model copy_cache {
+  key        String @id @db.VarChar(255)
+  value      String @db.MediumText
+  expiration Int
+}
+
+model copy_cache_locks {
+  key        String @id @db.VarChar(255)
+  owner      String @db.VarChar(255)
+  expiration Int
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model copy_copy_issuer_arranger {
+  issuer_id   BigInt
+  arranger_id BigInt
+  smt_status  String? @db.VarChar(255)
+
+  @@index([arranger_id], map: "issuer_arranger_arranger_id_index")
+  @@index([issuer_id], map: "issuer_arranger_issuer_id_index")
+  @@ignore
+}
+
+model copy_cron_status {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  cron_name  String?   @db.VarChar(255)
+  cron_date  DateTime? @db.Date
+  updated_at DateTime? @db.DateTime(0)
+}
+
+model copy_daily_issuer_cron_table {
+  id             BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
   isin           String?   @db.VarChar(255)
-  allotment_date DateTime? @db.Date
-  status         Boolean   @default(false)
-  created_at     DateTime  @default(now()) @db.Timestamp(0)
+  allotment_date DateTime? @db.DateTime(0)
+  status         Int       @default(0) @db.TinyInt
+  created_at     DateTime? @db.Timestamp(0)
   updated_at     DateTime? @db.Timestamp(0)
+
+  @@index([allotment_date], map: "daily_issuer_cron_table_allotment_date_index")
+  @@index([isin], map: "daily_issuer_cron_table_isin_index")
+}
+
+model copy_failed_jobs {
+  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  uuid       String   @unique(map: "failed_jobs_uuid_unique") @db.VarChar(255)
+  connection String   @db.Text
+  queue      String   @db.Text
+  payload    String   @db.LongText
+  exception  String   @db.LongText
+  failed_at  DateTime @default(now()) @db.Timestamp(0)
+}
+
+model copy_incorporatedate_cron {
+  id             BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  isin           String?   @db.VarChar(255)
+  allotment_date DateTime? @db.DateTime(0)
+  status         Int       @default(0) @db.TinyInt
+  created_at     DateTime? @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+
+  @@index([allotment_date], map: "incorporatedate_cron_allotment_date_index")
+  @@index([isin], map: "incorporatedate_cron_isin_index")
+}
+
+model copy_isin_re_issuance {
+  id               BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  isin_id          BigInt
+  isin             String    @db.VarChar(20)
+  issuer_master_id BigInt    @db.UnsignedBigInt
+  allotment_date   DateTime  @db.Date
+  issue_size       Decimal   @db.Decimal(18, 2)
+  face_value       Float?    @db.Float
+  maturity_date    DateTime? @db.Date
+  business_sector  Int?
+  security_name    String?   @db.VarChar(255)
+  security_class   String?   @db.VarChar(255)
+  mode_issue       Int?
+  seniority        Int?
+  tax_free         Float?    @db.Float
+  secured_flag     Int?
+  is_visible       Int       @default(0) @db.TinyInt
+  is_updated       Int       @default(1) @db.TinyInt
+  is_main          Int       @default(0) @db.TinyInt
+  created_at       DateTime? @db.Timestamp(0)
+  updated_at       DateTime? @db.Timestamp(0)
+
+  @@index([isin_id], map: "isin_re_issuance_isin_id_index")
+  @@index([issuer_master_id], map: "isin_re_issuance_issuer_master_id_index")
+}
+
+model copy_isin_re_issuance_details {
+  id                                    BigInt                                              @id @default(autoincrement()) @db.UnsignedBigInt
+  re_issuance_id                        BigInt                                              @db.UnsignedBigInt
+  bidding_date                          DateTime?                                           @db.Date
+  issuer_name                           String?                                             @db.VarChar(255)
+  isin                                  String?                                             @db.VarChar(20)
+  issue_description                     String?                                             @db.Text
+  type_of_issuance                      String?                                             @db.VarChar(100)
+  allotment_date                        DateTime?                                           @db.Date
+  face_value                            Decimal?                                            @db.Decimal(18, 2)
+  credit_rating                         String?                                             @db.VarChar(255)
+  type_of_book_bidding                  copy_isin_re_issuance_details_type_of_book_bidding?
+  price                                 Decimal?                                            @db.Decimal(18, 2)
+  spread                                Decimal?                                            @db.Decimal(10, 2)
+  yield                                 Decimal?                                            @db.Decimal(10, 2)
+  manner_of_allotment                   String?                                             @db.VarChar(255)
+  manner_of_settlement                  String?                                             @db.VarChar(255)
+  link_of_gid_ppm                       String?                                             @db.Text
+  link_of_kid_term_sheet                String?                                             @db.Text
+  base_issue_size                       Decimal?                                            @db.Decimal(18, 2)
+  green_shoe_option                     Decimal?                                            @db.Decimal(18, 2)
+  amount_raised                         Decimal?                                            @db.Decimal(18, 2)
+  coupon                                Decimal?                                            @db.Decimal(10, 2)
+  coupon_frequency                      Int?
+  successful_bidders_category           String?                                             @db.Text
+  type_of_bidding                       String?                                             @db.VarChar(100)
+  secured_unsecured                     copy_isin_re_issuance_details_secured_unsecured?
+  tenor                                 String?                                             @db.VarChar(100)
+  maturity_type                         String?                                             @db.VarChar(100)
+  interest_payment_type                 String?                                             @db.VarChar(100)
+  anchor_amount                         Decimal?                                            @db.Decimal(18, 2)
+  number_of_anchor_investors            Int?
+  total_qib_bidding                     Decimal?                                            @db.Decimal(18, 2)
+  total_qib_amount_accepted             Decimal?                                            @db.Decimal(18, 2)
+  total_non_qib_bidding                 Decimal?                                            @db.Decimal(18, 2)
+  total_non_qib_amount_accepted         Decimal?                                            @db.Decimal(18, 2)
+  cutoff_yield_price                    Decimal?                                            @db.Decimal(18, 2)
+  weighted_average_cutoff_yield_price   Decimal?                                            @db.Decimal(18, 2)
+  issuance_done_through_bidding_process String?                                             @db.VarChar(100)
+  updated_by                            Int?
+  created_at                            DateTime?                                           @db.Timestamp(0)
+  updated_at                            DateTime?                                           @db.Timestamp(0)
+
+  @@index([re_issuance_id], map: "isin_re_issuance_details_re_issuance_id_index")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model copy_issuer_arranger {
+  issuer_id   BigInt
+  arranger_id BigInt
+  smt_status  String? @db.VarChar(255)
+
+  @@index([arranger_id], map: "issuer_arranger_arranger_id_index")
+  @@index([issuer_id], map: "issuer_arranger_issuer_id_index")
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model copy_issuer_trustee {
+  issuer_id  BigInt
+  trustee_id BigInt
+
+  @@index([issuer_id], map: "issuer_trustee_issuer_id_index")
+  @@index([trustee_id], map: "issuer_trustee_trustee_id_index")
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model issuer_arranger_old {
+  issuer_id   BigInt
+  arranger_id BigInt
+  smt_status  String? @db.VarChar(255)
+
+  @@index([arranger_id], map: "issuer_arranger_arranger_id_index")
+  @@index([issuer_id], map: "issuer_arranger_issuer_id_index")
+  @@ignore
 }
 
 enum users_user_type {
@@ -1207,6 +1375,16 @@ enum isin_re_issuance_details_type_of_book_bidding {
 }
 
 enum isin_re_issuance_details_secured_unsecured {
+  secured
+  unsecured
+}
+
+enum copy_isin_re_issuance_details_type_of_book_bidding {
+  open
+  closed
+}
+
+enum copy_isin_re_issuance_details_secured_unsecured {
   secured
   unsecured
 }
