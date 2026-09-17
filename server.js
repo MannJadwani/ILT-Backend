@@ -274,12 +274,12 @@ app.post('/bulk-issuers-upload', async (req, res) => {
         let arrangerId = null;
         if (item.leadManagerArranger) {
           await tx.$executeRawUnsafe(
-            `INSERT INTO master_arranger (short_name)
-             SELECT ? FROM DUAL
-             WHERE NOT EXISTS (
-               SELECT 1 FROM master_arranger WHERE short_name = ?
-             )`,
-            item.leadManagerArranger, item.leadManagerArranger
+            `INSERT INTO master_arranger (short_name, arranger_name)
+     SELECT ?, ? FROM DUAL
+     WHERE NOT EXISTS (
+       SELECT 1 FROM master_arranger WHERE short_name = ?
+     )`,
+            item.leadManagerArranger, item.leadManagerArranger, item.leadManagerArranger
           );
           const r = await tx.$queryRawUnsafe(
             `SELECT id FROM master_arranger WHERE short_name = ? LIMIT 1`,
@@ -292,12 +292,12 @@ app.post('/bulk-issuers-upload', async (req, res) => {
         let trusteeId = null;
         if (item.trustee) {
           await tx.$executeRawUnsafe(
-            `INSERT INTO master_trustee (short_name)
-             SELECT ? FROM DUAL
-             WHERE NOT EXISTS (
-               SELECT 1 FROM master_trustee WHERE short_name = ?
-             )`,
-            item.trustee, item.trustee
+            `INSERT INTO master_trustee (short_name, trustee_name)
+     SELECT ?, ? FROM DUAL
+     WHERE NOT EXISTS (
+       SELECT 1 FROM master_trustee WHERE short_name = ?
+     )`,
+            item.trustee, item.trustee, item.trustee
           );
           const r = await tx.$queryRawUnsafe(
             `SELECT id FROM master_trustee WHERE short_name = ? LIMIT 1`,
@@ -328,12 +328,12 @@ app.post('/bulk-issuers-upload', async (req, res) => {
         let agencyId = null;
         if (item.rating_agency) {
           await tx.$executeRawUnsafe(
-            `INSERT INTO master_agency (short_name)
-             SELECT ? FROM DUAL
-             WHERE NOT EXISTS (
-               SELECT 1 FROM master_agency WHERE short_name = ?
-             )`,
-            item.rating_agency, item.rating_agency
+            `INSERT INTO master_agency (short_name, agency_name)
+              SELECT ?, ? FROM DUAL
+              WHERE NOT EXISTS (
+                SELECT 1 FROM master_agency WHERE short_name = ?
+              )`,
+            item.rating_agency, item.rating_agency, item.rating_agency
           );
           const r = await tx.$queryRawUnsafe(
             `SELECT id FROM master_agency WHERE short_name = ? LIMIT 1`,
