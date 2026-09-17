@@ -4,7 +4,7 @@ require('dotenv').config();
 const app = express();
 const cors = require('cors');
 const axios = require('axios');
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use(cors({
   origin: [
     'http://localhost:3000',
@@ -16,6 +16,8 @@ app.use(cors({
   ],
   credentials: true
 }));
+
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 BigInt.prototype.toJSON = function () {
   return this.toString();
@@ -214,6 +216,17 @@ function tenorToFloat(t) {
 // MAIN ADMIN APIs:
 // ==========================================
 
+app.get('/getRatings', async (req, res) => {
+  try {
+    const result = await prisma.$queryRawUnsafe(`
+      SELECT DISTINCT rating FROM master_issuer_rating;
+    `);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/bulk-issuers-upload', async (req, res) => {
   const issuers = Array.isArray(req.body) ? req.body : req.body?.issuers || [];
 
@@ -222,12 +235,16 @@ app.post('/bulk-issuers-upload', async (req, res) => {
   }
 
   const summary = { success: 0, failed: 0, errors: [] };
+  let count = 0;
 
   for (const item of issuers) {
     try {
       const result = await prisma.$transaction(async (tx) => {
         const isin = item.isin;
         const issuerName = item.issuerName;
+        count++;
+        console.log('processing item: ', count, isin,);
+
 
         if (!isin || !issuerName) {
           throw new Error('Missing required field: isin or issuerName');
@@ -380,35 +397,38 @@ app.post('/bulk-issuers-upload', async (req, res) => {
         }
 
         /* ---------- 5b. master_issuer_rating (upsert by issuer_id) ---------- */
-        if (
+        /* ---------- 5b. master_issuer_rating (upsert by issuer_id + agency_id) ---------- */
+        // agency_id is NOT NULL in the schema, so a rating row is only valid
+        // when we have an agency. Ratings without an agency are skipped.
+        if (agencyId !== null && (
           (item.creditRating !== null && item.creditRating !== undefined) ||
-          (item.outlook !== null && item.outlook !== undefined) ||
-          agencyId !== null
-        ) {
+          (item.outlook !== null && item.outlook !== undefined)
+        )) {
           const existingRating = await tx.$queryRawUnsafe(
-            `SELECT id FROM master_issuer_rating WHERE issuer_id = ? LIMIT 1`,
-            isinId
+            `SELECT id FROM master_issuer_rating
+      WHERE issuer_id = ? AND agency_id = ?
+      LIMIT 1`,
+            isinId,
+            agencyId
           );
 
           if (existingRating.length) {
             await tx.$executeRawUnsafe(
               `UPDATE master_issuer_rating
-                  SET rating      = ?,
-                      outlook     = ?,
-                      agency_id   = ?,
-                      rating_date = ?
-                WHERE id = ?`,
+          SET rating      = ?,
+              outlook     = ?,
+              rating_date = ?
+        WHERE id = ?`,
               item.creditRating ?? null,
               item.outlook ?? null,
-              agencyId,
               allotmentDate,
               existingRating[0].id
             );
           } else {
             await tx.$executeRawUnsafe(
               `INSERT INTO master_issuer_rating
-                 (rating, watch, outlook, rating_date, agency_id, issuer_id)
-               VALUES (?, ?, ?, ?, ?, ?)`,
+         (rating, watch, outlook, rating_date, agency_id, issuer_id)
+       VALUES (?, ?, ?, ?, ?, ?)`,
               item.creditRating ?? null,
               null,                    // watch
               item.outlook ?? null,
