@@ -237,14 +237,155 @@ app.post('/bulk-issuers-upload', async (req, res) => {
   const summary = { success: 0, failed: 0, errors: [] };
   let count = 0;
 
+  /* =========================================================
+   * Name normalization + fuzzy matching helpers
+   * ========================================================= */
+
+  // Values treated as "no value supplied"
+  const PLACEHOLDER_VALUES = new Set([
+    'not found', 'na', 'n/a', 'n.a', 'none', 'nil', 'null', 'undefined',
+    '-', '--', 'not applicable', 'not available', 'notavailable',
+    'tbd', 'tba', 'unknown'
+  ]);
+
+  /**
+   * Normalize a name for comparison:
+   *  - lowercase
+   *  - strip punctuation (commas, periods, apostrophes, &, etc.)
+   *  - collapse whitespace
+   *  - convert placeholders like "Not Found" to null
+   */
+  function normalizeName(input) {
+    if (input === null || input === undefined) return null;
+    let s = String(input).toLowerCase();
+    // Any non-letter / non-number / non-whitespace becomes a space
+    s = s.replace(/[^\p{L}\p{N}\s]/gu, ' ');
+    s = s.replace(/\s+/g, ' ').trim();
+    if (!s) return null;
+    if (PLACEHOLDER_VALUES.has(s)) return null;
+    return s;
+  }
+
+  function tokenize(normalized) {
+    if (!normalized) return null;
+    const tokens = normalized.split(' ').filter(Boolean);
+    return tokens.length ? new Set(tokens) : null;
+  }
+
+  /**
+   * Returns true if every token of the smaller set exists in the larger set,
+   * and the smaller set has at least 2 tokens (avoids matching on a single
+   * generic word).
+   */
+  function isTokenSubset(setA, setB) {
+    if (!setA || !setB) return false;
+    const [small, large] = setA.size <= setB.size ? [setA, setB] : [setB, setA];
+    if (small.size < 2) return false;
+    for (const t of small) {
+      if (!large.has(t)) return false;
+    }
+    return true;
+  }
+
+  /**
+   * Find an existing master record by fuzzy name match, or insert a new one.
+   * Always searches the FULL name column, never the short_name.
+   * Returns the row id, or null if rawName is empty / a placeholder.
+   */
+  async function findOrCreateMaster(
+    tx,
+    { table, nameColumn, shortNameColumn = null, rawName }
+  ) {
+    if (rawName === null || rawName === undefined) return null;
+
+    const cleanName = String(rawName).trim();
+    if (!cleanName) return null;
+
+    const normalized = normalizeName(cleanName);
+    if (!normalized) return null; // placeholder, e.g. "Not Found"
+
+    const targetTokens = tokenize(normalized);
+
+    // Pull BOTH the full-name and short-name columns for every row
+    const selectCols = shortNameColumn
+      ? `id, \`${nameColumn}\` AS name, \`${shortNameColumn}\` AS short_name`
+      : `id, \`${nameColumn}\` AS name`;
+
+    const rows = await tx.$queryRawUnsafe(
+      `SELECT ${selectCols} FROM \`${table}\``
+    );
+
+    // Try to match a given candidate string against the target
+    const matches = (candidate) => {
+      const norm = normalizeName(candidate);
+      if (!norm) return false;
+      if (norm === normalized) return true;
+      return isTokenSubset(targetTokens, tokenize(norm));
+    };
+
+    // 1) exact / fuzzy on the FULL name column
+    let match = rows.find((r) => matches(r.name));
+
+    // 2) fallback: exact / fuzzy on the SHORT name column
+    if (!match && shortNameColumn) {
+      match = rows.find((r) => matches(r.short_name));
+    }
+
+    if (match) {
+      // Backfill the full-name column if it was NULL / empty,
+      // so future runs match on the name column directly.
+      if (shortNameColumn) {
+        const existingName = match.name;
+        const isEmpty =
+          existingName === null ||
+          existingName === undefined ||
+          String(existingName).trim() === '';
+
+        if (isEmpty) {
+          await tx.$executeRawUnsafe(
+            `UPDATE \`${table}\` SET \`${nameColumn}\` = ? WHERE id = ?`,
+            cleanName,
+            match.id
+          );
+        }
+      }
+      return match.id;
+    }
+
+    // Insert new master row
+    if (shortNameColumn) {
+      const shortName =
+        cleanName.length > 50 ? cleanName.slice(0, 50) : cleanName;
+      await tx.$executeRawUnsafe(
+        `INSERT INTO \`${table}\` (\`${nameColumn}\`, \`${shortNameColumn}\`) VALUES (?, ?)`,
+        cleanName,
+        shortName
+      );
+    } else {
+      await tx.$executeRawUnsafe(
+        `INSERT INTO \`${table}\` (\`${nameColumn}\`) VALUES (?)`,
+        cleanName
+      );
+    }
+
+    const inserted = await tx.$queryRawUnsafe(
+      `SELECT id FROM \`${table}\` WHERE \`${nameColumn}\` = ? LIMIT 1`,
+      cleanName
+    );
+    return inserted[0]?.id ?? null;
+  }
+
+  /* =========================================================
+   * Main loop
+   * ========================================================= */
+
   for (const item of issuers) {
     try {
       const result = await prisma.$transaction(async (tx) => {
         const isin = item.isin;
         const issuerName = item.issuerName;
         count++;
-        console.log('processing item: ', count, isin,);
-
+        console.log('processing item: ', count, isin);
 
         if (!isin || !issuerName) {
           throw new Error('Missing required field: isin or issuerName');
@@ -255,92 +396,44 @@ app.post('/bulk-issuers-upload', async (req, res) => {
         const tenure = parseTenor(item.tenor);
 
         /* ---------- 1. issuer_details ---------- */
-        await tx.$executeRawUnsafe(
-          `INSERT INTO issuer_details (issuer_name)
-           SELECT ? FROM DUAL
-           WHERE NOT EXISTS (
-             SELECT 1 FROM issuer_details WHERE issuer_name = ?
-           )`,
-          issuerName, issuerName
-        );
-
-        const issuerRows = await tx.$queryRawUnsafe(
-          `SELECT id FROM issuer_details WHERE issuer_name = ? LIMIT 1`,
-          issuerName
-        );
-        const issuerId = issuerRows[0].id;
+        const issuerId = await findOrCreateMaster(tx, {
+          table: 'issuer_details',
+          nameColumn: 'issuer_name',
+          rawName: issuerName
+        });
+        if (!issuerId) throw new Error('Failed to resolve issuer_details');
 
         /* ---------- 2. master_arranger ---------- */
-        let arrangerId = null;
-        if (item.leadManagerArranger) {
-          await tx.$executeRawUnsafe(
-            `INSERT INTO master_arranger (short_name, arranger_name)
-     SELECT ?, ? FROM DUAL
-     WHERE NOT EXISTS (
-       SELECT 1 FROM master_arranger WHERE short_name = ?
-     )`,
-            item.leadManagerArranger, item.leadManagerArranger, item.leadManagerArranger
-          );
-          const r = await tx.$queryRawUnsafe(
-            `SELECT id FROM master_arranger WHERE short_name = ? LIMIT 1`,
-            item.leadManagerArranger
-          );
-          arrangerId = r[0]?.id ?? null;
-        }
+        const arrangerId = await findOrCreateMaster(tx, {
+          table: 'master_arranger',
+          nameColumn: 'arranger_name',
+          shortNameColumn: 'short_name',
+          rawName: item.leadManagerArranger
+        });
 
         /* ---------- 3. master_trustee ---------- */
-        let trusteeId = null;
-        if (item.trustee) {
-          await tx.$executeRawUnsafe(
-            `INSERT INTO master_trustee (short_name, trustee_name)
-     SELECT ?, ? FROM DUAL
-     WHERE NOT EXISTS (
-       SELECT 1 FROM master_trustee WHERE short_name = ?
-     )`,
-            item.trustee, item.trustee, item.trustee
-          );
-          const r = await tx.$queryRawUnsafe(
-            `SELECT id FROM master_trustee WHERE short_name = ? LIMIT 1`,
-            item.trustee
-          );
-          trusteeId = r[0]?.id ?? null;
-        }
+        const trusteeId = await findOrCreateMaster(tx, {
+          table: 'master_trustee',
+          nameColumn: 'trustee_name',
+          shortNameColumn: 'short_name',
+          rawName: item.trustee
+        });
 
         /* ---------- 4. master_registrar ---------- */
-        let registrarId = null;
-        if (item.registrar) {
-          await tx.$executeRawUnsafe(
-            `INSERT INTO master_registrar (short_name, registrar_name)
-             SELECT ?, ? FROM DUAL
-             WHERE NOT EXISTS (
-               SELECT 1 FROM master_registrar WHERE short_name = ?
-             )`,
-            item.registrar, item.registrar, item.registrar
-          );
-          const r = await tx.$queryRawUnsafe(
-            `SELECT id FROM master_registrar WHERE short_name = ? LIMIT 1`,
-            item.registrar
-          );
-          registrarId = r[0]?.id ?? null;
-        }
+        const registrarId = await findOrCreateMaster(tx, {
+          table: 'master_registrar',
+          nameColumn: 'registrar_name',
+          shortNameColumn: 'short_name',
+          rawName: item.registrar
+        });
 
         /* ---------- 4b. master_agency ---------- */
-        let agencyId = null;
-        if (item.rating_agency) {
-          await tx.$executeRawUnsafe(
-            `INSERT INTO master_agency (short_name, agency_name)
-              SELECT ?, ? FROM DUAL
-              WHERE NOT EXISTS (
-                SELECT 1 FROM master_agency WHERE short_name = ?
-              )`,
-            item.rating_agency, item.rating_agency, item.rating_agency
-          );
-          const r = await tx.$queryRawUnsafe(
-            `SELECT id FROM master_agency WHERE short_name = ? LIMIT 1`,
-            item.rating_agency
-          );
-          agencyId = r[0]?.id ?? null;
-        }
+        const agencyId = await findOrCreateMaster(tx, {
+          table: 'master_agency',
+          nameColumn: 'agency_name',
+          shortNameColumn: 'short_name',
+          rawName: item.rating_agency
+        });
 
         /* ---------- 5. master_issuer (upsert by isin) ---------- */
         const existingMasterIssuer = await tx.$queryRawUnsafe(
@@ -396,18 +489,16 @@ app.post('/bulk-issuers-upload', async (req, res) => {
           isinId = miRows[0].id;
         }
 
-        /* ---------- 5b. master_issuer_rating (upsert by issuer_id) ---------- */
         /* ---------- 5b. master_issuer_rating (upsert by issuer_id + agency_id) ---------- */
-        // agency_id is NOT NULL in the schema, so a rating row is only valid
-        // when we have an agency. Ratings without an agency are skipped.
-        if (agencyId !== null && (
-          (item.creditRating !== null && item.creditRating !== undefined) ||
-          (item.outlook !== null && item.outlook !== undefined)
-        )) {
+        if (
+          agencyId !== null &&
+          ((item.creditRating !== null && item.creditRating !== undefined) ||
+            (item.outlook !== null && item.outlook !== undefined))
+        ) {
           const existingRating = await tx.$queryRawUnsafe(
             `SELECT id FROM master_issuer_rating
-      WHERE issuer_id = ? AND agency_id = ?
-      LIMIT 1`,
+              WHERE issuer_id = ? AND agency_id = ?
+              LIMIT 1`,
             isinId,
             agencyId
           );
@@ -415,10 +506,10 @@ app.post('/bulk-issuers-upload', async (req, res) => {
           if (existingRating.length) {
             await tx.$executeRawUnsafe(
               `UPDATE master_issuer_rating
-          SET rating      = ?,
-              outlook     = ?,
-              rating_date = ?
-        WHERE id = ?`,
+                  SET rating      = ?,
+                      outlook     = ?,
+                      rating_date = ?
+                WHERE id = ?`,
               item.creditRating ?? null,
               item.outlook ?? null,
               allotmentDate,
@@ -427,10 +518,10 @@ app.post('/bulk-issuers-upload', async (req, res) => {
           } else {
             await tx.$executeRawUnsafe(
               `INSERT INTO master_issuer_rating
-         (rating, watch, outlook, rating_date, agency_id, issuer_id)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+                 (rating, watch, outlook, rating_date, agency_id, issuer_id)
+               VALUES (?, ?, ?, ?, ?, ?)`,
               item.creditRating ?? null,
-              null,                    // watch
+              null,
               item.outlook ?? null,
               allotmentDate,
               agencyId,
@@ -508,39 +599,39 @@ app.post('/bulk-issuers-upload', async (req, res) => {
           null,                                                  // 1  bidding_date
           issuerName,                                            // 2  issuer_name
           isin,                                                  // 3  isin
-          item.issueDescription ?? null,                         // 4  issue_description
-          item.typeOfIssuanceTypeOfPlacement ?? null,            // 5  type_of_issuance
-          allotmentDate,                                         // 6  allotment_date
-          item.faceValue ?? null,                       // 7  face_value
-          item.creditRating ?? null,                             // 8  credit_rating
-          bookBiddingToEnum(item.typeOfBookBidding),             // 9  type_of_book_bidding
-          item.priceInRs ?? null,                                // 10 price
-          item.spreadBps ?? null,                                // 11 spread
-          item.yield ?? null,                                    // 12 yield
-          item.mannerOfAllotment ?? null,                        // 13 manner_of_allotment
-          item.mannerOfSettlement ?? null,                       // 14 manner_of_settlement
-          item.linkOfGidPpm ?? null,                             // 15 link_of_gid_ppm
-          item.linkOfKidTermsheet ?? null,                       // 16 link_of_kid_term_sheet
-          item.baseIssueSize ?? null,                     // 17 base_issue_size
-          item.greenShoeOption ?? null,                   // 18 green_shoe_option
-          item.amountRaised ?? null,                       // 19 amount_raised
-          item.coupon_rate ?? null,                              // 20 coupon
-          couponFreqToInt(item.couponFrequency),                 // 21 coupon_frequency
-          item.noOfSuccesfulBiddersCategoryOfInvestors ?? null,  // 22 successful_bidders_category
-          item.typeOfBidding ?? null,                            // 23 type_of_bidding
-          securedToEnum(item.securedUnsecured),                  // 24 secured_unsecured
-          item.tenor ?? null,                                    // 25 tenor
-          item.maturityType ?? null,                             // 26 maturity_type
-          item.interestPaymentType ?? null,                      // 27 interest_payment_type
-          item.anchorAmount ?? null,                      // 28 anchor_amount
-          item.noOfAnchorInvestors ?? null,                      // 29 number_of_anchor_investors
-          item.totalQibBiddingAmount ?? null,             // 30 total_qib_bidding
-          item.totalQibAmountAcceptedAmount ?? null,      // 31 total_qib_amount_accepted
-          item.totalNonQibBiddingAmount ?? null,          // 32 total_non_qib_bidding
-          item.totalNonQibAmountAcceptedAmountInRsCrs ?? null,   // 33 total_non_qib_amount_accepted
-          item.cutOffYieldPriceRs ?? null,                       // 34 cutoff_yield_price
-          item.weightedAverageCutOffYieldPriceRsSpreadBps ?? null, // 35 weighted_average_cutoff_yield_price
-          'YES'                                                  // 36 issuance_done_through_bidding_process
+          item.issueDescription ?? null,                         // 4
+          item.typeOfIssuanceTypeOfPlacement ?? null,            // 5
+          allotmentDate,                                         // 6
+          item.faceValue ?? null,                                // 7
+          item.creditRating ?? null,                             // 8
+          bookBiddingToEnum(item.typeOfBookBidding),             // 9
+          item.priceInRs ?? null,                                // 10
+          item.spreadBps ?? null,                                // 11
+          item.yield ?? null,                                    // 12
+          item.mannerOfAllotment ?? null,                        // 13
+          item.mannerOfSettlement ?? null,                       // 14
+          item.linkOfGidPpm ?? null,                             // 15
+          item.linkOfKidTermsheet ?? null,                       // 16
+          item.baseIssueSize ?? null,                            // 17
+          item.greenShoeOption ?? null,                          // 18
+          item.amountRaised ?? null,                             // 19
+          item.coupon_rate ?? null,                              // 20
+          couponFreqToInt(item.couponFrequency),                 // 21
+          item.noOfSuccesfulBiddersCategoryOfInvestors ?? null,  // 22
+          item.typeOfBidding ?? null,                            // 23
+          securedToEnum(item.securedUnsecured),                  // 24
+          item.tenor ?? null,                                    // 25
+          item.maturityType ?? null,                             // 26
+          item.interestPaymentType ?? null,                      // 27
+          item.anchorAmount ?? null,                             // 28
+          item.noOfAnchorInvestors ?? null,                      // 29
+          item.totalQibBiddingAmount ?? null,                    // 30
+          item.totalQibAmountAcceptedAmount ?? null,             // 31
+          item.totalNonQibBiddingAmount ?? null,                 // 32
+          item.totalNonQibAmountAcceptedAmountInRsCrs ?? null,   // 33
+          item.cutOffYieldPriceRs ?? null,                       // 34
+          item.weightedAverageCutOffYieldPriceRsSpreadBps ?? null, // 35
+          'YES'                                                  // 36
         ];
 
         if (existingDetails.length) {
@@ -739,7 +830,7 @@ app.post('/bulk-issuers-upload', async (req, res) => {
 
   return res.status(200).json({
     message: 'Bulk issuers upload completed',
-    summary,
+    summary
   });
 });
 
