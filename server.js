@@ -444,25 +444,33 @@ app.post('/bulk-issuers-upload', async (req, res) => {
         let isinId;
         if (existingMasterIssuer.length) {
           isinId = existingMasterIssuer[0].id;
+
+          // Guard secured_flag: only compute when the source value is actually present,
+          // otherwise pass null so COALESCE keeps the existing flag.
+          const securedFlag =
+            item.securedUnsecured !== null && item.securedUnsecured !== undefined
+              ? securedToFlag(item.securedUnsecured)
+              : null;
+
           await tx.$executeRawUnsafe(
             `UPDATE master_issuer
-                SET issuer_master_id = ?,
-                    security_name    = ?,
-                    issue_size       = ?,
-                    face_value       = ?,
-                    allotment_date   = ?,
-                    maturity_date    = ?,
-                    secured_flag     = ?,
-                    is_visible       = 1,
-                    updated_at       = NOW()
-              WHERE id = ?`,
+        SET issuer_master_id = COALESCE(?, issuer_master_id),
+            security_name    = COALESCE(?, security_name),
+            issue_size       = COALESCE(?, issue_size),
+            face_value       = COALESCE(?, face_value),
+            allotment_date   = COALESCE(?, allotment_date),
+            maturity_date    = COALESCE(?, maturity_date),
+            secured_flag     = COALESCE(?, secured_flag),
+            is_visible       = 1,
+            updated_at       = NOW()
+      WHERE id = ?`,
             issuerId,
             issuerName,
             item.amountRaised ?? null,
             item.faceValue ?? null,
             allotmentDate,
             maturityDate,
-            securedToFlag(item.securedUnsecured),
+            securedFlag,
             isinId
           );
         } else {
@@ -539,21 +547,27 @@ app.post('/bulk-issuers-upload', async (req, res) => {
         let reIssuanceId;
         if (existingReIssuance.length) {
           reIssuanceId = existingReIssuance[0].id;
+
+          const securedFlag =
+            item.securedUnsecured !== null && item.securedUnsecured !== undefined
+              ? securedToFlag(item.securedUnsecured)
+              : null;
+
           await tx.$executeRawUnsafe(
             `UPDATE isin_re_issuance
-                SET isin_id          = ?,
-                    issuer_master_id = ?,
-                    allotment_date   = ?,
-                    issue_size       = ?,
-                    face_value       = ?,
-                    maturity_date    = ?,
-                    security_name    = ?,
-                    secured_flag     = ?,
-                    is_visible       = 1,
-                    is_updated       = 1,
-                    is_main          = 1,
-                    updated_at       = NOW()
-              WHERE id = ?`,
+        SET isin_id          = COALESCE(?, isin_id),
+            issuer_master_id = COALESCE(?, issuer_master_id),
+            allotment_date   = COALESCE(?, allotment_date),
+            issue_size       = COALESCE(?, issue_size),
+            face_value       = COALESCE(?, face_value),
+            maturity_date    = COALESCE(?, maturity_date),
+            security_name    = COALESCE(?, security_name),
+            secured_flag     = COALESCE(?, secured_flag),
+            is_visible       = 1,
+            is_updated       = 1,
+            is_main          = 1,
+            updated_at       = NOW()
+      WHERE id = ?`,
             isinId,
             issuerId,
             allotmentDate,
@@ -561,7 +575,7 @@ app.post('/bulk-issuers-upload', async (req, res) => {
             item.faceValue ?? null,
             maturityDate,
             issuerName,
-            securedToFlag(item.securedUnsecured),
+            securedFlag,
             reIssuanceId
           );
         } else {
@@ -637,43 +651,43 @@ app.post('/bulk-issuers-upload', async (req, res) => {
         if (existingDetails.length) {
           await tx.$executeRawUnsafe(
             `UPDATE isin_re_issuance_details SET
-               bidding_date                          = ?,
-               issuer_name                           = ?,
-               isin                                  = ?,
-               issue_description                     = ?,
-               type_of_issuance                      = ?,
-               allotment_date                        = ?,
-               face_value                            = ?,
-               credit_rating                         = ?,
-               type_of_book_bidding                  = ?,
-               price                                 = ?,
-               spread                                = ?,
-               yield                                 = ?,
-               manner_of_allotment                   = ?,
-               manner_of_settlement                  = ?,
-               link_of_gid_ppm                       = ?,
-               link_of_kid_term_sheet                = ?,
-               base_issue_size                       = ?,
-               green_shoe_option                     = ?,
-               amount_raised                         = ?,
-               coupon                                = ?,
-               coupon_frequency                      = ?,
-               successful_bidders_category           = ?,
-               type_of_bidding                       = ?,
-               secured_unsecured                     = ?,
-               tenor                                 = ?,
-               maturity_type                         = ?,
-               interest_payment_type                 = ?,
-               anchor_amount                         = ?,
-               number_of_anchor_investors            = ?,
-               total_qib_bidding                     = ?,
-               total_qib_amount_accepted             = ?,
-               total_non_qib_bidding                 = ?,
-               total_non_qib_amount_accepted         = ?,
-               cutoff_yield_price                    = ?,
-               weighted_average_cutoff_yield_price   = ?,
-               issuance_done_through_bidding_process = ?
-             WHERE id = ?`,
+       bidding_date                          = ?,
+       issuer_name                           = ?,
+       isin                                  = ?,
+       issue_description                     = COALESCE(?, issue_description),
+       type_of_issuance                      = ?,
+       allotment_date                        = ?,
+       face_value                            = COALESCE(?, face_value),
+       credit_rating                         = ?,
+       type_of_book_bidding                  = ?,
+       price                                 = COALESCE(?, price),
+       spread                                = COALESCE(?, spread),
+       yield                                 = COALESCE(?, yield),
+       manner_of_allotment                   = COALESCE(?, manner_of_allotment),
+       manner_of_settlement                  = COALESCE(?, manner_of_settlement),
+       link_of_gid_ppm                       = COALESCE(?, link_of_gid_ppm),
+       link_of_kid_term_sheet                = COALESCE(?, link_of_kid_term_sheet),
+       base_issue_size                       = COALESCE(?, base_issue_size),
+       green_shoe_option                     = ?,
+       amount_raised                         = COALESCE(?, amount_raised),
+       coupon                                = ?,
+       coupon_frequency                      = ?,
+       successful_bidders_category           = ?,
+       type_of_bidding                       = ?,
+       secured_unsecured                     = ?,
+       tenor                                 = ?,
+       maturity_type                         = COALESCE(?, maturity_type),
+       interest_payment_type                 = COALESCE(?, interest_payment_type),
+       anchor_amount                         = COALESCE(?, anchor_amount),
+       number_of_anchor_investors            = ?,
+       total_qib_bidding                     = ?,
+       total_qib_amount_accepted             = ?,
+       total_non_qib_bidding                 = ?,
+       total_non_qib_amount_accepted         = ?,
+       cutoff_yield_price                    = COALESCE(?, cutoff_yield_price),
+       weighted_average_cutoff_yield_price   = COALESCE(?, weighted_average_cutoff_yield_price),
+       issuance_done_through_bidding_process = ?
+     WHERE id = ?`,
             ...v,
             existingDetails[0].id
           );
