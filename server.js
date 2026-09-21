@@ -5490,7 +5490,7 @@ app.post('/issuers_page_agency_rating_data', async (req, res) => {
       mainQuery = `
         SELECT 
           ma.short_name as label, 
-          COUNT(DISTINCT mir.id) as rating_no,
+          COUNT( mir.id) as rating_no,
           mir.rating 
         FROM master_agency ma
         INNER JOIN master_issuer_rating mir ON mir.agency_id = ma.id 
@@ -5505,7 +5505,7 @@ app.post('/issuers_page_agency_rating_data', async (req, res) => {
       mainQuery = `
         SELECT 
           ma.short_name as label, 
-          COUNT(DISTINCT mir.id) as rating_no,
+          COUNT( mir.id) as rating_no,
           ma.id as agency_id
         FROM master_agency ma
         INNER JOIN master_issuer_rating mir ON mir.agency_id = ma.id 
