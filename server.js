@@ -4516,6 +4516,12 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
     }
     const tableJoins = Array.from(tableJoinsSet).join('\n');
 
+    console.log("cyStart:", cyStart);
+    console.log("cyEnd:", cyEnd);
+    console.log("filterJoins:", filterJoins);
+    console.log("filterConditions:", filterConditions);
+    console.log("filterParams:", filterParams);
+
     // ─── Date range condition ───
     const dateConditions = `isin_re_issuance.allotment_date BETWEEN ? AND ? AND (isin_re_issuance.is_visible = 1)`;
 
