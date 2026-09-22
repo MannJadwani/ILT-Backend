@@ -6519,7 +6519,7 @@ app.post('/issuer_page_monthly_detailed_data', async (req, res) => {
     // COUNT QUERY — same joins, count distinct ISINs
     // =========================
     const countQuery = `
-      SELECT COUNT(*) AS total
+      SELECT COUNT(DISTINCT isin) AS total
       FROM (
         SELECT i.isin_id, i.isin
         FROM isin_re_issuance AS i
