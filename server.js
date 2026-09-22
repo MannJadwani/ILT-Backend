@@ -4547,7 +4547,7 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
 
     const totalIssuesCountQuery = `
       SELECT 
-        COUNT(isin_re_issuance.isin_id) AS aggregate
+        COUNT(DISTINCT isin_re_issuance.id) AS aggregate
       FROM isin_re_issuance
       ${totalJoins}
       WHERE ${dateConditions}
@@ -4591,7 +4591,7 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
         SELECT
           mi.issuer_id AS id,
           mi.issuer_name AS issuer_name,
-          COUNT(mi.isin) as no_issues,
+          COUNT(DISTINCT mi.id) as no_issues,
           ROUND(SUM(mi.issue_size) / 10000000, 2) as issue_size,
           RANK() OVER ( ORDER BY ${rankOrder} ) as arr_rank
         FROM (
@@ -4614,7 +4614,7 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
         SELECT
           mi.issuer_id AS id,
           mi.issuer_name AS issuer_name,
-          COUNT(mi.isin) as no_issues,
+          COUNT(DISTINCT mi.id) as no_issues,
           ROUND(SUM(mi.issue_size) / 10000000, 2) as issue_size,
           RANK() OVER ( ORDER BY ${rankOrder} ) as arr_rank
         FROM (
@@ -4914,7 +4914,7 @@ app.post('/issuers_page_top_sectors_data', async (req, res) => {
           isin_re_issuance.business_sector,
           MAX(mbs.description) AS sector_name,
           ROUND(SUM(isin_re_issuance.issue_size) / 10000000, 2) AS issue_size,
-          COUNT(DISTINCT isin_re_issuance.isin) AS issue_no
+          COUNT(DISTINCT isin_re_issuance.id) AS issue_no
         FROM isin_re_issuance
         ${subqueryJoins}
         JOIN master_business_sector mbs ON mbs.code = isin_re_issuance.business_sector
@@ -4928,7 +4928,7 @@ app.post('/issuers_page_top_sectors_data', async (req, res) => {
           isin_re_issuance.business_sector,
           MAX(mbs.description) AS sector_name,
           ROUND(SUM(isin_re_issuance.issue_size) / 10000000, 2) AS issue_size,
-          COUNT(DISTINCT isin_re_issuance.isin) AS issue_no
+          COUNT(DISTINCT isin_re_issuance.id) AS issue_no
         FROM isin_re_issuance
         ${subqueryJoins}
         JOIN master_business_sector mbs ON mbs.code = isin_re_issuance.business_sector
@@ -6242,7 +6242,7 @@ app.post('/issuer_page_monthly_summary_data', async (req, res) => {
     const query = `
       SELECT
         MONTH(mi.allotment_date)             AS issue_month_no,
-        COUNT(DISTINCT mi.isin)              AS no_of_issue,
+        COUNT(DISTINCT mi.id)              AS no_of_issue,
         IF(
           SUM(mi.issue_size) > 0,
           ROUND(SUM(mi.issue_size) / 10000000, 2),
@@ -6486,7 +6486,7 @@ app.post('/issuer_page_monthly_detailed_data', async (req, res) => {
     // =========================
     const dataQuery = `
       SELECT
-        i.isin_id                                                              AS issuerId,
+        i.id                                                              AS issuerId,
         i.isin,
         MAX(id2.issuer_name)                                                   AS issuer_name,
         MAX(i.allotment_date)                                                  AS allotment_date,
@@ -6510,7 +6510,7 @@ app.post('/issuer_page_monthly_detailed_data', async (req, res) => {
       FROM isin_re_issuance AS i
       ${joinsSql}
       ${whereClause}
-      GROUP BY i.isin_id, i.isin
+      GROUP BY i.id, i.isin
       ORDER BY MAX(id2.issuer_name) ASC
       LIMIT ? OFFSET ?
     `;
@@ -6519,13 +6519,13 @@ app.post('/issuer_page_monthly_detailed_data', async (req, res) => {
     // COUNT QUERY — same joins, count distinct ISINs
     // =========================
     const countQuery = `
-      SELECT COUNT(DISTINCT isin) AS total
+      SELECT COUNT(DISTINCT i.id) AS total
       FROM (
-        SELECT i.isin_id, i.isin
+        SELECT i.id, i.isin
         FROM isin_re_issuance AS i
         ${joinsSql}
         ${whereClause}
-        GROUP BY i.isin_id, i.isin
+        GROUP BY i.id, i.isin
       ) AS aggregate_table
     `;
 
