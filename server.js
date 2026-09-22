@@ -4596,7 +4596,7 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
           RANK() OVER ( ORDER BY ${rankOrder} ) as arr_rank
         FROM (
           SELECT DISTINCT 
-            isin_re_issuance.isin_id, 
+            isin_re_issuance.id, 
             isin_re_issuance.issuer_master_id, 
             isin_re_issuance.isin, 
             isin_re_issuance.issue_size,
@@ -4619,7 +4619,7 @@ app.post('/issuers_page_top_issuers_data', async (req, res) => {
           RANK() OVER ( ORDER BY ${rankOrder} ) as arr_rank
         FROM (
           SELECT DISTINCT 
-            isin_re_issuance.isin_id, 
+            isin_re_issuance.id, 
             isin_re_issuance.issuer_master_id, 
             isin_re_issuance.isin, 
             isin_re_issuance.issue_size,
