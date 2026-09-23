@@ -8925,7 +8925,7 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
     }
 
     // Rating (multi-select)
-    if (rating.length > 0) {
+    if (hasFilterValue(rating)) {
       const placeholders = rating.map(() => '?').join(', ');
       conditions.push(`EXISTS (
         SELECT 1 FROM master_issuer_rating mir2 
@@ -8935,7 +8935,7 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
     }
 
     // Credit Rating Agency (multi-select)
-    if (creditRatingAgency.length > 0) {
+    if (hasFilterValue(creditRatingAgency)) {
       const placeholders = creditRatingAgency.map(() => '?').join(', ');
       conditions.push(`EXISTS (
         SELECT 1 FROM master_issuer_rating mir2 
@@ -8946,7 +8946,7 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
     }
 
     // Listing Status (multi-select)
-    if (listingStatus.length > 0) {
+    if (hasFilterValue(listingStatus)) {
       const placeholders = listingStatus.map(() => '?').join(', ');
       conditions.push(`EXISTS (
         SELECT 1 FROM master_issuer_stock_exchange mise2
@@ -8957,7 +8957,7 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
     }
 
     // Seniority (multi-select)
-    if (seniority.length > 0) {
+    if (hasFilterValue(seniority)) {
       const placeholders = seniority.map(() => '?').join(', ');
       conditions.push(`EXISTS (
         SELECT 1 FROM master_seniority_tier_classification mstc2
@@ -8967,7 +8967,7 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
     }
 
     // Secured Flag (multi-select)
-    if (securedFlag.length > 0) {
+    if (hasFilterValue(securedFlag)) {
       const placeholders = securedFlag.map(() => '?').join(', ');
       conditions.push(`EXISTS (
         SELECT 1 FROM master_secured_flag msf2
@@ -8977,7 +8977,7 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
     }
 
     // Sector (multi-select)
-    if (sector.length > 0) {
+    if (hasFilterValue(sector)) {
       const placeholders = sector.map(() => '?').join(', ');
       conditions.push(`EXISTS (
         SELECT 1 FROM master_business_sector mbs2
@@ -8987,7 +8987,7 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
     }
 
     // Trustee (multi-select)
-    if (trustee.length > 0) {
+    if (hasFilterValue(trustee)) {
       const placeholders = trustee.map(() => '?').join(', ');
       conditions.push(`EXISTS (
         SELECT 1 FROM issuer_trustee it2
@@ -8998,7 +8998,7 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
     }
 
     // Nature (multi-select)
-    if (nature.length > 0) {
+    if (hasFilterValue(nature)) {
       const placeholders = nature.map(() => '?').join(', ');
       conditions.push(`EXISTS (
         SELECT 1 FROM master_issuer mi2
@@ -9009,7 +9009,7 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
     }
 
     // Ownership Type (multi-select)
-    if (ownershipType.length > 0) {
+    if (hasFilterValue(ownershipType)) {
       const placeholders = ownershipType.map(() => '?').join(', ');
       conditions.push(`EXISTS (
         SELECT 1 FROM master_issuer mi2
@@ -9020,7 +9020,7 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
     }
 
     // Security Type (multi-select)
-    if (securityType.length > 0) {
+    if (hasFilterValue(securityType)) {
       const placeholders = securityType.map(() => '?').join(', ');
       conditions.push(`EXISTS (
         SELECT 1 FROM master_security_type mst2
@@ -9030,7 +9030,7 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
     }
 
     // Mode Of Issue (multi-select)
-    if (modeOfIssue.length > 0) {
+    if (hasFilterValue(modeOfIssue)) {
       const placeholders = modeOfIssue.map(() => '?').join(', ');
       conditions.push(`EXISTS (
         SELECT 1 FROM master_mode_issue mmi2
@@ -9040,7 +9040,7 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
     }
 
     // Arranger (single-select, LIKE filter)
-    if (arranger) {
+    if (hasFilterValue(arranger)) {
       conditions.push(`EXISTS (
         SELECT 1 FROM issuer_arranger ia2
         JOIN master_arranger ma2 ON ma2.id = ia2.arranger_id
@@ -9050,7 +9050,7 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
     }
 
     // Registrar (single-select, LIKE filter)
-    if (registrar) {
+    if (hasFilterValue(registrar)) {
       conditions.push(`EXISTS (
         SELECT 1 FROM issuer_registrar ir2
         JOIN master_registrar mr2 ON mr2.id = ir2.registrar_id
@@ -9130,7 +9130,7 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
     // Count query
     // ---------------------
     const countQuery = `
-      SELECT COUNT(mi.isin_id) AS total
+      SELECT COUNT(DISTINCT mi.id) AS total
       FROM isin_re_issuance mi
       ${whereClause}
     `;
@@ -12992,7 +12992,7 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
     }
 
     // Rating (multi-select)
-    if (rating.length > 0) {
+    if (hasFilterValue(rating)) {
       const placeholders = rating.map(() => '?').join(', ');
       conditions.push(`EXISTS (
         SELECT 1 FROM master_issuer_rating mir 
@@ -13002,7 +13002,7 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
     }
 
     // Listing Status (multi-select)
-    if (listingStatus.length > 0) {
+    if (hasFilterValue(listingStatus)) {
       const placeholders = listingStatus.map(() => '?').join(', ');
       conditions.push(`EXISTS (
         SELECT 1 FROM master_issuer_stock_exchange mise2 
@@ -13013,28 +13013,28 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
     }
 
     // Seniority (multi-select)
-    if (seniority.length > 0) {
+    if (hasFilterValue(seniority)) {
       const placeholders = seniority.map(() => '?').join(', ');
       conditions.push(`mstc.description IN (${placeholders})`);
       params.push(...seniority);
     }
 
     // Secured Flag (multi-select)
-    if (securedFlag.length > 0) {
+    if (hasFilterValue(securedFlag)) {
       const placeholders = securedFlag.map(() => '?').join(', ');
       conditions.push(`msf.description IN (${placeholders})`);
       params.push(...securedFlag);
     }
 
     // Sector (multi-select)
-    if (sector.length > 0) {
+    if (hasFilterValue(sector)) {
       const placeholders = sector.map(() => '?').join(', ');
       conditions.push(`mbs.description IN (${placeholders})`);
       params.push(...sector);
     }
 
     // Trustee (multi-select)
-    if (trustee.length > 0) {
+    if (hasFilterValue(trustee)) {
       const placeholders = trustee.map(() => '?').join(', ');
       conditions.push(`EXISTS (
         SELECT 1 FROM issuer_trustee it2 
@@ -13045,21 +13045,21 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
     }
 
     // Nature (multi-select)
-    if (nature.length > 0) {
+    if (hasFilterValue(nature)) {
       const placeholders = nature.map(() => '?').join(', ');
       conditions.push(`mint.description IN (${placeholders})`);
       params.push(...nature);
     }
 
     // Ownership Type (multi-select)
-    if (ownershipType.length > 0) {
+    if (hasFilterValue(ownershipType)) {
       const placeholders = ownershipType.map(() => '?').join(', ');
       conditions.push(`miot.description IN (${placeholders})`);
       params.push(...ownershipType);
     }
 
     // Credit Rating Agency (multi-select)
-    if (creditRatingAgency.length > 0) {
+    if (hasFilterValue(creditRatingAgency)) {
       const placeholders = creditRatingAgency.map(() => '?').join(', ');
       conditions.push(`EXISTS (
         SELECT 1 FROM master_issuer_rating mir2 
@@ -13070,21 +13070,21 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
     }
 
     // Security Type (multi-select)
-    if (securityType.length > 0) {
+    if (hasFilterValue(securityType)) {
       const placeholders = securityType.map(() => '?').join(', ');
       conditions.push(`mst.description IN (${placeholders})`);
       params.push(...securityType);
     }
 
     // Mode Of Issue (multi-select)
-    if (modeOfIssue.length > 0) {
+    if (hasFilterValue(modeOfIssue)) {
       const placeholders = modeOfIssue.map(() => '?').join(', ');
       conditions.push(`mmi.description IN (${placeholders})`);
       params.push(...modeOfIssue);
     }
 
     // Registrar (single-select, LIKE filter)
-    if (registrar) {
+    if (hasFilterValue(registrar)) {
       conditions.push(`EXISTS (
         SELECT 1 FROM issuer_registrar ir2 
         JOIN master_registrar mr2 ON mr2.id = ir2.registrar_id 
@@ -13233,7 +13233,7 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
     // Count query — same joins and filters, no row multiplication
     // ─────────────────────
     const countQuery = `
-      SELECT COUNT(mi.isin_id) AS total
+      SELECT COUNT(DISTINCT mi.id) AS total
       FROM isin_re_issuance mi
 
       LEFT JOIN issuer_details id
@@ -16432,19 +16432,19 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
     }
 
     // Issuer Name (single-select, LIKE filter)
-    if (issuerName) {
+    if (hasFilterValue(issuerName)) {
       conditions.push(`id.issuer_name LIKE ?`);
       params.push(`%${issuerName}%`);
     }
 
     // ISIN (single-select, LIKE filter)
-    if (isin) {
+    if (hasFilterValue(isin)) {
       conditions.push(`mi.isin LIKE ?`);
       params.push(`%${isin}%`);
     }
 
     // Rating (multi-select, 1:N)
-    if (rating.length > 0) {
+    if (hasFilterValue(rating)) {
       const placeholders = rating.map(() => '?').join(', ');
       conditions.push(`EXISTS (
         SELECT 1 FROM master_issuer_rating mir 
@@ -16454,7 +16454,7 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
     }
 
     // Listing Status (multi-select, 1:N)
-    if (listingStatus.length > 0) {
+    if (hasFilterValue(listingStatus)) {
       const placeholders = listingStatus.map(() => '?').join(', ');
       conditions.push(`EXISTS (
         SELECT 1 FROM master_issuer_stock_exchange mise 
@@ -16465,42 +16465,42 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
     }
 
     // Seniority (multi-select, 1:1 via join)
-    if (seniority.length > 0) {
+    if (hasFilterValue(seniority)) {
       const placeholders = seniority.map(() => '?').join(', ');
       conditions.push(`mstc.description IN (${placeholders})`);
       params.push(...seniority);
     }
 
     // Secured Flag (multi-select, 1:1 via join)
-    if (securedFlag.length > 0) {
+    if (hasFilterValue(securedFlag)) {
       const placeholders = securedFlag.map(() => '?').join(', ');
       conditions.push(`msf.description IN (${placeholders})`);
       params.push(...securedFlag);
     }
 
     // Sector (multi-select, 1:1 via join)
-    if (sector.length > 0) {
+    if (hasFilterValue(sector)) {
       const placeholders = sector.map(() => '?').join(', ');
       conditions.push(`mbs.description IN (${placeholders})`);
       params.push(...sector);
     }
 
     // Nature (multi-select, 1:1 via join)
-    if (nature.length > 0) {
+    if (hasFilterValue(nature)) {
       const placeholders = nature.map(() => '?').join(', ');
       conditions.push(`mint.description IN (${placeholders})`);
       params.push(...nature);
     }
 
     // Ownership Type (multi-select, 1:1 via join)
-    if (ownershipType.length > 0) {
+    if (hasFilterValue(ownershipType)) {
       const placeholders = ownershipType.map(() => '?').join(', ');
       conditions.push(`miot.description IN (${placeholders})`);
       params.push(...ownershipType);
     }
 
     // Credit Rating Agency (multi-select, 1:N)
-    if (creditRatingAgency.length > 0) {
+    if (hasFilterValue(creditRatingAgency)) {
       const placeholders = creditRatingAgency.map(() => '?').join(', ');
       conditions.push(`EXISTS (
         SELECT 1 FROM master_issuer_rating mir2 
@@ -16511,21 +16511,21 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
     }
 
     // Security Type (multi-select, 1:1 via join)
-    if (securityType.length > 0) {
+    if (hasFilterValue(securityType)) {
       const placeholders = securityType.map(() => '?').join(', ');
       conditions.push(`mst.description IN (${placeholders})`);
       params.push(...securityType);
     }
 
     // Mode Of Issue (multi-select, 1:1 via join)
-    if (modeOfIssue.length > 0) {
+    if (hasFilterValue(modeOfIssue)) {
       const placeholders = modeOfIssue.map(() => '?').join(', ');
       conditions.push(`mmi.description IN (${placeholders})`);
       params.push(...modeOfIssue);
     }
 
     // Arranger (single-select, LIKE, 1:N)
-    if (arranger) {
+    if (hasFilterValue(arranger)) {
       conditions.push(`EXISTS (
         SELECT 1 FROM issuer_arranger ia 
         JOIN master_arranger ma ON ma.id = ia.arranger_id 
@@ -16535,7 +16535,7 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
     }
 
     // Registrar (single-select, LIKE, 1:N)
-    if (registrar) {
+    if (hasFilterValue(registrar)) {
       conditions.push(`EXISTS (
         SELECT 1 FROM issuer_registrar ir 
         JOIN master_registrar mr ON mr.id = ir.registrar_id 
@@ -16683,7 +16683,7 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
     // Count query — same joins and filters, no row multiplication
     // ─────────────────────
     const countQuery = `
-      SELECT COUNT(mi.isin_id) AS total
+      SELECT COUNT(DISTINCT mi.id) AS total
       FROM isin_re_issuance mi
 
       LEFT JOIN issuer_details id
@@ -19828,7 +19828,7 @@ app.post('/registrarPage_detailed_data', async (req, res) => {
     }
 
     // Rating (multi-select) — EXISTS to avoid row multiplication
-    if (rating.length > 0) {
+    if (hasFilterValue(rating)) {
       const placeholders = rating.map(() => '?').join(', ');
       conditions.push(`EXISTS (
         SELECT 1 FROM master_issuer_rating mir 
@@ -19838,7 +19838,7 @@ app.post('/registrarPage_detailed_data', async (req, res) => {
     }
 
     // Listing Status (multi-select) — EXISTS
-    if (listingStatus.length > 0) {
+    if (hasFilterValue(listingStatus)) {
       const placeholders = listingStatus.map(() => '?').join(', ');
       conditions.push(`EXISTS (
         SELECT 1 FROM master_issuer_stock_exchange mise 
@@ -19849,42 +19849,42 @@ app.post('/registrarPage_detailed_data', async (req, res) => {
     }
 
     // Seniority (multi-select)
-    if (seniority.length > 0) {
+    if (hasFilterValue(seniority)) {
       const placeholders = seniority.map(() => '?').join(', ');
       conditions.push(`mstc.description IN (${placeholders})`);
       params.push(...seniority);
     }
 
     // Secured Flag (multi-select)
-    if (securedFlag.length > 0) {
+    if (hasFilterValue(securedFlag)) {
       const placeholders = securedFlag.map(() => '?').join(', ');
       conditions.push(`msf.description IN (${placeholders})`);
       params.push(...securedFlag);
     }
 
     // Sector (multi-select)
-    if (sector.length > 0) {
+    if (hasFilterValue(sector)) {
       const placeholders = sector.map(() => '?').join(', ');
       conditions.push(`mbs.description IN (${placeholders})`);
       params.push(...sector);
     }
 
     // Nature (multi-select)
-    if (nature.length > 0) {
+    if (hasFilterValue(nature)) {
       const placeholders = nature.map(() => '?').join(', ');
       conditions.push(`mint.description IN (${placeholders})`);
       params.push(...nature);
     }
 
     // Ownership Type (multi-select)
-    if (ownershipType.length > 0) {
+    if (hasFilterValue(ownershipType)) {
       const placeholders = ownershipType.map(() => '?').join(', ');
       conditions.push(`miot.description IN (${placeholders})`);
       params.push(...ownershipType);
     }
 
     // Credit Rating Agency (multi-select) — EXISTS
-    if (creditRatingAgency.length > 0) {
+    if (hasFilterValue(creditRatingAgency)) {
       const placeholders = creditRatingAgency.map(() => '?').join(', ');
       conditions.push(`EXISTS (
         SELECT 1 FROM master_issuer_rating mir 
@@ -19895,21 +19895,21 @@ app.post('/registrarPage_detailed_data', async (req, res) => {
     }
 
     // Security Type (multi-select)
-    if (securityType.length > 0) {
+    if (hasFilterValue(securityType)) {
       const placeholders = securityType.map(() => '?').join(', ');
       conditions.push(`mst.description IN (${placeholders})`);
       params.push(...securityType);
     }
 
     // Mode Of Issue (multi-select)
-    if (modeOfIssue.length > 0) {
+    if (hasFilterValue(modeOfIssue)) {
       const placeholders = modeOfIssue.map(() => '?').join(', ');
       conditions.push(`mmi.description IN (${placeholders})`);
       params.push(...modeOfIssue);
     }
 
     // Registrar (single-select, LIKE filter) — EXISTS
-    if (registrar) {
+    if (hasFilterValue(registrar)) {
       conditions.push(`EXISTS (
         SELECT 1 FROM issuer_registrar ir 
         JOIN master_registrar mr ON mr.id = ir.registrar_id 
@@ -20027,7 +20027,7 @@ app.post('/registrarPage_detailed_data', async (req, res) => {
 
     // ── COUNT QUERY ──
     const countQuery = `
-      SELECT COUNT(mi.isin_id) AS total
+      SELECT COUNT(DISTINCT mi.id) AS total
       FROM isin_re_issuance mi
       LEFT JOIN issuer_details id ON id.id = mi.issuer_master_id
       LEFT JOIN master_issuer m ON m.id = mi.isin_id
