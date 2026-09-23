@@ -8407,7 +8407,7 @@ app.post('/arrangers_page_credit_rating_data', async (req, res) => {
 
     /* ---------------- TOTALS (percentage denominator) ---------------- */
     const totalRatingQuery = `
-      SELECT COUNT(DISTINCT master_issuer_rating.id) AS aggregate
+      SELECT COUNT(master_issuer_rating.id) AS aggregate
       FROM master_issuer_rating
       INNER JOIN isin_re_issuance i
         ON i.isin_id = master_issuer_rating.issuer_id
@@ -8435,10 +8435,10 @@ app.post('/arrangers_page_credit_rating_data', async (req, res) => {
       SELECT
         MAX(master_agency.short_name) AS label,
         ROUND(
-          (COUNT(DISTINCT master_issuer_rating.id) / ?) * 100,
+          (COUNT(master_issuer_rating.id) / ?) * 100,
           2
         ) AS percentage,
-        COUNT(DISTINCT master_issuer_rating.id) AS rating_no,
+        COUNT(master_issuer_rating.id) AS rating_no,
         CONCAT('#', SUBSTRING((LPAD(HEX(ROUND(RAND() * 10000000)), 6, 0)), -6)) AS color,
         GROUP_CONCAT(
           DISTINCT master_issuer_rating.rating
@@ -12842,10 +12842,10 @@ app.post('/trustees_page_credit_rating_data', async (req, res) => {
       SELECT
         MAX(master_agency.short_name) AS label,
         ROUND(
-          (COUNT(DISTINCT master_issuer_rating.id) / ${safeTotalRatingNo}) * 100,
+          (COUNT(master_issuer_rating.id) / ${safeTotalRatingNo}) * 100,
           2
         ) AS percentage,
-        COUNT(DISTINCT master_issuer_rating.id) AS rating_no,
+        COUNT(master_issuer_rating.id) AS rating_no,
         CONCAT(
           '#',
           SUBSTRING(
@@ -16248,7 +16248,7 @@ app.post('/rating_agencies_page_credit_rating_data', async (req, res) => {
     const idFilterParams = isIdValid ? [parsedId] : [];
 
     const totalRatingNoResult = await prisma.$queryRawUnsafe(`
-      SELECT COUNT(DISTINCT mir.id) AS aggregate
+      SELECT COUNT(*) AS aggregate
       FROM master_issuer_rating mir
       INNER JOIN isin_re_issuance i
         ON i.isin_id = mir.issuer_id
@@ -16273,8 +16273,8 @@ app.post('/rating_agencies_page_credit_rating_data', async (req, res) => {
       creditRatingQuery = `
         SELECT
           MAX(master_agency.short_name) AS label,
-          ROUND((COUNT(DISTINCT mir.id) / ${safeTotalRatingNo}) * 100, 2) AS percentage,
-          COUNT(DISTINCT mir.id) AS rating_no,
+          ROUND((COUNT(mir.rating) / ${safeTotalRatingNo}) * 100, 2) AS percentage,
+          COUNT(mir.id) AS rating_no,
           CONCAT('#', SUBSTRING(LPAD(HEX(ROUND(RAND() * 10000000)), 6, '0'), -6)) AS color,
           mir.rating
         FROM master_agency
@@ -16294,8 +16294,8 @@ app.post('/rating_agencies_page_credit_rating_data', async (req, res) => {
       creditRatingQuery = `
         SELECT
           MAX(master_agency.short_name) AS label,
-          ROUND((COUNT(DISTINCT mir.id) / ${safeTotalRatingNo}) * 100, 2) AS percentage,
-          COUNT(DISTINCT mir.id) AS rating_no,
+          ROUND((COUNT(mir.rating) / ${safeTotalRatingNo}) * 100, 2) AS percentage,
+          COUNT(mir.id) AS rating_no,
           CONCAT('#', SUBSTRING(LPAD(HEX(ROUND(RAND() * 10000000)), 6, '0'), -6)) AS color,
           mir.rating
         FROM master_agency
@@ -19633,7 +19633,7 @@ app.post('/registrars_page_credit_rating_data', async (req, res) => {
     /* ---------------- TOTAL RATINGS (denominator) ---------------- */
 
     const totalQuery = `
-      SELECT COUNT(DISTINCT master_issuer_rating.id) AS aggregate
+      SELECT COUNT(*) AS aggregate
       FROM master_issuer_rating
       INNER JOIN isin_re_issuance AS i
         ON i.isin_id = master_issuer_rating.issuer_id
@@ -19660,13 +19660,13 @@ app.post('/registrars_page_credit_rating_data', async (req, res) => {
         MAX(master_agency.short_name) AS label,
         ROUND(
           (
-            COUNT(DISTINCT master_issuer_rating.id) /
+            COUNT(master_issuer_rating.rating) /
             ?
           ) * 100,
           2
         ) AS percentage,
 
-        COUNT(DISTINCT master_issuer_rating.id) AS rating_no,
+        COUNT(master_issuer_rating.id) AS rating_no,
 
         CONCAT(
           '#',
