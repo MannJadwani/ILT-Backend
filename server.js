@@ -4307,8 +4307,8 @@ const hasFilterValue = (value) => {
   }
 
   return value !== undefined &&
-         value !== null &&
-         value !== '';
+    value !== null &&
+    value !== '';
 };
 //updated issuer APIs DONE
 //updated issuer APIs DONE
@@ -6784,7 +6784,8 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
       issueType,
       limit,
       offset = 0,
-      // Filters from detailed page (issuerName excluded)
+
+      // Filters from detailed page
       rating = "",
       registrar = "",
       arranger = "",
@@ -6803,309 +6804,687 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
       isin = ""
     } = req.body;
 
+    /* =========================================================
+       VALIDATION
+    ========================================================= */
+
     if (!startDate || !endDate) {
-      return res.status(400).json({ error: 'startDate, endDate are required' });
+      return res.status(400).json({
+        error: 'startDate, endDate are required'
+      });
     }
 
     const currentStartDate = new Date(startDate);
     const currentEndDate = new Date(endDate);
 
-    if (isNaN(currentStartDate.getTime()) || isNaN(currentEndDate.getTime())) {
-      return res.status(400).json({ error: 'Invalid date format' });
+    if (
+      isNaN(currentStartDate.getTime()) ||
+      isNaN(currentEndDate.getTime())
+    ) {
+      return res.status(400).json({
+        error: 'Invalid date format'
+      });
     }
 
     const previousStartDate = new Date(currentStartDate);
-    previousStartDate.setFullYear(previousStartDate.getFullYear() - 1);
+    previousStartDate.setFullYear(
+      previousStartDate.getFullYear() - 1
+    );
 
     const previousEndDate = new Date(currentEndDate);
-    previousEndDate.setFullYear(previousEndDate.getFullYear() - 1);
+    previousEndDate.setFullYear(
+      previousEndDate.getFullYear() - 1
+    );
 
     const formatDate = (date) =>
       date.toISOString().slice(0, 19).replace('T', ' ');
 
-    /* ---------------- HELPER: Build multi-value IN clause ---------------- */
-    const buildInClause = (field, values, useLike = false) => {
-      if (!values || (Array.isArray(values) && values.length === 0)) return null;
-      const vals = Array.isArray(values)
-        ? values.filter(v => v !== '' && v !== null && v !== undefined)
-        : [values].filter(v => v !== '' && v !== null && v !== undefined);
-      if (vals.length === 0) return null;
-
-      if (useLike) {
-        const clauses = vals.map(() => `${field} LIKE ?`).join(' OR ');
-        const params = vals.map(v => `%${v}%`);
-        return { clause: `(${clauses})`, params };
-      }
-
-      const placeholders = vals.map(() => '?').join(',');
-      return { clause: `${field} IN (${placeholders})`, params: vals };
-    };
-
-    /* ---------------- DYNAMIC FILTER BUILDER ---------------- */
-    const buildFilterConditions = (tableAlias = 'mi') => {
-      const conditions = [];
-      const params = [];
-
-      if (rating) {
-        const inClause = buildInClause('mir2.rating', rating);
-        if (inClause) {
-          conditions.push(`EXISTS (
-            SELECT 1 FROM master_issuer_rating mir2
-            JOIN master_agency ma2 ON ma2.id = mir2.agency_id
-            WHERE mir2.issuer_id = ${tableAlias}.isin_id AND ${inClause.clause}
-          )`);
-          params.push(...inClause.params);
-        }
-      }
-
-      if (creditRatingAgency) {
-        const inClause = buildInClause('ma2.short_name', creditRatingAgency);
-        if (inClause) {
-          conditions.push(`EXISTS (
-            SELECT 1 FROM master_issuer_rating mir2
-            JOIN master_agency ma2 ON ma2.id = mir2.agency_id
-            WHERE mir2.issuer_id = ${tableAlias}.isin_id AND ${inClause.clause}
-          )`);
-          params.push(...inClause.params);
-        }
-      }
-
-      if (registrar) {
-        const inClause = buildInClause('mr2.registrar_name', registrar, true);
-        if (inClause) {
-          conditions.push(`EXISTS (
-            SELECT 1 FROM issuer_registrar ir2
-            JOIN master_registrar mr2 ON mr2.id = ir2.registrar_id
-            WHERE ir2.issuer_id = ${tableAlias}.isin_id AND ${inClause.clause}
-          )`);
-          params.push(...inClause.params);
-        }
-      }
-
-      if (arranger) {
-        const inClause = buildInClause('ma2.short_name', arranger, true);
-        if (inClause) {
-          conditions.push(`EXISTS (
-            SELECT 1 FROM issuer_arranger ia2
-            JOIN master_arranger ma2 ON ma2.id = ia2.arranger_id
-            WHERE ia2.issuer_id = ${tableAlias}.isin_id AND ${inClause.clause}
-          )`);
-          params.push(...inClause.params);
-        }
-      }
-
-      if (seniority) {
-        const inClause = buildInClause('mstc2.description', seniority);
-        if (inClause) {
-          conditions.push(`EXISTS (
-            SELECT 1 FROM master_seniority_tier_classification mstc2
-            WHERE mstc2.code = ${tableAlias}.seniority AND ${inClause.clause}
-          )`);
-          params.push(...inClause.params);
-        }
-      }
-
-      if (taxFree) {
-        const inClause = buildInClause('mtf2.description', taxFree);
-        if (inClause) {
-          conditions.push(`EXISTS (
-            SELECT 1 FROM master_tax_free mtf2
-            WHERE mtf2.code = ${tableAlias}.tax_free AND ${inClause.clause}
-          )`);
-          params.push(...inClause.params);
-        }
-      }
-
-      if (securedFlag) {
-        const inClause = buildInClause('msf2.description', securedFlag);
-        if (inClause) {
-          conditions.push(`EXISTS (
-            SELECT 1 FROM master_secured_flag msf2
-            WHERE msf2.code = ${tableAlias}.secured_flag AND ${inClause.clause}
-          )`);
-          params.push(...inClause.params);
-        }
-      }
-
-      if (sector) {
-        const inClause = buildInClause('mbs2.description', sector);
-        if (inClause) {
-          conditions.push(`EXISTS (
-            SELECT 1 FROM master_business_sector mbs2
-            WHERE mbs2.code = ${tableAlias}.business_sector AND ${inClause.clause}
-          )`);
-          params.push(...inClause.params);
-        }
-      }
-
-      if (trustee) {
-        const inClause = buildInClause('mt2.short_name', trustee);
-        if (inClause) {
-          conditions.push(`EXISTS (
-            SELECT 1 FROM issuer_trustee it2
-            JOIN master_trustee mt2 ON mt2.id = it2.trustee_id
-            WHERE it2.issuer_id = ${tableAlias}.isin_id AND ${inClause.clause}
-          )`);
-          params.push(...inClause.params);
-        }
-      }
-
-      // ─── FIX: nature_type lives on master_issuer, not isin_re_issuance ───
-      if (nature) {
-        const inClause = buildInClause('mitn2.description', nature);
-        if (inClause) {
-          conditions.push(`EXISTS (
-            SELECT 1 FROM master_issuer mi2
-            JOIN master_issuer_type_nature mitn2 ON mitn2.code = mi2.nature_type
-            WHERE mi2.id = ${tableAlias}.isin_id AND ${inClause.clause}
-          )`);
-          params.push(...inClause.params);
-        }
-      }
-
-      // ─── FIX: issuer_ownership_type lives on master_issuer, not isin_re_issuance ───
-      if (ownershipType) {
-        const inClause = buildInClause('miot2.description', ownershipType);
-        if (inClause) {
-          conditions.push(`EXISTS (
-            SELECT 1 FROM master_issuer mi2
-            JOIN master_issuer_ownership_type miot2 ON miot2.code = mi2.issuer_ownership_type
-            WHERE mi2.id = ${tableAlias}.isin_id AND ${inClause.clause}
-          )`);
-          params.push(...inClause.params);
-        }
-      }
-
-      if (dealSize) {
-        const inClause = buildInClause(`${tableAlias}.issue_size`, dealSize, true);
-        if (inClause) {
-          conditions.push(inClause.clause);
-          params.push(...inClause.params);
-        }
-      }
-
-      if (listingStatus) {
-        const inClause = buildInClause('mls2.description', listingStatus);
-        if (inClause) {
-          conditions.push(`EXISTS (
-            SELECT 1 FROM master_issuer_stock_exchange mise2
-            JOIN master_listing_status mls2 ON mls2.code = mise2.listing_status
-            WHERE mise2.issuer_id = ${tableAlias}.isin_id AND ${inClause.clause}
-          )`);
-          params.push(...inClause.params);
-        }
-      }
-
-      if (securityType) {
-        const inClause = buildInClause('mst2.description', securityType);
-        if (inClause) {
-          conditions.push(`EXISTS (
-            SELECT 1 FROM master_security_type mst2
-            WHERE mst2.code = ${tableAlias}.security_class AND ${inClause.clause}
-          )`);
-          params.push(...inClause.params);
-        }
-      }
-
-      if (modeOfIssue) {
-        const inClause = buildInClause('mmi2.description', modeOfIssue);
-        if (inClause) {
-          conditions.push(`EXISTS (
-            SELECT 1 FROM master_mode_issue mmi2
-            WHERE mmi2.code = ${tableAlias}.mode_issue AND ${inClause.clause}
-          )`);
-          params.push(...inClause.params);
-        }
-      }
-
-      if (isin) {
-        const inClause = buildInClause(`${tableAlias}.isin`, isin, true);
-        if (inClause) {
-          conditions.push(inClause.clause);
-          params.push(...inClause.params);
-        }
-      }
-
-      return { conditions, params };
-    };
-
-    const {
-      conditions: filterConditions,
-      params: filterParams
-    } = buildFilterConditions('mi');
-
-    const filterSql = filterConditions.length > 0
-      ? ' AND ' + filterConditions.join(' AND ')
-      : '';
-
     const cyStart = formatDate(currentStartDate);
     const cyEnd = formatDate(currentEndDate);
+
     const pyStart = formatDate(previousStartDate);
     const pyEnd = formatDate(previousEndDate);
 
-    /* ---------------- TOTALS ---------------- */
+    /* =========================================================
+       HELPER: BUILD IN / LIKE CLAUSE
+    ========================================================= */
 
-    const totalIssueSize = await prisma.$queryRawUnsafe(`
+    const buildInClause = (
+      field,
+      values,
+      useLike = false
+    ) => {
+      if (
+        !values ||
+        (Array.isArray(values) && values.length === 0)
+      ) {
+        return null;
+      }
+
+      const vals = Array.isArray(values)
+        ? values.filter(
+            (v) =>
+              v !== '' &&
+              v !== null &&
+              v !== undefined
+          )
+        : [values].filter(
+            (v) =>
+              v !== '' &&
+              v !== null &&
+              v !== undefined
+          );
+
+      if (vals.length === 0) {
+        return null;
+      }
+
+      if (useLike) {
+        const clauses = vals
+          .map(() => `${field} LIKE ?`)
+          .join(' OR ');
+
+        const params = vals.map(
+          (v) => `%${v}%`
+        );
+
+        return {
+          clause: `(${clauses})`,
+          params
+        };
+      }
+
+      const placeholders = vals
+        .map(() => '?')
+        .join(',');
+
+      return {
+        clause: `${field} IN (${placeholders})`,
+        params: vals
+      };
+    };
+
+    /* =========================================================
+       DYNAMIC FILTER JOINS
+       
+       IMPORTANT:
+       Only add a JOIN when its corresponding filter has a value.
+    ========================================================= */
+
+    const buildFilterParts = () => {
+      const joins = [];
+      const conditions = [];
+      const params = [];
+
+      const addedJoins = new Set();
+
+      const addJoin = (join) => {
+        if (!addedJoins.has(join)) {
+          addedJoins.add(join);
+          joins.push(join);
+        }
+      };
+
+      /* ---------------------------------------------------------
+         RATING
+      --------------------------------------------------------- */
+
+      if (hasFilterValue(rating)) {
+        addJoin(`
+          LEFT JOIN master_issuer_rating AS filter_mir
+            ON filter_mir.issuer_id = mi.isin_id
+        `);
+
+        const inClause = buildInClause(
+          'filter_mir.rating',
+          rating
+        );
+
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
+      }
+
+      /* ---------------------------------------------------------
+         CREDIT RATING AGENCY
+      --------------------------------------------------------- */
+
+      if (hasFilterValue(creditRatingAgency)) {
+        addJoin(`
+          LEFT JOIN master_issuer_rating AS filter_mir_agency
+            ON filter_mir_agency.issuer_id = mi.isin_id
+        `);
+
+        addJoin(`
+          LEFT JOIN master_agency AS filter_ma_agency
+            ON filter_ma_agency.id = filter_mir_agency.agency_id
+        `);
+
+        const inClause = buildInClause(
+          'filter_ma_agency.short_name',
+          creditRatingAgency
+        );
+
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
+      }
+
+      /* ---------------------------------------------------------
+         REGISTRAR
+      --------------------------------------------------------- */
+
+      if (hasFilterValue(registrar)) {
+        addJoin(`
+          LEFT JOIN issuer_registrar AS filter_ir
+            ON filter_ir.issuer_id = mi.isin_id
+        `);
+
+        addJoin(`
+          LEFT JOIN master_registrar AS filter_mr
+            ON filter_mr.id = filter_ir.registrar_id
+        `);
+
+        const inClause = buildInClause(
+          'filter_mr.registrar_name',
+          registrar,
+          true
+        );
+
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
+      }
+
+      /* ---------------------------------------------------------
+         ARRANGER
+      --------------------------------------------------------- */
+
+      if (hasFilterValue(arranger)) {
+        addJoin(`
+          LEFT JOIN issuer_arranger AS filter_ia
+            ON filter_ia.issuer_id = mi.isin_id
+        `);
+
+        addJoin(`
+          LEFT JOIN master_arranger AS filter_ma
+            ON filter_ma.id = filter_ia.arranger_id
+        `);
+
+        const inClause = buildInClause(
+          'filter_ma.short_name',
+          arranger,
+          true
+        );
+
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
+      }
+
+      /* ---------------------------------------------------------
+         SENIORITY
+      --------------------------------------------------------- */
+
+      if (hasFilterValue(seniority)) {
+        addJoin(`
+          LEFT JOIN master_seniority_tier_classification
+            AS filter_mstc
+            ON filter_mstc.code = mi.seniority
+        `);
+
+        const inClause = buildInClause(
+          'filter_mstc.description',
+          seniority
+        );
+
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
+      }
+
+      /* ---------------------------------------------------------
+         TAX FREE
+      --------------------------------------------------------- */
+
+      if (hasFilterValue(taxFree)) {
+        addJoin(`
+          LEFT JOIN master_tax_free AS filter_mtf
+            ON filter_mtf.code = mi.tax_free
+        `);
+
+        const inClause = buildInClause(
+          'filter_mtf.description',
+          taxFree
+        );
+
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
+      }
+
+      /* ---------------------------------------------------------
+         SECURED FLAG
+      --------------------------------------------------------- */
+
+      if (hasFilterValue(securedFlag)) {
+        addJoin(`
+          LEFT JOIN master_secured_flag AS filter_msf
+            ON filter_msf.code = mi.secured_flag
+        `);
+
+        const inClause = buildInClause(
+          'filter_msf.description',
+          securedFlag
+        );
+
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
+      }
+
+      /* ---------------------------------------------------------
+         SECTOR
+      --------------------------------------------------------- */
+
+      if (hasFilterValue(sector)) {
+        addJoin(`
+          LEFT JOIN master_business_sector AS filter_mbs
+            ON filter_mbs.code = mi.business_sector
+        `);
+
+        const inClause = buildInClause(
+          'filter_mbs.description',
+          sector
+        );
+
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
+      }
+
+      /* ---------------------------------------------------------
+         TRUSTEE
+      --------------------------------------------------------- */
+
+      if (hasFilterValue(trustee)) {
+        addJoin(`
+          LEFT JOIN issuer_trustee AS filter_it
+            ON filter_it.issuer_id = mi.isin_id
+        `);
+
+        addJoin(`
+          LEFT JOIN master_trustee AS filter_mt
+            ON filter_mt.id = filter_it.trustee_id
+        `);
+
+        const inClause = buildInClause(
+          'filter_mt.short_name',
+          trustee
+        );
+
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
+      }
+
+      /* ---------------------------------------------------------
+         NATURE
+         
+         nature_type belongs to master_issuer
+      --------------------------------------------------------- */
+
+      if (hasFilterValue(nature)) {
+        addJoin(`
+          LEFT JOIN master_issuer AS filter_mi_nature
+            ON filter_mi_nature.id = mi.isin_id
+        `);
+
+        addJoin(`
+          LEFT JOIN master_issuer_type_nature
+            AS filter_mitn
+            ON filter_mitn.code = filter_mi_nature.nature_type
+        `);
+
+        const inClause = buildInClause(
+          'filter_mitn.description',
+          nature
+        );
+
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
+      }
+
+      /* ---------------------------------------------------------
+         OWNERSHIP TYPE
+         
+         issuer_ownership_type belongs to master_issuer
+      --------------------------------------------------------- */
+
+      if (hasFilterValue(ownershipType)) {
+        addJoin(`
+          LEFT JOIN master_issuer AS filter_mi_ownership
+            ON filter_mi_ownership.id = mi.isin_id
+        `);
+
+        addJoin(`
+          LEFT JOIN master_issuer_ownership_type
+            AS filter_miot
+            ON filter_miot.code =
+               filter_mi_ownership.issuer_ownership_type
+        `);
+
+        const inClause = buildInClause(
+          'filter_miot.description',
+          ownershipType
+        );
+
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
+      }
+
+      /* ---------------------------------------------------------
+         DEAL SIZE
+      --------------------------------------------------------- */
+
+      if (hasFilterValue(dealSize)) {
+        const inClause = buildInClause(
+          'mi.issue_size',
+          dealSize,
+          true
+        );
+
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
+      }
+
+      /* ---------------------------------------------------------
+         LISTING STATUS
+      --------------------------------------------------------- */
+
+      if (hasFilterValue(listingStatus)) {
+        addJoin(`
+          LEFT JOIN (
+            SELECT
+              mise.issuer_id,
+              MAX(mls.description) AS listing_status
+            FROM master_issuer_stock_exchange mise
+            LEFT JOIN master_listing_status mls
+              ON mls.code = mise.listing_status
+            WHERE mise.listing_status IS NOT NULL
+            GROUP BY mise.issuer_id
+          ) AS filter_listing_data
+            ON filter_listing_data.issuer_id = mi.isin_id
+        `);
+
+        const inClause = buildInClause(
+          'filter_listing_data.listing_status',
+          listingStatus
+        );
+
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
+      }
+
+      /* ---------------------------------------------------------
+         SECURITY TYPE
+      --------------------------------------------------------- */
+
+      if (hasFilterValue(securityType)) {
+        addJoin(`
+          LEFT JOIN master_security_type AS filter_mst
+            ON filter_mst.code = mi.security_class
+        `);
+
+        const inClause = buildInClause(
+          'filter_mst.description',
+          securityType
+        );
+
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
+      }
+
+      /* ---------------------------------------------------------
+         MODE OF ISSUE
+      --------------------------------------------------------- */
+
+      if (hasFilterValue(modeOfIssue)) {
+        addJoin(`
+          LEFT JOIN master_mode_issue AS filter_mmi
+            ON filter_mmi.code = mi.mode_issue
+        `);
+
+        const inClause = buildInClause(
+          'filter_mmi.description',
+          modeOfIssue
+        );
+
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
+      }
+
+      /* ---------------------------------------------------------
+         ISIN
+      --------------------------------------------------------- */
+
+      if (hasFilterValue(isin)) {
+        const inClause = buildInClause(
+          'mi.isin',
+          isin,
+          true
+        );
+
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
+      }
+
+      return {
+        joins,
+        conditions,
+        params
+      };
+    };
+
+    /* =========================================================
+       BUILD FILTER PARTS
+    ========================================================= */
+
+    const {
+      joins: filterJoins,
+      conditions: filterConditions,
+      params: filterParams
+    } = buildFilterParts();
+
+    const filterClause =
+      filterConditions.length > 0
+        ? `AND ${filterConditions.join(' AND ')}`
+        : '';
+
+    const totalJoins =
+      filterJoins.length > 0
+        ? filterJoins.join('\n')
+        : '';
+
+    console.log('cyStart:', cyStart);
+    console.log('cyEnd:', cyEnd);
+    console.log('filterJoins:', filterJoins);
+    console.log('filterConditions:', filterConditions);
+    console.log('filterParams:', filterParams);
+
+    /* =========================================================
+       COMMON DATE CONDITION
+    ========================================================= */
+
+    const currentDateCondition = `
+      mi.allotment_date BETWEEN ? AND ?
+      AND mi.is_visible = 1
+    `;
+
+    /* =========================================================
+       TOTALS
+    ========================================================= */
+
+    const totalIssueSizeQuery = `
       SELECT
         SUM(mi.issue_size) AS aggregate
       FROM isin_re_issuance mi
+
       JOIN issuer_arranger ia
         ON ia.issuer_id = mi.isin_id
-      WHERE mi.allotment_date BETWEEN ? AND ?
-        AND mi.is_visible = 1
-        ${filterSql}
-    `, cyStart, cyEnd, ...filterParams);
 
-    const totalIssueSizePrevYear = await prisma.$queryRawUnsafe(`
+      ${totalJoins}
+
+      WHERE
+        ${currentDateCondition}
+        ${filterClause}
+    `;
+
+    const totalIssuesCountQuery = `
       SELECT
-        SUM(mi.issue_size) AS aggregate
+        COUNT(
+          DISTINCT
+          ia.arranger_id,
+          mi.allotment_date,
+          mi.issuer_master_id
+        ) AS aggregate
       FROM isin_re_issuance mi
+
       JOIN issuer_arranger ia
         ON ia.issuer_id = mi.isin_id
-      WHERE mi.allotment_date BETWEEN ? AND ?
-        AND mi.is_visible = 1
-        ${filterSql}
-    `, pyStart, pyEnd, ...filterParams);
 
-    const totalIssuesCountCurrYear = await prisma.$queryRawUnsafe(`
-      SELECT COUNT(DISTINCT ia.arranger_id, mi.allotment_date, mi.issuer_master_id) AS aggregate
-      FROM isin_re_issuance mi
-      JOIN issuer_arranger ia
-        ON ia.issuer_id = mi.isin_id
-      WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-      ${filterSql}
-    `, cyStart, cyEnd, ...filterParams);
+      ${totalJoins}
 
-    const totalIssuesCountPrevYear = await prisma.$queryRawUnsafe(`
-      SELECT COUNT(DISTINCT ia.arranger_id, mi.allotment_date, mi.issuer_master_id) AS aggregate
-      FROM isin_re_issuance mi
-      JOIN issuer_arranger ia
-        ON ia.issuer_id = mi.isin_id
-      WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-      ${filterSql}
-    `, pyStart, pyEnd, ...filterParams);
+      WHERE
+        ${currentDateCondition}
+        ${filterClause}
+    `;
 
-    // Fix: Properly handle zero aggregates. Use nullish coalescing for raw values,
-    // but keep actual totals for market share denominator (can be 0).
-    const totalCyCount = Number(totalIssuesCountCurrYear[0]?.aggregate) || 0;
-    const totalPyCount = Number(totalIssuesCountPrevYear[0]?.aggregate) || 0;
-    const totalCySize = Number(totalIssueSize[0]?.aggregate) || 0;
-    const totalPySize = Number(totalIssueSizePrevYear[0]?.aggregate) || 0;
+    const [
+      totalIssueSize,
+      totalIssueSizePrevYear,
+      totalIssuesCountCurrYear,
+      totalIssuesCountPrevYear
+    ] = await Promise.all([
+      prisma.$queryRawUnsafe(
+        totalIssueSizeQuery,
+        cyStart,
+        cyEnd,
+        ...filterParams
+      ),
 
-    // Fix: Use actual totals for denominator. When 0, market share will be 0 (not 100%).
-    const cyCountDenominator = totalCyCount || 1;
-    const pyCountDenominator = totalPyCount || 1;
-    const cySizeDenominator = totalCySize ? totalCySize / 10000000 : 1;
-    const pySizeDenominator = totalPySize ? totalPySize / 10000000 : 1;
+      prisma.$queryRawUnsafe(
+        totalIssueSizeQuery,
+        pyStart,
+        pyEnd,
+        ...filterParams
+      ),
 
-    /* ---------------- MAIN TABLE QUERY ---------------- */
+      prisma.$queryRawUnsafe(
+        totalIssuesCountQuery,
+        cyStart,
+        cyEnd,
+        ...filterParams
+      ),
 
-    // Fix: Validate and sanitize limit/offset properly
-    const safeLimit = limit ? Math.max(0, parseInt(limit, 10) || 0) : null;
-    const safeOffset = Math.max(0, parseInt(offset, 10) || 0);
-    const t1Limit = safeLimit !== null && safeLimit > 0
-      ? `LIMIT ${safeLimit} OFFSET ${safeOffset}`
-      : '';
+      prisma.$queryRawUnsafe(
+        totalIssuesCountQuery,
+        pyStart,
+        pyEnd,
+        ...filterParams
+      )
+    ]);
+
+    const totalCyCount =
+      Number(
+        totalIssuesCountCurrYear[0]?.aggregate
+      ) || 0;
+
+    const totalPyCount =
+      Number(
+        totalIssuesCountPrevYear[0]?.aggregate
+      ) || 0;
+
+    const totalCySize =
+      Number(
+        totalIssueSize[0]?.aggregate
+      ) || 0;
+
+    const totalPySize =
+      Number(
+        totalIssueSizePrevYear[0]?.aggregate
+      ) || 0;
+
+    /* =========================================================
+       MARKET SHARE DENOMINATORS
+    ========================================================= */
+
+    const cyCountDenominator =
+      totalCyCount || 1;
+
+    const pyCountDenominator =
+      totalPyCount || 1;
+
+    const cySizeDenominator =
+      totalCySize
+        ? totalCySize / 10000000
+        : 1;
+
+    const pySizeDenominator =
+      totalPySize
+        ? totalPySize / 10000000
+        : 1;
+
+    /* =========================================================
+       PAGINATION
+    ========================================================= */
+
+    const safeLimit =
+      limit
+        ? Math.max(
+            0,
+            parseInt(limit, 10) || 0
+          )
+        : null;
+
+    const safeOffset =
+      Math.max(
+        0,
+        parseInt(offset, 10) || 0
+      );
+
+    const t1Limit =
+      safeLimit !== null &&
+      safeLimit > 0
+        ? `LIMIT ${safeLimit} OFFSET ${safeOffset}`
+        : '';
+
+    /* =========================================================
+       MAIN TABLE QUERY
+    ========================================================= */
 
     let tableQuery = '';
     let tableBaseParams = [];
@@ -7115,151 +7494,408 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
         SELECT
           t1.id,
           t1.arranger_name,
+
           t1.no_issues AS cy_issues,
           t1.issue_size AS cy_issue_size,
           t1.arr_rank AS cy_arr_rank,
+
           t2.no_issues AS py_issues,
           t2.issue_size AS py_issue_size,
           t2.arr_rank AS py_arr_rank,
-          ROUND((t1.no_issues / ?) * 100, 2) AS cy_mkt_share,
-          ROUND((t2.no_issues / ?) * 100, 2) AS py_mkt_share,
+
+          ROUND(
+            (t1.no_issues / ?) * 100,
+            2
+          ) AS cy_mkt_share,
+
+          ROUND(
+            (t2.no_issues / ?) * 100,
+            2
+          ) AS py_mkt_share,
+
           CASE
-            WHEN (IFNULL(t1.no_issues,0) + IFNULL(t2.no_issues,0)) = 0 THEN 0
+            WHEN
+              (
+                IFNULL(t1.no_issues, 0) +
+                IFNULL(t2.no_issues, 0)
+              ) = 0
+            THEN 0
+
             ELSE ROUND(
-              ((IFNULL(t1.no_issues,0) - IFNULL(t2.no_issues,0)) /
-              (IFNULL(t1.no_issues,0) + IFNULL(t2.no_issues,0))) * 100, 2
+              (
+                (
+                  IFNULL(t1.no_issues, 0) -
+                  IFNULL(t2.no_issues, 0)
+                )
+                /
+                (
+                  IFNULL(t1.no_issues, 0) +
+                  IFNULL(t2.no_issues, 0)
+                )
+              ) * 100,
+              2
             )
           END AS yoy
+
         FROM (
+
           SELECT
             ma.id,
             ma.short_name AS arranger_name,
-            COUNT(DISTINCT ia.arranger_id, mi.allotment_date, mi.issuer_master_id) AS no_issues,
-            ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
+
+            COUNT(
+              DISTINCT
+              ia.arranger_id,
+              mi.allotment_date,
+              mi.issuer_master_id
+            ) AS no_issues,
+
+            ROUND(
+              SUM(mi.issue_size) / 10000000,
+              2
+            ) AS issue_size,
+
             RANK() OVER (
-              ORDER BY COUNT(DISTINCT ia.arranger_id, mi.allotment_date, mi.issuer_master_id) DESC, SUM(mi.issue_size) DESC
+              ORDER BY
+                COUNT(
+                  DISTINCT
+                  ia.arranger_id,
+                  mi.allotment_date,
+                  mi.issuer_master_id
+                ) DESC,
+                SUM(mi.issue_size) DESC
             ) AS arr_rank
+
           FROM isin_re_issuance mi
-          JOIN issuer_arranger ia ON ia.issuer_id = mi.isin_id
-          JOIN master_arranger ma ON ma.id = ia.arranger_id
-          WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-          ${filterSql}
-          GROUP BY ia.arranger_id, ma.id, ma.short_name
+
+          JOIN issuer_arranger ia
+            ON ia.issuer_id = mi.isin_id
+
+          JOIN master_arranger ma
+            ON ma.id = ia.arranger_id
+
+          ${totalJoins}
+
+          WHERE
+            mi.allotment_date BETWEEN ? AND ?
+            AND mi.is_visible = 1
+            ${filterClause}
+
+          GROUP BY
+            ia.arranger_id,
+            ma.id,
+            ma.short_name
+
           ORDER BY arr_rank
+
           ${t1Limit}
+
         ) t1
+
         LEFT JOIN (
+
           SELECT
             ma.id,
-            COUNT(DISTINCT mi.issuer_master_id, mi.allotment_date) AS no_issues,
-            ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
+
+            COUNT(
+              DISTINCT
+              ia.arranger_id,
+              mi.allotment_date,
+              mi.issuer_master_id
+            ) AS no_issues,
+
+            ROUND(
+              SUM(mi.issue_size) / 10000000,
+              2
+            ) AS issue_size,
+
             RANK() OVER (
-              ORDER BY COUNT(DISTINCT ia.arranger_id, mi.allotment_date, mi.issuer_master_id) DESC, SUM(mi.issue_size) DESC
+              ORDER BY
+                COUNT(
+                  DISTINCT
+                  ia.arranger_id,
+                  mi.allotment_date,
+                  mi.issuer_master_id
+                ) DESC,
+                SUM(mi.issue_size) DESC
             ) AS arr_rank
+
           FROM isin_re_issuance mi
-          JOIN issuer_arranger ia ON ia.issuer_id = mi.isin_id
-          JOIN master_arranger ma ON ma.id = ia.arranger_id
-          WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-          ${filterSql}
-          GROUP BY ia.arranger_id, ma.id, ma.short_name
-        ) t2 ON t1.id = t2.id
+
+          JOIN issuer_arranger ia
+            ON ia.issuer_id = mi.isin_id
+
+          JOIN master_arranger ma
+            ON ma.id = ia.arranger_id
+
+          ${totalJoins}
+
+          WHERE
+            mi.allotment_date BETWEEN ? AND ?
+            AND mi.is_visible = 1
+            ${filterClause}
+
+          GROUP BY
+            ia.arranger_id,
+            ma.id,
+            ma.short_name
+
+        ) t2
+          ON t1.id = t2.id
+
         ORDER BY t1.arr_rank;
       `;
 
       tableBaseParams = [
         cyCountDenominator,
         pyCountDenominator,
-        cyStart, cyEnd,
+
+        cyStart,
+        cyEnd,
         ...filterParams,
-        pyStart, pyEnd,
+
+        pyStart,
+        pyEnd,
         ...filterParams
       ];
+
     } else {
+
       tableQuery = `
         SELECT
           t1.id,
           t1.arranger_name,
+
           t1.no_issues AS cy_issues,
           t1.issue_size AS cy_issue_size,
           t1.arr_rank AS cy_arr_rank,
+
           t2.no_issues AS py_issues,
           t2.issue_size AS py_issue_size,
           t2.arr_rank AS py_arr_rank,
-          ROUND((t1.issue_size / ?) * 100, 2) AS cy_mkt_share,
-          ROUND((t2.issue_size / ?) * 100, 2) AS py_mkt_share,
+
+          ROUND(
+            (t1.issue_size / ?) * 100,
+            2
+          ) AS cy_mkt_share,
+
+          ROUND(
+            (t2.issue_size / ?) * 100,
+            2
+          ) AS py_mkt_share,
+
           CASE
-            WHEN (IFNULL(t1.issue_size,0) + IFNULL(t2.issue_size,0)) = 0 THEN 0
+            WHEN
+              (
+                IFNULL(t1.issue_size, 0) +
+                IFNULL(t2.issue_size, 0)
+              ) = 0
+            THEN 0
+
             ELSE ROUND(
-              ((IFNULL(t1.issue_size,0) - IFNULL(t2.issue_size,0)) /
-              (IFNULL(t1.issue_size,0) + IFNULL(t2.issue_size,0))) * 100, 2
+              (
+                (
+                  IFNULL(t1.issue_size, 0) -
+                  IFNULL(t2.issue_size, 0)
+                )
+                /
+                (
+                  IFNULL(t1.issue_size, 0) +
+                  IFNULL(t2.issue_size, 0)
+                )
+              ) * 100,
+              2
             )
           END AS yoy
+
         FROM (
+
           SELECT
             ma.id,
             ma.short_name AS arranger_name,
-            COUNT(DISTINCT ia.arranger_id, mi.allotment_date, mi.issuer_master_id) AS no_issues,
-            ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
+
+            COUNT(
+              DISTINCT
+              ia.arranger_id,
+              mi.allotment_date,
+              mi.issuer_master_id
+            ) AS no_issues,
+
+            ROUND(
+              SUM(mi.issue_size) / 10000000,
+              2
+            ) AS issue_size,
+
             RANK() OVER (
-              ORDER BY SUM(mi.issue_size) DESC, COUNT(DISTINCT ia.arranger_id, mi.allotment_date, mi.issuer_master_id) DESC
+              ORDER BY
+                SUM(mi.issue_size) DESC,
+                COUNT(
+                  DISTINCT
+                  ia.arranger_id,
+                  mi.allotment_date,
+                  mi.issuer_master_id
+                ) DESC
             ) AS arr_rank
+
           FROM isin_re_issuance mi
-          JOIN issuer_arranger ia ON ia.issuer_id = mi.isin_id
-          JOIN master_arranger ma ON ma.id = ia.arranger_id
-          WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-          ${filterSql}
-          GROUP BY ia.arranger_id, ma.id, ma.short_name
+
+          JOIN issuer_arranger ia
+            ON ia.issuer_id = mi.isin_id
+
+          JOIN master_arranger ma
+            ON ma.id = ia.arranger_id
+
+          ${totalJoins}
+
+          WHERE
+            mi.allotment_date BETWEEN ? AND ?
+            AND mi.is_visible = 1
+            ${filterClause}
+
+          GROUP BY
+            ia.arranger_id,
+            ma.id,
+            ma.short_name
+
           ORDER BY arr_rank
+
           ${t1Limit}
+
         ) t1
+
         LEFT JOIN (
+
           SELECT
             ma.id,
-            COUNT(DISTINCT ia.arranger_id, mi.allotment_date, mi.issuer_master_id) AS no_issues,
-            ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
+
+            COUNT(
+              DISTINCT
+              ia.arranger_id,
+              mi.allotment_date,
+              mi.issuer_master_id
+            ) AS no_issues,
+
+            ROUND(
+              SUM(mi.issue_size) / 10000000,
+              2
+            ) AS issue_size,
+
             RANK() OVER (
-              ORDER BY SUM(mi.issue_size) DESC, COUNT(DISTINCT ia.arranger_id, mi.allotment_date, mi.issuer_master_id) DESC
+              ORDER BY
+                SUM(mi.issue_size) DESC,
+                COUNT(
+                  DISTINCT
+                  ia.arranger_id,
+                  mi.allotment_date,
+                  mi.issuer_master_id
+                ) DESC
             ) AS arr_rank
+
           FROM isin_re_issuance mi
-          JOIN issuer_arranger ia ON ia.issuer_id = mi.isin_id
-          JOIN master_arranger ma ON ma.id = ia.arranger_id
-          WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-          ${filterSql}
-          GROUP BY ia.arranger_id, ma.id, ma.short_name
-        ) t2 ON t1.id = t2.id
+
+          JOIN issuer_arranger ia
+            ON ia.issuer_id = mi.isin_id
+
+          JOIN master_arranger ma
+            ON ma.id = ia.arranger_id
+
+          ${totalJoins}
+
+          WHERE
+            mi.allotment_date BETWEEN ? AND ?
+            AND mi.is_visible = 1
+            ${filterClause}
+
+          GROUP BY
+            ia.arranger_id,
+            ma.id,
+            ma.short_name
+
+        ) t2
+          ON t1.id = t2.id
+
         ORDER BY t1.arr_rank;
       `;
 
       tableBaseParams = [
         cySizeDenominator,
         pySizeDenominator,
-        cyStart, cyEnd,
+
+        cyStart,
+        cyEnd,
         ...filterParams,
-        pyStart, pyEnd,
+
+        pyStart,
+        pyEnd,
         ...filterParams
       ];
     }
 
-    const tableResult = await prisma.$queryRawUnsafe(tableQuery, ...tableBaseParams);
+    const tableResult =
+      await prisma.$queryRawUnsafe(
+        tableQuery,
+        ...tableBaseParams
+      );
 
-    /* ---------------- TOTAL COUNT FOR PAGINATION ---------------- */
+    /* =========================================================
+       TOTAL COUNT FOR PAGINATION
+    ========================================================= */
 
-    const totalCountResult = await prisma.$queryRawUnsafe(`
-      SELECT COUNT(DISTINCT ia.arranger_id, mi.allotment_date, mi.issuer_master_id) AS total
+    const totalCountQuery = `
+      SELECT
+        COUNT(
+          DISTINCT
+          ia.arranger_id,
+          mi.allotment_date,
+          mi.issuer_master_id
+        ) AS total
+
       FROM isin_re_issuance mi
-      JOIN issuer_arranger ia ON ia.issuer_id = mi.isin_id
-      WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-      ${filterSql}
-    `, cyStart, cyEnd, ...filterParams);
 
-    const totalRecords = parseInt(totalCountResult[0]?.total) || 0;
+      JOIN issuer_arranger ia
+        ON ia.issuer_id = mi.isin_id
 
-    /* ---------------- SECTOR BREAKUP QUERY ---------------- */
+      ${totalJoins}
+
+      WHERE
+        mi.allotment_date BETWEEN ? AND ?
+        AND mi.is_visible = 1
+        ${filterClause}
+    `;
+
+    const totalCountResult =
+      await prisma.$queryRawUnsafe(
+        totalCountQuery,
+        cyStart,
+        cyEnd,
+        ...filterParams
+      );
+
+    const totalRecords =
+      parseInt(
+        totalCountResult[0]?.total
+      ) || 0;
+
+    /* =========================================================
+       SECTOR BREAKUP
+    ========================================================= */
 
     const sectorValueSelect =
       issueType === 'count'
-        ? 'COUNT(DISTINCT ia.arranger_id, mi.allotment_date, mi.issuer_master_id)'
-        : 'ROUND(SUM(mi.issue_size) / 10000000, 2)';
+        ? `
+          COUNT(
+            DISTINCT
+            ia.arranger_id,
+            mi.allotment_date,
+            mi.issuer_master_id
+          )
+        `
+        : `
+          ROUND(
+            SUM(mi.issue_size) / 10000000,
+            2
+          )
+        `;
 
     const rankedArrangersSubQuery =
       issueType === 'count'
@@ -7267,32 +7903,80 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
           SELECT
             ma.id AS arranger_id,
             ma.short_name AS arranger_name,
+
             RANK() OVER (
-              ORDER BY COUNT(DISTINCT ia.arranger_id, mi.allotment_date, mi.issuer_master_id) DESC, SUM(mi.issue_size) DESC
+              ORDER BY
+                COUNT(
+                  DISTINCT
+                  ia.arranger_id,
+                  mi.allotment_date,
+                  mi.issuer_master_id
+                ) DESC,
+                SUM(mi.issue_size) DESC
             ) AS arr_rank
+
           FROM isin_re_issuance mi
-          JOIN issuer_arranger ia ON ia.issuer_id = mi.isin_id
-          JOIN master_arranger ma ON ma.id = ia.arranger_id
-          WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-          ${filterSql}
-          GROUP BY ia.arranger_id, ma.id, ma.short_name
+
+          JOIN issuer_arranger ia
+            ON ia.issuer_id = mi.isin_id
+
+          JOIN master_arranger ma
+            ON ma.id = ia.arranger_id
+
+          ${totalJoins}
+
+          WHERE
+            mi.allotment_date BETWEEN ? AND ?
+            AND mi.is_visible = 1
+            ${filterClause}
+
+          GROUP BY
+            ia.arranger_id,
+            ma.id,
+            ma.short_name
+
           ORDER BY arr_rank
+
           LIMIT 10
         `
         : `
           SELECT
             ma.id AS arranger_id,
             ma.short_name AS arranger_name,
+
             RANK() OVER (
-              ORDER BY SUM(mi.issue_size) DESC, COUNT(DISTINCT ia.arranger_id, mi.allotment_date, mi.issuer_master_id) DESC
+              ORDER BY
+                SUM(mi.issue_size) DESC,
+                COUNT(
+                  DISTINCT
+                  ia.arranger_id,
+                  mi.allotment_date,
+                  mi.issuer_master_id
+                ) DESC
             ) AS arr_rank
+
           FROM isin_re_issuance mi
-          JOIN issuer_arranger ia ON ia.issuer_id = mi.isin_id
-          JOIN master_arranger ma ON ma.id = ia.arranger_id
-          WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-          ${filterSql}
-          GROUP BY ia.arranger_id, ma.id, ma.short_name
+
+          JOIN issuer_arranger ia
+            ON ia.issuer_id = mi.isin_id
+
+          JOIN master_arranger ma
+            ON ma.id = ia.arranger_id
+
+          ${totalJoins}
+
+          WHERE
+            mi.allotment_date BETWEEN ? AND ?
+            AND mi.is_visible = 1
+            ${filterClause}
+
+          GROUP BY
+            ia.arranger_id,
+            ma.id,
+            ma.short_name
+
           ORDER BY arr_rank
+
           LIMIT 10
         `;
 
@@ -7301,15 +7985,30 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
         r.arranger_id AS id,
         r.arranger_name AS name,
         r.arr_rank,
+
         mbs.code,
         mbs.description,
+
         ${sectorValueSelect} AS value
+
       FROM (${rankedArrangersSubQuery}) r
-      JOIN issuer_arranger ia ON ia.arranger_id = r.arranger_id
-      JOIN isin_re_issuance mi ON mi.isin_id = ia.issuer_id
-      JOIN master_business_sector mbs ON mi.business_sector = mbs.code
-      WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-      ${filterSql}
+
+      JOIN issuer_arranger ia
+        ON ia.arranger_id = r.arranger_id
+
+      JOIN isin_re_issuance mi
+        ON mi.isin_id = ia.issuer_id
+
+      JOIN master_business_sector mbs
+        ON mi.business_sector = mbs.code
+
+      ${totalJoins}
+
+      WHERE
+        mi.allotment_date BETWEEN ? AND ?
+        AND mi.is_visible = 1
+        ${filterClause}
+
       GROUP BY
         r.arranger_id,
         r.arranger_name,
@@ -7317,45 +8016,100 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
         mi.business_sector,
         mbs.code,
         mbs.description
+
       ORDER BY
         r.arr_rank,
         value DESC;
     `;
 
     const sectorParams = [
-      cyStart, cyEnd, ...filterParams,
-      cyStart, cyEnd, ...filterParams
+      cyStart,
+      cyEnd,
+      ...filterParams,
+
+      cyStart,
+      cyEnd,
+      ...filterParams
     ];
 
-    const sectorData = await prisma.$queryRawUnsafe(sectorQuery, ...sectorParams);
+    const sectorData =
+      await prisma.$queryRawUnsafe(
+        sectorQuery,
+        ...sectorParams
+      );
 
-    /* ---------------- RESPONSE FORMAT ---------------- */
+    /* =========================================================
+       RESPONSE FORMAT
+    ========================================================= */
 
-    const finalResult = tableResult.map((item) => ({
-      id: item.id ?? '-',
-      rank: item.cy_arr_rank ?? '-',
-      name: item.arranger_name ?? '-',
-      currentSize: item.cy_issue_size ?? '-',
-      currentDeals: item.cy_issues ?? '-',
-      currentMarketShare: item.cy_mkt_share ?? '-',
-      previousRank: item.py_arr_rank ?? '-',
-      previousSize: item.py_issue_size ?? '-',
-      previousDeals: item.py_issues ?? '-',
-      previousMarketShare: item.py_mkt_share ?? '-',
-      yoyChange: item.yoy ?? '-'
-    }));
+    const finalResult =
+      tableResult.map((item) => ({
+        id: item.id ?? '-',
+
+        rank:
+          item.cy_arr_rank ?? '-',
+
+        name:
+          item.arranger_name ?? '-',
+
+        currentSize:
+          item.cy_issue_size ?? '-',
+
+        currentDeals:
+          item.cy_issues ?? '-',
+
+        currentMarketShare:
+          item.cy_mkt_share ?? '-',
+
+        previousRank:
+          item.py_arr_rank ?? '-',
+
+        previousSize:
+          item.py_issue_size ?? '-',
+
+        previousDeals:
+          item.py_issues ?? '-',
+
+        previousMarketShare:
+          item.py_mkt_share ?? '-',
+
+        yoyChange:
+          item.yoy ?? '-'
+      }));
 
     const totals = {
-      currentSize: Number(totalIssueSize[0]?.aggregate / 10000000) || 0,
-      previousSize: Number(totalIssueSizePrevYear[0]?.aggregate / 10000000) || 0,
-      currentDeals: Number(totalIssuesCountCurrYear[0]?.aggregate) || 0,
-      previousDeals: Number(totalIssuesCountPrevYear[0]?.aggregate) || 0,
+      currentSize:
+        Number(
+          totalIssueSize[0]?.aggregate
+        ) / 10000000 || 0,
+
+      previousSize:
+        Number(
+          totalIssueSizePrevYear[0]?.aggregate
+        ) / 10000000 || 0,
+
+      currentDeals:
+        Number(
+          totalIssuesCountCurrYear[0]?.aggregate
+        ) || 0,
+
+      previousDeals:
+        Number(
+          totalIssuesCountPrevYear[0]?.aggregate
+        ) || 0
     };
+
+    /* =========================================================
+       FINAL RESPONSE
+    ========================================================= */
 
     res.status(200).json({
       tableData: finalResult,
+
       sectorData,
+
       totals,
+
       pagination: {
         total: totalRecords,
         limit: safeLimit || 0,
@@ -7364,7 +8118,11 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
     });
 
   } catch (error) {
-    console.error(error);
+    console.error(
+      'Error in arrangers_page_top_arrangers_data:',
+      error
+    );
+
     res.status(500).json({
       error: 'Failed to fetch arrangers data',
       message: error.message
@@ -10325,6 +11083,7 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
       issueType,
       limit,
       offset = 0,
+
       rating = "",
       registrar = "",
       seniority = "",
@@ -10342,528 +11101,1310 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
       isin = ""
     } = req.body;
 
-    // Validation
+    /* =========================================================
+       VALIDATION
+    ========================================================= */
+
     if (!startDate || !endDate) {
-      return res.status(400).json({ error: 'startDate, endDate are required' });
+      return res.status(400).json({
+        error: 'startDate, endDate are required'
+      });
     }
 
     const parsedLimit = limit ? parseInt(limit, 10) : null;
     const parsedOffset = parseInt(offset, 10) || 0;
 
-    if (parsedLimit !== null && (isNaN(parsedLimit) || parsedLimit < 0)) {
-      return res.status(400).json({ error: 'limit must be a non-negative integer' });
-    }
-    if (isNaN(parsedOffset) || parsedOffset < 0) {
-      return res.status(400).json({ error: 'offset must be a non-negative integer' });
+    if (
+      parsedLimit !== null &&
+      (isNaN(parsedLimit) || parsedLimit < 0)
+    ) {
+      return res.status(400).json({
+        error: 'limit must be a non-negative integer'
+      });
     }
 
-    // Date calculations
+    if (
+      isNaN(parsedOffset) ||
+      parsedOffset < 0
+    ) {
+      return res.status(400).json({
+        error: 'offset must be a non-negative integer'
+      });
+    }
+
+    /* =========================================================
+       DATE CALCULATIONS
+    ========================================================= */
+
     const currentStartDate = new Date(startDate);
     const currentEndDate = new Date(endDate);
 
-    if (isNaN(currentStartDate.getTime()) || isNaN(currentEndDate.getTime())) {
-      return res.status(400).json({ error: 'Invalid date format' });
+    if (
+      isNaN(currentStartDate.getTime()) ||
+      isNaN(currentEndDate.getTime())
+    ) {
+      return res.status(400).json({
+        error: 'Invalid date format'
+      });
     }
 
     const previousStartDate = new Date(currentStartDate);
-    previousStartDate.setFullYear(previousStartDate.getFullYear() - 1);
+    previousStartDate.setFullYear(
+      previousStartDate.getFullYear() - 1
+    );
 
     const previousEndDate = new Date(currentEndDate);
-    previousEndDate.setFullYear(previousEndDate.getFullYear() - 1);
+    previousEndDate.setFullYear(
+      previousEndDate.getFullYear() - 1
+    );
 
-    const formatDate = (date) => date.toISOString().slice(0, 19).replace('T', ' ');
+    const formatDate = (date) =>
+      date.toISOString()
+        .slice(0, 19)
+        .replace('T', ' ');
 
-    const formatDateTime = (dateStr, isEnd = false) => {
+    const formatDateTime = (
+      dateStr,
+      isEnd = false
+    ) => {
       const date = new Date(dateStr);
-      if (isNaN(date.getTime())) return null;
+
+      if (isNaN(date.getTime())) {
+        return null;
+      }
+
       if (isEnd) {
         date.setHours(23, 59, 59, 0);
       } else {
         date.setHours(0, 0, 0, 0);
       }
-      return date.toISOString().slice(0, 19).replace('T', ' ');
+
+      return date.toISOString()
+        .slice(0, 19)
+        .replace('T', ' ');
     };
-
-    /* ---------------- HELPER: Build multi-value IN clause ---------------- */
-    const buildInClause = (field, values, useLike = false) => {
-      if (!values || (Array.isArray(values) && values.length === 0)) return null;
-      const vals = Array.isArray(values)
-        ? values.filter(v => v !== '' && v !== null && v !== undefined)
-        : [values].filter(v => v !== '' && v !== null && v !== undefined);
-      if (vals.length === 0) return null;
-
-      if (useLike) {
-        const clauses = vals.map(() => `${field} LIKE ?`).join(' OR ');
-        const params = vals.map(v => `%${v}%`);
-        return { clause: `(${clauses})`, params };
-      }
-
-      const placeholders = vals.map(() => '?').join(',');
-      return { clause: `${field} IN (${placeholders})`, params: vals };
-    };
-
-    /* ---------------- DYNAMIC FILTER BUILDER (excludes trustee) ---------------- */
-    const buildFilterConditions = (tableAlias = 'mi') => {
-      const conditions = [];
-      const params = [];
-
-      if (rating) {
-        const inClause = buildInClause('mir2.rating', rating);
-        if (inClause) {
-          conditions.push(`EXISTS (
-            SELECT 1 FROM master_issuer_rating mir2
-            WHERE mir2.issuer_id = ${tableAlias}.isin_id AND ${inClause.clause}
-          )`);
-          params.push(...inClause.params);
-        }
-      }
-
-      if (creditRatingAgency) {
-        const inClause = buildInClause('ma2.short_name', creditRatingAgency);
-        if (inClause) {
-          conditions.push(`EXISTS (
-            SELECT 1 FROM master_issuer_rating mir2
-            JOIN master_agency ma2 ON ma2.id = mir2.agency_id
-            WHERE mir2.issuer_id = ${tableAlias}.isin_id AND ${inClause.clause}
-          )`);
-          params.push(...inClause.params);
-        }
-      }
-
-      if (registrar) {
-        const inClause = buildInClause('mr2.registrar_name', registrar, true);
-        if (inClause) {
-          conditions.push(`EXISTS (
-            SELECT 1 FROM issuer_registrar ir2
-            JOIN master_registrar mr2 ON mr2.id = ir2.registrar_id
-            WHERE ir2.issuer_id = ${tableAlias}.isin_id AND ${inClause.clause}
-          )`);
-          params.push(...inClause.params);
-        }
-      }
-
-      if (seniority) {
-        const inClause = buildInClause('mstc2.description', seniority);
-        if (inClause) {
-          conditions.push(`EXISTS (
-            SELECT 1 FROM master_seniority_tier_classification mstc2
-            WHERE mstc2.code = ${tableAlias}.seniority AND ${inClause.clause}
-          )`);
-          params.push(...inClause.params);
-        }
-      }
-
-      if (taxFree) {
-        const inClause = buildInClause('mtf2.description', taxFree);
-        if (inClause) {
-          conditions.push(`EXISTS (
-            SELECT 1 FROM master_tax_free mtf2
-            WHERE mtf2.code = ${tableAlias}.tax_free AND ${inClause.clause}
-          )`);
-          params.push(...inClause.params);
-        }
-      }
-
-      if (securedFlag) {
-        const inClause = buildInClause('msf2.description', securedFlag);
-        if (inClause) {
-          conditions.push(`EXISTS (
-            SELECT 1 FROM master_secured_flag msf2
-            WHERE msf2.code = ${tableAlias}.secured_flag AND ${inClause.clause}
-          )`);
-          params.push(...inClause.params);
-        }
-      }
-
-      if (sector) {
-        const inClause = buildInClause('mbs2.description', sector);
-        if (inClause) {
-          conditions.push(`EXISTS (
-            SELECT 1 FROM master_business_sector mbs2
-            WHERE mbs2.code = ${tableAlias}.business_sector AND ${inClause.clause}
-          )`);
-          params.push(...inClause.params);
-        }
-      }
-
-      // ─── FIX: nature_type lives on master_issuer, not isin_re_issuance ───
-      if (nature) {
-        const inClause = buildInClause('mitn2.description', nature);
-        if (inClause) {
-          conditions.push(`EXISTS (
-            SELECT 1 FROM master_issuer mi2
-            JOIN master_issuer_type_nature mitn2 ON mitn2.code = mi2.nature_type
-            WHERE mi2.id = ${tableAlias}.isin_id AND ${inClause.clause}
-          )`);
-          params.push(...inClause.params);
-        }
-      }
-
-      // ─── FIX: issuer_ownership_type lives on master_issuer, not isin_re_issuance ───
-      if (ownershipType) {
-        const inClause = buildInClause('miot2.description', ownershipType);
-        if (inClause) {
-          conditions.push(`EXISTS (
-            SELECT 1 FROM master_issuer mi2
-            JOIN master_issuer_ownership_type miot2 ON miot2.code = mi2.issuer_ownership_type
-            WHERE mi2.id = ${tableAlias}.isin_id AND ${inClause.clause}
-          )`);
-          params.push(...inClause.params);
-        }
-      }
-
-      if (dealSize) {
-        const inClause = buildInClause(`${tableAlias}.issue_size`, dealSize, true);
-        if (inClause) {
-          conditions.push(inClause.clause);
-          params.push(...inClause.params);
-        }
-      }
-
-      if (listingStatus) {
-        const inClause = buildInClause('mls2.description', listingStatus);
-        if (inClause) {
-          conditions.push(`EXISTS (
-            SELECT 1 FROM master_issuer_stock_exchange mise2
-            JOIN master_listing_status mls2 ON mls2.code = mise2.listing_status
-            WHERE mise2.issuer_id = ${tableAlias}.isin_id AND ${inClause.clause}
-          )`);
-          params.push(...inClause.params);
-        }
-      }
-
-      if (securityType) {
-        const inClause = buildInClause('mst2.description', securityType);
-        if (inClause) {
-          conditions.push(`EXISTS (
-            SELECT 1 FROM master_security_type mst2
-            WHERE mst2.code = ${tableAlias}.security_class AND ${inClause.clause}
-          )`);
-          params.push(...inClause.params);
-        }
-      }
-
-      if (modeOfIssue) {
-        const inClause = buildInClause('mmi2.description', modeOfIssue);
-        if (inClause) {
-          conditions.push(`EXISTS (
-            SELECT 1 FROM master_mode_issue mmi2
-            WHERE mmi2.code = ${tableAlias}.mode_issue AND ${inClause.clause}
-          )`);
-          params.push(...inClause.params);
-        }
-      }
-
-      if (isin) {
-        const inClause = buildInClause(`${tableAlias}.isin`, isin, true);
-        if (inClause) {
-          conditions.push(inClause.clause);
-          params.push(...inClause.params);
-        }
-      }
-
-      return { conditions, params };
-    };
-
-    const {
-      conditions: filterConditions,
-      params: filterParams
-    } = buildFilterConditions('mi');
-
-    const filterSql = filterConditions.length > 0
-      ? ' AND ' + filterConditions.join(' AND ')
-      : '';
-
-    /* ---------------- TRUSTEE FILTER (context-dependent) ---------------- */
-    const buildTrusteeDirectFilter = () => {
-      if (!trustee) return { sql: '', params: [] };
-      const inClause = buildInClause('mt.short_name', trustee, true);
-      if (!inClause) return { sql: '', params: [] };
-      return { sql: ` AND ${inClause.clause}`, params: inClause.params };
-    };
-
-    const buildTrusteeExistsFilter = () => {
-      if (!trustee) return { sql: '', params: [] };
-      const inClause = buildInClause('mt2.short_name', trustee, true);
-      if (!inClause) return { sql: '', params: [] };
-      return {
-        sql: ` AND EXISTS (
-          SELECT 1 FROM issuer_trustee it2
-          JOIN master_trustee mt2 ON mt2.id = it2.trustee_id
-          WHERE it2.issuer_id = mi.isin_id AND ${inClause.clause}
-        )`,
-        params: inClause.params
-      };
-    };
-
-    const { sql: trusteeDirectSql, params: trusteeDirectParams } = buildTrusteeDirectFilter();
-    const { sql: trusteeExistsSql, params: trusteeExistsParams } = buildTrusteeExistsFilter();
 
     const cyStart = formatDateTime(currentStartDate);
     const cyEnd = formatDateTime(currentEndDate);
+
     const pyStart = formatDateTime(previousStartDate);
     const pyEnd = formatDateTime(previousEndDate);
 
-    /* ---------------- TOTALS ---------------- */
+    /* =========================================================
+       HELPER: BUILD MULTI-VALUE IN / LIKE CLAUSE
+    ========================================================= */
 
-    const totalIssueSizeRaw = await prisma.$queryRawUnsafe(`
-      SELECT COALESCE(SUM(mi.issue_size), 0) AS aggregate
-      FROM isin_re_issuance mi
-      JOIN issuer_trustee it
-        ON it.issuer_id = mi.isin_id
-      WHERE mi.allotment_date BETWEEN ? AND ?
-        AND mi.is_visible = 1
-        ${trusteeExistsSql}
-        ${filterSql}
-    `,
-      cyStart,
-      cyEnd,
-      ...trusteeExistsParams,
-      ...filterParams
-    );
+    const buildInClause = (
+      field,
+      values,
+      useLike = false
+    ) => {
+      if (
+        !values ||
+        (Array.isArray(values) &&
+          values.length === 0)
+      ) {
+        return null;
+      }
 
-    const totalIssueSizePrevYearRaw = await prisma.$queryRawUnsafe(`
-      SELECT COALESCE(SUM(mi.issue_size), 0) AS aggregate
-      FROM isin_re_issuance mi
-      JOIN issuer_trustee it
-        ON it.issuer_id = mi.isin_id
-      WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-      ${trusteeExistsSql}
-      ${filterSql}
-    `, pyStart, pyEnd, ...trusteeExistsParams, ...filterParams);
+      const vals = Array.isArray(values)
+        ? values.filter(
+            (v) =>
+              v !== '' &&
+              v !== null &&
+              v !== undefined
+          )
+        : [values].filter(
+            (v) =>
+              v !== '' &&
+              v !== null &&
+              v !== undefined
+          );
 
-    const totalIssuesCountCurrYearRaw = await prisma.$queryRawUnsafe(`
-      SELECT COUNT(DISTINCT it.trustee_id, mi.allotment_date, mi.issuer_master_id) AS aggregate
-      FROM isin_re_issuance mi
-      JOIN issuer_trustee it
-        ON it.issuer_id = mi.isin_id
-      WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-      ${trusteeExistsSql}
-      ${filterSql}
-    `, cyStart, cyEnd, ...trusteeExistsParams, ...filterParams);
+      if (vals.length === 0) {
+        return null;
+      }
 
-    const totalIssuesCountPrevYearRaw = await prisma.$queryRawUnsafe(`
-      SELECT COUNT(DISTINCT it.trustee_id, mi.allotment_date, mi.issuer_master_id) AS aggregate
-      FROM isin_re_issuance mi
-      JOIN issuer_trustee it
-        ON it.issuer_id = mi.isin_id
-      WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-      ${trusteeExistsSql}
-      ${filterSql}
-    `, pyStart, pyEnd, ...trusteeExistsParams, ...filterParams);
+      if (useLike) {
+        const clauses = vals
+          .map(() => `${field} LIKE ?`)
+          .join(' OR ');
 
-    // Safely extract totals with defaults
-    const totalIssueSize = parseFloat(totalIssueSizeRaw[0]?.aggregate) || 0;
-    const totalIssueSizePrevYear = parseFloat(totalIssueSizePrevYearRaw[0]?.aggregate) || 0;
-    const totalIssuesCountCurrYear = parseInt(totalIssuesCountCurrYearRaw[0]?.aggregate, 10) || 0;
-    const totalIssuesCountPrevYear = parseInt(totalIssuesCountPrevYearRaw[0]?.aggregate, 10) || 0;
+        const params = vals.map(
+          (v) => `%${v}%`
+        );
 
-    // Avoid division by zero in SQL by using safe denominators
-    const safeTotalIssueSize = totalIssueSize > 0 ? totalIssueSize / 10000000 : 1;
-    const safeTotalIssueSizePrevYear = totalIssueSizePrevYear > 0 ? totalIssueSizePrevYear / 10000000 : 1;
-    const safeTotalIssuesCount = totalIssuesCountCurrYear > 0 ? totalIssuesCountCurrYear : 1;
-    const safeTotalIssuesCountPrevYear = totalIssuesCountPrevYear > 0 ? totalIssuesCountPrevYear : 1;
+        return {
+          clause: `(${clauses})`,
+          params
+        };
+      }
 
-    /* ---------------- MAIN TABLE QUERY ---------------- */
+      const placeholders = vals
+        .map(() => '?')
+        .join(',');
 
-    const limitOffsetSql = parsedLimit !== null ? `LIMIT ${parsedLimit} OFFSET ${parsedOffset}` : '';
+      return {
+        clause: `${field} IN (${placeholders})`,
+        params: vals
+      };
+    };
+
+    /* =========================================================
+       DYNAMIC FILTER BUILDER
+
+       Only add a JOIN when the corresponding filter
+       actually contains a value.
+
+       hasFilterValue() is defined outside this API.
+    ========================================================= */
+
+    const buildFilterParts = () => {
+      const joins = [];
+      const conditions = [];
+      const params = [];
+
+      const addedJoins = new Set();
+
+      const addJoin = (join) => {
+        const normalizedJoin = join.trim();
+
+        if (!addedJoins.has(normalizedJoin)) {
+          addedJoins.add(normalizedJoin);
+          joins.push(normalizedJoin);
+        }
+      };
+
+      /* ---------------------------------------------------------
+         RATING
+      --------------------------------------------------------- */
+
+      if (hasFilterValue(rating)) {
+        addJoin(`
+          LEFT JOIN master_issuer_rating AS filter_mir
+            ON filter_mir.issuer_id = mi.isin_id
+        `);
+
+        const inClause = buildInClause(
+          'filter_mir.rating',
+          rating
+        );
+
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
+      }
+
+      /* ---------------------------------------------------------
+         CREDIT RATING AGENCY
+      --------------------------------------------------------- */
+
+      if (hasFilterValue(creditRatingAgency)) {
+        addJoin(`
+          LEFT JOIN master_issuer_rating AS filter_mir_agency
+            ON filter_mir_agency.issuer_id = mi.isin_id
+        `);
+
+        addJoin(`
+          LEFT JOIN master_agency AS filter_ma_agency
+            ON filter_ma_agency.id =
+               filter_mir_agency.agency_id
+        `);
+
+        const inClause = buildInClause(
+          'filter_ma_agency.short_name',
+          creditRatingAgency
+        );
+
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
+      }
+
+      /* ---------------------------------------------------------
+         REGISTRAR
+      --------------------------------------------------------- */
+
+      if (hasFilterValue(registrar)) {
+        addJoin(`
+          LEFT JOIN issuer_registrar AS filter_ir
+            ON filter_ir.issuer_id = mi.isin_id
+        `);
+
+        addJoin(`
+          LEFT JOIN master_registrar AS filter_mr
+            ON filter_mr.id =
+               filter_ir.registrar_id
+        `);
+
+        const inClause = buildInClause(
+          'filter_mr.registrar_name',
+          registrar,
+          true
+        );
+
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
+      }
+
+      /* ---------------------------------------------------------
+         SENIORITY
+      --------------------------------------------------------- */
+
+      if (hasFilterValue(seniority)) {
+        addJoin(`
+          LEFT JOIN master_seniority_tier_classification
+            AS filter_mstc
+            ON filter_mstc.code =
+               mi.seniority
+        `);
+
+        const inClause = buildInClause(
+          'filter_mstc.description',
+          seniority
+        );
+
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
+      }
+
+      /* ---------------------------------------------------------
+         TAX FREE
+      --------------------------------------------------------- */
+
+      if (hasFilterValue(taxFree)) {
+        addJoin(`
+          LEFT JOIN master_tax_free AS filter_mtf
+            ON filter_mtf.code =
+               mi.tax_free
+        `);
+
+        const inClause = buildInClause(
+          'filter_mtf.description',
+          taxFree
+        );
+
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
+      }
+
+      /* ---------------------------------------------------------
+         SECURED FLAG
+      --------------------------------------------------------- */
+
+      if (hasFilterValue(securedFlag)) {
+        addJoin(`
+          LEFT JOIN master_secured_flag AS filter_msf
+            ON filter_msf.code =
+               mi.secured_flag
+        `);
+
+        const inClause = buildInClause(
+          'filter_msf.description',
+          securedFlag
+        );
+
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
+      }
+
+      /* ---------------------------------------------------------
+         SECTOR
+      --------------------------------------------------------- */
+
+      if (hasFilterValue(sector)) {
+        addJoin(`
+          LEFT JOIN master_business_sector AS filter_mbs
+            ON filter_mbs.code =
+               mi.business_sector
+        `);
+
+        const inClause = buildInClause(
+          'filter_mbs.description',
+          sector
+        );
+
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
+      }
+
+      /* ---------------------------------------------------------
+         TRUSTEE
+         
+         This JOIN is added only when trustee filter is present.
+      --------------------------------------------------------- */
+
+      if (hasFilterValue(trustee)) {
+        addJoin(`
+          LEFT JOIN issuer_trustee AS filter_it
+            ON filter_it.issuer_id =
+               mi.isin_id
+        `);
+
+        addJoin(`
+          LEFT JOIN master_trustee AS filter_mt
+            ON filter_mt.id =
+               filter_it.trustee_id
+        `);
+
+        const inClause = buildInClause(
+          'filter_mt.short_name',
+          trustee,
+          true
+        );
+
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
+      }
+
+      /* ---------------------------------------------------------
+         NATURE
+
+         nature_type is on master_issuer.
+      --------------------------------------------------------- */
+
+      if (hasFilterValue(nature)) {
+        addJoin(`
+          LEFT JOIN master_issuer AS filter_mi_nature
+            ON filter_mi_nature.id =
+               mi.isin_id
+        `);
+
+        addJoin(`
+          LEFT JOIN master_issuer_type_nature
+            AS filter_mitn
+            ON filter_mitn.code =
+               filter_mi_nature.nature_type
+        `);
+
+        const inClause = buildInClause(
+          'filter_mitn.description',
+          nature
+        );
+
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
+      }
+
+      /* ---------------------------------------------------------
+         OWNERSHIP TYPE
+
+         issuer_ownership_type is on master_issuer.
+      --------------------------------------------------------- */
+
+      if (hasFilterValue(ownershipType)) {
+        addJoin(`
+          LEFT JOIN master_issuer AS filter_mi_ownership
+            ON filter_mi_ownership.id =
+               mi.isin_id
+        `);
+
+        addJoin(`
+          LEFT JOIN master_issuer_ownership_type
+            AS filter_miot
+            ON filter_miot.code =
+               filter_mi_ownership.issuer_ownership_type
+        `);
+
+        const inClause = buildInClause(
+          'filter_miot.description',
+          ownershipType
+        );
+
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
+      }
+
+      /* ---------------------------------------------------------
+         DEAL SIZE
+      --------------------------------------------------------- */
+
+      if (hasFilterValue(dealSize)) {
+        const inClause = buildInClause(
+          'mi.issue_size',
+          dealSize,
+          true
+        );
+
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
+      }
+
+      /* ---------------------------------------------------------
+         LISTING STATUS
+      --------------------------------------------------------- */
+
+      if (hasFilterValue(listingStatus)) {
+        addJoin(`
+          LEFT JOIN master_issuer_stock_exchange
+            AS filter_mise
+            ON filter_mise.issuer_id =
+               mi.isin_id
+        `);
+
+        addJoin(`
+          LEFT JOIN master_listing_status
+            AS filter_mls
+            ON filter_mls.code =
+               filter_mise.listing_status
+        `);
+
+        const inClause = buildInClause(
+          'filter_mls.description',
+          listingStatus
+        );
+
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
+      }
+
+      /* ---------------------------------------------------------
+         SECURITY TYPE
+      --------------------------------------------------------- */
+
+      if (hasFilterValue(securityType)) {
+        addJoin(`
+          LEFT JOIN master_security_type
+            AS filter_mst
+            ON filter_mst.code =
+               mi.security_class
+        `);
+
+        const inClause = buildInClause(
+          'filter_mst.description',
+          securityType
+        );
+
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
+      }
+
+      /* ---------------------------------------------------------
+         MODE OF ISSUE
+      --------------------------------------------------------- */
+
+      if (hasFilterValue(modeOfIssue)) {
+        addJoin(`
+          LEFT JOIN master_mode_issue
+            AS filter_mmi
+            ON filter_mmi.code =
+               mi.mode_issue
+        `);
+
+        const inClause = buildInClause(
+          'filter_mmi.description',
+          modeOfIssue
+        );
+
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
+      }
+
+      /* ---------------------------------------------------------
+         ISIN
+      --------------------------------------------------------- */
+
+      if (hasFilterValue(isin)) {
+        const inClause = buildInClause(
+          'mi.isin',
+          isin,
+          true
+        );
+
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
+      }
+
+      return {
+        joins,
+        conditions,
+        params
+      };
+    };
+
+    /* =========================================================
+       BUILD FILTERS
+    ========================================================= */
+
+    const {
+      joins: filterJoins,
+      conditions: filterConditions,
+      params: filterParams
+    } = buildFilterParts();
+
+    const filterJoinsSql =
+      filterJoins.length > 0
+        ? filterJoins.join('\n')
+        : '';
+
+    const filterSql =
+      filterConditions.length > 0
+        ? ` AND ${filterConditions.join(' AND ')}`
+        : '';
+
+    console.log('cyStart:', cyStart);
+    console.log('cyEnd:', cyEnd);
+    console.log('filterJoins:', filterJoins);
+    console.log('filterConditions:', filterConditions);
+    console.log('filterParams:', filterParams);
+
+    /* =========================================================
+       TRUSTEE BASE JOIN
+       
+       The main trustee table always needs issuer_trustee
+       and master_trustee because the result itself is grouped
+       by trustee.
+       
+       The additional filter JOINs above are only added when
+       their corresponding filter is present.
+    ========================================================= */
+
+    /* =========================================================
+       TOTALS
+    ========================================================= */
+
+    const totalIssueSizeRaw =
+      await prisma.$queryRawUnsafe(`
+        SELECT
+          COALESCE(
+            SUM(mi.issue_size),
+            0
+          ) AS aggregate
+
+        FROM isin_re_issuance mi
+
+        JOIN issuer_trustee it
+          ON it.issuer_id =
+             mi.isin_id
+
+        ${filterJoinsSql}
+
+        WHERE
+          mi.allotment_date BETWEEN ? AND ?
+          AND mi.is_visible = 1
+          ${filterSql}
+      `,
+        cyStart,
+        cyEnd,
+        ...filterParams
+      );
+
+    const totalIssueSizePrevYearRaw =
+      await prisma.$queryRawUnsafe(`
+        SELECT
+          COALESCE(
+            SUM(mi.issue_size),
+            0
+          ) AS aggregate
+
+        FROM isin_re_issuance mi
+
+        JOIN issuer_trustee it
+          ON it.issuer_id =
+             mi.isin_id
+
+        ${filterJoinsSql}
+
+        WHERE
+          mi.allotment_date BETWEEN ? AND ?
+          AND mi.is_visible = 1
+          ${filterSql}
+      `,
+        pyStart,
+        pyEnd,
+        ...filterParams
+      );
+
+    const totalIssuesCountCurrYearRaw =
+      await prisma.$queryRawUnsafe(`
+        SELECT
+          COUNT(
+            DISTINCT
+            it.trustee_id,
+            mi.allotment_date,
+            mi.issuer_master_id
+          ) AS aggregate
+
+        FROM isin_re_issuance mi
+
+        JOIN issuer_trustee it
+          ON it.issuer_id =
+             mi.isin_id
+
+        ${filterJoinsSql}
+
+        WHERE
+          mi.allotment_date BETWEEN ? AND ?
+          AND mi.is_visible = 1
+          ${filterSql}
+      `,
+        cyStart,
+        cyEnd,
+        ...filterParams
+      );
+
+    const totalIssuesCountPrevYearRaw =
+      await prisma.$queryRawUnsafe(`
+        SELECT
+          COUNT(
+            DISTINCT
+            it.trustee_id,
+            mi.allotment_date,
+            mi.issuer_master_id
+          ) AS aggregate
+
+        FROM isin_re_issuance mi
+
+        JOIN issuer_trustee it
+          ON it.issuer_id =
+             mi.isin_id
+
+        ${filterJoinsSql}
+
+        WHERE
+          mi.allotment_date BETWEEN ? AND ?
+          AND mi.is_visible = 1
+          ${filterSql}
+      `,
+        pyStart,
+        pyEnd,
+        ...filterParams
+      );
+
+    /* =========================================================
+       TOTAL VALUES
+    ========================================================= */
+
+    const totalIssueSize =
+      parseFloat(
+        totalIssueSizeRaw[0]?.aggregate
+      ) || 0;
+
+    const totalIssueSizePrevYear =
+      parseFloat(
+        totalIssueSizePrevYearRaw[0]?.aggregate
+      ) || 0;
+
+    const totalIssuesCountCurrYear =
+      parseInt(
+        totalIssuesCountCurrYearRaw[0]?.aggregate,
+        10
+      ) || 0;
+
+    const totalIssuesCountPrevYear =
+      parseInt(
+        totalIssuesCountPrevYearRaw[0]?.aggregate,
+        10
+      ) || 0;
+
+    /* =========================================================
+       SAFE DENOMINATORS
+    ========================================================= */
+
+    const safeTotalIssueSize =
+      totalIssueSize > 0
+        ? totalIssueSize / 10000000
+        : 1;
+
+    const safeTotalIssueSizePrevYear =
+      totalIssueSizePrevYear > 0
+        ? totalIssueSizePrevYear / 10000000
+        : 1;
+
+    const safeTotalIssuesCount =
+      totalIssuesCountCurrYear > 0
+        ? totalIssuesCountCurrYear
+        : 1;
+
+    const safeTotalIssuesCountPrevYear =
+      totalIssuesCountPrevYear > 0
+        ? totalIssuesCountPrevYear
+        : 1;
+
+    /* =========================================================
+       MAIN TABLE
+    ========================================================= */
+
+    const limitOffsetSql =
+      parsedLimit !== null
+        ? `LIMIT ${parsedLimit} OFFSET ${parsedOffset}`
+        : '';
 
     let tableQuery = '';
 
+    /* =========================================================
+       COUNT MODE
+    ========================================================= */
+
     if (issueType === 'count') {
       tableQuery = `
-      SELECT
-        t1.id,
-        t1.trustee_name,
-        t1.no_issues AS cy_issues,
-        t1.issue_size AS cy_issue_size,
-        t1.arr_rank AS cy_arr_rank,
-        t2.no_issues AS py_issues,
-        t2.issue_size AS py_issue_size,
-        t2.arr_rank AS py_arr_rank,
-        ROUND((t1.no_issues / ${safeTotalIssuesCount}) * 100, 2) AS cy_mkt_share,
-        ROUND((t2.no_issues / ${safeTotalIssuesCountPrevYear}) * 100, 2) AS py_mkt_share,
-        CASE
-          WHEN IFNULL(t2.no_issues, 0) = 0 THEN 
-            CASE WHEN IFNULL(t1.no_issues, 0) = 0 THEN 0 ELSE 100 END
-          ELSE ROUND(
-            ((IFNULL(t1.no_issues, 0) - IFNULL(t2.no_issues, 0)) /
-            IFNULL(t2.no_issues, 0)) * 100, 2
-          )
-        END AS yoy
-      FROM (
         SELECT
-          mt.id,
-          mt.short_name AS trustee_name,
-          COUNT(DISTINCT it.trustee_id, mi.allotment_date, mi.issuer_master_id) AS no_issues,
-          ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
-          RANK() OVER (
-            ORDER BY SUM(mi.issue_size) DESC, COUNT(DISTINCT it.trustee_id, mi.allotment_date, mi.issuer_master_id) DESC
-          ) AS arr_rank
-        FROM isin_re_issuance mi
-        JOIN issuer_trustee it ON it.issuer_id = mi.isin_id
-        JOIN master_trustee mt ON mt.id = it.trustee_id
-        WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-        ${trusteeDirectSql}
-        ${filterSql}
-        GROUP BY it.trustee_id, mt.id, mt.short_name
-        ORDER BY arr_rank
-        ${limitOffsetSql}
-      ) t1
-      LEFT JOIN (
-        SELECT
-          mt.id,
-          COUNT(DISTINCT it.trustee_id, mi.allotment_date, mi.issuer_master_id) AS no_issues,
-          ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
-          RANK() OVER (
-            ORDER BY SUM(mi.issue_size) DESC, COUNT(DISTINCT it.trustee_id, mi.allotment_date, mi.issuer_master_id) DESC
-          ) AS arr_rank
-        FROM isin_re_issuance mi
-        JOIN issuer_trustee it ON it.issuer_id = mi.isin_id
-        JOIN master_trustee mt ON mt.id = it.trustee_id
-        WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-        ${trusteeDirectSql}
-        ${filterSql}
-        GROUP BY it.trustee_id, mt.id, mt.short_name
-      ) t2 ON t1.id = t2.id
-      ORDER BY t1.arr_rank;
-      `;
-    } else {
-      tableQuery = `
-      SELECT
-        t1.id,
-        t1.trustee_name,
-        t1.no_issues AS cy_issues,
-        t1.issue_size AS cy_issue_size,
-        t1.arr_rank AS cy_arr_rank,
-        t2.no_issues AS py_issues,
-        t2.issue_size AS py_issue_size,
-        t2.arr_rank AS py_arr_rank,
-        ROUND((t1.issue_size / ${safeTotalIssueSize}) * 100, 2) AS cy_mkt_share,
-        ROUND((t2.issue_size / ${safeTotalIssueSizePrevYear}) * 100, 2) AS py_mkt_share,
-        CASE
-          WHEN IFNULL(t2.issue_size, 0) = 0 THEN 
-            CASE WHEN IFNULL(t1.issue_size, 0) = 0 THEN 0 ELSE 100 END
-          ELSE ROUND(
-            ((IFNULL(t1.issue_size, 0) - IFNULL(t2.issue_size, 0)) /
-            IFNULL(t2.issue_size, 0)) * 100, 2
-          )
-        END AS yoy
-      FROM (
-        SELECT
-          mt.id,
-          mt.short_name AS trustee_name,
-          COUNT(DISTINCT it.trustee_id, mi.allotment_date, mi.issuer_master_id) AS no_issues,
-          ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
-          RANK() OVER (
-            ORDER BY SUM(mi.issue_size) DESC, COUNT(DISTINCT it.trustee_id, mi.allotment_date, mi.issuer_master_id) DESC
-          ) AS arr_rank
-        FROM isin_re_issuance mi
-        JOIN issuer_trustee it ON it.issuer_id = mi.isin_id
-        JOIN master_trustee mt ON mt.id = it.trustee_id
-        WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-        ${trusteeDirectSql}
-        ${filterSql}
-        GROUP BY it.trustee_id, mt.id, mt.short_name
-        ORDER BY arr_rank
-        ${limitOffsetSql}
-      ) t1
-      LEFT JOIN (
-        SELECT
-          mt.id,
-          COUNT(DISTINCT it.trustee_id, mi.allotment_date, mi.issuer_master_id) AS no_issues,
-          ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
-          RANK() OVER (
-            ORDER BY SUM(mi.issue_size) DESC, COUNT(DISTINCT it.trustee_id, mi.allotment_date, mi.issuer_master_id) DESC
-          ) AS arr_rank
-        FROM isin_re_issuance mi
-        JOIN issuer_trustee it ON it.issuer_id = mi.isin_id
-        JOIN master_trustee mt ON mt.id = it.trustee_id
-        WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-        ${trusteeDirectSql}
-        ${filterSql}
-        GROUP BY it.trustee_id, mt.id, mt.short_name
-      ) t2 ON t1.id = t2.id
-      ORDER BY t1.arr_rank;
+          t1.id,
+          t1.trustee_name,
+
+          t1.no_issues AS cy_issues,
+          t1.issue_size AS cy_issue_size,
+          t1.arr_rank AS cy_arr_rank,
+
+          t2.no_issues AS py_issues,
+          t2.issue_size AS py_issue_size,
+          t2.arr_rank AS py_arr_rank,
+
+          ROUND(
+            (
+              t1.no_issues /
+              ${safeTotalIssuesCount}
+            ) * 100,
+            2
+          ) AS cy_mkt_share,
+
+          ROUND(
+            (
+              t2.no_issues /
+              ${safeTotalIssuesCountPrevYear}
+            ) * 100,
+            2
+          ) AS py_mkt_share,
+
+          CASE
+            WHEN IFNULL(t2.no_issues, 0) = 0 THEN
+              CASE
+                WHEN IFNULL(t1.no_issues, 0) = 0
+                THEN 0
+                ELSE 100
+              END
+
+            ELSE ROUND(
+              (
+                (
+                  IFNULL(t1.no_issues, 0) -
+                  IFNULL(t2.no_issues, 0)
+                )
+                /
+                IFNULL(t2.no_issues, 0)
+              ) * 100,
+              2
+            )
+          END AS yoy
+
+        FROM (
+
+          SELECT
+            mt.id,
+            mt.short_name AS trustee_name,
+
+            COUNT(
+              DISTINCT
+              it.trustee_id,
+              mi.allotment_date,
+              mi.issuer_master_id
+            ) AS no_issues,
+
+            ROUND(
+              SUM(mi.issue_size) / 10000000,
+              2
+            ) AS issue_size,
+
+            RANK() OVER (
+              ORDER BY
+                SUM(mi.issue_size) DESC,
+                COUNT(
+                  DISTINCT
+                  it.trustee_id,
+                  mi.allotment_date,
+                  mi.issuer_master_id
+                ) DESC
+            ) AS arr_rank
+
+          FROM isin_re_issuance mi
+
+          JOIN issuer_trustee it
+            ON it.issuer_id =
+               mi.isin_id
+
+          JOIN master_trustee mt
+            ON mt.id =
+               it.trustee_id
+
+          ${filterJoinsSql}
+
+          WHERE
+            mi.allotment_date BETWEEN ? AND ?
+            AND mi.is_visible = 1
+            ${filterSql}
+
+          GROUP BY
+            it.trustee_id,
+            mt.id,
+            mt.short_name
+
+          ORDER BY arr_rank
+
+          ${limitOffsetSql}
+
+        ) t1
+
+        LEFT JOIN (
+
+          SELECT
+            mt.id,
+
+            COUNT(
+              DISTINCT
+              it.trustee_id,
+              mi.allotment_date,
+              mi.issuer_master_id
+            ) AS no_issues,
+
+            ROUND(
+              SUM(mi.issue_size) / 10000000,
+              2
+            ) AS issue_size,
+
+            RANK() OVER (
+              ORDER BY
+                SUM(mi.issue_size) DESC,
+                COUNT(
+                  DISTINCT
+                  it.trustee_id,
+                  mi.allotment_date,
+                  mi.issuer_master_id
+                ) DESC
+            ) AS arr_rank
+
+          FROM isin_re_issuance mi
+
+          JOIN issuer_trustee it
+            ON it.issuer_id =
+               mi.isin_id
+
+          JOIN master_trustee mt
+            ON mt.id =
+               it.trustee_id
+
+          ${filterJoinsSql}
+
+          WHERE
+            mi.allotment_date BETWEEN ? AND ?
+            AND mi.is_visible = 1
+            ${filterSql}
+
+          GROUP BY
+            it.trustee_id,
+            mt.id,
+            mt.short_name
+
+        ) t2
+          ON t1.id = t2.id
+
+        ORDER BY t1.arr_rank;
       `;
     }
 
-    const tableResult = await prisma.$queryRawUnsafe(tableQuery,
-      cyStart, cyEnd, ...trusteeDirectParams, ...filterParams,
-      pyStart, pyEnd, ...trusteeDirectParams, ...filterParams
-    );
+    /* =========================================================
+       SIZE MODE
+    ========================================================= */
 
-    /*----total count for table pagination ---*/
-    const totalCountResult = await prisma.$queryRawUnsafe(`
-      SELECT COUNT(DISTINCT it.trustee_id, mi.allotment_date, mi.issuer_master_id) AS total
-      FROM isin_re_issuance mi
-      JOIN issuer_trustee it ON it.issuer_id = mi.isin_id
-      JOIN master_trustee mt ON mt.id = it.trustee_id
-      WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-      ${trusteeDirectSql}
-      ${filterSql}
-    `,
-      cyStart, cyEnd, ...trusteeDirectParams, ...filterParams
-    );
+    else {
+      tableQuery = `
+        SELECT
+          t1.id,
+          t1.trustee_name,
 
-    const totalRecords = parseInt(totalCountResult[0]?.total, 10) || 0;
+          t1.no_issues AS cy_issues,
+          t1.issue_size AS cy_issue_size,
+          t1.arr_rank AS cy_arr_rank,
 
-    /* ---------------- SECTOR BREAKUP QUERY ---------------- */
+          t2.no_issues AS py_issues,
+          t2.issue_size AS py_issue_size,
+          t2.arr_rank AS py_arr_rank,
+
+          ROUND(
+            (
+              t1.issue_size /
+              ${safeTotalIssueSize}
+            ) * 100,
+            2
+          ) AS cy_mkt_share,
+
+          ROUND(
+            (
+              t2.issue_size /
+              ${safeTotalIssueSizePrevYear}
+            ) * 100,
+            2
+          ) AS py_mkt_share,
+
+          CASE
+            WHEN IFNULL(t2.issue_size, 0) = 0 THEN
+              CASE
+                WHEN IFNULL(t1.issue_size, 0) = 0
+                THEN 0
+                ELSE 100
+              END
+
+            ELSE ROUND(
+              (
+                (
+                  IFNULL(t1.issue_size, 0) -
+                  IFNULL(t2.issue_size, 0)
+                )
+                /
+                IFNULL(t2.issue_size, 0)
+              ) * 100,
+              2
+            )
+          END AS yoy
+
+        FROM (
+
+          SELECT
+            mt.id,
+            mt.short_name AS trustee_name,
+
+            COUNT(
+              DISTINCT
+              it.trustee_id,
+              mi.allotment_date,
+              mi.issuer_master_id
+            ) AS no_issues,
+
+            ROUND(
+              SUM(mi.issue_size) / 10000000,
+              2
+            ) AS issue_size,
+
+            RANK() OVER (
+              ORDER BY
+                SUM(mi.issue_size) DESC,
+                COUNT(
+                  DISTINCT
+                  it.trustee_id,
+                  mi.allotment_date,
+                  mi.issuer_master_id
+                ) DESC
+            ) AS arr_rank
+
+          FROM isin_re_issuance mi
+
+          JOIN issuer_trustee it
+            ON it.issuer_id =
+               mi.isin_id
+
+          JOIN master_trustee mt
+            ON mt.id =
+               it.trustee_id
+
+          ${filterJoinsSql}
+
+          WHERE
+            mi.allotment_date BETWEEN ? AND ?
+            AND mi.is_visible = 1
+            ${filterSql}
+
+          GROUP BY
+            it.trustee_id,
+            mt.id,
+            mt.short_name
+
+          ORDER BY arr_rank
+
+          ${limitOffsetSql}
+
+        ) t1
+
+        LEFT JOIN (
+
+          SELECT
+            mt.id,
+
+            COUNT(
+              DISTINCT
+              it.trustee_id,
+              mi.allotment_date,
+              mi.issuer_master_id
+            ) AS no_issues,
+
+            ROUND(
+              SUM(mi.issue_size) / 10000000,
+              2
+            ) AS issue_size,
+
+            RANK() OVER (
+              ORDER BY
+                SUM(mi.issue_size) DESC,
+                COUNT(
+                  DISTINCT
+                  it.trustee_id,
+                  mi.allotment_date,
+                  mi.issuer_master_id
+                ) DESC
+            ) AS arr_rank
+
+          FROM isin_re_issuance mi
+
+          JOIN issuer_trustee it
+            ON it.issuer_id =
+               mi.isin_id
+
+          JOIN master_trustee mt
+            ON mt.id =
+               it.trustee_id
+
+          ${filterJoinsSql}
+
+          WHERE
+            mi.allotment_date BETWEEN ? AND ?
+            AND mi.is_visible = 1
+            ${filterSql}
+
+          GROUP BY
+            it.trustee_id,
+            mt.id,
+            mt.short_name
+
+        ) t2
+          ON t1.id = t2.id
+
+        ORDER BY t1.arr_rank;
+      `;
+    }
+
+    /* =========================================================
+       EXECUTE MAIN TABLE QUERY
+    ========================================================= */
+
+    const tableResult =
+      await prisma.$queryRawUnsafe(
+        tableQuery,
+
+        // Current year
+        cyStart,
+        cyEnd,
+        ...filterParams,
+
+        // Previous year
+        pyStart,
+        pyEnd,
+        ...filterParams
+      );
+
+    /* =========================================================
+       TOTAL COUNT FOR PAGINATION
+    ========================================================= */
+
+    const totalCountResult =
+      await prisma.$queryRawUnsafe(`
+        SELECT
+          COUNT(
+            DISTINCT
+            it.trustee_id,
+            mi.allotment_date,
+            mi.issuer_master_id
+          ) AS total
+
+        FROM isin_re_issuance mi
+
+        JOIN issuer_trustee it
+          ON it.issuer_id =
+             mi.isin_id
+
+        JOIN master_trustee mt
+          ON mt.id =
+             it.trustee_id
+
+        ${filterJoinsSql}
+
+        WHERE
+          mi.allotment_date BETWEEN ? AND ?
+          AND mi.is_visible = 1
+          ${filterSql}
+      `,
+        cyStart,
+        cyEnd,
+        ...filterParams
+      );
+
+    const totalRecords =
+      parseInt(
+        totalCountResult[0]?.total,
+        10
+      ) || 0;
+
+    /* =========================================================
+       SECTOR BREAKUP
+    ========================================================= */
 
     const sectorValueSelect =
       issueType === 'count'
-        ? 'COUNT(DISTINCT it.trustee_id, mi.allotment_date, mi.issuer_master_id)'
-        : 'ROUND(SUM(mi.issue_size) / 10000000, 2)';
+        ? `
+          COUNT(
+            DISTINCT
+            it.trustee_id,
+            mi.allotment_date,
+            mi.issuer_master_id
+          )
+        `
+        : `
+          ROUND(
+            SUM(mi.issue_size) / 10000000,
+            2
+          )
+        `;
+
+    /* =========================================================
+       RANKED TRUSTEES FOR SECTOR
+    ========================================================= */
 
     const rankedTrusteesSubQuery =
       issueType === 'count'
         ? `
-      SELECT
-        mt.id AS trustee_id,
-        mt.short_name AS trustee_name,
-        RANK() OVER (
-          ORDER BY COUNT(DISTINCT it.trustee_id, mi.allotment_date, mi.issuer_master_id) DESC, SUM(mi.issue_size) DESC
-        ) AS arr_rank
-      FROM isin_re_issuance mi
-      JOIN issuer_trustee it ON it.issuer_id = mi.isin_id
-      JOIN master_trustee mt ON mt.id = it.trustee_id
-      WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-      ${trusteeDirectSql}
-      ${filterSql}
-      GROUP BY it.trustee_id, mt.id, mt.short_name
-      LIMIT 10
-    `
+          SELECT
+            mt.id AS trustee_id,
+            mt.short_name AS trustee_name,
+
+            RANK() OVER (
+              ORDER BY
+                COUNT(
+                  DISTINCT
+                  it.trustee_id,
+                  mi.allotment_date,
+                  mi.issuer_master_id
+                ) DESC,
+                SUM(mi.issue_size) DESC
+            ) AS arr_rank
+
+          FROM isin_re_issuance mi
+
+          JOIN issuer_trustee it
+            ON it.issuer_id =
+               mi.isin_id
+
+          JOIN master_trustee mt
+            ON mt.id =
+               it.trustee_id
+
+          ${filterJoinsSql}
+
+          WHERE
+            mi.allotment_date BETWEEN ? AND ?
+            AND mi.is_visible = 1
+            ${filterSql}
+
+          GROUP BY
+            it.trustee_id,
+            mt.id,
+            mt.short_name
+
+          LIMIT 10
+        `
         : `
-      SELECT
-        mt.id AS trustee_id,
-        mt.short_name AS trustee_name,
-        RANK() OVER (
-          ORDER BY SUM(mi.issue_size) DESC, COUNT(DISTINCT it.trustee_id, mi.allotment_date, mi.issuer_master_id) DESC
-        ) AS arr_rank
-      FROM isin_re_issuance mi
-      JOIN issuer_trustee it ON it.issuer_id = mi.isin_id
-      JOIN master_trustee mt ON mt.id = it.trustee_id
-      WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-      ${trusteeDirectSql}
-      ${filterSql}
-      GROUP BY it.trustee_id, mt.id, mt.short_name
-      LIMIT 10
-    `;
+          SELECT
+            mt.id AS trustee_id,
+            mt.short_name AS trustee_name,
+
+            RANK() OVER (
+              ORDER BY
+                SUM(mi.issue_size) DESC,
+                COUNT(
+                  DISTINCT
+                  it.trustee_id,
+                  mi.allotment_date,
+                  mi.issuer_master_id
+                ) DESC
+            ) AS arr_rank
+
+          FROM isin_re_issuance mi
+
+          JOIN issuer_trustee it
+            ON it.issuer_id =
+               mi.isin_id
+
+          JOIN master_trustee mt
+            ON mt.id =
+               it.trustee_id
+
+          ${filterJoinsSql}
+
+          WHERE
+            mi.allotment_date BETWEEN ? AND ?
+            AND mi.is_visible = 1
+            ${filterSql}
+
+          GROUP BY
+            it.trustee_id,
+            mt.id,
+            mt.short_name
+
+          LIMIT 10
+        `;
+
+    /* =========================================================
+       SECTOR QUERY
+    ========================================================= */
 
     const sectorQuery = `
       SELECT
         r.trustee_id AS id,
         r.trustee_name AS name,
         r.arr_rank,
+
         mbs.code,
         mbs.description,
+
         ${sectorValueSelect} AS value
-      FROM (${rankedTrusteesSubQuery}) r
-      JOIN issuer_trustee it ON it.trustee_id = r.trustee_id
-      JOIN isin_re_issuance mi ON mi.isin_id = it.issuer_id
-      JOIN master_business_sector mbs ON mi.business_sector = mbs.code
-      WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-      ${filterSql}
+
+      FROM (
+        ${rankedTrusteesSubQuery}
+      ) r
+
+      JOIN issuer_trustee it
+        ON it.trustee_id =
+           r.trustee_id
+
+      JOIN isin_re_issuance mi
+        ON mi.isin_id =
+           it.issuer_id
+
+      JOIN master_business_sector mbs
+        ON mi.business_sector =
+           mbs.code
+
+      ${filterJoinsSql}
+
+      WHERE
+        mi.allotment_date BETWEEN ? AND ?
+        AND mi.is_visible = 1
+        ${filterSql}
+
       GROUP BY
         r.trustee_id,
         r.trustee_name,
@@ -10871,45 +12412,95 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
         mbs.code,
         mbs.description,
         mi.business_sector
+
       ORDER BY
         r.arr_rank,
         value DESC;
     `;
 
-    // Parameters: subquery dates + trusteeDirectParams + baseFilterParams, then outer dates + baseFilterParams
-    const sectorData = await prisma.$queryRawUnsafe(sectorQuery,
-      cyStart, cyEnd, ...trusteeDirectParams, ...filterParams,
-      cyStart, cyEnd, ...filterParams
-    );
+    const sectorData =
+      await prisma.$queryRawUnsafe(
+        sectorQuery,
 
-    /* ---------------- RESPONSE FORMAT ---------------- */
+        // Ranked trustees subquery
+        cyStart,
+        cyEnd,
+        ...filterParams,
 
-    const finalResult = tableResult.map((item) => ({
-      id: item.id ?? '-',
-      rank: item.cy_arr_rank ?? '-',
-      name: item.trustee_name ?? '-',
-      currentSize: item.cy_issue_size ?? '-',
-      currentDeals: item.cy_issues ?? '-',
-      currentMarketShare: item.cy_mkt_share ?? '-',
-      previousRank: item.py_arr_rank ?? '-',
-      previousSize: item.py_issue_size ?? '-',
-      previousDeals: item.py_issues ?? '-',
-      previousMarketShare: item.py_mkt_share ?? '-',
-      yoyChange: item.yoy ?? '-'
-    }));
+        // Outer sector query
+        cyStart,
+        cyEnd,
+        ...filterParams
+      );
 
+    /* =========================================================
+       RESPONSE FORMAT
+    ========================================================= */
+
+    const finalResult =
+      tableResult.map((item) => ({
+        id: item.id ?? '-',
+
+        rank:
+          item.cy_arr_rank ?? '-',
+
+        name:
+          item.trustee_name ?? '-',
+
+        currentSize:
+          item.cy_issue_size ?? '-',
+
+        currentDeals:
+          item.cy_issues ?? '-',
+
+        currentMarketShare:
+          item.cy_mkt_share ?? '-',
+
+        previousRank:
+          item.py_arr_rank ?? '-',
+
+        previousSize:
+          item.py_issue_size ?? '-',
+
+        previousDeals:
+          item.py_issues ?? '-',
+
+        previousMarketShare:
+          item.py_mkt_share ?? '-',
+
+        yoyChange:
+          item.yoy ?? '-'
+      }));
+
+    /* =========================================================
+       TOTALS
+    ========================================================= */
 
     const totals = {
-      currentSize: Number(safeTotalIssueSize) || 0,
-      previousSize: Number(safeTotalIssueSizePrevYear) || 0,
-      currentDeals: Number(safeTotalIssuesCount) || 0,
-      previousDeals: Number(safeTotalIssuesCountPrevYear) || 0,
+      currentSize:
+        Number(safeTotalIssueSize) || 0,
+
+      previousSize:
+        Number(safeTotalIssueSizePrevYear) || 0,
+
+      currentDeals:
+        Number(safeTotalIssuesCount) || 0,
+
+      previousDeals:
+        Number(safeTotalIssuesCountPrevYear) || 0
     };
+
+    /* =========================================================
+       RESPONSE
+    ========================================================= */
 
     res.status(200).json({
       tableData: finalResult,
+
       sectorData,
+
       totals,
+
       pagination: {
         total: totalRecords,
         limit: parsedLimit,
@@ -10918,7 +12509,11 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Trustees data API error:', error);
+    console.error(
+      'Trustees data API error:',
+      error
+    );
+
     res.status(500).json({
       error: 'Failed to fetch trustees data',
       message: error.message
@@ -13414,12 +15009,32 @@ app.post('/trustee_top_participants_details', async (req, res) => {
 
 app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
   try {
-    // ── Helper: normalize string/array inputs ──
-    const toArray = (val) => {
-      if (Array.isArray(val)) return val;
-      if (val && typeof val === 'string') return [val];
+    // ─────────────────────────────────────────────────────────────
+    // HELPERS
+    // ─────────────────────────────────────────────────────────────
+
+    const toArray = (value) => {
+      if (Array.isArray(value)) return value;
+      if (value && typeof value === 'string') return [value];
       return [];
     };
+
+    const buildInClause = (field, values) => {
+      if (!Array.isArray(values) || values.length === 0) {
+        return null;
+      }
+
+      const placeholders = values.map(() => '?').join(', ');
+
+      return {
+        clause: `${field} IN (${placeholders})`,
+        params: values
+      };
+    };
+
+    // ─────────────────────────────────────────────────────────────
+    // REQUEST BODY
+    // ─────────────────────────────────────────────────────────────
 
     const {
       startDate,
@@ -13427,10 +15042,9 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
       issueType,
       limit,
       offset = 0,
-      isin = ""
+      isin = ''
     } = req.body;
 
-    // ── Multi-select filters (arrays) ──
     const rating = toArray(req.body.rating);
     const registrar = toArray(req.body.registrar);
     const seniority = toArray(req.body.seniority);
@@ -13444,32 +15058,64 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
     const listingStatus = toArray(req.body.listingStatus);
 
     if (!startDate || !endDate) {
-      return res.status(400).json({ error: 'startDate, endDate are required' });
+      return res.status(400).json({
+        error: 'startDate, endDate are required'
+      });
     }
 
-    // Validate and parse limit/offset
-    const parsedLimit = limit ? parseInt(limit, 10) : null;
+    // ─────────────────────────────────────────────────────────────
+    // PAGINATION VALIDATION
+    // ─────────────────────────────────────────────────────────────
+
+    const parsedLimit = limit !== undefined && limit !== null && limit !== ''
+      ? parseInt(limit, 10)
+      : null;
+
     const parsedOffset = parseInt(offset, 10) || 0;
 
-    if (parsedLimit !== null && (isNaN(parsedLimit) || parsedLimit < 0)) {
-      return res.status(400).json({ error: 'limit must be a non-negative integer' });
+    if (
+      parsedLimit !== null &&
+      (Number.isNaN(parsedLimit) || parsedLimit < 0)
+    ) {
+      return res.status(400).json({
+        error: 'limit must be a non-negative integer'
+      });
     }
-    if (isNaN(parsedOffset) || parsedOffset < 0) {
-      return res.status(400).json({ error: 'offset must be a non-negative integer' });
+
+    if (
+      Number.isNaN(parsedOffset) ||
+      parsedOffset < 0
+    ) {
+      return res.status(400).json({
+        error: 'offset must be a non-negative integer'
+      });
     }
+
+    // ─────────────────────────────────────────────────────────────
+    // DATE HANDLING
+    // ─────────────────────────────────────────────────────────────
 
     const currentStartDate = new Date(startDate);
     const currentEndDate = new Date(endDate);
 
-    if (isNaN(currentStartDate.getTime()) || isNaN(currentEndDate.getTime())) {
-      return res.status(400).json({ error: 'Invalid date format' });
+    if (
+      Number.isNaN(currentStartDate.getTime()) ||
+      Number.isNaN(currentEndDate.getTime())
+    ) {
+      return res.status(400).json({
+        error: 'Invalid date format'
+      });
     }
 
     const previousStartDate = new Date(currentStartDate);
-    previousStartDate.setFullYear(previousStartDate.getFullYear() - 1);
+    previousStartDate.setFullYear(
+      previousStartDate.getFullYear() - 1
+    );
 
     const previousEndDate = new Date(currentEndDate);
-    previousEndDate.setFullYear(previousEndDate.getFullYear() - 1);
+    previousEndDate.setFullYear(
+      previousEndDate.getFullYear() - 1
+    );
 
     const formatDate = (date) =>
       date.toISOString().slice(0, 19).replace('T', ' ');
@@ -13479,377 +15125,755 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
     const sqlPreviousStart = formatDate(previousStartDate);
     const sqlPreviousEnd = formatDate(previousEndDate);
 
-    /* ---------------- FILTER HELPERS (parameterized) ---------------- */
+    // ─────────────────────────────────────────────────────────────
+    // DYNAMIC FILTER JOIN BUILDER
+    // ─────────────────────────────────────────────────────────────
 
-    const buildFilterConditions = () => {
+    const buildFilterParts = () => {
+      const joins = [];
       const conditions = [];
       const params = [];
+      const addedJoins = new Set();
 
-      if (rating.length > 0) {
-        const placeholders = rating.map(() => '?').join(', ');
-        conditions.push(`mir.rating IN (${placeholders})`);
-        params.push(...rating);
+      const addJoin = (joinSql) => {
+        const normalizedJoin = joinSql.trim();
+
+        if (!addedJoins.has(normalizedJoin)) {
+          addedJoins.add(normalizedJoin);
+          joins.push(normalizedJoin);
+        }
+      };
+
+      const addCondition = (field, values) => {
+        const inClause = buildInClause(field, values);
+
+        if (inClause) {
+          conditions.push(inClause.clause);
+          params.push(...inClause.params);
+        }
+      };
+
+      // ─────────────────────────────────────────────────────────
+      // RATING
+      // ─────────────────────────────────────────────────────────
+
+      if (hasFilterValue(rating)) {
+        addJoin(`
+          LEFT JOIN master_issuer_rating AS filter_mir
+            ON filter_mir.issuer_id = mi.isin_id
+        `);
+
+        addCondition('filter_mir.rating', rating);
       }
 
-      if (listingStatus.length > 0) {
-        const placeholders = listingStatus.map(() => '?').join(', ');
-        conditions.push(`EXISTS (
-          SELECT 1 FROM master_issuer_stock_exchange mise
-          LEFT JOIN master_listing_status mls ON mls.code = mise.listing_status
-          WHERE mise.issuer_id = mi.isin_id AND mls.description IN (${placeholders})
-        )`);
-        params.push(...listingStatus);
+      // ─────────────────────────────────────────────────────────
+      // REGISTRAR
+      // ─────────────────────────────────────────────────────────
+
+      if (hasFilterValue(registrar)) {
+        addJoin(`
+          LEFT JOIN issuer_registrar AS filter_ir
+            ON filter_ir.issuer_id = mi.isin_id
+
+          LEFT JOIN master_registrar AS filter_mr
+            ON filter_mr.id = filter_ir.registrar_id
+        `);
+
+        addCondition('filter_mr.registrar_name', registrar);
       }
 
-      if (seniority.length > 0) {
-        const placeholders = seniority.map(() => '?').join(', ');
-        conditions.push(`EXISTS (SELECT 1 FROM master_seniority_tier_classification mstc WHERE mstc.code = mi.seniority AND mstc.description IN (${placeholders}))`);
-        params.push(...seniority);
+      // ─────────────────────────────────────────────────────────
+      // SENIORITY
+      // ─────────────────────────────────────────────────────────
+
+      if (hasFilterValue(seniority)) {
+        addJoin(`
+          LEFT JOIN master_seniority_tier_classification AS filter_mstc
+            ON filter_mstc.code = mi.seniority
+        `);
+
+        addCondition('filter_mstc.description', seniority);
       }
 
-      if (securedFlag.length > 0) {
-        const placeholders = securedFlag.map(() => '?').join(', ');
-        conditions.push(`EXISTS (SELECT 1 FROM master_secured_flag msf WHERE msf.code = mi.secured_flag AND msf.description IN (${placeholders}))`);
-        params.push(...securedFlag);
+      // ─────────────────────────────────────────────────────────
+      // SECURED FLAG
+      // ─────────────────────────────────────────────────────────
+
+      if (hasFilterValue(securedFlag)) {
+        addJoin(`
+          LEFT JOIN master_secured_flag AS filter_msf
+            ON filter_msf.code = mi.secured_flag
+        `);
+
+        addCondition('filter_msf.description', securedFlag);
       }
 
-      if (sector.length > 0) {
-        const placeholders = sector.map(() => '?').join(', ');
-        conditions.push(`EXISTS (SELECT 1 FROM master_business_sector mbs WHERE mbs.code = mi.business_sector AND mbs.description IN (${placeholders}))`);
-        params.push(...sector);
+      // ─────────────────────────────────────────────────────────
+      // SECTOR
+      // ─────────────────────────────────────────────────────────
+
+      if (hasFilterValue(sector)) {
+        addJoin(`
+          LEFT JOIN master_business_sector AS filter_mbs
+            ON filter_mbs.code = mi.business_sector
+        `);
+
+        addCondition('filter_mbs.description', sector);
       }
 
-      // ─── FIX: nature_type lives on master_issuer, not isin_re_issuance ───
-      if (nature.length > 0) {
-        const placeholders = nature.map(() => '?').join(', ');
-        conditions.push(`EXISTS (
-          SELECT 1 FROM master_issuer mi2
-          JOIN master_issuer_type_nature mitn ON mitn.code = mi2.nature_type
-          WHERE mi2.id = mi.isin_id AND mitn.description IN (${placeholders})
-        )`);
-        params.push(...nature);
+      // ─────────────────────────────────────────────────────────
+      // NATURE
+      // nature_type belongs to master_issuer
+      // ─────────────────────────────────────────────────────────
+
+      if (hasFilterValue(nature)) {
+        addJoin(`
+          LEFT JOIN master_issuer AS filter_mi_nature
+            ON filter_mi_nature.id = mi.isin_id
+
+          LEFT JOIN master_issuer_type_nature AS filter_mitn
+            ON filter_mitn.code = filter_mi_nature.nature_type
+        `);
+
+        addCondition('filter_mitn.description', nature);
       }
 
-      // ─── FIX: issuer_ownership_type lives on master_issuer, not isin_re_issuance ───
-      if (ownershipType.length > 0) {
-        const placeholders = ownershipType.map(() => '?').join(', ');
-        conditions.push(`EXISTS (
-          SELECT 1 FROM master_issuer mi2
-          JOIN master_issuer_ownership_type miot ON miot.code = mi2.issuer_ownership_type
-          WHERE mi2.id = mi.isin_id AND miot.description IN (${placeholders})
-        )`);
-        params.push(...ownershipType);
+      // ─────────────────────────────────────────────────────────
+      // OWNERSHIP TYPE
+      // issuer_ownership_type belongs to master_issuer
+      // ─────────────────────────────────────────────────────────
+
+      if (hasFilterValue(ownershipType)) {
+        addJoin(`
+          LEFT JOIN master_issuer AS filter_mi_ownership
+            ON filter_mi_ownership.id = mi.isin_id
+
+          LEFT JOIN master_issuer_ownership_type AS filter_miot
+            ON filter_miot.code =
+               filter_mi_ownership.issuer_ownership_type
+        `);
+
+        addCondition('filter_miot.description', ownershipType);
       }
 
-      if (creditRatingAgency.length > 0) {
-        const placeholders = creditRatingAgency.map(() => '?').join(', ');
-        conditions.push(`ma.short_name IN (${placeholders})`);
-        params.push(...creditRatingAgency);
+      // ─────────────────────────────────────────────────────────
+      // CREDIT RATING AGENCY
+      // ─────────────────────────────────────────────────────────
+
+      if (hasFilterValue(creditRatingAgency)) {
+        addJoin(`
+          LEFT JOIN master_issuer_rating AS filter_mir_agency
+            ON filter_mir_agency.issuer_id = mi.isin_id
+
+          LEFT JOIN master_agency AS filter_ma
+            ON filter_ma.id = filter_mir_agency.agency_id
+        `);
+
+        addCondition('filter_ma.short_name', creditRatingAgency);
       }
 
-      if (securityType.length > 0) {
-        const placeholders = securityType.map(() => '?').join(', ');
-        conditions.push(`EXISTS (SELECT 1 FROM master_security_type mst WHERE mst.code = mi.security_class AND mst.description IN (${placeholders}))`);
-        params.push(...securityType);
+      // ─────────────────────────────────────────────────────────
+      // SECURITY TYPE
+      // ─────────────────────────────────────────────────────────
+
+      if (hasFilterValue(securityType)) {
+        addJoin(`
+          LEFT JOIN master_security_type AS filter_mst
+            ON filter_mst.code = mi.security_class
+        `);
+
+        addCondition('filter_mst.description', securityType);
       }
 
-      if (modeOfIssue.length > 0) {
-        const placeholders = modeOfIssue.map(() => '?').join(', ');
-        conditions.push(`EXISTS (SELECT 1 FROM master_mode_issue mmi WHERE mmi.code = mi.mode_issue AND mmi.description IN (${placeholders}))`);
-        params.push(...modeOfIssue);
+      // ─────────────────────────────────────────────────────────
+      // MODE OF ISSUE
+      // ─────────────────────────────────────────────────────────
+
+      if (hasFilterValue(modeOfIssue)) {
+        addJoin(`
+          LEFT JOIN master_mode_issue AS filter_mmi
+            ON filter_mmi.code = mi.mode_issue
+        `);
+
+        addCondition('filter_mmi.description', modeOfIssue);
       }
 
-      if (isin) {
-        conditions.push(`mi.isin LIKE ?`);
+      // ─────────────────────────────────────────────────────────
+      // LISTING STATUS
+      // ─────────────────────────────────────────────────────────
+
+      if (hasFilterValue(listingStatus)) {
+        addJoin(`
+          LEFT JOIN master_issuer_stock_exchange AS filter_mise
+            ON filter_mise.issuer_id = mi.isin_id
+
+          LEFT JOIN master_listing_status AS filter_mls
+            ON filter_mls.code = filter_mise.listing_status
+        `);
+
+        addCondition('filter_mls.description', listingStatus);
+      }
+
+      // ─────────────────────────────────────────────────────────
+      // ISIN SEARCH
+      // ─────────────────────────────────────────────────────────
+
+      if (hasFilterValue(isin)) {
+        conditions.push('mi.isin LIKE ?');
         params.push(`%${isin}%`);
       }
 
-      if (registrar.length > 0) {
-        const placeholders = registrar.map(() => '?').join(', ');
-        conditions.push(`EXISTS (
-          SELECT 1 FROM issuer_registrar ir
-          JOIN master_registrar mr ON mr.id = ir.registrar_id
-          WHERE ir.issuer_id = mi.isin_id AND mr.registrar_name IN (${placeholders})
-        )`);
-        params.push(...registrar);
-      }
-
-      return { conditions, params };
+      return {
+        joins,
+        conditions,
+        params
+      };
     };
 
-    const { conditions: filterConditions, params: filterParams } = buildFilterConditions();
-    const filterSql = filterConditions.length > 0 ? ' AND ' + filterConditions.join(' AND ') : '';
+    const {
+      joins: filterJoins,
+      conditions: filterConditions,
+      params: filterParams
+    } = buildFilterParts();
 
-    /* ---------------- TOTALS (parameterized, no Cartesian product) ---------------- */
+    const filterJoinsSql =
+      filterJoins.length > 0
+        ? filterJoins.join('\n')
+        : '';
 
-    const totalIssueSizeResult = await prisma.$queryRawUnsafe(`
-        SELECT COALESCE(SUM(mi.issue_size),0) AS aggregate
-        FROM isin_re_issuance mi
-        JOIN master_issuer_rating mir
-            ON mir.issuer_id = mi.isin_id
-        JOIN master_agency ma
-            ON ma.id = mir.agency_id
-        WHERE mi.allotment_date BETWEEN ? AND ?
-          AND mi.is_visible = 1
-          ${filterSql}
-    `, sqlCurrentStart, sqlCurrentEnd, ...filterParams);
+    const filterSql =
+      filterConditions.length > 0
+        ? ` AND ${filterConditions.join(' AND ')}`
+        : '';
 
-    const totalIssueSizePrevYearResult = await prisma.$queryRawUnsafe(`
-        SELECT COALESCE(SUM(mi.issue_size),0) AS aggregate
-        FROM isin_re_issuance mi
-        JOIN master_issuer_rating mir
-            ON mir.issuer_id = mi.isin_id
-        JOIN master_agency ma
-            ON ma.id = mir.agency_id
-        WHERE mi.allotment_date BETWEEN ? AND ?
-          AND mi.is_visible = 1
-          ${filterSql}
-    `, sqlPreviousStart, sqlPreviousEnd, ...filterParams);
+    console.log('Rating agency filterJoins:', filterJoins);
+    console.log('Rating agency filterConditions:', filterConditions);
+    console.log('Rating agency filterParams:', filterParams);
 
-    const totalIssuesCountCurrYearResult = await prisma.$queryRawUnsafe(`
-        SELECT COUNT( mi.isin) AS aggregate
-        FROM isin_re_issuance mi
-        JOIN master_issuer_rating mir
-            ON mir.issuer_id = mi.isin_id
-        JOIN master_agency ma
-            ON ma.id = mir.agency_id
-        WHERE mi.allotment_date BETWEEN ? AND ?
-          AND mi.is_visible = 1
-          ${filterSql}
-    `, sqlCurrentStart, sqlCurrentEnd, ...filterParams);
+    // ─────────────────────────────────────────────────────────────
+    // TOTALS
+    // ─────────────────────────────────────────────────────────────
 
-    const totalIssuesCountPrevYearResult = await prisma.$queryRawUnsafe(`
-        SELECT COUNT(mi.isin) AS aggregate
-        FROM isin_re_issuance mi
-        JOIN master_issuer_rating mir
-            ON mir.issuer_id = mi.isin_id
-        JOIN master_agency ma
-            ON ma.id = mir.agency_id
-        WHERE mi.allotment_date BETWEEN ? AND ?
-          AND mi.is_visible = 1
-          ${filterSql}
-    `, sqlPreviousStart, sqlPreviousEnd, ...filterParams);
+    const totalIssueSizeResult = await prisma.$queryRawUnsafe(
+      `
+      SELECT COALESCE(SUM(mi.issue_size), 0) AS aggregate
+      FROM isin_re_issuance mi
 
-    // Safely extract totals
-    const totalIssueSize = parseFloat(totalIssueSizeResult[0]?.aggregate) || 0;
-    const totalIssueSizePrevYear = parseFloat(totalIssueSizePrevYearResult[0]?.aggregate) || 0;
-    const totalIssuesCountCurrYear = parseInt(totalIssuesCountCurrYearResult[0]?.aggregate, 10) || 0;
-    const totalIssuesCountPrevYear = parseInt(totalIssuesCountPrevYearResult[0]?.aggregate, 10) || 0;
+      JOIN master_issuer_rating mir
+        ON mir.issuer_id = mi.isin_id
 
-    const safeTotalIssueSize = totalIssueSize > 0 ? totalIssueSize / 10000000 : 1;
-    const safeTotalIssueSizePrevYear = totalIssueSizePrevYear > 0 ? totalIssueSizePrevYear / 10000000 : 1;
-    const safeTotalIssuesCount = totalIssuesCountCurrYear > 0 ? totalIssuesCountCurrYear : 1;
-    const safeTotalIssuesCountPrevYear = totalIssuesCountPrevYear > 0 ? totalIssuesCountPrevYear : 1;
+      JOIN master_agency ma
+        ON ma.id = mir.agency_id
 
-    /* ---------------- MAIN TABLE QUERY ---------------- */
+      ${filterJoinsSql}
 
-    const limitOffsetSql = parsedLimit !== null ? `LIMIT ${parsedLimit} OFFSET ${parsedOffset}` : '';
+      WHERE mi.allotment_date BETWEEN ? AND ?
+        AND mi.is_visible = 1
+        ${filterSql}
+      `,
+      sqlCurrentStart,
+      sqlCurrentEnd,
+      ...filterParams
+    );
+
+    const totalIssueSizePrevYearResult = await prisma.$queryRawUnsafe(
+      `
+      SELECT COALESCE(SUM(mi.issue_size), 0) AS aggregate
+      FROM isin_re_issuance mi
+
+      JOIN master_issuer_rating mir
+        ON mir.issuer_id = mi.isin_id
+
+      JOIN master_agency ma
+        ON ma.id = mir.agency_id
+
+      ${filterJoinsSql}
+
+      WHERE mi.allotment_date BETWEEN ? AND ?
+        AND mi.is_visible = 1
+        ${filterSql}
+      `,
+      sqlPreviousStart,
+      sqlPreviousEnd,
+      ...filterParams
+    );
+
+    const totalIssuesCountCurrYearResult = await prisma.$queryRawUnsafe(
+      `
+      SELECT COUNT(DISTINCT mi.id) AS aggregate
+      FROM isin_re_issuance mi
+
+      JOIN master_issuer_rating mir
+        ON mir.issuer_id = mi.isin_id
+
+      JOIN master_agency ma
+        ON ma.id = mir.agency_id
+
+      ${filterJoinsSql}
+
+      WHERE mi.allotment_date BETWEEN ? AND ?
+        AND mi.is_visible = 1
+        ${filterSql}
+      `,
+      sqlCurrentStart,
+      sqlCurrentEnd,
+      ...filterParams
+    );
+
+    const totalIssuesCountPrevYearResult = await prisma.$queryRawUnsafe(
+      `
+      SELECT COUNT(DISTINCT mi.id) AS aggregate
+      FROM isin_re_issuance mi
+
+      JOIN master_issuer_rating mir
+        ON mir.issuer_id = mi.isin_id
+
+      JOIN master_agency ma
+        ON ma.id = mir.agency_id
+
+      ${filterJoinsSql}
+
+      WHERE mi.allotment_date BETWEEN ? AND ?
+        AND mi.is_visible = 1
+        ${filterSql}
+      `,
+      sqlPreviousStart,
+      sqlPreviousEnd,
+      ...filterParams
+    );
+
+    // ─────────────────────────────────────────────────────────────
+    // TOTALS PARSING
+    // ─────────────────────────────────────────────────────────────
+
+    const totalIssueSize =
+      parseFloat(totalIssueSizeResult[0]?.aggregate) || 0;
+
+    const totalIssueSizePrevYear =
+      parseFloat(totalIssueSizePrevYearResult[0]?.aggregate) || 0;
+
+    const totalIssuesCountCurrYear =
+      parseInt(totalIssuesCountCurrYearResult[0]?.aggregate, 10) || 0;
+
+    const totalIssuesCountPrevYear =
+      parseInt(totalIssuesCountPrevYearResult[0]?.aggregate, 10) || 0;
+
+    const safeTotalIssueSize =
+      totalIssueSize > 0
+        ? totalIssueSize / 10000000
+        : 1;
+
+    const safeTotalIssueSizePrevYear =
+      totalIssueSizePrevYear > 0
+        ? totalIssueSizePrevYear / 10000000
+        : 1;
+
+    const safeTotalIssuesCount =
+      totalIssuesCountCurrYear > 0
+        ? totalIssuesCountCurrYear
+        : 1;
+
+    const safeTotalIssuesCountPrevYear =
+      totalIssuesCountPrevYear > 0
+        ? totalIssuesCountPrevYear
+        : 1;
+
+    // ─────────────────────────────────────────────────────────────
+    // PAGINATION SQL
+    // ─────────────────────────────────────────────────────────────
+
+    const limitOffsetSql =
+      parsedLimit !== null
+        ? `LIMIT ${parsedLimit} OFFSET ${parsedOffset}`
+        : '';
+
+    // ─────────────────────────────────────────────────────────────
+    // MAIN TABLE QUERY
+    // ─────────────────────────────────────────────────────────────
 
     let tableQuery = '';
 
     if (issueType === 'count') {
       tableQuery = `
-      SELECT
-        t1.id,
-        t1.agency_name,
-        t1.no_issues AS cy_issues,
-        t1.issue_size AS cy_issue_size,
-        t1.arr_rank AS cy_arr_rank,
-        t2.no_issues AS py_issues,
-        t2.issue_size AS py_issue_size,
-        t2.arr_rank AS py_arr_rank,
-        ROUND((t1.no_issues / ${safeTotalIssuesCount}) * 100, 2) AS cy_mkt_share,
-        ROUND((t2.no_issues / ${safeTotalIssuesCountPrevYear}) * 100, 2) AS py_mkt_share,
-        CASE
-          WHEN IFNULL(t2.no_issues, 0) = 0 THEN
-            CASE WHEN IFNULL(t1.no_issues, 0) = 0 THEN 0 ELSE 100 END
-          ELSE ROUND(
-            ((IFNULL(t1.no_issues, 0) - IFNULL(t2.no_issues, 0)) /
-            IFNULL(t2.no_issues, 0)) * 100, 2
-          )
-        END AS yoy
-      FROM (
         SELECT
-          ma.id,
-          ma.short_name AS agency_name,
-          COUNT(mi.isin) AS no_issues,
-          ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
-          RANK() OVER (
-                ORDER BY
-                    COUNT(mi.isin) DESC,
-                    ROUND(SUM(mi.issue_size) / 10000000, 2) DESC
-            ) AS arr_rank
-        FROM isin_re_issuance mi
-        JOIN issuer_details ON issuer_details.id = mi.issuer_master_id
-        JOIN master_issuer_rating mir ON mir.issuer_id = mi.isin_id
-        JOIN master_agency ma ON ma.id = mir.agency_id
-        WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-        ${filterSql}
-        GROUP BY ma.id, ma.short_name
-        ORDER BY arr_rank
-        ${limitOffsetSql}
-      ) t1
-      LEFT JOIN (
-        SELECT
-          ma.id,
-          COUNT(mi.isin) AS no_issues,
-          ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
-          RANK() OVER (
+          t1.id,
+          t1.agency_name,
+
+          t1.no_issues AS cy_issues,
+          t1.issue_size AS cy_issue_size,
+          t1.arr_rank AS cy_arr_rank,
+
+          t2.no_issues AS py_issues,
+          t2.issue_size AS py_issue_size,
+          t2.arr_rank AS py_arr_rank,
+
+          ROUND(
+            (t1.no_issues / ${safeTotalIssuesCount}) * 100,
+            2
+          ) AS cy_mkt_share,
+
+          ROUND(
+            (t2.no_issues / ${safeTotalIssuesCountPrevYear}) * 100,
+            2
+          ) AS py_mkt_share,
+
+          CASE
+            WHEN IFNULL(t2.no_issues, 0) = 0 THEN
+              CASE
+                WHEN IFNULL(t1.no_issues, 0) = 0 THEN 0
+                ELSE 100
+              END
+            ELSE ROUND(
+              (
+                (
+                  IFNULL(t1.no_issues, 0) -
+                  IFNULL(t2.no_issues, 0)
+                ) / IFNULL(t2.no_issues, 0)
+              ) * 100,
+              2
+            )
+          END AS yoy
+
+        FROM (
+          SELECT
+            ma.id,
+            ma.short_name AS agency_name,
+
+            COUNT(DISTINCT mi.id) AS no_issues,
+
+            ROUND(
+              SUM(mi.issue_size) / 10000000,
+              2
+            ) AS issue_size,
+
+            RANK() OVER (
               ORDER BY
-                  COUNT(mi.isin) DESC,
-                  ROUND(SUM(mi.issue_size) / 10000000, 2) DESC
-          ) AS arr_rank
-        FROM isin_re_issuance mi
-        JOIN issuer_details ON issuer_details.id = mi.issuer_master_id
-        JOIN master_issuer_rating mir ON mir.issuer_id = mi.isin_id
-        JOIN master_agency ma ON ma.id = mir.agency_id
-        WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-        ${filterSql}
-        GROUP BY ma.id, ma.short_name
-      ) t2 ON t1.id = t2.id
-      ORDER BY t1.arr_rank;
+                COUNT(DISTINCT mi.id) DESC,
+                ROUND(SUM(mi.issue_size) / 10000000, 2) DESC
+            ) AS arr_rank
+
+          FROM isin_re_issuance mi
+
+          JOIN issuer_details
+            ON issuer_details.id = mi.issuer_master_id
+
+          JOIN master_issuer_rating mir
+            ON mir.issuer_id = mi.isin_id
+
+          JOIN master_agency ma
+            ON ma.id = mir.agency_id
+
+          ${filterJoinsSql}
+
+          WHERE mi.allotment_date BETWEEN ? AND ?
+            AND mi.is_visible = 1
+            ${filterSql}
+
+          GROUP BY ma.id, ma.short_name
+          ORDER BY arr_rank
+          ${limitOffsetSql}
+        ) t1
+
+        LEFT JOIN (
+          SELECT
+            ma.id,
+
+            COUNT(DISTINCT mi.id) AS no_issues,
+
+            ROUND(
+              SUM(mi.issue_size) / 10000000,
+              2
+            ) AS issue_size,
+
+            RANK() OVER (
+              ORDER BY
+                COUNT(DISTINCT mi.id) DESC,
+                ROUND(SUM(mi.issue_size) / 10000000, 2) DESC
+            ) AS arr_rank
+
+          FROM isin_re_issuance mi
+
+          JOIN issuer_details
+            ON issuer_details.id = mi.issuer_master_id
+
+          JOIN master_issuer_rating mir
+            ON mir.issuer_id = mi.isin_id
+
+          JOIN master_agency ma
+            ON ma.id = mir.agency_id
+
+          ${filterJoinsSql}
+
+          WHERE mi.allotment_date BETWEEN ? AND ?
+            AND mi.is_visible = 1
+            ${filterSql}
+
+          GROUP BY ma.id, ma.short_name
+        ) t2
+          ON t1.id = t2.id
+
+        ORDER BY t1.arr_rank;
       `;
     } else {
       tableQuery = `
-      SELECT
-        t1.id,
-        t1.agency_name,
-        t1.no_issues AS cy_issues,
-        t1.issue_size AS cy_issue_size,
-        t1.arr_rank AS cy_arr_rank,
-        t2.no_issues AS py_issues,
-        t2.issue_size AS py_issue_size,
-        t2.arr_rank AS py_arr_rank,
-        ROUND((t1.issue_size / ${safeTotalIssueSize}) * 100, 2) AS cy_mkt_share,
-        ROUND((t2.issue_size / ${safeTotalIssueSizePrevYear}) * 100, 2) AS py_mkt_share,
-        CASE
-          WHEN IFNULL(t2.issue_size, 0) = 0 THEN
-            CASE WHEN IFNULL(t1.issue_size, 0) = 0 THEN 0 ELSE 100 END
-          ELSE ROUND(
-            ((IFNULL(t1.issue_size, 0) - IFNULL(t2.issue_size, 0)) /
-            IFNULL(t2.issue_size, 0)) * 100, 2
-          )
-        END AS yoy
-      FROM (
         SELECT
-          ma.id,
-          ma.short_name AS agency_name,
-          COUNT(mi.isin) AS no_issues,
-          ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
-          RANK() OVER (
+          t1.id,
+          t1.agency_name,
+
+          t1.no_issues AS cy_issues,
+          t1.issue_size AS cy_issue_size,
+          t1.arr_rank AS cy_arr_rank,
+
+          t2.no_issues AS py_issues,
+          t2.issue_size AS py_issue_size,
+          t2.arr_rank AS py_arr_rank,
+
+          ROUND(
+            (t1.issue_size / ${safeTotalIssueSize}) * 100,
+            2
+          ) AS cy_mkt_share,
+
+          ROUND(
+            (t2.issue_size / ${safeTotalIssueSizePrevYear}) * 100,
+            2
+          ) AS py_mkt_share,
+
+          CASE
+            WHEN IFNULL(t2.issue_size, 0) = 0 THEN
+              CASE
+                WHEN IFNULL(t1.issue_size, 0) = 0 THEN 0
+                ELSE 100
+              END
+            ELSE ROUND(
+              (
+                (
+                  IFNULL(t1.issue_size, 0) -
+                  IFNULL(t2.issue_size, 0)
+                ) / IFNULL(t2.issue_size, 0)
+              ) * 100,
+              2
+            )
+          END AS yoy
+
+        FROM (
+          SELECT
+            ma.id,
+            ma.short_name AS agency_name,
+
+            COUNT(DISTINCT mi.id) AS no_issues,
+
+            ROUND(
+              SUM(mi.issue_size) / 10000000,
+              2
+            ) AS issue_size,
+
+            RANK() OVER (
               ORDER BY
-                  ROUND(SUM(issue_size) / 10000000, 2) DESC,
-                  COUNT(isin) DESC
-          ) AS arr_rank
-        FROM isin_re_issuance mi
-        JOIN master_issuer_rating mir ON mir.issuer_id = mi.isin_id
-        JOIN master_agency ma ON ma.id = mir.agency_id
-        WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-        ${filterSql}
-        GROUP BY ma.id, ma.short_name
-        ORDER BY arr_rank
-        ${limitOffsetSql}
-      ) t1
-      LEFT JOIN (
-        SELECT
-          ma.id,
-          COUNT(mi.isin) AS no_issues,
-          ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
-          RANK() OVER (
+                ROUND(SUM(mi.issue_size) / 10000000, 2) DESC,
+                COUNT(DISTINCT mi.id) DESC
+            ) AS arr_rank
+
+          FROM isin_re_issuance mi
+
+          JOIN master_issuer_rating mir
+            ON mir.issuer_id = mi.isin_id
+
+          JOIN master_agency ma
+            ON ma.id = mir.agency_id
+
+          ${filterJoinsSql}
+
+          WHERE mi.allotment_date BETWEEN ? AND ?
+            AND mi.is_visible = 1
+            ${filterSql}
+
+          GROUP BY ma.id, ma.short_name
+          ORDER BY arr_rank
+          ${limitOffsetSql}
+        ) t1
+
+        LEFT JOIN (
+          SELECT
+            ma.id,
+
+            COUNT(DISTINCT mi.id) AS no_issues,
+
+            ROUND(
+              SUM(mi.issue_size) / 10000000,
+              2
+            ) AS issue_size,
+
+            RANK() OVER (
               ORDER BY
-                  ROUND(SUM(issue_size) / 10000000, 2) DESC,
-                  COUNT(isin) DESC
-          ) AS arr_rank
-        FROM isin_re_issuance mi
-        JOIN master_issuer_rating mir ON mir.issuer_id = mi.isin_id
-        JOIN master_agency ma ON ma.id = mir.agency_id
-        WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-        ${filterSql}
-        GROUP BY ma.id, ma.short_name
-      ) t2 ON t1.id = t2.id
-      ORDER BY t1.arr_rank;
+                ROUND(SUM(mi.issue_size) / 10000000, 2) DESC,
+                COUNT(DISTINCT mi.id) DESC
+            ) AS arr_rank
+
+          FROM isin_re_issuance mi
+
+          JOIN master_issuer_rating mir
+            ON mir.issuer_id = mi.isin_id
+
+          JOIN master_agency ma
+            ON ma.id = mir.agency_id
+
+          ${filterJoinsSql}
+
+          WHERE mi.allotment_date BETWEEN ? AND ?
+            AND mi.is_visible = 1
+            ${filterSql}
+
+          GROUP BY ma.id, ma.short_name
+        ) t2
+          ON t1.id = t2.id
+
+        ORDER BY t1.arr_rank;
       `;
     }
 
-    const tableResult = await prisma.$queryRawUnsafe(tableQuery,
-      sqlCurrentStart, sqlCurrentEnd, ...filterParams,
-      sqlPreviousStart, sqlPreviousEnd, ...filterParams
+    const tableResult = await prisma.$queryRawUnsafe(
+      tableQuery,
+
+      sqlCurrentStart,
+      sqlCurrentEnd,
+      ...filterParams,
+
+      sqlPreviousStart,
+      sqlPreviousEnd,
+      ...filterParams
     );
 
-    /* ---------------- TOTAL COUNT ---------------- */
+    // ─────────────────────────────────────────────────────────────
+    // TOTAL COUNT
+    // ─────────────────────────────────────────────────────────────
 
-    const totalCountResult = await prisma.$queryRawUnsafe(`
-      SELECT COUNT(mi.isin) AS total
+    const totalCountResult = await prisma.$queryRawUnsafe(
+      `
+      SELECT COUNT(DISTINCT mi.id) AS total
       FROM isin_re_issuance mi
-      JOIN master_issuer_rating mir ON mir.issuer_id = mi.isin_id
-      JOIN master_agency ma ON ma.id = mir.agency_id
-      WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-      ${filterSql}
-    `, sqlCurrentStart, sqlCurrentEnd, ...filterParams);
 
-    const totalRecords = Number(totalCountResult[0]?.total) || 0;
+      JOIN master_issuer_rating mir
+        ON mir.issuer_id = mi.isin_id
 
-    /* ---------------- SECTOR BREAKUP QUERY ---------------- */
+      JOIN master_agency ma
+        ON ma.id = mir.agency_id
+
+      ${filterJoinsSql}
+
+      WHERE mi.allotment_date BETWEEN ? AND ?
+        AND mi.is_visible = 1
+        ${filterSql}
+      `,
+      sqlCurrentStart,
+      sqlCurrentEnd,
+      ...filterParams
+    );
+
+    const totalRecords =
+      Number(totalCountResult[0]?.total) || 0;
+
+    // ─────────────────────────────────────────────────────────────
+    // SECTOR BREAKUP
+    // ─────────────────────────────────────────────────────────────
 
     const sectorValueSelect =
       issueType === 'count'
-        ? 'COUNT(mi.isin)'
+        ? 'COUNT(DISTINCT mi.id)'
         : 'ROUND(SUM(mi.issue_size) / 10000000, 2)';
 
     const rankedAgenciesSubQuery =
       issueType === 'count'
         ? `
-      SELECT
-        ma.id AS agency_id,
-        ma.short_name AS agency_name,
-        RANK() OVER (
-          ORDER BY COUNT(mi.isin) DESC, SUM(mi.issue_size) DESC
-        ) AS arr_rank
-      FROM isin_re_issuance mi
-      JOIN master_issuer_rating mir ON mir.issuer_id = mi.isin_id
-      JOIN master_agency ma ON ma.id = mir.agency_id
-      WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-      ${filterSql}
-      GROUP BY ma.id, ma.short_name
-      ORDER BY arr_rank
-      LIMIT 10
-    `
+          SELECT
+            ma.id AS agency_id,
+            ma.short_name AS agency_name,
+
+            RANK() OVER (
+              ORDER BY
+                COUNT(DISTINCT mi.id) DESC,
+                SUM(mi.issue_size) DESC
+            ) AS arr_rank
+
+          FROM isin_re_issuance mi
+
+          JOIN master_issuer_rating mir
+            ON mir.issuer_id = mi.isin_id
+
+          JOIN master_agency ma
+            ON ma.id = mir.agency_id
+
+          ${filterJoinsSql}
+
+          WHERE mi.allotment_date BETWEEN ? AND ?
+            AND mi.is_visible = 1
+            ${filterSql}
+
+          GROUP BY ma.id, ma.short_name
+          ORDER BY arr_rank
+          LIMIT 10
+        `
         : `
-      SELECT
-        ma.id AS agency_id,
-        ma.short_name AS agency_name,
-        RANK() OVER (
-          ORDER BY SUM(mi.issue_size) DESC, COUNT(mi.isin) DESC
-        ) AS arr_rank
-      FROM isin_re_issuance mi
-      JOIN master_issuer_rating mir ON mir.issuer_id = mi.isin_id
-      JOIN master_agency ma ON ma.id = mir.agency_id
-      WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
-      ${filterSql}
-      GROUP BY ma.id, ma.short_name
-      ORDER BY arr_rank
-      LIMIT 10
-    `;
+          SELECT
+            ma.id AS agency_id,
+            ma.short_name AS agency_name,
+
+            RANK() OVER (
+              ORDER BY
+                SUM(mi.issue_size) DESC,
+                COUNT(DISTINCT mi.id) DESC
+            ) AS arr_rank
+
+          FROM isin_re_issuance mi
+
+          JOIN master_issuer_rating mir
+            ON mir.issuer_id = mi.isin_id
+
+          JOIN master_agency ma
+            ON ma.id = mir.agency_id
+
+          ${filterJoinsSql}
+
+          WHERE mi.allotment_date BETWEEN ? AND ?
+            AND mi.is_visible = 1
+            ${filterSql}
+
+          GROUP BY ma.id, ma.short_name
+          ORDER BY arr_rank
+          LIMIT 10
+        `;
 
     const sectorQuery = `
       SELECT
         r.agency_id AS id,
         r.agency_name AS name,
         r.arr_rank,
+
         mbs.code,
         mbs.description,
+
         ${sectorValueSelect} AS value
+
       FROM (${rankedAgenciesSubQuery}) r
-      JOIN master_issuer_rating mir ON mir.agency_id = r.agency_id
-      JOIN isin_re_issuance mi ON mi.isin_id = mir.issuer_id
-      JOIN master_business_sector mbs ON mi.business_sector = mbs.code
-      WHERE mi.allotment_date BETWEEN ? AND ? AND (mi.is_visible = 1)
+
+      JOIN master_issuer_rating mir
+        ON mir.agency_id = r.agency_id
+
+      JOIN isin_re_issuance mi
+        ON mi.isin_id = mir.issuer_id
+
+      JOIN master_business_sector mbs
+        ON mi.business_sector = mbs.code
+
+      WHERE mi.allotment_date BETWEEN ? AND ?
+        AND mi.is_visible = 1
+
       GROUP BY
         r.agency_id,
         r.agency_name,
         r.arr_rank,
         mbs.code,
         mbs.description
+
       ORDER BY
         r.arr_rank,
         value DESC;
@@ -13857,23 +15881,33 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
 
     const sectorData = await prisma.$queryRawUnsafe(
       sectorQuery,
-      sqlCurrentStart, sqlCurrentEnd, ...filterParams,  // for the subquery
-      sqlCurrentStart, sqlCurrentEnd                    // for the outer query
+
+      sqlCurrentStart,
+      sqlCurrentEnd,
+      ...filterParams,
+
+      sqlCurrentStart,
+      sqlCurrentEnd
     );
 
-    /* ---------------- RESPONSE FORMAT ---------------- */
+    // ─────────────────────────────────────────────────────────────
+    // RESPONSE FORMAT
+    // ─────────────────────────────────────────────────────────────
 
     const finalResult = tableResult.map((item) => ({
       id: item.id ?? '-',
       rank: item.cy_arr_rank ?? '-',
       name: item.agency_name ?? '-',
+
       currentSize: item.cy_issue_size ?? '-',
       currentDeals: item.cy_issues ?? '-',
       currentMarketShare: item.cy_mkt_share ?? '-',
+
       previousRank: item.py_arr_rank ?? '-',
       previousSize: item.py_issue_size ?? '-',
       previousDeals: item.py_issues ?? '-',
       previousMarketShare: item.py_mkt_share ?? '-',
+
       yoyChange: item.yoy ?? '-'
     }));
 
@@ -13881,10 +15915,10 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
       currentSize: Number(safeTotalIssueSize) || 0,
       previousSize: Number(safeTotalIssueSizePrevYear) || 0,
       currentDeals: Number(safeTotalIssuesCount) || 0,
-      previousDeals: Number(safeTotalIssuesCountPrevYear) || 0,
+      previousDeals: Number(safeTotalIssuesCountPrevYear) || 0
     };
 
-    res.status(200).json({
+    return res.status(200).json({
       tableData: finalResult,
       sectorData,
       totals,
@@ -13894,10 +15928,13 @@ app.post('/rating_agencies_page_top_agencies_data', async (req, res) => {
         offset: parsedOffset
       }
     });
-
   } catch (error) {
-    console.error('Rating agencies top data API error:', error);
-    res.status(500).json({
+    console.error(
+      'Rating agencies top data API error:',
+      error
+    );
+
+    return res.status(500).json({
       error: 'Failed to fetch rating agencies data',
       message: error.message
     });
@@ -16610,7 +18647,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
     const previousEndDate = new Date(currentEndDate);
     previousEndDate.setFullYear(previousEndDate.getFullYear() - 1);
 
-    // Format dates for MySQL (YYYY-MM-DD HH:MM:SS) — use local time to avoid UTC shift
+    // Format dates for MySQL (YYYY-MM-DD HH:MM:SS) — local time
     const pad = (n) => String(n).padStart(2, '0');
     const formatDate = (date) => {
       const y = date.getFullYear();
@@ -16642,195 +18679,269 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
     const effectiveIssueType = validIssueTypes.includes(issueType) ? issueType : 'issue_size';
     const normalizedIssueType = effectiveIssueType === 'size' ? 'issue_size' : effectiveIssueType;
 
-    /* ─────────────── COMMON FILTER BUILDER (excludes registrar) ─────────────── */
-    const buildCommonFilters = (alias) => {
+    /* ─────────────── HELPERS ─────────────── */
+
+    // Build IN / LIKE clause (matches trustees / arrangers reference)
+    const buildInClause = (field, values, useLike = false) => {
+      if (!values || (Array.isArray(values) && values.length === 0)) return null;
+
+      const vals = Array.isArray(values)
+        ? values.filter((v) => v !== '' && v !== null && v !== undefined)
+        : [values].filter((v) => v !== '' && v !== null && v !== undefined);
+
+      if (vals.length === 0) return null;
+
+      if (useLike) {
+        const clauses = vals.map(() => `${field} LIKE ?`).join(' OR ');
+        return {
+          clause: `(${clauses})`,
+          params: vals.map((v) => `%${v}%`)
+        };
+      }
+
+      const placeholders = vals.map(() => '?').join(',');
+      return {
+        clause: `${field} IN (${placeholders})`,
+        params: vals
+      };
+    };
+
+    /* ─────────────── DYNAMIC FILTER BUILDER ───────────────
+       Only add a JOIN when the corresponding filter has a value.
+       hasFilterValue() is defined outside this API.
+    ──────────────────────────────────────────────────────── */
+    const buildFilterParts = (excludeBusinessSector = false) => {
       const joins = [];
       const conditions = [];
       const params = [];
+      const addedJoins = new Set();
 
-      if (listingStatus.length > 0) {
-        const placeholders = listingStatus.map(() => '?').join(', ');
-        conditions.push(`EXISTS (
-          SELECT 1 FROM master_issuer_stock_exchange mise
-          JOIN master_listing_status mls ON mls.code = mise.listing_status
-          WHERE mise.issuer_id = ${alias}.isin_id AND mls.description IN (${placeholders})
-        )`);
-        params.push(...listingStatus);
+      const addJoin = (join) => {
+        const normalizedJoin = join.trim();
+        if (!addedJoins.has(normalizedJoin)) {
+          addedJoins.add(normalizedJoin);
+          joins.push(normalizedJoin);
+        }
+      };
+
+      // ── CREDIT RATING ──
+      if (hasFilterValue(creditRating)) {
+        addJoin(`
+          LEFT JOIN master_issuer_rating AS filter_mir
+            ON filter_mir.issuer_id = mi.isin_id
+        `);
+        const c = buildInClause('filter_mir.rating', creditRating);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
       }
 
-      if (creditRating.length > 0) {
-        const placeholders = creditRating.map(() => '?').join(', ');
-        conditions.push(`EXISTS (
-          SELECT 1 FROM master_issuer_rating mir
-          WHERE mir.issuer_id = ${alias}.isin_id AND mir.rating IN (${placeholders})
-        )`);
-        params.push(...creditRating);
+      // ── CREDIT RATING AGENCY ──
+      if (hasFilterValue(creditRatingAgency)) {
+        addJoin(`
+          LEFT JOIN master_issuer_rating AS filter_mir_agency
+            ON filter_mir_agency.issuer_id = mi.isin_id
+        `);
+        addJoin(`
+          LEFT JOIN master_agency AS filter_ma_agency
+            ON filter_ma_agency.id = filter_mir_agency.agency_id
+        `);
+        const c = buildInClause('filter_ma_agency.short_name', creditRatingAgency);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
       }
 
-      if (creditRatingAgency.length > 0) {
-        const placeholders = creditRatingAgency.map(() => '?').join(', ');
-        conditions.push(`EXISTS (
-          SELECT 1 FROM master_issuer_rating mir
-          WHERE mir.issuer_id = ${alias}.isin_id AND mir.rating_agency IN (${placeholders})
-        )`);
-        params.push(...creditRatingAgency);
+      // ── REGISTRAR (multi-select) ──
+      if (hasFilterValue(registrar)) {
+        addJoin(`
+          LEFT JOIN issuer_registrar AS filter_ir
+            ON filter_ir.issuer_id = mi.isin_id
+        `);
+        addJoin(`
+          LEFT JOIN master_registrar AS filter_mr
+            ON filter_mr.id = filter_ir.registrar_id
+        `);
+        const c = buildInClause('filter_mr.short_name', registrar, true);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
       }
 
-      if (seniority.length > 0) {
-        joins.push(`LEFT JOIN master_seniority_tier_classification mstc ON mstc.code = ${alias}.seniority`);
-        const placeholders = seniority.map(() => '?').join(', ');
-        conditions.push(`mstc.description IN (${placeholders})`);
-        params.push(...seniority);
+      // ── SENIORITY ──
+      if (hasFilterValue(seniority)) {
+        addJoin(`
+          LEFT JOIN master_seniority_tier_classification AS filter_mstc
+            ON filter_mstc.code = mi.seniority
+        `);
+        const c = buildInClause('filter_mstc.description', seniority);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
       }
 
-      if (securedFlag.length > 0) {
-        joins.push(`LEFT JOIN master_secured_flag msf ON msf.code = ${alias}.secured_flag`);
-        const placeholders = securedFlag.map(() => '?').join(', ');
-        conditions.push(`msf.description IN (${placeholders})`);
-        params.push(...securedFlag);
+      // ── SECURED FLAG ──
+      if (hasFilterValue(securedFlag)) {
+        addJoin(`
+          LEFT JOIN master_secured_flag AS filter_msf
+            ON filter_msf.code = mi.secured_flag
+        `);
+        const c = buildInClause('filter_msf.description', securedFlag);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
       }
 
-      if (businessSector.length > 0) {
-        joins.push(`LEFT JOIN master_business_sector mbs ON mbs.code = ${alias}.business_sector`);
-        const placeholders = businessSector.map(() => '?').join(', ');
-        conditions.push(`mbs.description IN (${placeholders})`);
-        params.push(...businessSector);
+      // ── BUSINESS SECTOR ──
+      // (Excluded from sector-breakdown query so the GROUP BY sector still works)
+      if (!excludeBusinessSector && hasFilterValue(businessSector)) {
+        addJoin(`
+          LEFT JOIN master_business_sector AS filter_mbs
+            ON filter_mbs.code = mi.business_sector
+        `);
+        const c = buildInClause('filter_mbs.description', businessSector);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
       }
 
-      // ─── FIX: nature_type lives on master_issuer, not isin_re_issuance ───
-      if (issuerNatureType.length > 0) {
-        joins.push(`LEFT JOIN master_issuer mi_nature ON mi_nature.id = ${alias}.isin_id`);
-        joins.push(`LEFT JOIN master_issuer_type_nature mitn ON mitn.code = mi_nature.nature_type`);
-        const placeholders = issuerNatureType.map(() => '?').join(', ');
-        conditions.push(`mitn.description IN (${placeholders})`);
-        params.push(...issuerNatureType);
+      // ── ISSUER NATURE TYPE (lives on master_issuer) ──
+      if (hasFilterValue(issuerNatureType)) {
+        addJoin(`
+          LEFT JOIN master_issuer AS filter_mi_nature
+            ON filter_mi_nature.id = mi.isin_id
+        `);
+        addJoin(`
+          LEFT JOIN master_issuer_type_nature AS filter_mitn
+            ON filter_mitn.code = filter_mi_nature.nature_type
+        `);
+        const c = buildInClause('filter_mitn.description', issuerNatureType);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
       }
 
-      // ─── FIX: issuer_ownership_type lives on master_issuer, not isin_re_issuance ───
-      if (issuerOwnershipType.length > 0) {
-        joins.push(`LEFT JOIN master_issuer mi_ownership ON mi_ownership.id = ${alias}.isin_id`);
-        joins.push(`LEFT JOIN master_issuer_ownership_type miot ON miot.code = mi_ownership.issuer_ownership_type`);
-        const placeholders = issuerOwnershipType.map(() => '?').join(', ');
-        conditions.push(`miot.description IN (${placeholders})`);
-        params.push(...issuerOwnershipType);
+      // ── ISSUER OWNERSHIP TYPE (lives on master_issuer) ──
+      if (hasFilterValue(issuerOwnershipType)) {
+        addJoin(`
+          LEFT JOIN master_issuer AS filter_mi_ownership
+            ON filter_mi_ownership.id = mi.isin_id
+        `);
+        addJoin(`
+          LEFT JOIN master_issuer_ownership_type AS filter_miot
+            ON filter_miot.code = filter_mi_ownership.issuer_ownership_type
+        `);
+        const c = buildInClause('filter_miot.description', issuerOwnershipType);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
       }
 
-      if (securityType.length > 0) {
-        joins.push(`LEFT JOIN master_security_type mst ON mst.code = ${alias}.security_class`);
-        const placeholders = securityType.map(() => '?').join(', ');
-        conditions.push(`mst.description IN (${placeholders})`);
-        params.push(...securityType);
+      // ── SECURITY TYPE ──
+      if (hasFilterValue(securityType)) {
+        addJoin(`
+          LEFT JOIN master_security_type AS filter_mst
+            ON filter_mst.code = mi.security_class
+        `);
+        const c = buildInClause('filter_mst.description', securityType);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
       }
 
-      if (modeOfIssue.length > 0) {
-        joins.push(`LEFT JOIN master_mode_issue mmi ON mmi.code = ${alias}.mode_issue`);
-        const placeholders = modeOfIssue.map(() => '?').join(', ');
-        conditions.push(`mmi.description IN (${placeholders})`);
-        params.push(...modeOfIssue);
+      // ── MODE OF ISSUE ──
+      if (hasFilterValue(modeOfIssue)) {
+        addJoin(`
+          LEFT JOIN master_mode_issue AS filter_mmi
+            ON filter_mmi.code = mi.mode_issue
+        `);
+        const c = buildInClause('filter_mmi.description', modeOfIssue);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
       }
 
-      if (isin) {
-        conditions.push(`${alias}.isin LIKE ?`);
-        params.push(`%${isin}%`);
+      // ── LISTING STATUS ──
+      if (hasFilterValue(listingStatus)) {
+        addJoin(`
+          LEFT JOIN (
+            SELECT
+              mise.issuer_id,
+              MAX(mls.description) AS listing_status
+            FROM master_issuer_stock_exchange mise
+            LEFT JOIN master_listing_status mls
+              ON mls.code = mise.listing_status
+            WHERE mise.listing_status IS NOT NULL
+            GROUP BY mise.issuer_id
+          ) AS filter_listing_data
+            ON filter_listing_data.issuer_id = mi.isin_id
+        `);
+        const c = buildInClause('filter_listing_data.listing_status', listingStatus);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
+
+      // ── ISIN (LIKE) ──
+      if (hasFilterValue(isin)) {
+        const c = buildInClause('mi.isin', isin, true);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
       }
 
       return { joins, conditions, params };
     };
 
-    const commonFilters = buildCommonFilters('mi');
-    const commonJoinsSql = commonFilters.joins.join('\n');
-    const commonWhereSql = commonFilters.conditions.length > 0
-      ? `AND ${commonFilters.conditions.join(' AND ')}`
-      : '';
-    const commonParams = commonFilters.params;
+    /* ── BUILD FILTERS ── */
+    const {
+      joins: filterJoins,
+      conditions: filterConditions,
+      params: filterParams
+    } = buildFilterParts(false);
 
-    // ── Helper to safely extract numeric values from Prisma BigInt results ──
+    const filterJoinsSql = filterJoins.length > 0 ? filterJoins.join('\n') : '';
+    const filterSql = filterConditions.length > 0
+      ? `AND ${filterConditions.join(' AND ')}`
+      : '';
+
+    // Sector-breakdown filters (exclude businessSector so GROUP BY still works)
+    const {
+      joins: sectorFilterJoins,
+      conditions: sectorFilterConditions,
+      params: sectorFilterParams
+    } = buildFilterParts(true);
+
+    const sectorFilterJoinsSql = sectorFilterJoins.length > 0
+      ? sectorFilterJoins.join('\n')
+      : '';
+    const sectorFilterSql = sectorFilterConditions.length > 0
+      ? `AND ${sectorFilterConditions.join(' AND ')}`
+      : '';
+
+    /* ── Helper to safely extract numeric values from Prisma BigInt results ── */
     const safeNumber = (val) => {
       if (val === null || val === undefined) return 0;
       return typeof val === 'bigint' ? Number(val) : Number(val) || 0;
     };
 
-    // ── Registrar filter helpers ──
-    const registrarPlaceholders = registrar.length > 0
-      ? registrar.map(() => '?').join(', ')
-      : '';
-    const registrarWhere = registrar.length > 0
-      ? `AND mr.short_name IN (${registrarPlaceholders})`
-      : '';
-    const registrarExistsWhere = registrar.length > 0
-      ? `AND EXISTS (SELECT 1 FROM master_registrar mr WHERE mr.id = ir.registrar_id AND mr.short_name IN (${registrarPlaceholders}))`
-      : '';
-
-    /* ── TOTALS (common filters only) ── */
+    /* ── TOTALS ── */
     const totalIssueSizePromise = prisma.$queryRawUnsafe(`
-        SELECT COALESCE(SUM(mi.issue_size), 0) AS aggregate
-        FROM isin_re_issuance mi
-        JOIN issuer_registrar ir
-          ON ir.issuer_id = mi.isin_id
-        ${commonJoinsSql}
-        WHERE mi.allotment_date BETWEEN ? AND ?
-          AND mi.is_visible = 1
-          ${commonWhereSql}
-          ${registrarExistsWhere}
-      `,
-      currStartStr,
-      currEndStr,
-      ...commonParams,
-      ...(registrar.length > 0 ? registrar : [])
-    );
+      SELECT COALESCE(SUM(mi.issue_size), 0) AS aggregate
+      FROM isin_re_issuance mi
+      JOIN issuer_registrar ir ON ir.issuer_id = mi.isin_id
+      ${filterJoinsSql}
+      WHERE mi.allotment_date BETWEEN ? AND ?
+        AND mi.is_visible = 1
+        ${filterSql}
+    `, currStartStr, currEndStr, ...filterParams);
 
     const totalIssueSizePrevYearPromise = prisma.$queryRawUnsafe(`
       SELECT COALESCE(SUM(mi.issue_size), 0) AS aggregate
       FROM isin_re_issuance mi
-      JOIN issuer_registrar ir
-        ON ir.issuer_id = mi.isin_id
-      ${commonJoinsSql}
+      JOIN issuer_registrar ir ON ir.issuer_id = mi.isin_id
+      ${filterJoinsSql}
       WHERE mi.allotment_date BETWEEN ? AND ?
         AND mi.is_visible = 1
-        ${commonWhereSql}
-        ${registrarExistsWhere}
-    `,
-      prevStartStr,
-      prevEndStr,
-      ...commonParams,
-      ...(registrar.length > 0 ? registrar : [])
-    );
+        ${filterSql}
+    `, prevStartStr, prevEndStr, ...filterParams);
 
     const totalIssuesCountCurrYearPromise = prisma.$queryRawUnsafe(`
       SELECT COUNT(DISTINCT ir.registrar_id, mi.allotment_date, mi.issuer_master_id) AS aggregate
       FROM isin_re_issuance mi
-      JOIN issuer_registrar ir
-        ON ir.issuer_id = mi.isin_id
-      ${commonJoinsSql}
+      JOIN issuer_registrar ir ON ir.issuer_id = mi.isin_id
+      ${filterJoinsSql}
       WHERE mi.allotment_date BETWEEN ? AND ?
         AND mi.is_visible = 1
-        ${commonWhereSql}
-        ${registrarExistsWhere}
-    `,
-      currStartStr,
-      currEndStr,
-      ...commonParams,
-      ...(registrar.length > 0 ? registrar : [])
-    );
+        ${filterSql}
+    `, currStartStr, currEndStr, ...filterParams);
 
     const totalIssuesCountPrevYearPromise = prisma.$queryRawUnsafe(`
       SELECT COUNT(DISTINCT ir.registrar_id, mi.allotment_date, mi.issuer_master_id) AS aggregate
       FROM isin_re_issuance mi
-      JOIN issuer_registrar ir
-        ON ir.issuer_id = mi.isin_id
-      ${commonJoinsSql}
+      JOIN issuer_registrar ir ON ir.issuer_id = mi.isin_id
+      ${filterJoinsSql}
       WHERE mi.allotment_date BETWEEN ? AND ?
         AND mi.is_visible = 1
-        ${commonWhereSql}
-        ${registrarExistsWhere}
-    `,
-      prevStartStr,
-      prevEndStr,
-      ...commonParams,
-      ...(registrar.length > 0 ? registrar : [])
-    );
+        ${filterSql}
+    `, prevStartStr, prevEndStr, ...filterParams);
 
-    // Run all totals in parallel
     const [
       totalIssueSizeRaw,
       totalIssueSizePrevYearRaw,
@@ -16848,23 +18959,19 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
     const totalIssuesCountCurrYear = safeNumber(totalIssuesCountCurrYearRaw[0]?.aggregate);
     const totalIssuesCountPrevYear = safeNumber(totalIssuesCountPrevYearRaw[0]?.aggregate);
 
-    // Safe denominators for market share (avoid division by zero)
     const safeTotalIssueSize = totalIssueSize / 10000000 || 1;
     const safeTotalIssueSizePrev = totalIssueSizePrevYear / 10000000 || 1;
     const safeTotalIssuesCount = totalIssuesCountCurrYear || 1;
     const safeTotalIssuesCountPrev = totalIssuesCountPrevYear || 1;
 
     /* ── MAIN TABLE QUERY ── */
-    const tableBaseParams = registrar.length > 0
-      ? [...commonParams, ...registrar]
-      : [...commonParams];
-
-    const t1t2Joins = commonJoinsSql;
-    const t1t2Where = `${commonWhereSql} ${registrarWhere}`;
-
     const paginationClause = parsedLimit !== null && parsedLimit > 0
       ? `LIMIT ${parsedLimit} OFFSET ${parsedOffset}`
       : '';
+
+    const t1t2Joins = filterJoinsSql;
+    const t1t2Where = filterSql;
+    const t1t2Params = filterParams;
 
     let tableQuery = '';
 
@@ -16895,7 +19002,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
           COUNT(DISTINCT ir.registrar_id, mi.allotment_date, mi.issuer_master_id) AS no_issues,
           ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
           RANK() OVER (
-            ORDER BY SUM(mi.issue_size)DESC, COUNT(DISTINCT ir.registrar_id, mi.allotment_date, mi.issuer_master_id) DESC
+            ORDER BY SUM(mi.issue_size) DESC, COUNT(DISTINCT ir.registrar_id, mi.allotment_date, mi.issuer_master_id) DESC
           ) AS arr_rank
         FROM isin_re_issuance mi
         JOIN issuer_registrar ir ON ir.issuer_id = mi.isin_id
@@ -16913,7 +19020,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
           COUNT(DISTINCT ir.registrar_id, mi.allotment_date, mi.issuer_master_id) AS no_issues,
           ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
           RANK() OVER (
-            ORDER BY SUM(mi.issue_size)DESC, COUNT(DISTINCT ir.registrar_id, mi.allotment_date, mi.issuer_master_id) DESC
+            ORDER BY SUM(mi.issue_size) DESC, COUNT(DISTINCT ir.registrar_id, mi.allotment_date, mi.issuer_master_id) DESC
           ) AS arr_rank
         FROM isin_re_issuance mi
         JOIN issuer_registrar ir ON ir.issuer_id = mi.isin_id
@@ -16952,7 +19059,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
           COUNT(DISTINCT ir.registrar_id, mi.allotment_date, mi.issuer_master_id) AS no_issues,
           ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
           RANK() OVER (
-            ORDER BY SUM(mi.issue_size)DESC, COUNT(DISTINCT ir.registrar_id, mi.allotment_date, mi.issuer_master_id) DESC
+            ORDER BY SUM(mi.issue_size) DESC, COUNT(DISTINCT ir.registrar_id, mi.allotment_date, mi.issuer_master_id) DESC
           ) AS arr_rank
         FROM isin_re_issuance mi
         JOIN issuer_registrar ir ON ir.issuer_id = mi.isin_id
@@ -16970,7 +19077,7 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
           COUNT(DISTINCT ir.registrar_id, mi.allotment_date, mi.issuer_master_id) AS no_issues,
           ROUND(SUM(mi.issue_size) / 10000000, 2) AS issue_size,
           RANK() OVER (
-            ORDER BY SUM(mi.issue_size)DESC, COUNT(DISTINCT ir.registrar_id, mi.allotment_date, mi.issuer_master_id) DESC
+            ORDER BY SUM(mi.issue_size) DESC, COUNT(DISTINCT ir.registrar_id, mi.allotment_date, mi.issuer_master_id) DESC
           ) AS arr_rank
         FROM isin_re_issuance mi
         JOIN issuer_registrar ir ON ir.issuer_id = mi.isin_id
@@ -16984,26 +19091,31 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
       `;
     }
 
-    // Parameters: [marketShareDenomCurr, marketShareDenomPrev, t1 dates & filters, t2 dates & filters]
     const tableParams = normalizedIssueType === 'count'
-      ? [safeTotalIssuesCount, safeTotalIssuesCountPrev, currStartStr, currEndStr, ...tableBaseParams, prevStartStr, prevEndStr, ...tableBaseParams]
-      : [safeTotalIssueSize, safeTotalIssueSizePrev, currStartStr, currEndStr, ...tableBaseParams, prevStartStr, prevEndStr, ...tableBaseParams];
+      ? [
+          safeTotalIssuesCount,
+          safeTotalIssuesCountPrev,
+          currStartStr, currEndStr, ...t1t2Params,
+          prevStartStr, prevEndStr, ...t1t2Params
+        ]
+      : [
+          safeTotalIssueSize,
+          safeTotalIssueSizePrev,
+          currStartStr, currEndStr, ...t1t2Params,
+          prevStartStr, prevEndStr, ...t1t2Params
+        ];
 
     const tableResult = await prisma.$queryRawUnsafe(tableQuery, ...tableParams);
 
-    /* ── TOTAL COUNT ── */
-    const countJoins = `${commonJoinsSql}\n${registrar.length > 0 ? 'LEFT JOIN master_registrar mr ON mr.id = ir.registrar_id' : ''}`;
-    const countWhere = `${commonWhereSql} ${registrarWhere}`;
-    const countParams = registrar.length > 0 ? [...commonParams, ...registrar] : [...commonParams];
-
+    /* ── TOTAL COUNT FOR PAGINATION ── */
     const totalCountResult = await prisma.$queryRawUnsafe(`
       SELECT COUNT(DISTINCT ir.registrar_id, mi.allotment_date, mi.issuer_master_id) AS total
       FROM isin_re_issuance mi
       JOIN issuer_registrar ir ON ir.issuer_id = mi.isin_id
-      ${countJoins}
+      ${filterJoinsSql}
       WHERE mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1
-      ${countWhere}
-    `, currStartStr, currEndStr, ...countParams);
+      ${filterSql}
+    `, currStartStr, currEndStr, ...filterParams);
 
     const totalRecords = safeNumber(totalCountResult[0]?.total);
 
@@ -17013,51 +19125,23 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
         ? 'COUNT(DISTINCT ir.registrar_id, mi.allotment_date, mi.issuer_master_id)'
         : 'ROUND(SUM(mi.issue_size) / 10000000, 2)';
 
-    const rankJoins = commonJoinsSql;
-    const rankWhere = `${commonWhereSql} ${registrarWhere}`;
-    const rankParams = registrar.length > 0 ? [...commonParams, ...registrar] : [...commonParams];
-
-    const rankedRegistrarsSubQuery =
-      normalizedIssueType === 'count'
-        ? `
+    const rankedRegistrarsSubQuery = `
       SELECT
         mr.id AS registrar_id,
         mr.short_name AS registrar_name,
         RANK() OVER (
-          ORDER BY SUM(mi.issue_size)DESC, COUNT(DISTINCT ir.registrar_id, mi.allotment_date, mi.issuer_master_id) DESC
+          ORDER BY SUM(mi.issue_size) DESC, COUNT(DISTINCT ir.registrar_id, mi.allotment_date, mi.issuer_master_id) DESC
         ) AS arr_rank
       FROM isin_re_issuance mi
       JOIN issuer_registrar ir ON ir.issuer_id = mi.isin_id
       JOIN master_registrar mr ON mr.id = ir.registrar_id
-      ${rankJoins}
+      ${filterJoinsSql}
       WHERE mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1
-      ${rankWhere}
-      GROUP BY ir.registrar_id
-      ORDER BY arr_rank
-      LIMIT 10
-    `
-        : `
-      SELECT
-        mr.id AS registrar_id,
-        mr.short_name AS registrar_name,
-        RANK() OVER (
-          ORDER BY SUM(mi.issue_size)DESC, COUNT(DISTINCT ir.registrar_id, mi.allotment_date, mi.issuer_master_id) DESC
-        ) AS arr_rank
-      FROM isin_re_issuance mi
-      JOIN issuer_registrar ir ON ir.issuer_id = mi.isin_id
-      JOIN master_registrar mr ON mr.id = ir.registrar_id
-      ${rankJoins}
-      WHERE mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1
-      ${rankWhere}
+      ${filterSql}
       GROUP BY ir.registrar_id
       ORDER BY arr_rank
       LIMIT 10
     `;
-
-    const sectorCommonJoins = commonFilters.joins.filter(j => !j.includes('master_business_sector')).join('\n');
-    const sectorJoins = `${sectorCommonJoins}\n${registrar.length > 0 ? 'LEFT JOIN master_registrar mr ON mr.id = ir.registrar_id' : ''}`;
-    const sectorWhere = `${commonWhereSql} ${registrarWhere}`;
-    const sectorParams = registrar.length > 0 ? [...commonParams, ...registrar] : [...commonParams];
 
     const sectorQuery = `
       SELECT
@@ -17071,9 +19155,9 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
       JOIN issuer_registrar ir ON ir.registrar_id = r.registrar_id
       JOIN isin_re_issuance mi ON mi.isin_id = ir.issuer_id
       JOIN master_business_sector mbs ON mi.business_sector = mbs.code
-      ${sectorJoins}
+      ${sectorFilterJoinsSql}
       WHERE mi.allotment_date BETWEEN ? AND ? AND mi.is_visible = 1
-      ${sectorWhere}
+      ${sectorFilterSql}
       GROUP BY
         r.registrar_id,
         r.registrar_name,
@@ -17087,8 +19171,10 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
 
     const sectorData = await prisma.$queryRawUnsafe(
       sectorQuery,
-      currStartStr, currEndStr, ...rankParams,
-      currStartStr, currEndStr, ...sectorParams
+      // Ranked subquery params
+      currStartStr, currEndStr, ...filterParams,
+      // Outer sector params
+      currStartStr, currEndStr, ...sectorFilterParams
     );
 
     /* ── RESPONSE FORMAT ── */
