@@ -9254,7 +9254,7 @@ app.post('/arranger_page_monthly_summary_data', async (req, res) => {
       return res.status(400).json({ error: 'startDate must be before endDate' });
     }
 
-    // ─── FIX: Full day coverage — start at 00:00:00, end at 23:59:59 ───
+    // ─── Full day coverage — start at 00:00:00, end at 23:59:59 ───
     const cyStart = formatDateForSQL(new Date(Date.UTC(
       currentStartDate.getUTCFullYear(),
       currentStartDate.getUTCMonth(),
@@ -9272,122 +9272,212 @@ app.post('/arranger_page_monthly_summary_data', async (req, res) => {
     const expectedMonths = getMonthsInRange(currentStartDate, currentEndDate);
 
     /* ---------------------------------
-       BUILD DYNAMIC CONDITIONS
+       HELPER: Build multi-value IN / LIKE clause
     --------------------------------- */
-    const conditions = [];
-    const params = [];
+    const buildInClause = (field, values, useLike = false) => {
+      if (!values || (Array.isArray(values) && values.length === 0)) return null;
 
-    // Base filters
-    conditions.push(`mi.allotment_date BETWEEN ? AND ?`);
-    params.push(cyStart, cyEnd);
+      const vals = Array.isArray(values)
+        ? values.filter(v => v !== '' && v !== null && v !== undefined)
+        : [values].filter(v => v !== '' && v !== null && v !== undefined);
 
-    conditions.push(`mi.is_visible = 1`);
+      if (vals.length === 0) return null;
 
-    // ── 1:N relationship filters (EXISTS = no row multiplication) ──
-    if (rating.length > 0) {
-      const ph = rating.map(() => '?').join(', ');
-      conditions.push(`EXISTS (
-        SELECT 1 FROM master_issuer_rating mir
-        JOIN master_agency ma ON ma.id = mir.agency_id AND ma.parent_id = 0
-        WHERE mir.issuer_id = mi.isin_id AND mir.rating IN (${ph})
-      )`);
-      params.push(...rating);
-    }
+      if (useLike) {
+        const clauses = vals.map(() => `${field} LIKE ?`).join(' OR ');
+        const params = vals.map(v => `%${v}%`);
+        return { clause: `(${clauses})`, params };
+      }
 
-    if (creditRatingAgency.length > 0) {
-      const ph = creditRatingAgency.map(() => '?').join(', ');
-      conditions.push(`EXISTS (
-        SELECT 1 FROM master_issuer_rating mir
-        JOIN master_agency ma ON ma.id = mir.agency_id AND ma.parent_id = 0
-        WHERE mir.issuer_id = mi.isin_id AND ma.short_name IN (${ph})
-      )`);
-      params.push(...creditRatingAgency);
-    }
+      const placeholders = vals.map(() => '?').join(',');
+      return { clause: `${field} IN (${placeholders})`, params: vals };
+    };
 
-    if (listingStatus.length > 0) {
-      const ph = listingStatus.map(() => '?').join(', ');
-      conditions.push(`EXISTS (
-        SELECT 1 FROM master_issuer_stock_exchange mise
-        JOIN master_listing_status mls ON mls.code = mise.listing_status
-        WHERE mise.issuer_id = mi.isin_id AND mls.description IN (${ph})
-      )`);
-      params.push(...listingStatus);
-    }
+    /* ---------------------------------
+       DYNAMIC FILTER BUILDER
+       Only add a JOIN when the corresponding filter has a value.
+       hasFilterValue() is defined outside this API.
+    --------------------------------- */
+    const buildFilterParts = () => {
+      const joins = [];
+      const conditions = [];
+      const params = [];
+      const addedJoins = new Set();
 
-    // ── 1:1 lookup filters (safe to JOIN directly) ──
-    if (dealSize) {
-      conditions.push(`mi.issue_size LIKE ?`);
-      params.push(`%${dealSize}%`);
-    }
+      const addJoin = (join) => {
+        const normalizedJoin = join.trim();
+        if (!addedJoins.has(normalizedJoin)) {
+          addedJoins.add(normalizedJoin);
+          joins.push(normalizedJoin);
+        }
+      };
 
-    if (ownershipType.length > 0) {
-      const ph = ownershipType.map(() => '?').join(', ');
-      conditions.push(`miot.description IN (${ph})`);
-      params.push(...ownershipType);
-    }
+      /* ── Base date / visibility ── */
+      conditions.push(`mi.allotment_date BETWEEN ? AND ?`);
+      params.push(cyStart, cyEnd);
+      conditions.push(`mi.is_visible = 1`);
 
-    if (sector.length > 0) {
-      const ph = sector.map(() => '?').join(', ');
-      conditions.push(`mbs.description IN (${ph})`);
-      params.push(...sector);
-    }
+      /* ── 1:N relationship filters (EXISTS = no row multiplication, no joins) ── */
 
-    if (nature.length > 0) {
-      const ph = nature.map(() => '?').join(', ');
-      conditions.push(`mint.description IN (${ph})`);
-      params.push(...nature);
-    }
+      if (hasFilterValue(rating)) {
+        const c = buildInClause('mir.rating', rating);
+        if (c) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_issuer_rating mir
+            JOIN master_agency ma ON ma.id = mir.agency_id AND ma.parent_id = 0
+            WHERE mir.issuer_id = mi.isin_id AND ${c.clause}
+          )`);
+          params.push(...c.params);
+        }
+      }
 
-    if (securityType.length > 0) {
-      const ph = securityType.map(() => '?').join(', ');
-      conditions.push(`mst.description IN (${ph})`);
-      params.push(...securityType);
-    }
+      if (hasFilterValue(creditRatingAgency)) {
+        const c = buildInClause('ma.short_name', creditRatingAgency);
+        if (c) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_issuer_rating mir
+            JOIN master_agency ma ON ma.id = mir.agency_id AND ma.parent_id = 0
+            WHERE mir.issuer_id = mi.isin_id AND ${c.clause}
+          )`);
+          params.push(...c.params);
+        }
+      }
 
-    if (modeOfIssue.length > 0) {
-      const ph = modeOfIssue.map(() => '?').join(', ');
-      conditions.push(`mmi.description IN (${ph})`);
-      params.push(...modeOfIssue);
-    }
+      if (hasFilterValue(listingStatus)) {
+        const c = buildInClause('mls.description', listingStatus);
+        if (c) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_issuer_stock_exchange mise
+            JOIN master_listing_status mls ON mls.code = mise.listing_status
+            WHERE mise.issuer_id = mi.isin_id AND ${c.clause}
+          )`);
+          params.push(...c.params);
+        }
+      }
 
-    if (seniority.length > 0) {
-      const ph = seniority.map(() => '?').join(', ');
-      conditions.push(`mstc.description IN (${ph})`);
-      params.push(...seniority);
-    }
+      /* ── Direct conditions (no join needed) ── */
 
-    if (taxFree.length > 0) {
-      const ph = taxFree.map(() => '?').join(', ');
-      conditions.push(`mtf.description IN (${ph})`);
-      params.push(...taxFree);
-    }
+      if (hasFilterValue(dealSize)) {
+        const c = buildInClause('mi.issue_size', dealSize, true);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
 
-    if (securedFlag.length > 0) {
-      const ph = securedFlag.map(() => '?').join(', ');
-      conditions.push(`msf.description IN (${ph})`);
-      params.push(...securedFlag);
-    }
+      /* ── 1:1 lookup filters (dynamic JOINs, added only when needed) ── */
 
-    if (arranger) {
-      conditions.push(`ma2.short_name LIKE ?`);
-      params.push(`%${arranger}%`);
-    }
+      if (hasFilterValue(ownershipType)) {
+        addJoin(`
+          LEFT JOIN master_issuer AS filter_mi_ownership
+            ON filter_mi_ownership.id = mi.isin_id
+        `);
+        addJoin(`
+          LEFT JOIN master_issuer_ownership_type AS filter_miot
+            ON filter_miot.code = filter_mi_ownership.issuer_ownership_type
+        `);
+        const c = buildInClause('filter_miot.description', ownershipType);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
 
-    const whereClause = conditions.length
-      ? `WHERE ${conditions.join(' AND ')}`
+      if (hasFilterValue(sector)) {
+        addJoin(`
+          LEFT JOIN master_business_sector AS filter_mbs
+            ON filter_mbs.code = mi.business_sector
+        `);
+        const c = buildInClause('filter_mbs.description', sector);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
+
+      if (hasFilterValue(nature)) {
+        addJoin(`
+          LEFT JOIN master_issuer AS filter_mi_nature
+            ON filter_mi_nature.id = mi.isin_id
+        `);
+        addJoin(`
+          LEFT JOIN master_issuer_type_nature AS filter_mint
+            ON filter_mint.code = filter_mi_nature.nature_type
+        `);
+        const c = buildInClause('filter_mint.description', nature);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
+
+      if (hasFilterValue(securityType)) {
+        addJoin(`
+          LEFT JOIN master_security_type AS filter_mst
+            ON filter_mst.code = mi.security_class
+        `);
+        const c = buildInClause('filter_mst.description', securityType);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
+
+      if (hasFilterValue(modeOfIssue)) {
+        addJoin(`
+          LEFT JOIN master_mode_issue AS filter_mmi
+            ON filter_mmi.code = mi.mode_issue
+        `);
+        const c = buildInClause('filter_mmi.description', modeOfIssue);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
+
+      if (hasFilterValue(seniority)) {
+        addJoin(`
+          LEFT JOIN master_seniority_tier_classification AS filter_mstc
+            ON filter_mstc.code = mi.seniority
+        `);
+        const c = buildInClause('filter_mstc.description', seniority);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
+
+      if (hasFilterValue(taxFree)) {
+        addJoin(`
+          LEFT JOIN master_tax_free AS filter_mtf
+            ON filter_mtf.code = mi.tax_free
+        `);
+        const c = buildInClause('filter_mtf.description', taxFree);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
+
+      if (hasFilterValue(securedFlag)) {
+        addJoin(`
+          LEFT JOIN master_secured_flag AS filter_msf
+            ON filter_msf.code = mi.secured_flag
+        `);
+        const c = buildInClause('filter_msf.description', securedFlag);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
+
+      if (hasFilterValue(arranger)) {
+        addJoin(`
+          LEFT JOIN master_arranger AS filter_ma2
+            ON filter_ma2.id = ia.arranger_id
+        `);
+        const c = buildInClause('filter_ma2.short_name', arranger, true);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
+
+      return { joins, conditions, params };
+    };
+
+    const {
+      joins: filterJoins,
+      conditions: filterConditions,
+      params: filterParams
+    } = buildFilterParts();
+
+    const filterJoinsSql = filterJoins.length > 0 ? filterJoins.join('\n') : '';
+    const whereClause = filterConditions.length
+      ? `WHERE ${filterConditions.join(' AND ')}`
       : '';
 
     /* ---------------------------------
        MAIN QUERY
        - No DISTINCT subquery
-       - No 1:N LEFT JOINs (ratings, listing_status moved to EXISTS)
-       - Direct aggregation
+       - No 1:N LEFT JOINs (ratings, listing_status handled via EXISTS)
+       - Only filters with values contribute their JOINs
     --------------------------------- */
     const query = `
       SELECT
         MONTH(mi.allotment_date)     AS issue_month_no,
         MONTHNAME(mi.allotment_date) AS issue_month,
-        COUNT(CONCAT(mi.isin_id, '-', ia.arranger_id)) AS no_of_issue,
+        COUNT(CONCAT(mi.id, '-', ia.arranger_id)) AS no_of_issue,
         IF(
           SUM(mi.issue_size) > 0,
           ROUND(SUM(mi.issue_size) / 10000000, 2),
@@ -9397,26 +9487,7 @@ app.post('/arranger_page_monthly_summary_data', async (req, res) => {
       FROM isin_re_issuance mi
       INNER JOIN issuer_arranger ia
         ON ia.issuer_id = mi.isin_id
-      LEFT JOIN master_issuer 
-        ON master_issuer.id = mi.isin_id
-      LEFT JOIN master_issuer_ownership_type miot
-        ON miot.code = master_issuer.issuer_ownership_type
-      LEFT JOIN master_business_sector mbs
-        ON mbs.code = mi.business_sector
-      LEFT JOIN master_issuer_type_nature mint
-        ON mint.code = master_issuer.nature_type
-      LEFT JOIN master_security_type mst
-        ON mst.code = mi.security_class
-      LEFT JOIN master_mode_issue mmi
-        ON mmi.code = mi.mode_issue
-      LEFT JOIN master_seniority_tier_classification mstc
-        ON mstc.code = mi.seniority
-      LEFT JOIN master_tax_free mtf
-        ON mtf.code = mi.tax_free
-      LEFT JOIN master_secured_flag msf
-        ON msf.code = mi.secured_flag
-      LEFT JOIN master_arranger ma2
-        ON ma2.id = ia.arranger_id
+      ${filterJoinsSql}
       ${whereClause}
       GROUP BY
         MONTH(mi.allotment_date),
@@ -9425,9 +9496,9 @@ app.post('/arranger_page_monthly_summary_data', async (req, res) => {
         MONTH(mi.allotment_date) ASC
     `;
 
-    const result = await prisma.$queryRawUnsafe(query, ...params);
+    const result = await prisma.$queryRawUnsafe(query, ...filterParams);
 
-    // ─── FIX: Merge SQL results with expected month list (includes empty months) ───
+    // ─── Merge SQL results with expected month list (includes empty months) ───
     const resultMap = new Map();
     for (const row of result) {
       resultMap.set(Number(row.issue_month_no), row);
@@ -13385,7 +13456,7 @@ app.post('/trustee_page_monthly_summary_data', async (req, res) => {
       return res.status(400).json({ error: 'startDate must be before endDate' });
     }
 
-    // ─── FIX: Full day coverage — start at 00:00:00, end at 23:59:59 ───
+    // ─── Full day coverage — start at 00:00:00, end at 23:59:59 ───
     const cyStart = formatDateForSQL(new Date(Date.UTC(
       currentStartDate.getUTCFullYear(),
       currentStartDate.getUTCMonth(),
@@ -13403,122 +13474,210 @@ app.post('/trustee_page_monthly_summary_data', async (req, res) => {
     const expectedMonths = getMonthsInRange(currentStartDate, currentEndDate);
 
     /* ---------------------------------
-       BUILD DYNAMIC CONDITIONS
+       HELPER: Build multi-value IN / LIKE clause
     --------------------------------- */
-    const conditions = [];
-    const params = [];
+    const buildInClause = (field, values, useLike = false) => {
+      if (!values || (Array.isArray(values) && values.length === 0)) return null;
 
-    // Base filters
-    conditions.push(`mi.allotment_date BETWEEN ? AND ?`);
-    params.push(cyStart, cyEnd);
+      const vals = Array.isArray(values)
+        ? values.filter(v => v !== '' && v !== null && v !== undefined)
+        : [values].filter(v => v !== '' && v !== null && v !== undefined);
 
-    conditions.push(`mi.is_visible = 1`);
+      if (vals.length === 0) return null;
 
-    // ── 1:N relationship filters (EXISTS = no row multiplication) ──
-    if (rating.length > 0) {
-      const ph = rating.map(() => '?').join(', ');
-      conditions.push(`EXISTS (
-        SELECT 1 FROM master_issuer_rating mir
-        JOIN master_agency ma ON ma.id = mir.agency_id AND ma.parent_id = 0
-        WHERE mir.issuer_id = mi.isin_id AND mir.rating IN (${ph})
-      )`);
-      params.push(...rating);
-    }
+      if (useLike) {
+        const clauses = vals.map(() => `${field} LIKE ?`).join(' OR ');
+        const params = vals.map(v => `%${v}%`);
+        return { clause: `(${clauses})`, params };
+      }
 
-    if (creditRatingAgency.length > 0) {
-      const ph = creditRatingAgency.map(() => '?').join(', ');
-      conditions.push(`EXISTS (
-        SELECT 1 FROM master_issuer_rating mir
-        JOIN master_agency ma ON ma.id = mir.agency_id AND ma.parent_id = 0
-        WHERE mir.issuer_id = mi.isin_id AND ma.short_name IN (${ph})
-      )`);
-      params.push(...creditRatingAgency);
-    }
+      const placeholders = vals.map(() => '?').join(',');
+      return { clause: `${field} IN (${placeholders})`, params: vals };
+    };
 
-    if (listingStatus.length > 0) {
-      const ph = listingStatus.map(() => '?').join(', ');
-      conditions.push(`EXISTS (
-        SELECT 1 FROM master_issuer_stock_exchange mise
-        JOIN master_listing_status mls ON mls.code = mise.listing_status
-        WHERE mise.issuer_id = mi.isin_id AND mls.description IN (${ph})
-      )`);
-      params.push(...listingStatus);
-    }
+    /* ---------------------------------
+       DYNAMIC FILTER BUILDER
+       Only add a JOIN when the corresponding filter has a value.
+       hasFilterValue() is defined outside this API.
+    --------------------------------- */
+    const buildFilterParts = () => {
+      const joins = [];
+      const conditions = [];
+      const params = [];
+      const addedJoins = new Set();
 
-    // ── 1:1 lookup filters (safe to JOIN directly) ──
-    if (dealSize) {
-      conditions.push(`mi.issue_size LIKE ?`);
-      params.push(`%${dealSize}%`);
-    }
+      const addJoin = (join) => {
+        const normalizedJoin = join.trim();
+        if (!addedJoins.has(normalizedJoin)) {
+          addedJoins.add(normalizedJoin);
+          joins.push(normalizedJoin);
+        }
+      };
 
-    if (ownershipType.length > 0) {
-      const ph = ownershipType.map(() => '?').join(', ');
-      conditions.push(`miot.description IN (${ph})`);
-      params.push(...ownershipType);
-    }
+      /* ── Base date / visibility ── */
+      conditions.push(`mi.allotment_date BETWEEN ? AND ?`);
+      params.push(cyStart, cyEnd);
+      conditions.push(`mi.is_visible = 1`);
 
-    if (sector.length > 0) {
-      const ph = sector.map(() => '?').join(', ');
-      conditions.push(`mbs.description IN (${ph})`);
-      params.push(...sector);
-    }
+      /* ── 1:N relationship filters (EXISTS = no row multiplication, no joins) ── */
 
-    if (nature.length > 0) {
-      const ph = nature.map(() => '?').join(', ');
-      conditions.push(`mint.description IN (${ph})`);
-      params.push(...nature);
-    }
+      if (hasFilterValue(rating)) {
+        const c = buildInClause('mir.rating', rating);
+        if (c) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_issuer_rating mir
+            JOIN master_agency ma ON ma.id = mir.agency_id AND ma.parent_id = 0
+            WHERE mir.issuer_id = mi.isin_id AND ${c.clause}
+          )`);
+          params.push(...c.params);
+        }
+      }
 
-    if (securityType.length > 0) {
-      const ph = securityType.map(() => '?').join(', ');
-      conditions.push(`mst.description IN (${ph})`);
-      params.push(...securityType);
-    }
+      if (hasFilterValue(creditRatingAgency)) {
+        const c = buildInClause('ma.short_name', creditRatingAgency);
+        if (c) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_issuer_rating mir
+            JOIN master_agency ma ON ma.id = mir.agency_id AND ma.parent_id = 0
+            WHERE mir.issuer_id = mi.isin_id AND ${c.clause}
+          )`);
+          params.push(...c.params);
+        }
+      }
 
-    if (modeOfIssue.length > 0) {
-      const ph = modeOfIssue.map(() => '?').join(', ');
-      conditions.push(`mmi.description IN (${ph})`);
-      params.push(...modeOfIssue);
-    }
+      if (hasFilterValue(listingStatus)) {
+        const c = buildInClause('mls.description', listingStatus);
+        if (c) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_issuer_stock_exchange mise
+            JOIN master_listing_status mls ON mls.code = mise.listing_status
+            WHERE mise.issuer_id = mi.isin_id AND ${c.clause}
+          )`);
+          params.push(...c.params);
+        }
+      }
 
-    if (seniority.length > 0) {
-      const ph = seniority.map(() => '?').join(', ');
-      conditions.push(`mstc.description IN (${ph})`);
-      params.push(...seniority);
-    }
+      /* ── Direct conditions (no join needed) ── */
 
-    if (taxFree.length > 0) {
-      const ph = taxFree.map(() => '?').join(', ');
-      conditions.push(`mtf.description IN (${ph})`);
-      params.push(...taxFree);
-    }
+      if (hasFilterValue(dealSize)) {
+        const c = buildInClause('mi.issue_size', dealSize, true);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
 
-    if (securedFlag.length > 0) {
-      const ph = securedFlag.map(() => '?').join(', ');
-      conditions.push(`msf.description IN (${ph})`);
-      params.push(...securedFlag);
-    }
+      /* ── 1:1 lookup filters (dynamic JOINs, added only when needed) ── */
 
-    if (trustee) {
-      conditions.push(`mt.short_name LIKE ?`);
-      params.push(`%${trustee}%`);
-    }
+      if (hasFilterValue(ownershipType)) {
+        addJoin(`
+          LEFT JOIN master_issuer AS filter_mi_ownership
+            ON filter_mi_ownership.id = mi.isin_id
+        `);
+        addJoin(`
+          LEFT JOIN master_issuer_ownership_type AS filter_miot
+            ON filter_miot.code = filter_mi_ownership.issuer_ownership_type
+        `);
+        const c = buildInClause('filter_miot.description', ownershipType);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
 
-    const whereClause = conditions.length
-      ? `WHERE ${conditions.join(' AND ')}`
+      if (hasFilterValue(sector)) {
+        addJoin(`
+          LEFT JOIN master_business_sector AS filter_mbs
+            ON filter_mbs.code = mi.business_sector
+        `);
+        const c = buildInClause('filter_mbs.description', sector);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
+
+      if (hasFilterValue(nature)) {
+        addJoin(`
+          LEFT JOIN master_issuer AS filter_mi_nature
+            ON filter_mi_nature.id = mi.isin_id
+        `);
+        addJoin(`
+          LEFT JOIN master_issuer_type_nature AS filter_mint
+            ON filter_mint.code = filter_mi_nature.nature_type
+        `);
+        const c = buildInClause('filter_mint.description', nature);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
+
+      if (hasFilterValue(securityType)) {
+        addJoin(`
+          LEFT JOIN master_security_type AS filter_mst
+            ON filter_mst.code = mi.security_class
+        `);
+        const c = buildInClause('filter_mst.description', securityType);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
+
+      if (hasFilterValue(modeOfIssue)) {
+        addJoin(`
+          LEFT JOIN master_mode_issue AS filter_mmi
+            ON filter_mmi.code = mi.mode_issue
+        `);
+        const c = buildInClause('filter_mmi.description', modeOfIssue);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
+
+      if (hasFilterValue(seniority)) {
+        addJoin(`
+          LEFT JOIN master_seniority_tier_classification AS filter_mstc
+            ON filter_mstc.code = mi.seniority
+        `);
+        const c = buildInClause('filter_mstc.description', seniority);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
+
+      if (hasFilterValue(taxFree)) {
+        addJoin(`
+          LEFT JOIN master_tax_free AS filter_mtf
+            ON filter_mtf.code = mi.tax_free
+        `);
+        const c = buildInClause('filter_mtf.description', taxFree);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
+
+      if (hasFilterValue(securedFlag)) {
+        addJoin(`
+          LEFT JOIN master_secured_flag AS filter_msf
+            ON filter_msf.code = mi.secured_flag
+        `);
+        const c = buildInClause('filter_msf.description', securedFlag);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
+
+      if (hasFilterValue(trustee)) {
+        // mt is already INNER JOINed in the base FROM; use its alias directly.
+        const c = buildInClause('mt.short_name', trustee, true);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
+
+      return { joins, conditions, params };
+    };
+
+    const {
+      joins: filterJoins,
+      conditions: filterConditions,
+      params: filterParams
+    } = buildFilterParts();
+
+    const filterJoinsSql = filterJoins.length > 0 ? filterJoins.join('\n') : '';
+    const whereClause = filterConditions.length
+      ? `WHERE ${filterConditions.join(' AND ')}`
       : '';
 
     /* ---------------------------------
        MAIN QUERY
-       - No DISTINCT subquery
-       - No 1:N LEFT JOINs (ratings, listing_status moved to EXISTS)
-       - Direct aggregation with trustee join
+       - Base joins: issuer_trustee (needed for grouping) + master_trustee
+         (needed for trustee filter and label)
+       - 1:N filters (rating, agency, listing status) handled via EXISTS
+       - Only filters with values contribute their JOINs
     --------------------------------- */
     const query = `
       SELECT
         MONTH(mi.allotment_date)     AS issue_month_no,
         MONTHNAME(mi.allotment_date) AS issue_month,
-        COUNT( CONCAT(mi.isin_id, '-', it.trustee_id)) AS no_of_issue,
+        COUNT(CONCAT(mi.id, '-', it.trustee_id)) AS no_of_issue,
         IF(
           SUM(mi.issue_size) > 0,
           ROUND(SUM(mi.issue_size) / 10000000, 2),
@@ -13530,24 +13689,7 @@ app.post('/trustee_page_monthly_summary_data', async (req, res) => {
         ON it.issuer_id = mi.isin_id
       INNER JOIN master_trustee mt
         ON mt.id = it.trustee_id
-      LEFT JOIN master_issuer 
-        ON master_issuer.id = mi.isin_id
-      LEFT JOIN master_issuer_ownership_type miot
-        ON miot.code = master_issuer.issuer_ownership_type
-      LEFT JOIN master_business_sector mbs
-        ON mbs.code = mi.business_sector
-      LEFT JOIN master_issuer_type_nature mint
-        ON mint.code = master_issuer.nature_type
-      LEFT JOIN master_security_type mst
-        ON mst.code = mi.security_class
-      LEFT JOIN master_mode_issue mmi
-        ON mmi.code = mi.mode_issue
-      LEFT JOIN master_seniority_tier_classification mstc
-        ON mstc.code = mi.seniority
-      LEFT JOIN master_tax_free mtf
-        ON mtf.code = mi.tax_free
-      LEFT JOIN master_secured_flag msf
-        ON msf.code = mi.secured_flag
+      ${filterJoinsSql}
       ${whereClause}
       GROUP BY
         MONTH(mi.allotment_date),
@@ -13556,9 +13698,9 @@ app.post('/trustee_page_monthly_summary_data', async (req, res) => {
         MONTH(mi.allotment_date) ASC
     `;
 
-    const result = await prisma.$queryRawUnsafe(query, ...params);
+    const result = await prisma.$queryRawUnsafe(query, ...filterParams);
 
-    // ─── FIX: Merge SQL results with expected month list (includes empty months) ───
+    // ─── Merge SQL results with expected month list (includes empty months) ───
     const resultMap = new Map();
     for (const row of result) {
       resultMap.set(Number(row.issue_month_no), row);
@@ -16838,7 +16980,7 @@ app.post('/rating_agencies_page_monthly_summary_data', async (req, res) => {
       return res.status(400).json({ error: 'startDate must be before endDate' });
     }
 
-    // ─── FIX: Full day coverage — start at 00:00:00, end at 23:59:59 ───
+    // ─── Full day coverage — start at 00:00:00, end at 23:59:59 ───
     const cyStart = formatDateForSQL(new Date(Date.UTC(
       currentStartDate.getUTCFullYear(),
       currentStartDate.getUTCMonth(),
@@ -16856,117 +16998,203 @@ app.post('/rating_agencies_page_monthly_summary_data', async (req, res) => {
     const expectedMonths = getMonthsInRange(currentStartDate, currentEndDate);
 
     /* ---------------------------------
-       BUILD DYNAMIC CONDITIONS
+       HELPER: Build multi-value IN / LIKE clause
     --------------------------------- */
-    const conditions = [];
-    const params = [];
+    const buildInClause = (field, values, useLike = false) => {
+      if (!values || (Array.isArray(values) && values.length === 0)) return null;
 
-    // Base filters
-    conditions.push(`mi.allotment_date BETWEEN ? AND ?`);
-    params.push(cyStart, cyEnd);
+      const vals = Array.isArray(values)
+        ? values.filter(v => v !== '' && v !== null && v !== undefined)
+        : [values].filter(v => v !== '' && v !== null && v !== undefined);
 
-    conditions.push(`mi.is_visible = 1`);
+      if (vals.length === 0) return null;
 
-    // ── 1:N relationship filters (EXISTS = no row multiplication) ──
-    if (rating.length > 0) {
-      const ph = rating.map(() => '?').join(', ');
-      conditions.push(`EXISTS (
-        SELECT 1 FROM master_issuer_rating mir
-        JOIN master_agency ma ON ma.id = mir.agency_id AND ma.parent_id = 0
-        WHERE mir.issuer_id = mi.isin_id AND mir.rating IN (${ph})
-      )`);
-      params.push(...rating);
-    }
+      if (useLike) {
+        const clauses = vals.map(() => `${field} LIKE ?`).join(' OR ');
+        const params = vals.map(v => `%${v}%`);
+        return { clause: `(${clauses})`, params };
+      }
 
-    if (creditRatingAgency.length > 0) {
-      const ph = creditRatingAgency.map(() => '?').join(', ');
-      conditions.push(`EXISTS (
-        SELECT 1 FROM master_issuer_rating mir
-        JOIN master_agency ma ON ma.id = mir.agency_id AND ma.parent_id = 0
-        WHERE mir.issuer_id = mi.isin_id AND ma.short_name IN (${ph})
-      )`);
-      params.push(...creditRatingAgency);
-    }
+      const placeholders = vals.map(() => '?').join(',');
+      return { clause: `${field} IN (${placeholders})`, params: vals };
+    };
 
-    if (listingStatus.length > 0) {
-      const ph = listingStatus.map(() => '?').join(', ');
-      conditions.push(`EXISTS (
-        SELECT 1 FROM master_issuer_stock_exchange mise
-        JOIN master_listing_status mls ON mls.code = mise.listing_status
-        WHERE mise.issuer_id = mi.isin_id AND mls.description IN (${ph})
-      )`);
-      params.push(...listingStatus);
-    }
+    /* ---------------------------------
+       DYNAMIC FILTER BUILDER
+       Only add a JOIN when the corresponding filter has a value.
+       hasFilterValue() is defined outside this API.
+    --------------------------------- */
+    const buildFilterParts = () => {
+      const joins = [];
+      const conditions = [];
+      const params = [];
+      const addedJoins = new Set();
 
-    // ── 1:1 lookup filters (safe to JOIN directly) ──
-    if (dealSize) {
-      conditions.push(`mi.issue_size LIKE ?`);
-      params.push(`%${dealSize}%`);
-    }
+      const addJoin = (join) => {
+        const normalizedJoin = join.trim();
+        if (!addedJoins.has(normalizedJoin)) {
+          addedJoins.add(normalizedJoin);
+          joins.push(normalizedJoin);
+        }
+      };
 
-    if (ownershipType.length > 0) {
-      const ph = ownershipType.map(() => '?').join(', ');
-      conditions.push(`miot.description IN (${ph})`);
-      params.push(...ownershipType);
-    }
+      /* ── Base date / visibility ── */
+      conditions.push(`mi.allotment_date BETWEEN ? AND ?`);
+      params.push(cyStart, cyEnd);
+      conditions.push(`mi.is_visible = 1`);
 
-    if (sector.length > 0) {
-      const ph = sector.map(() => '?').join(', ');
-      conditions.push(`mbs.description IN (${ph})`);
-      params.push(...sector);
-    }
+      /* ── 1:N relationship filters (EXISTS = no row multiplication, no joins) ── */
 
-    if (nature.length > 0) {
-      const ph = nature.map(() => '?').join(', ');
-      conditions.push(`mint.description IN (${ph})`);
-      params.push(...nature);
-    }
+      if (hasFilterValue(rating)) {
+        const c = buildInClause('mir.rating', rating);
+        if (c) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_issuer_rating mir_x
+            JOIN master_agency ma_x ON ma_x.id = mir_x.agency_id AND ma_x.parent_id = 0
+            WHERE mir_x.issuer_id = mi.isin_id AND ${c.clause.replace(/^mir\./, 'mir_x.')}
+          )`);
+          params.push(...c.params);
+        }
+      }
 
-    if (securityType.length > 0) {
-      const ph = securityType.map(() => '?').join(', ');
-      conditions.push(`mst.description IN (${ph})`);
-      params.push(...securityType);
-    }
+      if (hasFilterValue(creditRatingAgency)) {
+        const c = buildInClause('ma_x.short_name', creditRatingAgency);
+        if (c) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_issuer_rating mir_x
+            JOIN master_agency ma_x ON ma_x.id = mir_x.agency_id AND ma_x.parent_id = 0
+            WHERE mir_x.issuer_id = mi.isin_id AND ${c.clause}
+          )`);
+          params.push(...c.params);
+        }
+      }
 
-    if (modeOfIssue.length > 0) {
-      const ph = modeOfIssue.map(() => '?').join(', ');
-      conditions.push(`mmi.description IN (${ph})`);
-      params.push(...modeOfIssue);
-    }
+      if (hasFilterValue(listingStatus)) {
+        const c = buildInClause('mls.description', listingStatus);
+        if (c) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_issuer_stock_exchange mise
+            JOIN master_listing_status mls ON mls.code = mise.listing_status
+            WHERE mise.issuer_id = mi.isin_id AND ${c.clause}
+          )`);
+          params.push(...c.params);
+        }
+      }
 
-    if (seniority.length > 0) {
-      const ph = seniority.map(() => '?').join(', ');
-      conditions.push(`mstc.description IN (${ph})`);
-      params.push(...seniority);
-    }
+      /* ── Direct conditions (no join needed) ── */
 
-    if (taxFree.length > 0) {
-      const ph = taxFree.map(() => '?').join(', ');
-      conditions.push(`mtf.description IN (${ph})`);
-      params.push(...taxFree);
-    }
+      if (hasFilterValue(dealSize)) {
+        const c = buildInClause('mi.issue_size', dealSize, true);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
 
-    if (securedFlag.length > 0) {
-      const ph = securedFlag.map(() => '?').join(', ');
-      conditions.push(`msf.description IN (${ph})`);
-      params.push(...securedFlag);
-    }
+      /* ── 1:1 lookup filters (dynamic JOINs, added only when needed) ── */
 
-    const whereClause = conditions.length
-      ? `WHERE ${conditions.join(' AND ')}`
+      if (hasFilterValue(ownershipType)) {
+        addJoin(`
+          LEFT JOIN master_issuer AS filter_mi_ownership
+            ON filter_mi_ownership.id = mi.isin_id
+        `);
+        addJoin(`
+          LEFT JOIN master_issuer_ownership_type AS filter_miot
+            ON filter_miot.code = filter_mi_ownership.issuer_ownership_type
+        `);
+        const c = buildInClause('filter_miot.description', ownershipType);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
+
+      if (hasFilterValue(sector)) {
+        addJoin(`
+          LEFT JOIN master_business_sector AS filter_mbs
+            ON filter_mbs.code = mi.business_sector
+        `);
+        const c = buildInClause('filter_mbs.description', sector);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
+
+      if (hasFilterValue(nature)) {
+        addJoin(`
+          LEFT JOIN master_issuer AS filter_mi_nature
+            ON filter_mi_nature.id = mi.isin_id
+        `);
+        addJoin(`
+          LEFT JOIN master_issuer_type_nature AS filter_mint
+            ON filter_mint.code = filter_mi_nature.nature_type
+        `);
+        const c = buildInClause('filter_mint.description', nature);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
+
+      if (hasFilterValue(securityType)) {
+        addJoin(`
+          LEFT JOIN master_security_type AS filter_mst
+            ON filter_mst.code = mi.security_class
+        `);
+        const c = buildInClause('filter_mst.description', securityType);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
+
+      if (hasFilterValue(modeOfIssue)) {
+        addJoin(`
+          LEFT JOIN master_mode_issue AS filter_mmi
+            ON filter_mmi.code = mi.mode_issue
+        `);
+        const c = buildInClause('filter_mmi.description', modeOfIssue);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
+
+      if (hasFilterValue(seniority)) {
+        addJoin(`
+          LEFT JOIN master_seniority_tier_classification AS filter_mstc
+            ON filter_mstc.code = mi.seniority
+        `);
+        const c = buildInClause('filter_mstc.description', seniority);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
+
+      if (hasFilterValue(taxFree)) {
+        addJoin(`
+          LEFT JOIN master_tax_free AS filter_mtf
+            ON filter_mtf.code = mi.tax_free
+        `);
+        const c = buildInClause('filter_mtf.description', taxFree);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
+
+      if (hasFilterValue(securedFlag)) {
+        addJoin(`
+          LEFT JOIN master_secured_flag AS filter_msf
+            ON filter_msf.code = mi.secured_flag
+        `);
+        const c = buildInClause('filter_msf.description', securedFlag);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
+
+      return { joins, conditions, params };
+    };
+
+    const {
+      joins: filterJoins,
+      conditions: filterConditions,
+      params: filterParams
+    } = buildFilterParts();
+
+    const filterJoinsSql = filterJoins.length > 0 ? filterJoins.join('\n') : '';
+    const whereClause = filterConditions.length
+      ? `WHERE ${filterConditions.join(' AND ')}`
       : '';
 
     /* ---------------------------------
        MAIN QUERY
-       - No DISTINCT subquery
-       - No 1:N LEFT JOINs (ratings, listing_status moved to EXISTS)
-       - Direct aggregation with agency join
+       - Base joins: master_issuer_rating + master_agency (anchor of endpoint)
+       - 1:N filters (rating, agency, listing status) handled via EXISTS
+       - Only filters with values contribute their JOINs
     --------------------------------- */
     const query = `
       SELECT
         MONTH(mi.allotment_date)     AS issue_month_no,
         MONTHNAME(mi.allotment_date) AS issue_month,
-        COUNT(CONCAT(mi.isin_id, '-', mir.agency_id)) AS no_of_issue,
+        COUNT(CONCAT(mi.id, '-', mir.agency_id)) AS no_of_issue,
         IF(
           SUM(mi.issue_size) > 0,
           ROUND(SUM(mi.issue_size) / 10000000, 2),
@@ -16978,24 +17206,7 @@ app.post('/rating_agencies_page_monthly_summary_data', async (req, res) => {
         ON mir.issuer_id = mi.isin_id
       INNER JOIN master_agency mag
         ON mag.id = mir.agency_id
-      LEFT JOIN master_issuer 
-        ON master_issuer.id = mi.isin_id
-      LEFT JOIN master_issuer_ownership_type miot
-        ON miot.code = master_issuer.issuer_ownership_type
-      LEFT JOIN master_business_sector mbs
-        ON mbs.code = mi.business_sector
-      LEFT JOIN master_issuer_type_nature mint
-        ON mint.code = master_issuer.nature_type
-      LEFT JOIN master_security_type mst
-        ON mst.code = mi.security_class
-      LEFT JOIN master_mode_issue mmi
-        ON mmi.code = mi.mode_issue
-      LEFT JOIN master_seniority_tier_classification mstc
-        ON mstc.code = mi.seniority
-      LEFT JOIN master_tax_free mtf
-        ON mtf.code = mi.tax_free
-      LEFT JOIN master_secured_flag msf
-        ON msf.code = mi.secured_flag
+      ${filterJoinsSql}
       ${whereClause}
       GROUP BY
         MONTH(mi.allotment_date),
@@ -17004,9 +17215,9 @@ app.post('/rating_agencies_page_monthly_summary_data', async (req, res) => {
         MONTH(mi.allotment_date) ASC
     `;
 
-    const result = await prisma.$queryRawUnsafe(query, ...params);
+    const result = await prisma.$queryRawUnsafe(query, ...filterParams);
 
-    // ─── FIX: Merge SQL results with expected month list (includes empty months) ───
+    // ─── Merge SQL results with expected month list (includes empty months) ───
     const resultMap = new Map();
     for (const row of result) {
       resultMap.set(Number(row.issue_month_no), row);
@@ -20153,7 +20364,7 @@ app.post('/registrar_page_monthly_summary_data', async (req, res) => {
       return res.status(400).json({ error: 'startDate must be before endDate' });
     }
 
-    // ─── FIX: Full day coverage — start at 00:00:00, end at 23:59:59 ───
+    // ─── Full day coverage — start at 00:00:00, end at 23:59:59 ───
     const cyStart = formatDateForSQL(new Date(Date.UTC(
       currentStartDate.getUTCFullYear(),
       currentStartDate.getUTCMonth(),
@@ -20171,122 +20382,209 @@ app.post('/registrar_page_monthly_summary_data', async (req, res) => {
     const expectedMonths = getMonthsInRange(currentStartDate, currentEndDate);
 
     /* ---------------------------------
-       BUILD DYNAMIC CONDITIONS
+       HELPER: Build multi-value IN / LIKE clause
     --------------------------------- */
-    const conditions = [];
-    const params = [];
+    const buildInClause = (field, values, useLike = false) => {
+      if (!values || (Array.isArray(values) && values.length === 0)) return null;
 
-    // Base filters
-    conditions.push(`mi.allotment_date BETWEEN ? AND ?`);
-    params.push(cyStart, cyEnd);
+      const vals = Array.isArray(values)
+        ? values.filter(v => v !== '' && v !== null && v !== undefined)
+        : [values].filter(v => v !== '' && v !== null && v !== undefined);
 
-    conditions.push(`mi.is_visible = 1`);
+      if (vals.length === 0) return null;
 
-    // ── 1:N relationship filters (EXISTS = no row multiplication) ──
-    if (rating.length > 0) {
-      const ph = rating.map(() => '?').join(', ');
-      conditions.push(`EXISTS (
-        SELECT 1 FROM master_issuer_rating mir
-        JOIN master_agency ma ON ma.id = mir.agency_id AND ma.parent_id = 0
-        WHERE mir.issuer_id = mi.isin_id AND mir.rating IN (${ph})
-      )`);
-      params.push(...rating);
-    }
+      if (useLike) {
+        const clauses = vals.map(() => `${field} LIKE ?`).join(' OR ');
+        const params = vals.map(v => `%${v}%`);
+        return { clause: `(${clauses})`, params };
+      }
 
-    if (creditRatingAgency.length > 0) {
-      const ph = creditRatingAgency.map(() => '?').join(', ');
-      conditions.push(`EXISTS (
-        SELECT 1 FROM master_issuer_rating mir
-        JOIN master_agency ma ON ma.id = mir.agency_id AND ma.parent_id = 0
-        WHERE mir.issuer_id = mi.isin_id AND ma.short_name IN (${ph})
-      )`);
-      params.push(...creditRatingAgency);
-    }
+      const placeholders = vals.map(() => '?').join(',');
+      return { clause: `${field} IN (${placeholders})`, params: vals };
+    };
 
-    if (listingStatus.length > 0) {
-      const ph = listingStatus.map(() => '?').join(', ');
-      conditions.push(`EXISTS (
-        SELECT 1 FROM master_issuer_stock_exchange mise
-        JOIN master_listing_status mls ON mls.code = mise.listing_status
-        WHERE mise.issuer_id = mi.isin_id AND mls.description IN (${ph})
-      )`);
-      params.push(...listingStatus);
-    }
+    /* ---------------------------------
+       DYNAMIC FILTER BUILDER
+       Only add a JOIN when the corresponding filter has a value.
+       hasFilterValue() is defined outside this API.
+    --------------------------------- */
+    const buildFilterParts = () => {
+      const joins = [];
+      const conditions = [];
+      const params = [];
+      const addedJoins = new Set();
 
-    // ── 1:1 lookup filters (safe to JOIN directly) ──
-    if (dealSize) {
-      conditions.push(`mi.issue_size LIKE ?`);
-      params.push(`%${dealSize}%`);
-    }
+      const addJoin = (join) => {
+        const normalizedJoin = join.trim();
+        if (!addedJoins.has(normalizedJoin)) {
+          addedJoins.add(normalizedJoin);
+          joins.push(normalizedJoin);
+        }
+      };
 
-    if (ownershipType.length > 0) {
-      const ph = ownershipType.map(() => '?').join(', ');
-      conditions.push(`miot.description IN (${ph})`);
-      params.push(...ownershipType);
-    }
+      /* ── Base date / visibility ── */
+      conditions.push(`mi.allotment_date BETWEEN ? AND ?`);
+      params.push(cyStart, cyEnd);
+      conditions.push(`mi.is_visible = 1`);
 
-    if (sector.length > 0) {
-      const ph = sector.map(() => '?').join(', ');
-      conditions.push(`mbs.description IN (${ph})`);
-      params.push(...sector);
-    }
+      /* ── 1:N relationship filters (EXISTS = no row multiplication, no joins) ── */
 
-    if (nature.length > 0) {
-      const ph = nature.map(() => '?').join(', ');
-      conditions.push(`mint.description IN (${ph})`);
-      params.push(...nature);
-    }
+      if (hasFilterValue(rating)) {
+        const c = buildInClause('mir.rating', rating);
+        if (c) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_issuer_rating mir
+            JOIN master_agency ma ON ma.id = mir.agency_id AND ma.parent_id = 0
+            WHERE mir.issuer_id = mi.isin_id AND ${c.clause}
+          )`);
+          params.push(...c.params);
+        }
+      }
 
-    if (securityType.length > 0) {
-      const ph = securityType.map(() => '?').join(', ');
-      conditions.push(`mst.description IN (${ph})`);
-      params.push(...securityType);
-    }
+      if (hasFilterValue(creditRatingAgency)) {
+        const c = buildInClause('ma.short_name', creditRatingAgency);
+        if (c) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_issuer_rating mir
+            JOIN master_agency ma ON ma.id = mir.agency_id AND ma.parent_id = 0
+            WHERE mir.issuer_id = mi.isin_id AND ${c.clause}
+          )`);
+          params.push(...c.params);
+        }
+      }
 
-    if (modeOfIssue.length > 0) {
-      const ph = modeOfIssue.map(() => '?').join(', ');
-      conditions.push(`mmi.description IN (${ph})`);
-      params.push(...modeOfIssue);
-    }
+      if (hasFilterValue(listingStatus)) {
+        const c = buildInClause('mls.description', listingStatus);
+        if (c) {
+          conditions.push(`EXISTS (
+            SELECT 1 FROM master_issuer_stock_exchange mise
+            JOIN master_listing_status mls ON mls.code = mise.listing_status
+            WHERE mise.issuer_id = mi.isin_id AND ${c.clause}
+          )`);
+          params.push(...c.params);
+        }
+      }
 
-    if (seniority.length > 0) {
-      const ph = seniority.map(() => '?').join(', ');
-      conditions.push(`mstc.description IN (${ph})`);
-      params.push(...seniority);
-    }
+      /* ── Direct conditions (no join needed) ── */
 
-    if (taxFree.length > 0) {
-      const ph = taxFree.map(() => '?').join(', ');
-      conditions.push(`mtf.description IN (${ph})`);
-      params.push(...taxFree);
-    }
+      if (hasFilterValue(dealSize)) {
+        const c = buildInClause('mi.issue_size', dealSize, true);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
 
-    if (securedFlag.length > 0) {
-      const ph = securedFlag.map(() => '?').join(', ');
-      conditions.push(`msf.description IN (${ph})`);
-      params.push(...securedFlag);
-    }
+      /* ── 1:1 lookup filters (dynamic JOINs, added only when needed) ── */
 
-    if (registrar) {
-      conditions.push(`registrar_master.short_name LIKE ?`);
-      params.push(`%${registrar}%`);
-    }
+      if (hasFilterValue(ownershipType)) {
+        addJoin(`
+          LEFT JOIN master_issuer AS filter_mi_ownership
+            ON filter_mi_ownership.id = mi.isin_id
+        `);
+        addJoin(`
+          LEFT JOIN master_issuer_ownership_type AS filter_miot
+            ON filter_miot.code = filter_mi_ownership.issuer_ownership_type
+        `);
+        const c = buildInClause('filter_miot.description', ownershipType);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
 
-    const whereClause = conditions.length
-      ? `WHERE ${conditions.join(' AND ')}`
+      if (hasFilterValue(sector)) {
+        addJoin(`
+          LEFT JOIN master_business_sector AS filter_mbs
+            ON filter_mbs.code = mi.business_sector
+        `);
+        const c = buildInClause('filter_mbs.description', sector);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
+
+      if (hasFilterValue(nature)) {
+        addJoin(`
+          LEFT JOIN master_issuer AS filter_mi_nature
+            ON filter_mi_nature.id = mi.isin_id
+        `);
+        addJoin(`
+          LEFT JOIN master_issuer_type_nature AS filter_mint
+            ON filter_mint.code = filter_mi_nature.nature_type
+        `);
+        const c = buildInClause('filter_mint.description', nature);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
+
+      if (hasFilterValue(securityType)) {
+        addJoin(`
+          LEFT JOIN master_security_type AS filter_mst
+            ON filter_mst.code = mi.security_class
+        `);
+        const c = buildInClause('filter_mst.description', securityType);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
+
+      if (hasFilterValue(modeOfIssue)) {
+        addJoin(`
+          LEFT JOIN master_mode_issue AS filter_mmi
+            ON filter_mmi.code = mi.mode_issue
+        `);
+        const c = buildInClause('filter_mmi.description', modeOfIssue);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
+
+      if (hasFilterValue(seniority)) {
+        addJoin(`
+          LEFT JOIN master_seniority_tier_classification AS filter_mstc
+            ON filter_mstc.code = mi.seniority
+        `);
+        const c = buildInClause('filter_mstc.description', seniority);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
+
+      if (hasFilterValue(taxFree)) {
+        addJoin(`
+          LEFT JOIN master_tax_free AS filter_mtf
+            ON filter_mtf.code = mi.tax_free
+        `);
+        const c = buildInClause('filter_mtf.description', taxFree);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
+
+      if (hasFilterValue(securedFlag)) {
+        addJoin(`
+          LEFT JOIN master_secured_flag AS filter_msf
+            ON filter_msf.code = mi.secured_flag
+        `);
+        const c = buildInClause('filter_msf.description', securedFlag);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
+
+      if (hasFilterValue(registrar)) {
+        // registrar_master is already INNER JOINed in the base FROM; use its alias directly.
+        const c = buildInClause('registrar_master.short_name', registrar, true);
+        if (c) { conditions.push(c.clause); params.push(...c.params); }
+      }
+
+      return { joins, conditions, params };
+    };
+
+    const {
+      joins: filterJoins,
+      conditions: filterConditions,
+      params: filterParams
+    } = buildFilterParts();
+
+    const filterJoinsSql = filterJoins.length > 0 ? filterJoins.join('\n') : '';
+    const whereClause = filterConditions.length
+      ? `WHERE ${filterConditions.join(' AND ')}`
       : '';
 
     /* ---------------------------------
        MAIN QUERY
-       - No DISTINCT subquery
-       - No 1:N LEFT JOINs (ratings, listing_status moved to EXISTS)
-       - Direct aggregation with registrar join
+       - Base joins: issuer_registrar + master_registrar (anchor of endpoint)
+       - 1:N filters (rating, agency, listing status) handled via EXISTS
+       - Only filters with values contribute their JOINs
     --------------------------------- */
     const query = `
       SELECT
         MONTH(mi.allotment_date)     AS issue_month_no,
         MONTHNAME(mi.allotment_date) AS issue_month,
-        COUNT(CONCAT(mi.isin_id, '-', ir.registrar_id)) AS no_of_issue,
+        COUNT(CONCAT(mi.id, '-', ir.registrar_id)) AS no_of_issue,
         IF(
           SUM(mi.issue_size) > 0,
           ROUND(SUM(mi.issue_size) / 10000000, 2),
@@ -20298,24 +20596,7 @@ app.post('/registrar_page_monthly_summary_data', async (req, res) => {
         ON ir.issuer_id = mi.isin_id
       INNER JOIN master_registrar registrar_master
         ON registrar_master.id = ir.registrar_id
-      LEFT JOIN master_issuer 
-        ON master_issuer.id = mi.isin_id
-      LEFT JOIN master_issuer_ownership_type miot
-        ON miot.code = master_issuer.issuer_ownership_type
-      LEFT JOIN master_business_sector mbs
-        ON mbs.code = mi.business_sector
-      LEFT JOIN master_issuer_type_nature mint
-        ON mint.code = master_issuer.nature_type
-      LEFT JOIN master_security_type mst
-        ON mst.code = mi.security_class
-      LEFT JOIN master_mode_issue mmi
-        ON mmi.code = mi.mode_issue
-      LEFT JOIN master_seniority_tier_classification mstc
-        ON mstc.code = mi.seniority
-      LEFT JOIN master_tax_free mtf
-        ON mtf.code = mi.tax_free
-      LEFT JOIN master_secured_flag msf
-        ON msf.code = mi.secured_flag
+      ${filterJoinsSql}
       ${whereClause}
       GROUP BY
         MONTH(mi.allotment_date),
@@ -20324,9 +20605,9 @@ app.post('/registrar_page_monthly_summary_data', async (req, res) => {
         MONTH(mi.allotment_date) ASC
     `;
 
-    const result = await prisma.$queryRawUnsafe(query, ...params);
+    const result = await prisma.$queryRawUnsafe(query, ...filterParams);
 
-    // ─── FIX: Merge SQL results with expected month list (includes empty months) ───
+    // ─── Merge SQL results with expected month list (includes empty months) ───
     const resultMap = new Map();
     for (const row of result) {
       resultMap.set(Number(row.issue_month_no), row);
