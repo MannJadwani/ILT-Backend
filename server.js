@@ -6519,7 +6519,7 @@ app.post('/issuer_page_monthly_detailed_data', async (req, res) => {
     // COUNT QUERY — same joins, count distinct ISINs
     // =========================
     const countQuery = `
-      SELECT COUNT(DISTINCT i.id) AS total
+      SELECT COUNT(*) AS total
       FROM (
         SELECT i.id, i.isin
         FROM isin_re_issuance AS i
@@ -9624,7 +9624,7 @@ app.post('/arrangers_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Arranger filter (LIKE search)
-    if (arranger) {
+    if (hasFilterValue(arranger)) {
       const arrangerValue = Array.isArray(arranger) ? arranger : [arranger];
       const inClause = buildInClause('ma2.short_name', arrangerValue, true);
       if (inClause) {
@@ -9638,7 +9638,7 @@ app.post('/arrangers_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Issuer Name filter (LIKE search)
-    if (issuerName) {
+    if (hasFilterValue(issuerName)) {
       const issuerNameValue = Array.isArray(issuerName) ? issuerName : [issuerName];
       const inClause = buildInClause('id2.issuer_name', issuerNameValue, true);
       if (inClause) {
@@ -9651,7 +9651,7 @@ app.post('/arrangers_page_monthly_detailed_data', async (req, res) => {
     }
 
     // ISIN filter (LIKE search)
-    if (isin && (Array.isArray(isin) ? isin.length > 0 : isin !== '')) {
+    if (hasFilterValue(isin)) {
       const isinValue = Array.isArray(isin) ? isin : [isin];
       const inClause = buildInClause('i.isin', isinValue, true);
       if (inClause) {
@@ -9661,7 +9661,7 @@ app.post('/arrangers_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Rating filter
-    if (rating && (Array.isArray(rating) ? rating.length > 0 : rating !== '')) {
+    if (hasFilterValue(rating)) {
       const ratingValue = Array.isArray(rating) ? rating : [rating];
       const inClause = buildInClause('mir2.rating', ratingValue);
       if (inClause) {
@@ -9674,7 +9674,7 @@ app.post('/arrangers_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Seniority filter
-    if (seniority && (Array.isArray(seniority) ? seniority.length > 0 : seniority !== '')) {
+    if (hasFilterValue(seniority)) {
       const seniorityValue = Array.isArray(seniority) ? seniority : [seniority];
       const inClause = buildInClause('mstc2.description', seniorityValue);
       if (inClause) {
@@ -9687,7 +9687,7 @@ app.post('/arrangers_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Tax Free filter
-    if (taxFree && (Array.isArray(taxFree) ? taxFree.length > 0 : taxFree !== '')) {
+    if (hasFilterValue(taxFree)) {
       const taxFreeValue = Array.isArray(taxFree) ? taxFree : [taxFree];
       const inClause = buildInClause('mtf2.description', taxFreeValue);
       if (inClause) {
@@ -9700,7 +9700,7 @@ app.post('/arrangers_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Secured Flag filter
-    if (securedFlag && (Array.isArray(securedFlag) ? securedFlag.length > 0 : securedFlag !== '')) {
+    if (hasFilterValue(securedFlag)) {
       const securedFlagValue = Array.isArray(securedFlag) ? securedFlag : [securedFlag];
       const inClause = buildInClause('msf2.description', securedFlagValue);
       if (inClause) {
@@ -9713,7 +9713,7 @@ app.post('/arrangers_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Trustee filter
-    if (trustee && (Array.isArray(trustee) ? trustee.length > 0 : trustee !== '')) {
+    if (hasFilterValue(trustee)) {
       const trusteeValue = Array.isArray(trustee) ? trustee : [trustee];
       const inClause = buildInClause('mt2.short_name', trusteeValue, true);
       if (inClause) {
@@ -9727,7 +9727,7 @@ app.post('/arrangers_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Credit Rating Agency filter
-    if (creditRatingAgency && (Array.isArray(creditRatingAgency) ? creditRatingAgency.length > 0 : creditRatingAgency !== '')) {
+    if (hasFilterValue(creditRatingAgency)) {
       const agencyValue = Array.isArray(creditRatingAgency) ? creditRatingAgency : [creditRatingAgency];
       const inClause = buildInClause('mag2.short_name', agencyValue, true);
       if (inClause) {
@@ -9741,7 +9741,7 @@ app.post('/arrangers_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Listing Status filter
-    if (listingStatus && (Array.isArray(listingStatus) ? listingStatus.length > 0 : listingStatus !== '')) {
+    if (hasFilterValue(listingStatus)) {
       const listingValue = Array.isArray(listingStatus) ? listingStatus : [listingStatus];
       const inClause = buildInClause('mls2.description', listingValue);
       if (inClause) {
@@ -9755,7 +9755,7 @@ app.post('/arrangers_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Security Type filter
-    if (securityType && (Array.isArray(securityType) ? securityType.length > 0 : securityType !== '')) {
+    if (hasFilterValue(securityType)) {
       const securityValue = Array.isArray(securityType) ? securityType : [securityType];
       const inClause = buildInClause('mst2.description', securityValue);
       if (inClause) {
@@ -9768,7 +9768,7 @@ app.post('/arrangers_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Mode of Issue filter
-    if (modeOfIssue && (Array.isArray(modeOfIssue) ? modeOfIssue.length > 0 : modeOfIssue !== '')) {
+    if (hasFilterValue(modeOfIssue)) {
       const modeValue = Array.isArray(modeOfIssue) ? modeOfIssue : [modeOfIssue];
       const inClause = buildInClause('mmi2.description', modeValue);
       if (inClause) {
@@ -9781,7 +9781,7 @@ app.post('/arrangers_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Registrar filter
-    if (registrar && (Array.isArray(registrar) ? registrar.length > 0 : registrar !== '')) {
+    if (hasFilterValue(registrar)) {
       const registrarValue = Array.isArray(registrar) ? registrar : [registrar];
       const inClause = buildInClause('mr2.short_name', registrarValue, true);
       if (inClause) {
@@ -9795,7 +9795,7 @@ app.post('/arrangers_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Sector filter
-    if (sector && (Array.isArray(sector) ? sector.length > 0 : sector !== '')) {
+    if (hasFilterValue(sector)) {
       const sectorValue = Array.isArray(sector) ? sector : [sector];
       const inClause = buildInClause('mbs2.description', sectorValue);
       if (inClause) {
@@ -9808,7 +9808,7 @@ app.post('/arrangers_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Nature filter
-    if (nature && (Array.isArray(nature) ? nature.length > 0 : nature !== '')) {
+    if (hasFilterValue(nature)) {
       const natureValue = Array.isArray(nature) ? nature : [nature];
       const inClause = buildInClause('mitn2.description', natureValue);
       if (inClause) {
@@ -9822,7 +9822,7 @@ app.post('/arrangers_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Ownership Type filter
-    if (ownershipType && (Array.isArray(ownershipType) ? ownershipType.length > 0 : ownershipType !== '')) {
+    if (hasFilterValue(ownershipType)) {
       const ownershipValue = Array.isArray(ownershipType) ? ownershipType : [ownershipType];
       const inClause = buildInClause('miot2.description', ownershipValue);
       if (inClause) {
@@ -9844,7 +9844,7 @@ app.post('/arrangers_page_monthly_detailed_data', async (req, res) => {
     // =========================
     const dataQuery = `
       SELECT
-        i.isin_id AS issuerId,
+        i.id AS issuerId,
         ia.arranger_id,
         ma.short_name AS arranger_name,
         i.isin,
@@ -9897,7 +9897,7 @@ app.post('/arrangers_page_monthly_detailed_data', async (req, res) => {
       LEFT JOIN master_tax_free AS tf ON tf.code = i.tax_free
       LEFT JOIN master_secured_flag AS msf ON msf.code = i.secured_flag
       ${whereClause}
-      GROUP BY i.isin_id, ia.arranger_id, ma.short_name, i.isin
+      GROUP BY i.id, ia.arranger_id, ma.short_name, i.isin
       ORDER BY ANY_VALUE(id.issuer_name) ASC
       LIMIT ? OFFSET ?
     `;
@@ -9906,11 +9906,15 @@ app.post('/arrangers_page_monthly_detailed_data', async (req, res) => {
     // COUNT QUERY — no 1:N joins, accurate count
     // =========================
     const countQuery = `
-      SELECT COUNT(CONCAT(i.isin_id, '-', ia.arranger_id)) AS total
-      FROM isin_re_issuance AS i
-      INNER JOIN issuer_arranger AS ia ON i.isin_id = ia.issuer_id
-      INNER JOIN master_arranger AS ma ON ia.arranger_id = ma.id
-      ${whereClause}
+      SELECT COUNT(*) AS total
+      FROM (
+        SELECT i.id, ia.arranger_id
+        FROM isin_re_issuance AS i
+        INNER JOIN issuer_arranger AS ia ON i.isin_id = ia.issuer_id
+        INNER JOIN master_arranger AS ma ON ia.arranger_id = ma.id
+        ${whereClause}
+        GROUP BY i.id, ia.arranger_id, ma.short_name, i.isin
+      ) AS aggregate_table
     `;
 
     // =========================
@@ -13758,8 +13762,6 @@ app.post('/trustee_page_monthly_detailed_data', async (req, res) => {
     // =========================
     // INPUT VALIDATION
     // =========================
-
-    // Fix: Validate dates
     if (!startDate || !endDate) {
       return res.status(400).json({
         success: false,
@@ -13777,11 +13779,9 @@ app.post('/trustee_page_monthly_detailed_data', async (req, res) => {
       });
     }
 
-    // Fix: Validate and sanitize limit/offset
     const safeLimit = Math.max(1, Math.min(1000, parseInt(limit, 10) || 25));
     const safeOffset = Math.max(0, parseInt(offset, 10) || 0);
 
-    // Fix: Validate month if provided
     const safeMonth = month !== "" ? parseInt(month, 10) : null;
     if (safeMonth !== null && (isNaN(safeMonth) || safeMonth < 1 || safeMonth > 12)) {
       return res.status(400).json({
@@ -13826,8 +13826,8 @@ app.post('/trustee_page_monthly_detailed_data', async (req, res) => {
       params.push(safeMonth);
     }
 
-    // Trustee Name filter (LIKE search, array support)
-    if (trusteeName && (Array.isArray(trusteeName) ? trusteeName.length > 0 : trusteeName !== '')) {
+    // Trustee Name filter
+    if (hasFilterValue(trusteeName)) {
       const trusteeValue = Array.isArray(trusteeName) ? trusteeName : [trusteeName];
       const inClause = buildInClause('mt2.short_name', trusteeValue, true);
       if (inClause) {
@@ -13840,8 +13840,8 @@ app.post('/trustee_page_monthly_detailed_data', async (req, res) => {
       }
     }
 
-    // Issuer Name filter (LIKE search, array support)
-    if (issuerName && (Array.isArray(issuerName) ? issuerName.length > 0 : issuerName !== '')) {
+    // Issuer Name filter
+    if (hasFilterValue(issuerName)) {
       const issuerNameValue = Array.isArray(issuerName) ? issuerName : [issuerName];
       const inClause = buildInClause('id2.issuer_name', issuerNameValue, true);
       if (inClause) {
@@ -13853,8 +13853,8 @@ app.post('/trustee_page_monthly_detailed_data', async (req, res) => {
       }
     }
 
-    // ISIN filter (LIKE search, array support)
-    if (isin && (Array.isArray(isin) ? isin.length > 0 : isin !== '')) {
+    // ISIN filter
+    if (hasFilterValue(isin)) {
       const isinValue = Array.isArray(isin) ? isin : [isin];
       const inClause = buildInClause('i.isin', isinValue, true);
       if (inClause) {
@@ -13863,8 +13863,8 @@ app.post('/trustee_page_monthly_detailed_data', async (req, res) => {
       }
     }
 
-    // Rating filter (array support)
-    if (rating && (Array.isArray(rating) ? rating.length > 0 : rating !== '')) {
+    // Rating filter
+    if (hasFilterValue(rating)) {
       const ratingValue = Array.isArray(rating) ? rating : [rating];
       const inClause = buildInClause('mir2.rating', ratingValue);
       if (inClause) {
@@ -13876,8 +13876,8 @@ app.post('/trustee_page_monthly_detailed_data', async (req, res) => {
       }
     }
 
-    // Seniority filter (array support)
-    if (seniority && (Array.isArray(seniority) ? seniority.length > 0 : seniority !== '')) {
+    // Seniority filter
+    if (hasFilterValue(seniority)) {
       const seniorityValue = Array.isArray(seniority) ? seniority : [seniority];
       const inClause = buildInClause('mstc2.description', seniorityValue);
       if (inClause) {
@@ -13889,8 +13889,8 @@ app.post('/trustee_page_monthly_detailed_data', async (req, res) => {
       }
     }
 
-    // Tax Free filter (array support)
-    if (taxFree && (Array.isArray(taxFree) ? taxFree.length > 0 : taxFree !== '')) {
+    // Tax Free filter
+    if (hasFilterValue(taxFree)) {
       const taxFreeValue = Array.isArray(taxFree) ? taxFree : [taxFree];
       const inClause = buildInClause('mtf2.description', taxFreeValue);
       if (inClause) {
@@ -13902,8 +13902,8 @@ app.post('/trustee_page_monthly_detailed_data', async (req, res) => {
       }
     }
 
-    // Secured Flag filter (array support)
-    if (securedFlag && (Array.isArray(securedFlag) ? securedFlag.length > 0 : securedFlag !== '')) {
+    // Secured Flag filter
+    if (hasFilterValue(securedFlag)) {
       const securedFlagValue = Array.isArray(securedFlag) ? securedFlag : [securedFlag];
       const inClause = buildInClause('msf2.description', securedFlagValue);
       if (inClause) {
@@ -13915,8 +13915,8 @@ app.post('/trustee_page_monthly_detailed_data', async (req, res) => {
       }
     }
 
-    // Credit Rating Agency filter (array support, LIKE search)
-    if (creditRatingAgency && (Array.isArray(creditRatingAgency) ? creditRatingAgency.length > 0 : creditRatingAgency !== '')) {
+    // Credit Rating Agency filter
+    if (hasFilterValue(creditRatingAgency)) {
       const agencyValue = Array.isArray(creditRatingAgency) ? creditRatingAgency : [creditRatingAgency];
       const inClause = buildInClause('mag2.short_name', agencyValue, true);
       if (inClause) {
@@ -13929,8 +13929,8 @@ app.post('/trustee_page_monthly_detailed_data', async (req, res) => {
       }
     }
 
-    // Listing Status filter (array support)
-    if (listingStatus && (Array.isArray(listingStatus) ? listingStatus.length > 0 : listingStatus !== '')) {
+    // Listing Status filter
+    if (hasFilterValue(listingStatus)) {
       const listingValue = Array.isArray(listingStatus) ? listingStatus : [listingStatus];
       const inClause = buildInClause('mls2.description', listingValue);
       if (inClause) {
@@ -13943,8 +13943,8 @@ app.post('/trustee_page_monthly_detailed_data', async (req, res) => {
       }
     }
 
-    // Security Type filter (array support)
-    if (securityType && (Array.isArray(securityType) ? securityType.length > 0 : securityType !== '')) {
+    // Security Type filter
+    if (hasFilterValue(securityType)) {
       const securityValue = Array.isArray(securityType) ? securityType : [securityType];
       const inClause = buildInClause('mst2.description', securityValue);
       if (inClause) {
@@ -13956,8 +13956,8 @@ app.post('/trustee_page_monthly_detailed_data', async (req, res) => {
       }
     }
 
-    // Mode of Issue filter (array support)
-    if (modeOfIssue && (Array.isArray(modeOfIssue) ? modeOfIssue.length > 0 : modeOfIssue !== '')) {
+    // Mode of Issue filter
+    if (hasFilterValue(modeOfIssue)) {
       const modeValue = Array.isArray(modeOfIssue) ? modeOfIssue : [modeOfIssue];
       const inClause = buildInClause('mmi2.description', modeValue);
       if (inClause) {
@@ -13969,8 +13969,8 @@ app.post('/trustee_page_monthly_detailed_data', async (req, res) => {
       }
     }
 
-    // Arranger filter (array support, LIKE search)
-    if (arranger && (Array.isArray(arranger) ? arranger.length > 0 : arranger !== '')) {
+    // Arranger filter
+    if (hasFilterValue(arranger)) {
       const arrangerValue = Array.isArray(arranger) ? arranger : [arranger];
       const inClause = buildInClause('ma2.short_name', arrangerValue, true);
       if (inClause) {
@@ -13983,8 +13983,8 @@ app.post('/trustee_page_monthly_detailed_data', async (req, res) => {
       }
     }
 
-    // Registrar filter (array support, LIKE search)
-    if (registrar && (Array.isArray(registrar) ? registrar.length > 0 : registrar !== '')) {
+    // Registrar filter
+    if (hasFilterValue(registrar)) {
       const registrarValue = Array.isArray(registrar) ? registrar : [registrar];
       const inClause = buildInClause('mr2.short_name', registrarValue, true);
       if (inClause) {
@@ -14005,22 +14005,22 @@ app.post('/trustee_page_monthly_detailed_data', async (req, res) => {
       : '';
 
     // =========================
-    // DATA QUERY — scalar subqueries for 1:N relationships
+    // DATA QUERY — no scalar subqueries, all 1:N via JOIN + GROUP_CONCAT / ANY_VALUE
     // =========================
     const dataQuery = `
       SELECT
-        i.isin_id AS issuerId,
+        i.id AS issuerId,
         i.isin,
         ANY_VALUE(id.issuer_name) AS issuer_name,
         ANY_VALUE(i.allotment_date) AS allotment_date,
-        (SELECT coupon_rate FROM issuer_coupon_details WHERE issuer_id = i.isin_id LIMIT 1) AS coupon_rate,
+        ANY_VALUE(icd.coupon_rate) AS coupon_rate,
         mt.short_name AS debenture_trustee_name,
-        (SELECT mr.short_name FROM issuer_registrar ir JOIN master_registrar mr ON mr.id = ir.registrar_id WHERE ir.issuer_id = i.isin_id LIMIT 1) AS registrar_detail,
+        ANY_VALUE(mr.short_name) AS registrar_detail,
         ANY_VALUE(i.maturity_date) AS maturity_date,
-        (SELECT GROUP_CONCAT(DISTINCT mir.rating) FROM master_issuer_rating mir WHERE mir.issuer_id = i.isin_id) AS rating,
-        (SELECT GROUP_CONCAT(DISTINCT mag.short_name) FROM master_issuer_rating mir JOIN master_agency mag ON mag.id = mir.agency_id WHERE mir.issuer_id = i.isin_id) AS agency_name,
-        (SELECT GROUP_CONCAT(DISTINCT CONCAT(mag.short_name, ': ', mir.rating)) FROM master_issuer_rating mir JOIN master_agency mag ON mag.id = mir.agency_id WHERE mir.issuer_id = i.isin_id) AS rating_info,
-        (SELECT GROUP_CONCAT(DISTINCT ma.short_name) FROM issuer_arranger ia JOIN master_arranger ma ON ma.id = ia.arranger_id WHERE ia.issuer_id = i.isin_id) AS arranger_name,
+        GROUP_CONCAT(DISTINCT mir.rating) AS rating,
+        GROUP_CONCAT(DISTINCT mag.short_name) AS agency_name,
+        GROUP_CONCAT(DISTINCT CONCAT(mag.short_name, ': ', mir.rating)) AS rating_info,
+        GROUP_CONCAT(DISTINCT ma.short_name) AS arranger_name,
         ANY_VALUE(i.security_name) AS security_name,
         ANY_VALUE(s.description) AS security_type,
         ANY_VALUE(mi.description) AS mode_issue,
@@ -14029,7 +14029,7 @@ app.post('/trustee_page_monthly_detailed_data', async (req, res) => {
         ANY_VALUE(mstc.description) AS seniority,
         ANY_VALUE(tf.description) AS tax_free,
         ANY_VALUE(msf.description) AS secured_flag,
-        (SELECT description FROM master_issuer_stock_exchange mise LEFT JOIN master_listing_status mls ON mls.code = mise.listing_status WHERE mise.issuer_id = i.isin_id ORDER BY mise.listing_status LIMIT 1) AS listing_status,
+        ANY_VALUE(mls.description) AS listing_status,
         ANY_VALUE(i.issuer_master_id) AS issuer_master_id,
         it.trustee_id
       FROM isin_re_issuance i
@@ -14041,19 +14041,28 @@ app.post('/trustee_page_monthly_detailed_data', async (req, res) => {
       LEFT JOIN master_seniority_tier_classification mstc ON mstc.code = i.seniority
       LEFT JOIN master_tax_free tf ON tf.code = i.tax_free
       LEFT JOIN master_secured_flag msf ON msf.code = i.secured_flag
+      LEFT JOIN issuer_coupon_details icd ON icd.issuer_id = i.isin_id
+      LEFT JOIN issuer_registrar ir ON ir.issuer_id = i.isin_id
+      LEFT JOIN master_registrar mr ON mr.id = ir.registrar_id
+      LEFT JOIN master_issuer_rating mir ON mir.issuer_id = i.isin_id
+      LEFT JOIN master_agency mag ON mag.id = mir.agency_id
+      LEFT JOIN issuer_arranger ia ON ia.issuer_id = i.isin_id
+      LEFT JOIN master_arranger ma ON ma.id = ia.arranger_id
+      LEFT JOIN master_issuer_stock_exchange mise ON mise.issuer_id = i.isin_id
+      LEFT JOIN master_listing_status mls ON mls.code = mise.listing_status
       ${whereClause}
-      GROUP BY i.isin_id, it.trustee_id, mt.short_name, i.isin
+      GROUP BY i.id, it.trustee_id, mt.short_name, i.isin
       ORDER BY ANY_VALUE(id.issuer_name)
       LIMIT ? OFFSET ?
     `;
 
     // =========================
-    // COUNT QUERY — simplified, no 1:N joins
+    // COUNT QUERY
     // =========================
     const countQuery = `
       SELECT COUNT(*) AS total
       FROM (
-        SELECT i.isin_id, it.trustee_id
+        SELECT i.id, it.trustee_id
         FROM isin_re_issuance i
         INNER JOIN issuer_trustee it ON i.isin_id = it.issuer_id
         INNER JOIN master_trustee mt ON mt.id = it.trustee_id
@@ -14064,7 +14073,7 @@ app.post('/trustee_page_monthly_detailed_data', async (req, res) => {
         LEFT JOIN master_tax_free tf ON tf.code = i.tax_free
         LEFT JOIN master_secured_flag msf ON msf.code = i.secured_flag
         ${whereClause}
-        GROUP BY i.isin_id, it.trustee_id, mt.short_name, i.isin
+        GROUP BY i.id, it.trustee_id, mt.short_name, i.isin
       ) AS aggregate_table
     `;
 
@@ -14076,9 +14085,6 @@ app.post('/trustee_page_monthly_detailed_data', async (req, res) => {
       prisma.$queryRawUnsafe(countQuery, ...params)
     ]);
 
-    // =========================
-    // TOTAL
-    // =========================
     const total = Number(countResult?.[0]?.total) || 0;
 
     // =========================
@@ -17350,7 +17356,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Issuer Name filter (LIKE search, array support)
-    if (issuerName && (Array.isArray(issuerName) ? issuerName.length > 0 : issuerName !== '')) {
+    if (hasFilterValue(issuerName)) {
       const issuerNameValue = Array.isArray(issuerName) ? issuerName : [issuerName];
       const inClause = buildInClause('id.issuer_name', issuerNameValue, true);
       if (inClause) {
@@ -17360,7 +17366,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
     }
 
     // ISIN filter (LIKE search, array support)
-    if (isin && (Array.isArray(isin) ? isin.length > 0 : isin !== '')) {
+    if (hasFilterValue(isin)) {
       const isinValue = Array.isArray(isin) ? isin : [isin];
       const inClause = buildInClause('i.isin', isinValue, true);
       if (inClause) {
@@ -17370,7 +17376,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Rating filter (array support)
-    if (rating && (Array.isArray(rating) ? rating.length > 0 : rating !== '')) {
+    if (hasFilterValue(rating)) {
       const ratingValue = Array.isArray(rating) ? rating : [rating];
       const inClause = buildInClause('mir2.rating', ratingValue);
       if (inClause) {
@@ -17383,7 +17389,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Seniority filter (array support)
-    if (seniority && (Array.isArray(seniority) ? seniority.length > 0 : seniority !== '')) {
+    if (hasFilterValue(seniority)) {
       const seniorityValue = Array.isArray(seniority) ? seniority : [seniority];
       const inClause = buildInClause('mstc2.description', seniorityValue);
       if (inClause) {
@@ -17396,7 +17402,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Tax Free filter (array support)
-    if (taxFree && (Array.isArray(taxFree) ? taxFree.length > 0 : taxFree !== '')) {
+    if (hasFilterValue(taxFree)) {
       const taxFreeValue = Array.isArray(taxFree) ? taxFree : [taxFree];
       const inClause = buildInClause('mtf2.description', taxFreeValue);
       if (inClause) {
@@ -17409,7 +17415,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Secured Flag filter (array support)
-    if (securedFlag && (Array.isArray(securedFlag) ? securedFlag.length > 0 : securedFlag !== '')) {
+    if (hasFilterValue(securedFlag)) {
       const securedFlagValue = Array.isArray(securedFlag) ? securedFlag : [securedFlag];
       const inClause = buildInClause('msf2.description', securedFlagValue);
       if (inClause) {
@@ -17422,7 +17428,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Credit Rating Agency filter (array support, LIKE search)
-    if (creditRatingAgency && (Array.isArray(creditRatingAgency) ? creditRatingAgency.length > 0 : creditRatingAgency !== '')) {
+    if (hasFilterValue(creditRatingAgency)) {
       const agencyValue = Array.isArray(creditRatingAgency) ? creditRatingAgency : [creditRatingAgency];
       const inClause = buildInClause('mag2.short_name', agencyValue, true);
       if (inClause) {
@@ -17436,7 +17442,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Listing Status filter (array support)
-    if (listingStatus && (Array.isArray(listingStatus) ? listingStatus.length > 0 : listingStatus !== '')) {
+    if (hasFilterValue(listingStatus)) {
       const listingValue = Array.isArray(listingStatus) ? listingStatus : [listingStatus];
       const inClause = buildInClause('mls2.description', listingValue);
       if (inClause) {
@@ -17450,7 +17456,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Security Type filter (array support)
-    if (securityType && (Array.isArray(securityType) ? securityType.length > 0 : securityType !== '')) {
+    if (hasFilterValue(securityType)) {
       const securityValue = Array.isArray(securityType) ? securityType : [securityType];
       const inClause = buildInClause('mst2.description', securityValue);
       if (inClause) {
@@ -17463,7 +17469,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Mode of Issue filter (array support)
-    if (modeOfIssue && (Array.isArray(modeOfIssue) ? modeOfIssue.length > 0 : modeOfIssue !== '')) {
+    if (hasFilterValue(modeOfIssue)) {
       const modeValue = Array.isArray(modeOfIssue) ? modeOfIssue : [modeOfIssue];
       const inClause = buildInClause('mmi2.description', modeValue);
       if (inClause) {
@@ -17476,7 +17482,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Arranger filter (array support, LIKE search)
-    if (arranger && (Array.isArray(arranger) ? arranger.length > 0 : arranger !== '')) {
+    if (hasFilterValue(arranger)) {
       const arrangerValue = Array.isArray(arranger) ? arranger : [arranger];
       const inClause = buildInClause('ma2.short_name', arrangerValue, true);
       if (inClause) {
@@ -17490,7 +17496,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Debenture Trustee filter (array support, LIKE search)
-    if (debentureTrustee && (Array.isArray(debentureTrustee) ? debentureTrustee.length > 0 : debentureTrustee !== '')) {
+    if (hasFilterValue(debentureTrustee)) {
       const trusteeValue = Array.isArray(debentureTrustee) ? debentureTrustee : [debentureTrustee];
       const inClause = buildInClause('mt2.short_name', trusteeValue, true);
       if (inClause) {
@@ -17504,7 +17510,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Registrar filter (array support, LIKE search)
-    if (registrar && (Array.isArray(registrar) ? registrar.length > 0 : registrar !== '')) {
+    if (hasFilterValue(registrar)) {
       const registrarValue = Array.isArray(registrar) ? registrar : [registrar];
       const inClause = buildInClause('mr2.short_name', registrarValue, true);
       if (inClause) {
@@ -17529,7 +17535,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
     // =========================
     const dataQuery = `
       SELECT
-        i.isin_id AS issuerId,
+        i.id AS issuerId,
         i.isin,
         ANY_VALUE(id.issuer_name) AS issuer_name,
         ANY_VALUE(i.allotment_date) AS allotment_date,
@@ -17560,7 +17566,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
       LEFT JOIN master_tax_free tf ON tf.code = i.tax_free
       LEFT JOIN master_secured_flag msf ON msf.code = i.secured_flag
       ${whereClause}
-      GROUP BY i.isin_id, mir.agency_id, mag.short_name, i.isin
+      GROUP BY i.id, mir.agency_id, mag.short_name, i.isin
       ORDER BY ANY_VALUE(id.issuer_name)
       LIMIT ? OFFSET ?
     `;
@@ -17571,7 +17577,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
     const countQuery = `
       SELECT COUNT(*) AS total
       FROM (
-        SELECT i.isin_id, mir.agency_id
+        SELECT i.id, mir.agency_id
         FROM isin_re_issuance i
         INNER JOIN master_issuer_rating mir ON i.isin_id = mir.issuer_id
         INNER JOIN master_agency mag ON mag.id = mir.agency_id
@@ -17582,7 +17588,7 @@ app.post('/rating_agencies_page_monthly_detailed_data', async (req, res) => {
         LEFT JOIN master_tax_free tf ON tf.code = i.tax_free
         LEFT JOIN master_secured_flag msf ON msf.code = i.secured_flag
         ${whereClause}
-        GROUP BY i.isin_id, mir.agency_id, mag.short_name, i.isin
+        GROUP BY i.id, mir.agency_id, mag.short_name, i.isin
       ) AS aggregate_table
     `;
 
@@ -20747,7 +20753,7 @@ app.post('/registrars_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Registrar Name filter (LIKE search, array support)
-    if (registrarName && (Array.isArray(registrarName) ? registrarName.length > 0 : registrarName !== '')) {
+    if (hasFilterValue(registrarName)) {
       const registrarValue = Array.isArray(registrarName) ? registrarName : [registrarName];
       const inClause = buildInClause('mr2.short_name', registrarValue, true);
       if (inClause) {
@@ -20761,7 +20767,7 @@ app.post('/registrars_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Issuer Name filter (LIKE search, array support)
-    if (issuerName && (Array.isArray(issuerName) ? issuerName.length > 0 : issuerName !== '')) {
+    if (hasFilterValue(issuerName)) {
       const issuerNameValue = Array.isArray(issuerName) ? issuerName : [issuerName];
       const inClause = buildInClause('id2.issuer_name', issuerNameValue, true);
       if (inClause) {
@@ -20774,7 +20780,7 @@ app.post('/registrars_page_monthly_detailed_data', async (req, res) => {
     }
 
     // ISIN filter (LIKE search, array support)
-    if (isin && (Array.isArray(isin) ? isin.length > 0 : isin !== '')) {
+    if (hasFilterValue(isin)) {
       const isinValue = Array.isArray(isin) ? isin : [isin];
       const inClause = buildInClause('i.isin', isinValue, true);
       if (inClause) {
@@ -20784,7 +20790,7 @@ app.post('/registrars_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Rating filter (array support)
-    if (rating && (Array.isArray(rating) ? rating.length > 0 : rating !== '')) {
+    if (hasFilterValue(rating)) {
       const ratingValue = Array.isArray(rating) ? rating : [rating];
       const inClause = buildInClause('mir2.rating', ratingValue);
       if (inClause) {
@@ -20797,7 +20803,7 @@ app.post('/registrars_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Seniority filter (array support)
-    if (seniority && (Array.isArray(seniority) ? seniority.length > 0 : seniority !== '')) {
+    if (hasFilterValue(seniority)) {
       const seniorityValue = Array.isArray(seniority) ? seniority : [seniority];
       const inClause = buildInClause('mstc2.description', seniorityValue);
       if (inClause) {
@@ -20810,7 +20816,7 @@ app.post('/registrars_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Tax Free filter (array support)
-    if (taxFree && (Array.isArray(taxFree) ? taxFree.length > 0 : taxFree !== '')) {
+    if (hasFilterValue(taxFree)) {
       const taxFreeValue = Array.isArray(taxFree) ? taxFree : [taxFree];
       const inClause = buildInClause('mtf2.description', taxFreeValue);
       if (inClause) {
@@ -20823,7 +20829,7 @@ app.post('/registrars_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Secured Flag filter (array support)
-    if (securedFlag && (Array.isArray(securedFlag) ? securedFlag.length > 0 : securedFlag !== '')) {
+    if (hasFilterValue(securedFlag)) {
       const securedFlagValue = Array.isArray(securedFlag) ? securedFlag : [securedFlag];
       const inClause = buildInClause('msf2.description', securedFlagValue);
       if (inClause) {
@@ -20836,7 +20842,7 @@ app.post('/registrars_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Trustee filter (array support, LIKE search)
-    if (trustee && (Array.isArray(trustee) ? trustee.length > 0 : trustee !== '')) {
+    if (hasFilterValue(trustee)) {
       const trusteeValue = Array.isArray(trustee) ? trustee : [trustee];
       const inClause = buildInClause('mt2.short_name', trusteeValue, true);
       if (inClause) {
@@ -20850,7 +20856,7 @@ app.post('/registrars_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Credit Rating Agency filter (array support, LIKE search)
-    if (creditRatingAgency && (Array.isArray(creditRatingAgency) ? creditRatingAgency.length > 0 : creditRatingAgency !== '')) {
+    if (hasFilterValue(creditRatingAgency)) {
       const agencyValue = Array.isArray(creditRatingAgency) ? creditRatingAgency : [creditRatingAgency];
       const inClause = buildInClause('mag2.short_name', agencyValue, true);
       if (inClause) {
@@ -20864,7 +20870,7 @@ app.post('/registrars_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Listing Status filter (array support)
-    if (listingStatus && (Array.isArray(listingStatus) ? listingStatus.length > 0 : listingStatus !== '')) {
+    if (hasFilterValue(listingStatus)) {
       const listingValue = Array.isArray(listingStatus) ? listingStatus : [listingStatus];
       const inClause = buildInClause('mls2.description', listingValue);
       if (inClause) {
@@ -20878,7 +20884,7 @@ app.post('/registrars_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Security Type filter (array support)
-    if (securityType && (Array.isArray(securityType) ? securityType.length > 0 : securityType !== '')) {
+    if (hasFilterValue(securityType)) {
       const securityValue = Array.isArray(securityType) ? securityType : [securityType];
       const inClause = buildInClause('mst2.description', securityValue);
       if (inClause) {
@@ -20891,7 +20897,7 @@ app.post('/registrars_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Mode of Issue filter (array support)
-    if (modeOfIssue && (Array.isArray(modeOfIssue) ? modeOfIssue.length > 0 : modeOfIssue !== '')) {
+    if (hasFilterValue(modeOfIssue)) {
       const modeValue = Array.isArray(modeOfIssue) ? modeOfIssue : [modeOfIssue];
       const inClause = buildInClause('mmi2.description', modeValue);
       if (inClause) {
@@ -20904,7 +20910,7 @@ app.post('/registrars_page_monthly_detailed_data', async (req, res) => {
     }
 
     // Arranger filter (array support, LIKE search)
-    if (arranger && (Array.isArray(arranger) ? arranger.length > 0 : arranger !== '')) {
+    if (hasFilterValue(arranger)) {
       const arrangerValue = Array.isArray(arranger) ? arranger : [arranger];
       const inClause = buildInClause('ma2.short_name', arrangerValue, true);
       if (inClause) {
@@ -20929,7 +20935,7 @@ app.post('/registrars_page_monthly_detailed_data', async (req, res) => {
     // =========================
     const dataQuery = `
       SELECT
-        i.isin_id AS issuerId,
+        i.id AS issuerId,
         i.isin,
         ANY_VALUE(id.issuer_name) AS issuer_name,
         ANY_VALUE(i.allotment_date) AS allotment_date,
@@ -20973,7 +20979,7 @@ app.post('/registrars_page_monthly_detailed_data', async (req, res) => {
     const countQuery = `
       SELECT COUNT(*) AS total
       FROM (
-        SELECT i.isin_id, ir1.registrar_id
+        SELECT i.id, ir1.registrar_id
         FROM isin_re_issuance i
         INNER JOIN issuer_registrar ir1 ON i.isin_id = ir1.issuer_id
         INNER JOIN master_registrar mr ON mr.id = ir1.registrar_id
@@ -20984,7 +20990,7 @@ app.post('/registrars_page_monthly_detailed_data', async (req, res) => {
         LEFT JOIN master_tax_free tf ON tf.code = i.tax_free
         LEFT JOIN master_secured_flag msf ON msf.code = i.secured_flag
         ${whereClause}
-        GROUP BY i.isin_id, ir1.registrar_id, mr.short_name, i.isin
+        GROUP BY i.id, ir1.registrar_id, mr.short_name, i.isin
       ) AS aggregate_table
     `;
 
