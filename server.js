@@ -20621,25 +20621,28 @@ app.post('/registrars_page_monthly_detailed_data', async (req, res) => {
       LEFT JOIN master_tax_free       tf   ON tf.code = i.tax_free
       LEFT JOIN master_secured_flag   msf  ON msf.code = i.secured_flag
 
-      -- 1. First coupon rate (by coupon id)
+      -- 1. First coupon rate (safe ORDER BY)
       LEFT JOIN (
         SELECT issuer_id, coupon_rate
         FROM (
           SELECT icd.issuer_id,
                  icd.coupon_rate,
-                 ROW_NUMBER() OVER (PARTITION BY icd.issuer_id ORDER BY icd.id) AS rn
+                 ROW_NUMBER() OVER (
+                   PARTITION BY icd.issuer_id
+                   ORDER BY icd.coupon_rate ASC
+                 ) AS rn
           FROM issuer_coupon_details icd
         ) z
         WHERE z.rn = 1
       ) cp ON cp.issuer_id = i.isin_id
 
-      -- 2. First trustee (by trustee row id)
+      -- 2. First trustee (safe ORDER BY)
       LEFT JOIN (
         SELECT issuer_id, debenture_trustee_name
         FROM (
           SELECT it.issuer_id,
                  mt.short_name AS debenture_trustee_name,
-                 ROW_NUMBER() OVER (PARTITION BY it.issuer_id ORDER BY it.id) AS rn
+                 ROW_NUMBER() OVER (PARTITION BY it.issuer_id ORDER BY mt.id) AS rn
           FROM issuer_trustee it
           JOIN master_trustee mt ON mt.id = it.trustee_id
         ) x
@@ -20666,7 +20669,7 @@ app.post('/registrars_page_monthly_detailed_data', async (req, res) => {
         GROUP BY ia.issuer_id
       ) ar ON ar.issuer_id = i.isin_id
 
-      -- 5. First listing status (by listing_status then id)
+      -- 5. First listing status (safe ORDER BY)
       LEFT JOIN (
         SELECT issuer_id, listing_status
         FROM (
@@ -20674,7 +20677,7 @@ app.post('/registrars_page_monthly_detailed_data', async (req, res) => {
                  mls.description AS listing_status,
                  ROW_NUMBER() OVER (
                    PARTITION BY mise.issuer_id
-                   ORDER BY mise.listing_status ASC, mise.id ASC
+                   ORDER BY mise.listing_status ASC, mise.issuer_id ASC
                  ) AS rn
           FROM master_issuer_stock_exchange mise
           INNER JOIN master_listing_status mls ON mls.code = mise.listing_status
