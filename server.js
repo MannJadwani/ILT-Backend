@@ -19356,7 +19356,7 @@ app.post('/registrarPage_detailed_data', async (req, res) => {
       return res.status(400).json({ error: 'startDate must be before endDate' });
     }
 
-    // ─── FIX: Full day coverage — start at 00:00:00, end at 23:59:59 ───
+    // ─── Full day coverage — start at 00:00:00, end at 23:59:59 ───
     const cyStart = formatDateForSQL(new Date(Date.UTC(
       currentStartDate.getUTCFullYear(),
       currentStartDate.getUTCMonth(),
@@ -19498,84 +19498,37 @@ app.post('/registrarPage_detailed_data', async (req, res) => {
       return d.toISOString().split('T')[0];
     };
 
-    // ── MAIN DATA QUERY — scalar subqueries for 1:N relationships ──
+    // ── MAIN DATA QUERY — derived tables for 1:N relationships ──
     const dataQuery = `
       SELECT
         mi.id,
         mi.isin_id,
         mi.isin,
-        ANY_VALUE(mi.security_name) AS security_name,
-        ANY_VALUE(mi.issue_size) AS issue_size,
-        ANY_VALUE(mi.face_value) AS face_value,
-        ANY_VALUE(mi.allotment_date) AS allotment_date,
-        ANY_VALUE(mi.maturity_date) AS maturity_date,
-        ANY_VALUE(id.issuer_name) AS issuer_name,
-        ANY_VALUE(miot.description) AS ownership_type,
-        ANY_VALUE(mint.description) AS nature,
-        ANY_VALUE(mbs.description) AS sector,
-        ANY_VALUE(mst.description) AS security_type,
-        ANY_VALUE(mmi.description) AS mode_of_issue,
-        ANY_VALUE(mstc.description) AS Seniority,
-        ANY_VALUE(msf.description) AS secured_flag,
-        ANY_VALUE(mtf.description) AS tax_free,
-        -- 1:N lookups via scalar subqueries
-        (
-          SELECT GROUP_CONCAT(DISTINCT mt.short_name SEPARATOR ', ')
-          FROM issuer_trustee it
-          JOIN master_trustee mt ON mt.id = it.trustee_id
-          WHERE it.issuer_id = mi.isin_id
-        ) AS debenture_trustee,
-        (
-          SELECT GROUP_CONCAT(DISTINCT ma.short_name SEPARATOR ', ')
-          FROM issuer_arranger ia
-          JOIN master_arranger ma ON ma.id = ia.arranger_id
-          WHERE ia.issuer_id = mi.isin_id
-        ) AS Arranger,
-        (
-          SELECT GROUP_CONCAT(DISTINCT mr.registrar_name SEPARATOR ', ')
-          FROM issuer_registrar ir
-          JOIN master_registrar mr ON mr.id = ir.registrar_id
-          WHERE ir.issuer_id = mi.isin_id
-        ) AS Registrar,
-        (
-          SELECT coupon_rate
-          FROM issuer_coupon_details
-          WHERE issuer_id = mi.isin_id
-          LIMIT 1
-        ) AS coupon_rate,
-        (
-          SELECT mir.rating
-          FROM master_issuer_rating mir
-          JOIN master_agency ma ON ma.id = mir.agency_id
-          WHERE mir.issuer_id = mi.isin_id
-          ORDER BY ma.id
-          LIMIT 1
-        ) AS credit_rating,
-        (
-          SELECT ma.short_name
-          FROM master_issuer_rating mir
-          JOIN master_agency ma ON ma.id = mir.agency_id
-          WHERE mir.issuer_id = mi.isin_id
-          ORDER BY ma.id
-          LIMIT 1
-        ) AS credit_rating_agency,
-        (
-          SELECT mls.description
-          FROM master_issuer_stock_exchange mise
-          LEFT JOIN master_listing_status mls ON mls.code = mise.listing_status
-          WHERE mise.issuer_id = mi.isin_id
-            AND mise.listing_status IS NOT NULL
-          ORDER BY mise.id
-          LIMIT 1
-        ) AS listing_status,
-        (
-          SELECT mise.listing_status
-          FROM master_issuer_stock_exchange mise
-          WHERE mise.issuer_id = mi.isin_id
-            AND mise.listing_status IS NOT NULL
-          ORDER BY mise.id
-          LIMIT 1
-        ) AS listing_status_code
+        mi.security_name,
+        mi.issue_size,
+        mi.face_value,
+        mi.allotment_date,
+        mi.maturity_date,
+        id.issuer_name AS issuer_name,
+        miot.description AS ownership_type,
+        mint.description AS nature,
+        mbs.description AS sector,
+        mst.description AS security_type,
+        mmi.description AS mode_of_issue,
+        mstc.description AS Seniority,
+        msf.description AS secured_flag,
+        mtf.description AS tax_free,
+
+        -- 1:N relations pre-aggregated in derived tables
+        t.debenture_trustee,
+        a.Arranger,
+        r.Registrar,
+        cp.coupon_rate,
+        crf.credit_rating,
+        crf.credit_rating_agency,
+        ls.listing_status,
+        ls.listing_status_code
+
       FROM isin_re_issuance mi
       LEFT JOIN issuer_details id ON id.id = mi.issuer_master_id
       LEFT JOIN master_issuer m ON m.id = mi.isin_id
@@ -19587,13 +19540,86 @@ app.post('/registrarPage_detailed_data', async (req, res) => {
       LEFT JOIN master_seniority_tier_classification mstc ON mstc.code = mi.seniority
       LEFT JOIN master_tax_free mtf ON mtf.code = mi.tax_free
       LEFT JOIN master_secured_flag msf ON msf.code = mi.secured_flag
+
+      -- 1. Trustees
+      LEFT JOIN (
+        SELECT it.issuer_id,
+               GROUP_CONCAT(DISTINCT mt.short_name SEPARATOR ', ') AS debenture_trustee
+        FROM issuer_trustee it
+        JOIN master_trustee mt ON mt.id = it.trustee_id
+        GROUP BY it.issuer_id
+      ) t ON t.issuer_id = mi.isin_id
+
+      -- 2. Arrangers
+      LEFT JOIN (
+        SELECT ia.issuer_id,
+               GROUP_CONCAT(DISTINCT ma.short_name SEPARATOR ', ') AS Arranger
+        FROM issuer_arranger ia
+        JOIN master_arranger ma ON ma.id = ia.arranger_id
+        GROUP BY ia.issuer_id
+      ) a ON a.issuer_id = mi.isin_id
+
+      -- 3. Registrars
+      LEFT JOIN (
+        SELECT ir.issuer_id,
+               GROUP_CONCAT(DISTINCT mr.registrar_name SEPARATOR ', ') AS Registrar
+        FROM issuer_registrar ir
+        JOIN master_registrar mr ON mr.id = ir.registrar_id
+        GROUP BY ir.issuer_id
+      ) r ON r.issuer_id = mi.isin_id
+
+      -- 4. First coupon rate (by coupon id)
+      LEFT JOIN (
+        SELECT issuer_id, coupon_rate
+        FROM (
+          SELECT icd.issuer_id,
+                 icd.coupon_rate,
+                 ROW_NUMBER() OVER (PARTITION BY icd.issuer_id ORDER BY icd.id) AS rn
+          FROM issuer_coupon_details icd
+        ) z
+        WHERE z.rn = 1
+      ) cp ON cp.issuer_id = mi.isin_id
+
+      -- 5. First credit rating (by agency id) + its agency
+      LEFT JOIN (
+        SELECT issuer_id,
+               rating AS credit_rating,
+               agency_short_name AS credit_rating_agency
+        FROM (
+          SELECT mir.issuer_id,
+                 mir.rating,
+                 ma.short_name AS agency_short_name,
+                 ROW_NUMBER() OVER (PARTITION BY mir.issuer_id ORDER BY ma.id) AS rn
+          FROM master_issuer_rating mir
+          JOIN master_agency ma ON ma.id = mir.agency_id
+        ) x
+        WHERE x.rn = 1
+      ) crf ON crf.issuer_id = mi.isin_id
+
+      -- 6. First listing status (by exchange id)
+      LEFT JOIN (
+        SELECT issuer_id,
+               listing_status AS listing_status_code,
+               listing_status_description AS listing_status
+        FROM (
+          SELECT mise.issuer_id,
+                 mise.listing_status,
+                 mls.description AS listing_status_description,
+                 ROW_NUMBER() OVER (PARTITION BY mise.issuer_id ORDER BY mise.id) AS rn
+          FROM master_issuer_stock_exchange mise
+          LEFT JOIN master_listing_status mls ON mls.code = mise.listing_status
+          WHERE mise.listing_status IS NOT NULL
+        ) y
+        WHERE y.rn = 1
+      ) ls ON ls.issuer_id = mi.isin_id
+
       ${whereClause}
-      GROUP BY mi.id, mi.isin_id, mi.isin
-      ORDER BY ANY_VALUE(mi.allotment_date) ASC
+
+      ORDER BY mi.allotment_date ASC
       LIMIT ? OFFSET ?
     `;
 
-    // ── COUNT QUERY ──
+    // ── COUNT QUERY — unchanged ──
     const countQuery = `
       SELECT COUNT(DISTINCT mi.id) AS total
       FROM isin_re_issuance mi
