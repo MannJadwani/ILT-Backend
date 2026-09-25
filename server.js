@@ -6863,17 +6863,17 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
 
       const vals = Array.isArray(values)
         ? values.filter(
-            (v) =>
-              v !== '' &&
-              v !== null &&
-              v !== undefined
-          )
+          (v) =>
+            v !== '' &&
+            v !== null &&
+            v !== undefined
+        )
         : [values].filter(
-            (v) =>
-              v !== '' &&
-              v !== null &&
-              v !== undefined
-          );
+          (v) =>
+            v !== '' &&
+            v !== null &&
+            v !== undefined
+        );
 
       if (vals.length === 0) {
         return null;
@@ -7465,9 +7465,9 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
     const safeLimit =
       limit
         ? Math.max(
-            0,
-            parseInt(limit, 10) || 0
-          )
+          0,
+          parseInt(limit, 10) || 0
+        )
         : null;
 
     const safeOffset =
@@ -7478,7 +7478,7 @@ app.post('/arrangers_page_top_arrangers_data', async (req, res) => {
 
     const t1Limit =
       safeLimit !== null &&
-      safeLimit > 0
+        safeLimit > 0
         ? `LIMIT ${safeLimit} OFFSET ${safeOffset}`
         : '';
 
@@ -11109,17 +11109,17 @@ app.post('/trustees_page_top_trustees_data', async (req, res) => {
 
       const vals = Array.isArray(values)
         ? values.filter(
-            (v) =>
-              v !== '' &&
-              v !== null &&
-              v !== undefined
-          )
+          (v) =>
+            v !== '' &&
+            v !== null &&
+            v !== undefined
+        )
         : [values].filter(
-            (v) =>
-              v !== '' &&
-              v !== null &&
-              v !== undefined
-          );
+          (v) =>
+            v !== '' &&
+            v !== null &&
+            v !== undefined
+        );
 
       if (vals.length === 0) {
         return null;
@@ -12877,50 +12877,76 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
       params.push(...listingStatus);
     }
 
-    // Seniority (multi-select)
+    // Seniority
     if (hasFilterValue(seniority)) {
       const placeholders = seniority.map(() => '?').join(', ');
-      conditions.push(`mstc.description IN (${placeholders})`);
+      conditions.push(`EXISTS (
+        SELECT 1 FROM master_seniority_tier_classification mstc2
+        WHERE mstc2.code = mi.seniority AND mstc2.description IN (${placeholders})
+      )`);
       params.push(...seniority);
     }
 
-    // Secured Flag (multi-select)
+    // Secured Flag
     if (hasFilterValue(securedFlag)) {
       const placeholders = securedFlag.map(() => '?').join(', ');
-      conditions.push(`msf.description IN (${placeholders})`);
+      conditions.push(`EXISTS (
+        SELECT 1 FROM master_secured_flag msf2
+        WHERE msf2.code = mi.secured_flag AND msf2.description IN (${placeholders})
+      )`);
       params.push(...securedFlag);
     }
 
-    // Sector (multi-select)
+    // Sector
     if (hasFilterValue(sector)) {
       const placeholders = sector.map(() => '?').join(', ');
-      conditions.push(`mbs.description IN (${placeholders})`);
+      conditions.push(`EXISTS (
+        SELECT 1 FROM master_business_sector mbs2
+        WHERE mbs2.code = mi.business_sector AND mbs2.description IN (${placeholders})
+      )`);
       params.push(...sector);
     }
 
-    // Trustee (multi-select)
-    if (hasFilterValue(trustee)) {
-      const placeholders = trustee.map(() => '?').join(', ');
-      conditions.push(`EXISTS (
-        SELECT 1 FROM issuer_trustee it2 
-        JOIN master_trustee mt2 ON mt2.id = it2.trustee_id 
-        WHERE it2.issuer_id = mi.isin_id AND mt2.short_name IN (${placeholders})
-      )`);
-      params.push(...trustee);
-    }
-
-    // Nature (multi-select)
+    // Nature
     if (hasFilterValue(nature)) {
       const placeholders = nature.map(() => '?').join(', ');
-      conditions.push(`mint.description IN (${placeholders})`);
+      conditions.push(`EXISTS (
+        SELECT 1 FROM master_issuer mi2
+        JOIN master_issuer_type_nature mint2 ON mint2.code = mi2.nature_type
+        WHERE mi2.id = mi.isin_id AND mint2.description IN (${placeholders})
+      )`);
       params.push(...nature);
     }
 
-    // Ownership Type (multi-select)
+    // Ownership Type
     if (hasFilterValue(ownershipType)) {
       const placeholders = ownershipType.map(() => '?').join(', ');
-      conditions.push(`miot.description IN (${placeholders})`);
+      conditions.push(`EXISTS (
+        SELECT 1 FROM master_issuer mi2
+        JOIN master_issuer_ownership_type miot2 ON miot2.code = mi2.issuer_ownership_type
+        WHERE mi2.id = mi.isin_id AND miot2.description IN (${placeholders})
+      )`);
       params.push(...ownershipType);
+    }
+
+    // Security Type
+    if (hasFilterValue(securityType)) {
+      const placeholders = securityType.map(() => '?').join(', ');
+      conditions.push(`EXISTS (
+        SELECT 1 FROM master_security_type mst2
+        WHERE mst2.code = mi.security_class AND mst2.description IN (${placeholders})
+      )`);
+      params.push(...securityType);
+    }
+
+    // Mode Of Issue
+    if (hasFilterValue(modeOfIssue)) {
+      const placeholders = modeOfIssue.map(() => '?').join(', ');
+      conditions.push(`EXISTS (
+        SELECT 1 FROM master_mode_issue mmi2
+        WHERE mmi2.code = mi.mode_issue AND mmi2.description IN (${placeholders})
+      )`);
+      params.push(...modeOfIssue);
     }
 
     // Credit Rating Agency (multi-select)
@@ -12934,18 +12960,15 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
       params.push(...creditRatingAgency);
     }
 
-    // Security Type (multi-select)
-    if (hasFilterValue(securityType)) {
-      const placeholders = securityType.map(() => '?').join(', ');
-      conditions.push(`mst.description IN (${placeholders})`);
-      params.push(...securityType);
-    }
-
-    // Mode Of Issue (multi-select)
-    if (hasFilterValue(modeOfIssue)) {
-      const placeholders = modeOfIssue.map(() => '?').join(', ');
-      conditions.push(`mmi.description IN (${placeholders})`);
-      params.push(...modeOfIssue);
+    // Trustee (multi-select)
+    if (hasFilterValue(trustee)) {
+      const placeholders = trustee.map(() => '?').join(', ');
+      conditions.push(`EXISTS (
+        SELECT 1 FROM issuer_trustee it2 
+        JOIN master_trustee mt2 ON mt2.id = it2.trustee_id 
+        WHERE it2.issuer_id = mi.isin_id AND mt2.short_name IN (${placeholders})
+      )`);
+      params.push(...trustee);
     }
 
     // Registrar (single-select, LIKE filter)
@@ -13100,34 +13123,6 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
     const countQuery = `
       SELECT COUNT(DISTINCT mi.id) AS total
       FROM isin_re_issuance mi
-
-      LEFT JOIN issuer_details id
-        ON id.id = mi.issuer_master_id
-
-      LEFT JOIN master_issuer m
-        ON m.id = mi.isin_id
-
-      LEFT JOIN master_issuer_ownership_type miot
-        ON miot.code = m.issuer_ownership_type
-
-      LEFT JOIN master_issuer_type_nature mint
-        ON mint.code = m.nature_type
-
-      LEFT JOIN master_business_sector mbs
-        ON mbs.code = mi.business_sector
-
-      LEFT JOIN master_mode_issue mmi
-        ON mmi.code = mi.mode_issue
-
-      LEFT JOIN master_security_type mst
-        ON mst.code = mi.security_class
-
-      LEFT JOIN master_seniority_tier_classification mstc
-        ON mstc.code = mi.seniority
-
-      LEFT JOIN master_secured_flag msf
-        ON msf.code = mi.secured_flag
-
       ${whereClause}
     `;
 
@@ -18801,17 +18796,17 @@ app.post('/registrars_page_top_registrars_data', async (req, res) => {
 
     const tableParams = normalizedIssueType === 'count'
       ? [
-          safeTotalIssuesCount,
-          safeTotalIssuesCountPrev,
-          currStartStr, currEndStr, ...t1t2Params,
-          prevStartStr, prevEndStr, ...t1t2Params
-        ]
+        safeTotalIssuesCount,
+        safeTotalIssuesCountPrev,
+        currStartStr, currEndStr, ...t1t2Params,
+        prevStartStr, prevEndStr, ...t1t2Params
+      ]
       : [
-          safeTotalIssueSize,
-          safeTotalIssueSizePrev,
-          currStartStr, currEndStr, ...t1t2Params,
-          prevStartStr, prevEndStr, ...t1t2Params
-        ];
+        safeTotalIssueSize,
+        safeTotalIssueSizePrev,
+        currStartStr, currEndStr, ...t1t2Params,
+        prevStartStr, prevEndStr, ...t1t2Params
+      ];
 
     const tableResult = await prisma.$queryRawUnsafe(tableQuery, ...tableParams);
 
