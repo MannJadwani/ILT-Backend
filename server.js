@@ -20302,7 +20302,7 @@ app.post('/registrars_page_monthly_detailed_data', async (req, res) => {
       LEFT JOIN master_tax_free tf ON tf.code = i.tax_free
       LEFT JOIN master_secured_flag msf ON msf.code = i.secured_flag
       ${whereClause}
-      GROUP BY i.isin_id, ir1.registrar_id, mr.short_name, i.isin
+      GROUP BY i.id, ir1.registrar_id, mr.short_name, i.isin
       ORDER BY ANY_VALUE(id.issuer_name)
       LIMIT ? OFFSET ?
     `;
