@@ -12810,7 +12810,7 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
       return res.status(400).json({ error: 'startDate must be before endDate' });
     }
 
-    // ─── FIX: Full day coverage — start at 00:00:00, end at 23:59:59 ───
+    // ─── Full day coverage — start at 00:00:00, end at 23:59:59 ───
     const cyStart = formatDateForSQL(new Date(Date.UTC(
       currentStartDate.getUTCFullYear(),
       currentStartDate.getUTCMonth(),
@@ -12824,7 +12824,7 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
       23, 59, 59
     )));
 
-    // Fix: Validate and sanitize limit/offset
+    // Validate and sanitize limit/offset
     const safeLimit = Math.max(1, Math.min(1000, parseInt(limit, 10) || 25));
     const safeOffset = Math.max(0, parseInt(offset, 10) || 0);
 
@@ -12877,76 +12877,50 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
       params.push(...listingStatus);
     }
 
-    // Seniority
+    // Seniority (multi-select)
     if (hasFilterValue(seniority)) {
       const placeholders = seniority.map(() => '?').join(', ');
-      conditions.push(`EXISTS (
-        SELECT 1 FROM master_seniority_tier_classification mstc2
-        WHERE mstc2.code = mi.seniority AND mstc2.description IN (${placeholders})
-      )`);
+      conditions.push(`mstc.description IN (${placeholders})`);
       params.push(...seniority);
     }
 
-    // Secured Flag
+    // Secured Flag (multi-select)
     if (hasFilterValue(securedFlag)) {
       const placeholders = securedFlag.map(() => '?').join(', ');
-      conditions.push(`EXISTS (
-        SELECT 1 FROM master_secured_flag msf2
-        WHERE msf2.code = mi.secured_flag AND msf2.description IN (${placeholders})
-      )`);
+      conditions.push(`msf.description IN (${placeholders})`);
       params.push(...securedFlag);
     }
 
-    // Sector
+    // Sector (multi-select)
     if (hasFilterValue(sector)) {
       const placeholders = sector.map(() => '?').join(', ');
-      conditions.push(`EXISTS (
-        SELECT 1 FROM master_business_sector mbs2
-        WHERE mbs2.code = mi.business_sector AND mbs2.description IN (${placeholders})
-      )`);
+      conditions.push(`mbs.description IN (${placeholders})`);
       params.push(...sector);
     }
 
-    // Nature
+    // Trustee (multi-select)
+    if (hasFilterValue(trustee)) {
+      const placeholders = trustee.map(() => '?').join(', ');
+      conditions.push(`EXISTS (
+        SELECT 1 FROM issuer_trustee it2 
+        JOIN master_trustee mt2 ON mt2.id = it2.trustee_id 
+        WHERE it2.issuer_id = mi.isin_id AND mt2.short_name IN (${placeholders})
+      )`);
+      params.push(...trustee);
+    }
+
+    // Nature (multi-select)
     if (hasFilterValue(nature)) {
       const placeholders = nature.map(() => '?').join(', ');
-      conditions.push(`EXISTS (
-        SELECT 1 FROM master_issuer mi2
-        JOIN master_issuer_type_nature mint2 ON mint2.code = mi2.nature_type
-        WHERE mi2.id = mi.isin_id AND mint2.description IN (${placeholders})
-      )`);
+      conditions.push(`mint.description IN (${placeholders})`);
       params.push(...nature);
     }
 
-    // Ownership Type
+    // Ownership Type (multi-select)
     if (hasFilterValue(ownershipType)) {
       const placeholders = ownershipType.map(() => '?').join(', ');
-      conditions.push(`EXISTS (
-        SELECT 1 FROM master_issuer mi2
-        JOIN master_issuer_ownership_type miot2 ON miot2.code = mi2.issuer_ownership_type
-        WHERE mi2.id = mi.isin_id AND miot2.description IN (${placeholders})
-      )`);
+      conditions.push(`miot.description IN (${placeholders})`);
       params.push(...ownershipType);
-    }
-
-    // Security Type
-    if (hasFilterValue(securityType)) {
-      const placeholders = securityType.map(() => '?').join(', ');
-      conditions.push(`EXISTS (
-        SELECT 1 FROM master_security_type mst2
-        WHERE mst2.code = mi.security_class AND mst2.description IN (${placeholders})
-      )`);
-      params.push(...securityType);
-    }
-
-    // Mode Of Issue
-    if (hasFilterValue(modeOfIssue)) {
-      const placeholders = modeOfIssue.map(() => '?').join(', ');
-      conditions.push(`EXISTS (
-        SELECT 1 FROM master_mode_issue mmi2
-        WHERE mmi2.code = mi.mode_issue AND mmi2.description IN (${placeholders})
-      )`);
-      params.push(...modeOfIssue);
     }
 
     // Credit Rating Agency (multi-select)
@@ -12960,15 +12934,18 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
       params.push(...creditRatingAgency);
     }
 
-    // Trustee (multi-select)
-    if (hasFilterValue(trustee)) {
-      const placeholders = trustee.map(() => '?').join(', ');
-      conditions.push(`EXISTS (
-        SELECT 1 FROM issuer_trustee it2 
-        JOIN master_trustee mt2 ON mt2.id = it2.trustee_id 
-        WHERE it2.issuer_id = mi.isin_id AND mt2.short_name IN (${placeholders})
-      )`);
-      params.push(...trustee);
+    // Security Type (multi-select)
+    if (hasFilterValue(securityType)) {
+      const placeholders = securityType.map(() => '?').join(', ');
+      conditions.push(`mst.description IN (${placeholders})`);
+      params.push(...securityType);
+    }
+
+    // Mode Of Issue (multi-select)
+    if (hasFilterValue(modeOfIssue)) {
+      const placeholders = modeOfIssue.map(() => '?').join(', ');
+      conditions.push(`mmi.description IN (${placeholders})`);
+      params.push(...modeOfIssue);
     }
 
     // Registrar (single-select, LIKE filter)
@@ -12986,7 +12963,7 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
       : '';
 
     // ─────────────────────
-    // Main data query — no 1:N joins, only 1:1 lookups + scalar subqueries
+    // Main data query — derived tables for 1:N relations
     // ─────────────────────
     const dataQuery = `
       SELECT
@@ -13007,79 +12984,16 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
         mstc.description AS Seniority,
         msf.description AS secured_flag,
 
-        -- 1:N relationships via scalar subqueries (prevents row multiplication)
-        (
-          SELECT GROUP_CONCAT(DISTINCT mt.short_name SEPARATOR ', ')
-          FROM issuer_trustee it
-          JOIN master_trustee mt ON mt.id = it.trustee_id
-          WHERE it.issuer_id = mi.isin_id
-        ) AS debenture_trustee,
-
-        (
-          SELECT GROUP_CONCAT(DISTINCT ma.short_name SEPARATOR ', ')
-          FROM issuer_arranger ia
-          JOIN master_arranger ma ON ma.id = ia.arranger_id
-          WHERE ia.issuer_id = mi.isin_id
-        ) AS Arranger,
-
-        (
-          SELECT GROUP_CONCAT(DISTINCT mr.registrar_name SEPARATOR ', ')
-          FROM issuer_registrar ir
-          JOIN master_registrar mr ON mr.id = ir.registrar_id
-          WHERE ir.issuer_id = mi.isin_id
-        ) AS Registrar,
-
-        (
-          SELECT GROUP_CONCAT(DISTINCT CONCAT(ma.short_name, ': ', mir.rating) SEPARATOR '; ')
-          FROM master_issuer_rating mir
-          JOIN master_agency ma ON ma.id = mir.agency_id
-          WHERE mir.issuer_id = mi.isin_id
-        ) AS credit_rating_info,
-
-        (
-          SELECT mir.rating
-          FROM master_issuer_rating mir
-          JOIN master_agency ma ON ma.id = mir.agency_id
-          WHERE mir.issuer_id = mi.isin_id
-          ORDER BY ma.id
-          LIMIT 1
-        ) AS credit_rating,
-
-        (
-          SELECT ma.short_name
-          FROM master_issuer_rating mir
-          JOIN master_agency ma ON ma.id = mir.agency_id
-          WHERE mir.issuer_id = mi.isin_id
-          ORDER BY ma.id
-          LIMIT 1
-        ) AS credit_rating_agency,
-
-        (
-          SELECT mls.description
-          FROM master_issuer_stock_exchange mise
-          LEFT JOIN master_listing_status mls ON mls.code = mise.listing_status
-          WHERE mise.issuer_id = mi.isin_id
-            AND mise.listing_status IS NOT NULL
-          ORDER BY mise.id
-          LIMIT 1
-        ) AS listing_status,
-
-        (
-          SELECT mise.listing_status
-          FROM master_issuer_stock_exchange mise
-          WHERE mise.issuer_id = mi.isin_id
-            AND mise.listing_status IS NOT NULL
-          ORDER BY mise.id
-          LIMIT 1
-        ) AS listing_status_code,
-
-        (
-          SELECT icd.coupon_rate
-          FROM issuer_coupon_details icd
-          WHERE icd.issuer_id = mi.isin_id
-          ORDER BY icd.id
-          LIMIT 1
-        ) AS coupon_rate
+        -- 1:N relations pre-aggregated in derived tables
+        t.debenture_trustee,
+        a.Arranger,
+        r.Registrar,
+        cr.credit_rating_info,
+        crf.credit_rating,
+        crf.credit_rating_agency,
+        ls.listing_status,
+        ls.listing_status_code,
+        cp.coupon_rate
 
       FROM isin_re_issuance mi
 
@@ -13110,6 +13024,87 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
       LEFT JOIN master_secured_flag msf
         ON msf.code = mi.secured_flag
 
+      -- 1. Trustees
+      LEFT JOIN (
+        SELECT it.issuer_id,
+               GROUP_CONCAT(DISTINCT mt.short_name SEPARATOR ', ') AS debenture_trustee
+        FROM issuer_trustee it
+        JOIN master_trustee mt ON mt.id = it.trustee_id
+        GROUP BY it.issuer_id
+      ) t ON t.issuer_id = mi.isin_id
+
+      -- 2. Arrangers
+      LEFT JOIN (
+        SELECT ia.issuer_id,
+               GROUP_CONCAT(DISTINCT ma.short_name SEPARATOR ', ') AS Arranger
+        FROM issuer_arranger ia
+        JOIN master_arranger ma ON ma.id = ia.arranger_id
+        GROUP BY ia.issuer_id
+      ) a ON a.issuer_id = mi.isin_id
+
+      -- 3. Registrars
+      LEFT JOIN (
+        SELECT ir.issuer_id,
+               GROUP_CONCAT(DISTINCT mr.registrar_name SEPARATOR ', ') AS Registrar
+        FROM issuer_registrar ir
+        JOIN master_registrar mr ON mr.id = ir.registrar_id
+        GROUP BY ir.issuer_id
+      ) r ON r.issuer_id = mi.isin_id
+
+      -- 4. Full credit rating info (agency: rating)
+      LEFT JOIN (
+        SELECT mir.issuer_id,
+               GROUP_CONCAT(DISTINCT CONCAT(ma.short_name, ': ', mir.rating) SEPARATOR '; ') AS credit_rating_info
+        FROM master_issuer_rating mir
+        JOIN master_agency ma ON ma.id = mir.agency_id
+        GROUP BY mir.issuer_id
+      ) cr ON cr.issuer_id = mi.isin_id
+
+      -- 5. First credit rating (by agency id) + its agency
+      LEFT JOIN (
+        SELECT issuer_id,
+               rating AS credit_rating,
+               agency_short_name AS credit_rating_agency
+        FROM (
+          SELECT mir.issuer_id,
+                 mir.rating,
+                 ma.short_name AS agency_short_name,
+                 ROW_NUMBER() OVER (PARTITION BY mir.issuer_id ORDER BY ma.id) AS rn
+          FROM master_issuer_rating mir
+          JOIN master_agency ma ON ma.id = mir.agency_id
+        ) x
+        WHERE x.rn = 1
+      ) crf ON crf.issuer_id = mi.isin_id
+
+      -- 6. First listing status (by exchange id)
+      LEFT JOIN (
+        SELECT issuer_id,
+               listing_status AS listing_status_code,
+               listing_status_description AS listing_status
+        FROM (
+          SELECT mise.issuer_id,
+                 mise.listing_status,
+                 mls.description AS listing_status_description,
+                 ROW_NUMBER() OVER (PARTITION BY mise.issuer_id ORDER BY mise.id) AS rn
+          FROM master_issuer_stock_exchange mise
+          LEFT JOIN master_listing_status mls ON mls.code = mise.listing_status
+          WHERE mise.listing_status IS NOT NULL
+        ) y
+        WHERE y.rn = 1
+      ) ls ON ls.issuer_id = mi.isin_id
+
+      -- 7. First coupon rate (by coupon id)
+      LEFT JOIN (
+        SELECT issuer_id, coupon_rate
+        FROM (
+          SELECT icd.issuer_id,
+                 icd.coupon_rate,
+                 ROW_NUMBER() OVER (PARTITION BY icd.issuer_id ORDER BY icd.id) AS rn
+          FROM issuer_coupon_details icd
+        ) z
+        WHERE z.rn = 1
+      ) cp ON cp.issuer_id = mi.isin_id
+
       ${whereClause}
 
       ORDER BY mi.allotment_date ASC
@@ -13118,11 +13113,39 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
     `;
 
     // ─────────────────────
-    // Count query — same joins and filters, no row multiplication
+    // Count query — unchanged (already fast)
     // ─────────────────────
     const countQuery = `
       SELECT COUNT(DISTINCT mi.id) AS total
       FROM isin_re_issuance mi
+
+      LEFT JOIN issuer_details id
+        ON id.id = mi.issuer_master_id
+
+      LEFT JOIN master_issuer m
+        ON m.id = mi.isin_id
+
+      LEFT JOIN master_issuer_ownership_type miot
+        ON miot.code = m.issuer_ownership_type
+
+      LEFT JOIN master_issuer_type_nature mint
+        ON mint.code = m.nature_type
+
+      LEFT JOIN master_business_sector mbs
+        ON mbs.code = mi.business_sector
+
+      LEFT JOIN master_mode_issue mmi
+        ON mmi.code = mi.mode_issue
+
+      LEFT JOIN master_security_type mst
+        ON mst.code = mi.security_class
+
+      LEFT JOIN master_seniority_tier_classification mstc
+        ON mstc.code = mi.seniority
+
+      LEFT JOIN master_secured_flag msf
+        ON msf.code = mi.secured_flag
+
       ${whereClause}
     `;
 
@@ -13149,7 +13172,6 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
         : null;
 
       return {
-        // FIX: Query selects isin_id, not id
         id: item?.isin_id || '-',
         issuerName: item?.issuer_name || '-',
         isin: item?.isin || '-',
