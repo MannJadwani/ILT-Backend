@@ -283,11 +283,25 @@ function nameSimilarity(a, b) {
 function findBestMatch(issuerName, issuers) {
   let best = null;
   let bestScore = 0;
-  console.log('issuers: ',issuers);
-  
+
+  console.log('[findBestMatch] looking for:', issuerName);
+  console.log('[findBestMatch] candidates:', issuers);
 
   for (const issuer of issuers) {
-    const score = nameSimilarity(issuerName, issuer?.issuer_name);
+    if (!issuer) continue;
+
+    const candidateName =
+      issuer.issuer_name ?? issuer.issuerName ?? issuer.name ?? null;
+
+    if (!candidateName) {
+      console.warn('[findBestMatch] skipping entry with no name:', issuer);
+      continue;
+    }
+
+    const score = nameSimilarity(issuerName, String(candidateName));
+    console.log(
+      `[findBestMatch] "${issuerName}" vs "${candidateName}" -> ${score.toFixed(4)}`
+    );
 
     if (score > bestScore) {
       bestScore = score;
@@ -295,7 +309,10 @@ function findBestMatch(issuerName, issuers) {
     }
   }
 
-  return bestScore >= 0.7 ? best : null;
+  if (bestScore >= 0.7 && best) {
+    return { issuer: { ...best, id: Number(best.id) }, score: bestScore };
+  }
+  return null;
 }
 
 
@@ -328,7 +345,7 @@ app.post('/uploadIssuers', async (req, res) => {
     const item = items[idx];
     const isin = String(item.isin || '').trim();
     const issuerName = String(item.issuerName || '').trim();
-    const faceValue = Number(item.faceValue || 0) *  100000;
+    const faceValue = Number(item.faceValue || 0) * 100000;
     const baseIssueSize = Number(item.baseIssueSize || 0);
     const greenShoeOption = Number(item.greenShoeOption || 0);
     const issueSize = (baseIssueSize + greenShoeOption) * 10000000;
@@ -387,10 +404,10 @@ app.post('/uploadIssuers', async (req, res) => {
             const placeholders = ids.map(() => '?').join(',');
 
             console.log(`[Item ${idx + 1}] Fetching issuer names for IDs: ${ids.join(', ')}`);
-            const issuers = await tx.$queryRawUnsafe(
+            const issuers = (await tx.$queryRawUnsafe(
               `SELECT id, issuer_name FROM issuer_details WHERE id IN (${placeholders})`,
               ...ids
-            );
+            )).map(r => ({ id: Number(r.id), issuer_name: r.issuer_name }));
             console.log(`[Item ${idx + 1}] Issuers fetched:`, issuers.map(i => `${i.id}: ${i.issuer_name}`));
 
             console.log(`[Item ${idx + 1}] Performing fuzzy match for "${issuerName}"...`);
@@ -519,7 +536,7 @@ app.post('/uploadIssuers', async (req, res) => {
   res.json({ success: true, results });
 });
 
-app.post('/issuances-upload',async (req,res)=>{
+app.post('/issuances-upload', async (req, res) => {
   try {
     const result = await prisma.$queryRawUnsafe(`
       SELECT DISTINCT rating FROM master_issuer_rating;
