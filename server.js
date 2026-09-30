@@ -283,9 +283,11 @@ function nameSimilarity(a, b) {
 function findBestMatch(issuerName, issuers) {
   let best = null;
   let bestScore = 0;
+  console.log('issuers: ',issuers);
+  
 
   for (const issuer of issuers) {
-    const score = nameSimilarity(issuerName, issuer.issuer_name);
+    const score = nameSimilarity(issuerName, issuer?.issuer_name);
 
     if (score > bestScore) {
       bestScore = score;
