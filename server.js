@@ -301,6 +301,8 @@ function findBestMatch(issuerName, issuers) {
 // MAIN ADMIN APIs:
 // ==========================================
 
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 app.post('/uploadIssuers', async (req, res) => {
   console.log('\n========================================');
   console.log('[uploadIssuers] Request received at', new Date().toISOString());
@@ -315,10 +317,12 @@ app.post('/uploadIssuers', async (req, res) => {
   }
 
   console.log(`[uploadIssuers] Processing ${items.length} item(s)`);
-
   const results = [];
 
   for (let idx = 0; idx < items.length; idx++) {
+
+    await delay(500);
+
     const item = items[idx];
     const isin = String(item.isin || '').trim();
     const issuerName = String(item.issuerName || '').trim();
@@ -337,54 +341,40 @@ app.post('/uploadIssuers', async (req, res) => {
 
     if (!isin || !issuerName || Number.isNaN(faceValue) || Number.isNaN(issueSize)) {
       console.warn(`[Item ${idx + 1}] Invalid input – skipping`);
-      results.push({
-        isin,
-        issuerName,
-        status: 'error',
-        message: 'Invalid input'
-      });
+      results.push({ isin, issuerName, status: 'error', message: 'Invalid input' });
       continue;
     }
 
     try {
       const result = await prisma.$transaction(async (tx) => {
-        /* ------------------------------------------------------------------ */
-        /* 1. Check if ISIN already exists                                     */
-        /* ------------------------------------------------------------------ */
-
+        /* -------------------------------------------------------------- */
+        /* 1. Check if ISIN exists                                        */
+        /* -------------------------------------------------------------- */
         console.log(`[Item ${idx + 1}] Checking if ISIN exists in master_issuer...`);
         const masterRows = await tx.$queryRawUnsafe(
-          `SELECT id, issuer_master_id FROM master_issuer WHERE isin = $1 LIMIT 1`,
+          `SELECT id, issuer_master_id FROM master_issuer WHERE isin = ? LIMIT 1`,
           isin
         );
-        console.log(`[Item ${idx + 1}] master_issuer rows found:`, masterRows.length);
+        console.log(`[Item ${idx + 1}] master_issuer rows found: ${masterRows.length}`);
 
         console.log(`[Item ${idx + 1}] Checking if ISIN exists in isin_re_issuance...`);
         const reRows = await tx.$queryRawUnsafe(
-          `SELECT id, issuer_master_id FROM isin_re_issuance WHERE isin = $1 LIMIT 1`,
+          `SELECT id, issuer_master_id FROM isin_re_issuance WHERE isin = ? LIMIT 1`,
           isin
         );
-        console.log(`[Item ${idx + 1}] isin_re_issuance rows found:`, reRows.length);
+        console.log(`[Item ${idx + 1}] isin_re_issuance rows found: ${reRows.length}`);
 
-        const isinExists = reRows.length > 0 || masterRows.length > 0;
+        const isinExists = masterRows.length > 0 || reRows.length > 0;
         console.log(`[Item ${idx + 1}] ISIN exists overall: ${isinExists}`);
 
-        /* ------------------------------------------------------------------ */
-        /* 2. ISIN exists                                                      */
-        /* ------------------------------------------------------------------ */
-
+        /* -------------------------------------------------------------- */
+        /* 2. ISIN exists                                                 */
+        /* -------------------------------------------------------------- */
         if (isinExists) {
           console.log(`[Item ${idx + 1}] ISIN already exists. Collecting existing issuer IDs...`);
           const existingIssuerIds = new Set();
-
-          masterRows.forEach(r => {
-            if (r.issuer_master_id) existingIssuerIds.add(Number(r.issuer_master_id));
-          });
-
-          reRows.forEach(r => {
-            if (r.issuer_master_id) existingIssuerIds.add(Number(r.issuer_master_id));
-          });
-
+          masterRows.forEach(r => { if (r.issuer_master_id) existingIssuerIds.add(Number(r.issuer_master_id)); });
+          reRows.forEach(r => { if (r.issuer_master_id) existingIssuerIds.add(Number(r.issuer_master_id)); });
           console.log(`[Item ${idx + 1}] Existing issuer IDs:`, [...existingIssuerIds]);
 
           let matchedIssuer = null;
@@ -392,7 +382,7 @@ app.post('/uploadIssuers', async (req, res) => {
 
           if (existingIssuerIds.size > 0) {
             const ids = [...existingIssuerIds];
-            const placeholders = ids.map((_, i) => `$${i + 1}`).join(',');
+            const placeholders = ids.map(() => '?').join(',');
 
             console.log(`[Item ${idx + 1}] Fetching issuer names for IDs: ${ids.join(', ')}`);
             const issuers = await tx.$queryRawUnsafe(
@@ -406,7 +396,9 @@ app.post('/uploadIssuers', async (req, res) => {
             if (match) {
               matchedIssuer = match.issuer;
               matchScore = match.score;
-              console.log(`[Item ${idx + 1}] Fuzzy match FOUND: "${matchedIssuer.issuer_name}" (id=${matchedIssuer.id}) with score ${matchScore.toFixed(4)}`);
+              console.log(
+                `[Item ${idx + 1}] Fuzzy match FOUND: "${matchedIssuer.issuer_name}" (id=${matchedIssuer.id}) score=${matchScore.toFixed(4)}`
+              );
             } else {
               console.log(`[Item ${idx + 1}] No fuzzy match found (threshold 70%)`);
             }
@@ -419,85 +411,52 @@ app.post('/uploadIssuers', async (req, res) => {
 
           if (matchedIssuer) {
             issuerId = matchedIssuer.id;
-            console.log(`[Item ${idx + 1}] Updating existing issuer data (id=${issuerId}) in master_issuer and isin_re_issuance...`);
+            console.log(`[Item ${idx + 1}] Updating existing issuer data (id=${issuerId})...`);
 
             await tx.$executeRawUnsafe(
-              `UPDATE master_issuer
-               SET face_value = $1, issue_size = $2
-               WHERE isin = $3`,
-              faceValue,
-              issueSize,
-              isin
+              `UPDATE master_issuer SET face_value = ?, issue_size = ? WHERE isin = ?`,
+              faceValue, issueSize, isin
             );
             console.log(`[Item ${idx + 1}] Updated master_issuer for ISIN ${isin}`);
 
             await tx.$executeRawUnsafe(
-              `UPDATE isin_re_issuance
-               SET face_value = $1, issue_size = $2
-               WHERE isin = $3`,
-              faceValue,
-              issueSize,
-              isin
+              `UPDATE isin_re_issuance SET face_value = ?, issue_size = ? WHERE isin = ?`,
+              faceValue, issueSize, isin
             );
             console.log(`[Item ${idx + 1}] Updated isin_re_issuance for ISIN ${isin}`);
 
             action = 'updated_existing';
           } else {
-            console.log(`[Item ${idx + 1}] No matching issuer found. Creating a new issuer_details entry...`);
-            const newIssuer = await tx.$queryRawUnsafe(
-              `INSERT INTO issuer_details (issuer_name)
-               VALUES ($1)
-               RETURNING id`,
+            console.log(`[Item ${idx + 1}] No matching issuer found. Creating new issuer_details entry...`);
+            await tx.$executeRawUnsafe(
+              `INSERT INTO issuer_details (issuer_name) VALUES (?)`,
               issuerName
             );
-
-            issuerId = newIssuer[0].id;
+            issuerId = await getLastInsertId(tx);
             console.log(`[Item ${idx + 1}] New issuer created with id=${issuerId}`);
 
             console.log(`[Item ${idx + 1}] Linking existing ISIN records to new issuer id=${issuerId}...`);
             await tx.$executeRawUnsafe(
-              `UPDATE master_issuer
-               SET issuer_master_id = $1, face_value = $2, issue_size = $3
-               WHERE isin = $4`,
-              issuerId,
-              faceValue,
-              issueSize,
-              isin
+              `UPDATE master_issuer SET issuer_master_id = ?, face_value = ?, issue_size = ? WHERE isin = ?`,
+              issuerId, faceValue, issueSize, isin
             );
-            console.log(`[Item ${idx + 1}] Updated master_issuer with new issuer link`);
-
             await tx.$executeRawUnsafe(
-              `UPDATE isin_re_issuance
-               SET issuer_master_id = $1, face_value = $2, issue_size = $3
-               WHERE isin = $4`,
-              issuerId,
-              faceValue,
-              issueSize,
-              isin
+              `UPDATE isin_re_issuance SET issuer_master_id = ?, face_value = ?, issue_size = ? WHERE isin = ?`,
+              issuerId, faceValue, issueSize, isin
             );
-            console.log(`[Item ${idx + 1}] Updated isin_re_issuance with new issuer link`);
+            console.log(`[Item ${idx + 1}] Updated both tables with new issuer link`);
 
             action = 'updated_with_new_issuer';
           }
 
-          return {
-            isin,
-            issuerName,
-            issuerId,
-            action,
-            issueSize,
-            faceValue
-          };
+          return { isin, issuerName, issuerId, action, issueSize, faceValue };
         }
 
-        /* ------------------------------------------------------------------ */
-        /* 3. ISIN does not exist                                              */
-        /* ------------------------------------------------------------------ */
-
-        console.log(`[Item ${idx + 1}] ISIN does not exist. Searching for matching issuer in all issuer_details...`);
-        const allIssuers = await tx.$queryRawUnsafe(
-          `SELECT id, issuer_name FROM issuer_details`
-        );
+        /* -------------------------------------------------------------- */
+        /* 3. ISIN does not exist                                         */
+        /* -------------------------------------------------------------- */
+        console.log(`[Item ${idx + 1}] ISIN does not exist. Searching for matching issuer...`);
+        const allIssuers = await tx.$queryRawUnsafe(`SELECT id, issuer_name FROM issuer_details`);
         console.log(`[Item ${idx + 1}] Total issuers in DB: ${allIssuers.length}`);
 
         console.log(`[Item ${idx + 1}] Performing fuzzy match for "${issuerName}"...`);
@@ -509,56 +468,36 @@ app.post('/uploadIssuers', async (req, res) => {
         if (match) {
           issuerId = match.issuer.id;
           action = 'created_isin_existing_issuer';
-          console.log(`[Item ${idx + 1}] Fuzzy match FOUND: "${match.issuer.issuer_name}" (id=${issuerId}) with score ${match.score.toFixed(4)}`);
+          console.log(
+            `[Item ${idx + 1}] Fuzzy match FOUND: "${match.issuer.issuer_name}" (id=${issuerId}) score=${match.score.toFixed(4)}`
+          );
         } else {
           console.log(`[Item ${idx + 1}] No fuzzy match found. Creating new issuer_details entry...`);
-          const newIssuer = await tx.$queryRawUnsafe(
-            `INSERT INTO issuer_details (issuer_name)
-             VALUES ($1)
-             RETURNING id`,
+          await tx.$executeRawUnsafe(
+            `INSERT INTO issuer_details (issuer_name) VALUES (?)`,
             issuerName
           );
-
-          issuerId = newIssuer[0].id;
+          issuerId = await getLastInsertId(tx);
           action = 'created_isin_new_issuer';
           console.log(`[Item ${idx + 1}] New issuer created with id=${issuerId}`);
         }
 
         console.log(`[Item ${idx + 1}] Inserting into master_issuer...`);
-        const masterInsert = await tx.$queryRawUnsafe(
-          `INSERT INTO master_issuer (issuer_master_id, isin, issue_size, face_value)
-           VALUES ($1, $2, $3, $4)
-           RETURNING id`,
-          issuerId,
-          isin,
-          issueSize,
-          faceValue
+        await tx.$executeRawUnsafe(
+          `INSERT INTO master_issuer (issuer_master_id, isin, issue_size, face_value) VALUES (?, ?, ?, ?)`,
+          issuerId, isin, issueSize, faceValue
         );
-
-        const masterId = masterInsert[0].id;
+        const masterId = await getLastInsertId(tx);
         console.log(`[Item ${idx + 1}] master_issuer inserted with id=${masterId}`);
 
         console.log(`[Item ${idx + 1}] Inserting into isin_re_issuance...`);
         await tx.$executeRawUnsafe(
-          `INSERT INTO isin_re_issuance
-             (isin_id, isin, issuer_master_id, face_value, issue_size)
-           VALUES ($1, $2, $3, $4, $5)`,
-          masterId,
-          isin,
-          issuerId,
-          faceValue,
-          issueSize
+          `INSERT INTO isin_re_issuance (isin_id, isin, issuer_master_id, face_value, issue_size) VALUES (?, ?, ?, ?, ?)`,
+          masterId, isin, issuerId, faceValue, issueSize
         );
         console.log(`[Item ${idx + 1}] isin_re_issuance inserted successfully`);
 
-        return {
-          isin,
-          issuerName,
-          issuerId,
-          action,
-          issueSize,
-          faceValue
-        };
+        return { isin, issuerName, issuerId, action, issueSize, faceValue };
       });
 
       console.log(`[Item ${idx + 1}] Transaction completed successfully. Result:`, result);
@@ -566,12 +505,7 @@ app.post('/uploadIssuers', async (req, res) => {
     } catch (err) {
       console.error(`[Item ${idx + 1}] ERROR:`, err.message);
       console.error(err.stack);
-      results.push({
-        isin,
-        issuerName,
-        status: 'error',
-        message: err.message
-      });
+      results.push({ isin, issuerName, status: 'error', message: err.message });
     }
   }
 
@@ -580,10 +514,7 @@ app.post('/uploadIssuers', async (req, res) => {
   console.log(JSON.stringify(results, null, 2));
   console.log('========================================\n');
 
-  res.json({
-    success: true,
-    results
-  });
+  res.json({ success: true, results });
 });
 
 app.post('/issuances-upload',async (req,res)=>{
