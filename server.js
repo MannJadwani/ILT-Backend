@@ -315,6 +315,11 @@ function findBestMatch(issuerName, issuers) {
   return null;
 }
 
+async function getLastInsertId(tx) {
+  const rows = await tx.$queryRawUnsafe(`SELECT LAST_INSERT_ID() as id`);
+  return Number(rows[0].id);
+}
+
 
 // ==========================================
 // MAIN ADMIN APIs:
