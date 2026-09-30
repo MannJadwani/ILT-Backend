@@ -211,10 +211,391 @@ function tenorToFloat(t) {
   return (t.years || 0) + (t.months || 0) / 12 + (t.days || 0) / 365;
 }
 
+/* -------------------------------------------------------------------------- */
+/* Name normalization and fuzzy matching                                      */
+/* -------------------------------------------------------------------------- */
+
+function normalizeName(name) {
+  return String(name || '')
+    .toLowerCase()
+    .replace(/[.,]/g, ' ')
+    .replace(/&/g, ' and ')
+    .replace(/\b limited\b/g, ' ltd')
+    .replace(/\b private\b/g, ' pvt')
+    .replace(/\b corporation\b/g, ' corp')
+    .replace(/\b incorporated\b/g, ' inc')
+    .replace(/\b company\b/g, ' co')
+    .replace(/[^a-z0-9 ]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function levenshtein(a, b) {
+  const m = a.length;
+  const n = b.length;
+
+  if (m === 0) return n;
+  if (n === 0) return m;
+
+  const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      dp[i][j] = Math.min(
+        dp[i - 1][j] + 1,
+        dp[i][j - 1] + 1,
+        dp[i - 1][j - 1] + cost
+      );
+    }
+  }
+
+  return dp[m][n];
+}
+
+function nameSimilarity(a, b) {
+  const na = normalizeName(a);
+  const nb = normalizeName(b);
+
+  if (!na || !nb) return 0;
+
+  const lev =
+    1 - levenshtein(na, nb) / Math.max(na.length, nb.length);
+
+  const ta = new Set(na.split(' ').filter(Boolean));
+  const tb = new Set(nb.split(' ').filter(Boolean));
+
+  const inter = [...ta].filter(t => tb.has(t)).length;
+  const union = new Set([...ta, ...tb]).size;
+  const jaccard = union === 0 ? 0 : inter / union;
+
+  const shorter = ta.size <= tb.size ? ta : tb;
+  const longer = ta.size <= tb.size ? tb : ta;
+  const containsAll = [...shorter].every(t => longer.has(t));
+  const containment = containsAll ? 1 : inter / shorter.size;
+
+  return Math.max(lev, jaccard, containment);
+}
+
+function findBestMatch(issuerName, issuers) {
+  let best = null;
+  let bestScore = 0;
+
+  for (const issuer of issuers) {
+    const score = nameSimilarity(issuerName, issuer.issuer_name);
+
+    if (score > bestScore) {
+      bestScore = score;
+      best = issuer;
+    }
+  }
+
+  return bestScore >= 0.7 ? best : null;
+}
+
 
 // ==========================================
 // MAIN ADMIN APIs:
 // ==========================================
+
+app.post('/uploadIssuers', async (req, res) => {
+  console.log('\n========================================');
+  console.log('[uploadIssuers] Request received at', new Date().toISOString());
+  console.log('[uploadIssuers] Body:', JSON.stringify(req.body, null, 2));
+  console.log('========================================\n');
+
+  const items = req.body;
+
+  if (!Array.isArray(items)) {
+    console.error('[uploadIssuers] Invalid body: not an array');
+    return res.status(400).json({ error: 'Request body must be an array' });
+  }
+
+  console.log(`[uploadIssuers] Processing ${items.length} item(s)`);
+
+  const results = [];
+
+  for (let idx = 0; idx < items.length; idx++) {
+    const item = items[idx];
+    const isin = String(item.isin || '').trim();
+    const issuerName = String(item.issuerName || '').trim();
+    const faceValue = Number(item.faceValue || 0) *  100000;
+    const baseIssueSize = Number(item.baseIssueSize || 0);
+    const greenShoeOption = Number(item.greenShoeOption || 0);
+    const issueSize = (baseIssueSize + greenShoeOption) * 10000000;
+
+    console.log(`\n--- [Item ${idx + 1}/${items.length}] ---`);
+    console.log(`[Item ${idx + 1}] ISIN: ${isin}`);
+    console.log(`[Item ${idx + 1}] Issuer Name: ${issuerName}`);
+    console.log(`[Item ${idx + 1}] Face Value: ${faceValue}`);
+    console.log(`[Item ${idx + 1}] Base Issue Size: ${baseIssueSize}`);
+    console.log(`[Item ${idx + 1}] Green Shoe Option: ${greenShoeOption}`);
+    console.log(`[Item ${idx + 1}] Calculated Issue Size: ${issueSize}`);
+
+    if (!isin || !issuerName || Number.isNaN(faceValue) || Number.isNaN(issueSize)) {
+      console.warn(`[Item ${idx + 1}] Invalid input – skipping`);
+      results.push({
+        isin,
+        issuerName,
+        status: 'error',
+        message: 'Invalid input'
+      });
+      continue;
+    }
+
+    try {
+      const result = await prisma.$transaction(async (tx) => {
+        /* ------------------------------------------------------------------ */
+        /* 1. Check if ISIN already exists                                     */
+        /* ------------------------------------------------------------------ */
+
+        console.log(`[Item ${idx + 1}] Checking if ISIN exists in master_issuer...`);
+        const masterRows = await tx.$queryRawUnsafe(
+          `SELECT id, issuer_master_id FROM master_issuer WHERE isin = $1 LIMIT 1`,
+          isin
+        );
+        console.log(`[Item ${idx + 1}] master_issuer rows found:`, masterRows.length);
+
+        console.log(`[Item ${idx + 1}] Checking if ISIN exists in isin_re_issuance...`);
+        const reRows = await tx.$queryRawUnsafe(
+          `SELECT id, issuer_master_id FROM isin_re_issuance WHERE isin = $1 LIMIT 1`,
+          isin
+        );
+        console.log(`[Item ${idx + 1}] isin_re_issuance rows found:`, reRows.length);
+
+        const isinExists = reRows.length > 0 || masterRows.length > 0;
+        console.log(`[Item ${idx + 1}] ISIN exists overall: ${isinExists}`);
+
+        /* ------------------------------------------------------------------ */
+        /* 2. ISIN exists                                                      */
+        /* ------------------------------------------------------------------ */
+
+        if (isinExists) {
+          console.log(`[Item ${idx + 1}] ISIN already exists. Collecting existing issuer IDs...`);
+          const existingIssuerIds = new Set();
+
+          masterRows.forEach(r => {
+            if (r.issuer_master_id) existingIssuerIds.add(Number(r.issuer_master_id));
+          });
+
+          reRows.forEach(r => {
+            if (r.issuer_master_id) existingIssuerIds.add(Number(r.issuer_master_id));
+          });
+
+          console.log(`[Item ${idx + 1}] Existing issuer IDs:`, [...existingIssuerIds]);
+
+          let matchedIssuer = null;
+          let matchScore = 0;
+
+          if (existingIssuerIds.size > 0) {
+            const ids = [...existingIssuerIds];
+            const placeholders = ids.map((_, i) => `$${i + 1}`).join(',');
+
+            console.log(`[Item ${idx + 1}] Fetching issuer names for IDs: ${ids.join(', ')}`);
+            const issuers = await tx.$queryRawUnsafe(
+              `SELECT id, issuer_name FROM issuer_details WHERE id IN (${placeholders})`,
+              ...ids
+            );
+            console.log(`[Item ${idx + 1}] Issuers fetched:`, issuers.map(i => `${i.id}: ${i.issuer_name}`));
+
+            console.log(`[Item ${idx + 1}] Performing fuzzy match for "${issuerName}"...`);
+            const match = findBestMatch(issuerName, issuers);
+            if (match) {
+              matchedIssuer = match.issuer;
+              matchScore = match.score;
+              console.log(`[Item ${idx + 1}] Fuzzy match FOUND: "${matchedIssuer.issuer_name}" (id=${matchedIssuer.id}) with score ${matchScore.toFixed(4)}`);
+            } else {
+              console.log(`[Item ${idx + 1}] No fuzzy match found (threshold 70%)`);
+            }
+          } else {
+            console.log(`[Item ${idx + 1}] No existing issuer IDs linked to this ISIN.`);
+          }
+
+          let issuerId;
+          let action;
+
+          if (matchedIssuer) {
+            issuerId = matchedIssuer.id;
+            console.log(`[Item ${idx + 1}] Updating existing issuer data (id=${issuerId}) in master_issuer and isin_re_issuance...`);
+
+            await tx.$executeRawUnsafe(
+              `UPDATE master_issuer
+               SET face_value = $1, issue_size = $2
+               WHERE isin = $3`,
+              faceValue,
+              issueSize,
+              isin
+            );
+            console.log(`[Item ${idx + 1}] Updated master_issuer for ISIN ${isin}`);
+
+            await tx.$executeRawUnsafe(
+              `UPDATE isin_re_issuance
+               SET face_value = $1, issue_size = $2
+               WHERE isin = $3`,
+              faceValue,
+              issueSize,
+              isin
+            );
+            console.log(`[Item ${idx + 1}] Updated isin_re_issuance for ISIN ${isin}`);
+
+            action = 'updated_existing';
+          } else {
+            console.log(`[Item ${idx + 1}] No matching issuer found. Creating a new issuer_details entry...`);
+            const newIssuer = await tx.$queryRawUnsafe(
+              `INSERT INTO issuer_details (issuer_name)
+               VALUES ($1)
+               RETURNING id`,
+              issuerName
+            );
+
+            issuerId = newIssuer[0].id;
+            console.log(`[Item ${idx + 1}] New issuer created with id=${issuerId}`);
+
+            console.log(`[Item ${idx + 1}] Linking existing ISIN records to new issuer id=${issuerId}...`);
+            await tx.$executeRawUnsafe(
+              `UPDATE master_issuer
+               SET issuer_master_id = $1, face_value = $2, issue_size = $3
+               WHERE isin = $4`,
+              issuerId,
+              faceValue,
+              issueSize,
+              isin
+            );
+            console.log(`[Item ${idx + 1}] Updated master_issuer with new issuer link`);
+
+            await tx.$executeRawUnsafe(
+              `UPDATE isin_re_issuance
+               SET issuer_master_id = $1, face_value = $2, issue_size = $3
+               WHERE isin = $4`,
+              issuerId,
+              faceValue,
+              issueSize,
+              isin
+            );
+            console.log(`[Item ${idx + 1}] Updated isin_re_issuance with new issuer link`);
+
+            action = 'updated_with_new_issuer';
+          }
+
+          return {
+            isin,
+            issuerName,
+            issuerId,
+            action,
+            issueSize,
+            faceValue
+          };
+        }
+
+        /* ------------------------------------------------------------------ */
+        /* 3. ISIN does not exist                                              */
+        /* ------------------------------------------------------------------ */
+
+        console.log(`[Item ${idx + 1}] ISIN does not exist. Searching for matching issuer in all issuer_details...`);
+        const allIssuers = await tx.$queryRawUnsafe(
+          `SELECT id, issuer_name FROM issuer_details`
+        );
+        console.log(`[Item ${idx + 1}] Total issuers in DB: ${allIssuers.length}`);
+
+        console.log(`[Item ${idx + 1}] Performing fuzzy match for "${issuerName}"...`);
+        const match = findBestMatch(issuerName, allIssuers);
+
+        let issuerId;
+        let action;
+
+        if (match) {
+          issuerId = match.issuer.id;
+          action = 'created_isin_existing_issuer';
+          console.log(`[Item ${idx + 1}] Fuzzy match FOUND: "${match.issuer.issuer_name}" (id=${issuerId}) with score ${match.score.toFixed(4)}`);
+        } else {
+          console.log(`[Item ${idx + 1}] No fuzzy match found. Creating new issuer_details entry...`);
+          const newIssuer = await tx.$queryRawUnsafe(
+            `INSERT INTO issuer_details (issuer_name)
+             VALUES ($1)
+             RETURNING id`,
+            issuerName
+          );
+
+          issuerId = newIssuer[0].id;
+          action = 'created_isin_new_issuer';
+          console.log(`[Item ${idx + 1}] New issuer created with id=${issuerId}`);
+        }
+
+        console.log(`[Item ${idx + 1}] Inserting into master_issuer...`);
+        const masterInsert = await tx.$queryRawUnsafe(
+          `INSERT INTO master_issuer (issuer_master_id, isin, issue_size, face_value)
+           VALUES ($1, $2, $3, $4)
+           RETURNING id`,
+          issuerId,
+          isin,
+          issueSize,
+          faceValue
+        );
+
+        const masterId = masterInsert[0].id;
+        console.log(`[Item ${idx + 1}] master_issuer inserted with id=${masterId}`);
+
+        console.log(`[Item ${idx + 1}] Inserting into isin_re_issuance...`);
+        await tx.$executeRawUnsafe(
+          `INSERT INTO isin_re_issuance
+             (isin_id, isin, issuer_master_id, face_value, issue_size)
+           VALUES ($1, $2, $3, $4, $5)`,
+          masterId,
+          isin,
+          issuerId,
+          faceValue,
+          issueSize
+        );
+        console.log(`[Item ${idx + 1}] isin_re_issuance inserted successfully`);
+
+        return {
+          isin,
+          issuerName,
+          issuerId,
+          action,
+          issueSize,
+          faceValue
+        };
+      });
+
+      console.log(`[Item ${idx + 1}] Transaction completed successfully. Result:`, result);
+      results.push(result);
+    } catch (err) {
+      console.error(`[Item ${idx + 1}] ERROR:`, err.message);
+      console.error(err.stack);
+      results.push({
+        isin,
+        issuerName,
+        status: 'error',
+        message: err.message
+      });
+    }
+  }
+
+  console.log('\n========================================');
+  console.log('[uploadIssuers] All items processed. Final results:');
+  console.log(JSON.stringify(results, null, 2));
+  console.log('========================================\n');
+
+  res.json({
+    success: true,
+    results
+  });
+});
+
+app.post('/issuances-upload',async (req,res)=>{
+  try {
+    const result = await prisma.$queryRawUnsafe(`
+      SELECT DISTINCT rating FROM master_issuer_rating;
+    `);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+})
 
 app.get('/getRatings', async (req, res) => {
   try {
