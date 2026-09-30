@@ -299,9 +299,9 @@ function findBestMatch(issuerName, issuers) {
     }
 
     const score = nameSimilarity(issuerName, String(candidateName));
-    console.log(
-      `[findBestMatch] "${issuerName}" vs "${candidateName}" -> ${score.toFixed(4)}`
-    );
+    // console.log(
+    //   `[findBestMatch] "${issuerName}" vs "${candidateName}" -> ${score.toFixed(4)}`
+    // );
 
     if (score > bestScore) {
       bestScore = score;
@@ -318,6 +318,68 @@ function findBestMatch(issuerName, issuers) {
 async function getLastInsertId(tx) {
   const rows = await tx.$queryRawUnsafe(`SELECT LAST_INSERT_ID() as id`);
   return Number(rows[0].id);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Date helpers                                                               */
+/* -------------------------------------------------------------------------- */
+
+function pad2(n) {
+  return String(n).padStart(2, '0');
+}
+
+function toMysqlDateTime(d) {
+  // d is a JS Date; format as YYYY-MM-DD HH:mm:ss in UTC.
+  // Change getUTC* -> get* if you want server-local time instead.
+  return (
+    `${d.getUTCFullYear()}-${pad2(d.getUTCMonth() + 1)}-${pad2(d.getUTCDate())} ` +
+    `${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}:${pad2(d.getUTCSeconds())}`
+  );
+}
+
+function excelSerialToDate(serial) {
+  // Excel epoch is 1899-12-30 (accounting for the 1900 leap-year bug).
+  const MS_PER_DAY = 86400 * 1000;
+  return new Date(Math.round((serial - 25569) * MS_PER_DAY));
+}
+
+/**
+ * Accepts:
+ *   - number            -> Excel serial         (e.g. 46154)
+ *   - "46154"           -> Excel serial string
+ *   - "2024-05-15"      -> ISO date
+ *   - "2024-05-15 10:20:30"
+ *   - ISO 8601 with tz
+ * Returns a MySQL-ready string "YYYY-MM-DD HH:mm:ss", or null if unparseable.
+ */
+function parseAllotmentDate(input) {
+  if (input === undefined || input === null || input === '') return null;
+
+  // Numeric (Excel serial)
+  if (typeof input === 'number' && Number.isFinite(input)) {
+    // Sanity range: Excel serials for plausible dates are ~20000 (1954) to ~60000 (2064)
+    if (input > 1000 && input < 100000) {
+      return toMysqlDateTime(excelSerialToDate(input));
+    }
+  }
+
+  // Numeric string (Excel serial)
+  if (typeof input === 'string' && /^\d+(\.\d+)?$/.test(input.trim())) {
+    const n = Number(input);
+    if (n > 1000 && n < 100000) {
+      return toMysqlDateTime(excelSerialToDate(n));
+    }
+  }
+
+  // Date string
+  const s = String(input).trim();
+
+  // Bare date: append time
+  const bare = /^\d{4}-\d{2}-\d{2}$/.test(s) ? `${s} 00:00:00` : s;
+  const d = new Date(bare);
+  if (Number.isNaN(d.getTime())) return null;
+
+  return toMysqlDateTime(d);
 }
 
 
@@ -355,13 +417,19 @@ app.post('/uploadIssuers', async (req, res) => {
     const greenShoeOption = Number(item.greenShoeOption || 0);
     const issueSize = (baseIssueSize + greenShoeOption) * 10000000;
 
-    console.log(`\n--- [Item ${idx + 1}/${items.length}] ---`);
-    console.log(`[Item ${idx + 1}] ISIN: ${isin}`);
-    console.log(`[Item ${idx + 1}] Issuer Name: ${issuerName}`);
-    console.log(`[Item ${idx + 1}] Face Value: ${faceValue}`);
-    console.log(`[Item ${idx + 1}] Base Issue Size: ${baseIssueSize}`);
-    console.log(`[Item ${idx + 1}] Green Shoe Option: ${greenShoeOption}`);
-    console.log(`[Item ${idx + 1}] Calculated Issue Size: ${issueSize}`);
+    // ---- NEW: allotment date handling ----
+    const rawAllot = item.allotmentDate;
+
+    let allotmentDate = parseAllotmentDate(rawAllot);
+
+    if (!allotmentDate) {
+      console.warn(
+        `[Item ${idx + 1}] allotmentDate missing or invalid (raw=${JSON.stringify(rawAllot)}). Defaulting to today.`
+      );
+      allotmentDate = toMysqlDateTime(new Date());
+    }
+
+    console.log(`[Item ${idx + 1}] Allotment Date (raw=${JSON.stringify(rawAllot)}) -> ${allotmentDate}`);
 
     if (!isin || !issuerName || Number.isNaN(faceValue) || Number.isNaN(issueSize)) {
       console.warn(`[Item ${idx + 1}] Invalid input – skipping`);
@@ -438,14 +506,17 @@ app.post('/uploadIssuers', async (req, res) => {
             console.log(`[Item ${idx + 1}] Updating existing issuer data (id=${issuerId})...`);
 
             await tx.$executeRawUnsafe(
-              `UPDATE master_issuer SET face_value = ?, issue_size = ? WHERE isin = ?`,
-              faceValue, issueSize, isin
+              `UPDATE master_issuer
+                  SET face_value = ?, issue_size = ?, allotment_date = ?
+              WHERE isin = ?`,
+              faceValue, issueSize, allotmentDate, isin
             );
-            console.log(`[Item ${idx + 1}] Updated master_issuer for ISIN ${isin}`);
 
             await tx.$executeRawUnsafe(
-              `UPDATE isin_re_issuance SET face_value = ?, issue_size = ? WHERE isin = ?`,
-              faceValue, issueSize, isin
+              `UPDATE isin_re_issuance
+                SET face_value = ?, issue_size = ?, allotment_date = ?
+              WHERE isin = ?`,
+              faceValue, issueSize, allotmentDate, isin
             );
             console.log(`[Item ${idx + 1}] Updated isin_re_issuance for ISIN ${isin}`);
 
@@ -461,12 +532,17 @@ app.post('/uploadIssuers', async (req, res) => {
 
             console.log(`[Item ${idx + 1}] Linking existing ISIN records to new issuer id=${issuerId}...`);
             await tx.$executeRawUnsafe(
-              `UPDATE master_issuer SET issuer_master_id = ?, face_value = ?, issue_size = ? WHERE isin = ?`,
-              issuerId, faceValue, issueSize, isin
+              `UPDATE master_issuer
+                SET issuer_master_id = ?, face_value = ?, issue_size = ?, allotment_date = ?
+              WHERE isin = ?`,
+              issuerId, faceValue, issueSize, allotmentDate, isin
             );
+
             await tx.$executeRawUnsafe(
-              `UPDATE isin_re_issuance SET issuer_master_id = ?, face_value = ?, issue_size = ? WHERE isin = ?`,
-              issuerId, faceValue, issueSize, isin
+              `UPDATE isin_re_issuance
+                SET issuer_master_id = ?, face_value = ?, issue_size = ?, allotment_date = ?
+              WHERE isin = ?`,
+              issuerId, faceValue, issueSize, allotmentDate, isin
             );
             console.log(`[Item ${idx + 1}] Updated both tables with new issuer link`);
 
@@ -507,21 +583,26 @@ app.post('/uploadIssuers', async (req, res) => {
         }
 
         console.log(`[Item ${idx + 1}] Inserting into master_issuer...`);
+        console.log(`[Item ${idx + 1}] Inserting into master_issuer...`);
         await tx.$executeRawUnsafe(
-          `INSERT INTO master_issuer (issuer_master_id, isin, issue_size, face_value) VALUES (?, ?, ?, ?)`,
-          issuerId, isin, issueSize, faceValue
+          `INSERT INTO master_issuer
+              (issuer_master_id, isin, issue_size, face_value, allotment_date)
+            VALUES (?, ?, ?, ?, ?)`,
+          issuerId, isin, issueSize, faceValue, allotmentDate
         );
         const masterId = await getLastInsertId(tx);
         console.log(`[Item ${idx + 1}] master_issuer inserted with id=${masterId}`);
 
         console.log(`[Item ${idx + 1}] Inserting into isin_re_issuance...`);
         await tx.$executeRawUnsafe(
-          `INSERT INTO isin_re_issuance (isin_id, isin, issuer_master_id, face_value, issue_size) VALUES (?, ?, ?, ?, ?)`,
-          masterId, isin, issuerId, faceValue, issueSize
+          `INSERT INTO isin_re_issuance
+            (isin_id, isin, issuer_master_id, face_value, issue_size, allotment_date)
+          VALUES (?, ?, ?, ?, ?, ?)`,
+          masterId, isin, issuerId, faceValue, issueSize, allotmentDate
         );
         console.log(`[Item ${idx + 1}] isin_re_issuance inserted successfully`);
 
-        return { isin, issuerName, issuerId, action, issueSize, faceValue };
+        return { isin, issuerName, issuerId, action, issueSize, faceValue, allotmentDate };
       });
 
       console.log(`[Item ${idx + 1}] Transaction completed successfully. Result:`, result);
