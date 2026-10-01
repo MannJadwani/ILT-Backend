@@ -384,18 +384,21 @@ const INTERMEDIARY_CONFIG = {
   arranger: {
     masterTable: 'master_arranger',
     nameColumn: 'arranger_name',
+    shortNameColumn: 'short_name',
     linkTable: 'issuer_arranger',
     linkIdColumn: 'arranger_id',
   },
   trustee: {
     masterTable: 'master_trustee',
     nameColumn: 'trustee_name',
+    shortNameColumn: 'short_name',
     linkTable: 'issuer_trustee',
     linkIdColumn: 'trustee_id',
   },
   registrar: {
     masterTable: 'master_registrar',
     nameColumn: 'registrar_name',
+    shortNameColumn: 'short_name',
     linkTable: 'issuer_registrar',
     linkIdColumn: 'registrar_id',
   },
@@ -589,14 +592,20 @@ app.post('/uploadIntermediaries', async (req, res) => {
           intermediaryId = Number(match.entity.id);
           matchScore = match.score;
           logDebug(kindTag, `Reusing existing ${cfg.masterTable} id=${intermediaryId}`);
+
         } else {
-          /* ---- Create new intermediary in master_X ---- */
-          logDebug(kindTag, `INSERT ${cfg.masterTable}`, { [cfg.nameColumn]: value });
+          /* ---- Create new intermediary in master_X (name + short_name) ---- */
+          logDebug(kindTag, `INSERT ${cfg.masterTable}`, {
+            [cfg.nameColumn]: value,
+            [cfg.shortNameColumn]: value,
+          });
 
           try {
             await prisma.$executeRawUnsafe(
-              `INSERT INTO ${cfg.masterTable} (${cfg.nameColumn}) VALUES (?)`,
-              value
+              `INSERT INTO ${cfg.masterTable}
+         (${cfg.nameColumn}, ${cfg.shortNameColumn})
+       VALUES (?, ?)`,
+              value, value
             );
             const [{ id }] = await prisma.$queryRawUnsafe(
               `SELECT LAST_INSERT_ID() AS id`
@@ -606,12 +615,12 @@ app.post('/uploadIntermediaries', async (req, res) => {
 
             intermediaryCache[listKey].push({ id: intermediaryId, name: value });
 
-            logInfo(kindTag, `  → Created ${cfg.masterTable} id=${intermediaryId}`);
+            logInfo(kindTag, `  → Created ${cfg.masterTable} id=${intermediaryId} (short_name="${value}")`);
           } catch (insertErr) {
             logWarn(kindTag, `INSERT failed (${insertErr.message}) — re-querying`);
             const rows = await prisma.$queryRawUnsafe(
               `SELECT id, ${cfg.nameColumn} AS name FROM ${cfg.masterTable}
-                 WHERE ${cfg.nameColumn} = ? LIMIT 1`,
+         WHERE ${cfg.nameColumn} = ? LIMIT 1`,
               value
             );
             if (rows && rows.length > 0) {
