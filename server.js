@@ -212,7 +212,76 @@ function tenorToFloat(t) {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Name normalization and fuzzy matching                                      */
+/* Logger utility                                                             */
+/* -------------------------------------------------------------------------- */
+
+const LOG_LEVELS = { DEBUG: 0, INFO: 1, WARN: 2, ERROR: 3 };
+const CURRENT_LOG_LEVEL = LOG_LEVELS.DEBUG; // change to INFO/WARN in prod
+
+function log(level, tag, message, meta) {
+  if (LOG_LEVELS[level] < CURRENT_LOG_LEVEL) return;
+
+  const ts = new Date().toISOString();
+  const prefix = `[${ts}] [${level}] [${tag}]`;
+
+  if (meta !== undefined) {
+    console.log(`${prefix} ${message}`, meta);
+  } else {
+    console.log(`${prefix} ${message}`);
+  }
+}
+
+const logDebug = (tag, msg, meta) => log('DEBUG', tag, msg, meta);
+const logInfo = (tag, msg, meta) => log('INFO', tag, msg, meta);
+const logWarn = (tag, msg, meta) => log('WARN', tag, msg, meta);
+const logError = (tag, msg, meta) => log('ERROR', tag, msg, meta);
+
+/* -------------------------------------------------------------------------- */
+/* Date helpers                                                               */
+/* -------------------------------------------------------------------------- */
+
+function pad2(n) {
+  return String(n).padStart(2, '0');
+}
+
+function toMysqlDateTime(d) {
+  return (
+    `${d.getUTCFullYear()}-${pad2(d.getUTCMonth() + 1)}-${pad2(d.getUTCDate())} ` +
+    `${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}:${pad2(d.getUTCSeconds())}`
+  );
+}
+
+function excelSerialToDate(serial) {
+  const MS_PER_DAY = 86400 * 1000;
+  return new Date(Math.round((serial - 25569) * MS_PER_DAY));
+}
+
+function parseAllotmentDate(input) {
+  if (input === undefined || input === null || input === '') return null;
+
+  if (typeof input === 'number' && Number.isFinite(input)) {
+    if (input > 1000 && input < 100000) {
+      return toMysqlDateTime(excelSerialToDate(input));
+    }
+  }
+
+  if (typeof input === 'string' && /^\d+(\.\d+)?$/.test(input.trim())) {
+    const n = Number(input);
+    if (n > 1000 && n < 100000) {
+      return toMysqlDateTime(excelSerialToDate(n));
+    }
+  }
+
+  const s = String(input).trim();
+  const bare = /^\d{4}-\d{2}-\d{2}$/.test(s) ? `${s} 00:00:00` : s;
+  const d = new Date(bare);
+  if (Number.isNaN(d.getTime())) return null;
+
+  return toMysqlDateTime(d);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Name matching helpers                                                      */
 /* -------------------------------------------------------------------------- */
 
 function normalizeName(name) {
@@ -262,8 +331,7 @@ function nameSimilarity(a, b) {
 
   if (!na || !nb) return 0;
 
-  const lev =
-    1 - levenshtein(na, nb) / Math.max(na.length, nb.length);
+  const lev = 1 - levenshtein(na, nb) / Math.max(na.length, nb.length);
 
   const ta = new Set(na.split(' ').filter(Boolean));
   const tb = new Set(nb.split(' ').filter(Boolean));
@@ -280,12 +348,11 @@ function nameSimilarity(a, b) {
   return Math.max(lev, jaccard, containment);
 }
 
-function findBestMatch(issuerName, issuers) {
+function findBestMatch(issuerName, issuers, tag = 'findBestMatch') {
   let best = null;
   let bestScore = 0;
 
-  console.log('[findBestMatch] looking for:', issuerName);
-  console.log('[findBestMatch] candidates:', issuers);
+  logDebug(tag, `Looking for match for: "${issuerName}" (${issuers.length} candidates)`);
 
   for (const issuer of issuers) {
     if (!issuer) continue;
@@ -294,332 +361,336 @@ function findBestMatch(issuerName, issuers) {
       issuer.issuer_name ?? issuer.issuerName ?? issuer.name ?? null;
 
     if (!candidateName) {
-      console.warn('[findBestMatch] skipping entry with no name:', issuer);
+      logWarn(tag, 'Skipping candidate with no name', issuer);
       continue;
     }
 
     const score = nameSimilarity(issuerName, String(candidateName));
-    // console.log(
-    //   `[findBestMatch] "${issuerName}" vs "${candidateName}" -> ${score.toFixed(4)}`
-    // );
 
     if (score > bestScore) {
       bestScore = score;
       best = issuer;
+      logDebug(tag, `New best: "${candidateName}" -> ${score.toFixed(4)}`);
     }
   }
 
   if (bestScore >= 0.7 && best) {
+    logInfo(
+      tag,
+      `Match accepted: "${best.issuer_name}" (id=${best.id}) score=${bestScore.toFixed(4)}`
+    );
     return { issuer: { ...best, id: Number(best.id) }, score: bestScore };
   }
+
+  logInfo(tag, `No match found (bestScore=${bestScore.toFixed(4)}) for "${issuerName}"`);
   return null;
 }
 
-async function getLastInsertId(tx) {
-  const rows = await tx.$queryRawUnsafe(`SELECT LAST_INSERT_ID() as id`);
-  return Number(rows[0].id);
-}
-
-/* -------------------------------------------------------------------------- */
-/* Date helpers                                                               */
-/* -------------------------------------------------------------------------- */
-
-function pad2(n) {
-  return String(n).padStart(2, '0');
-}
-
-function toMysqlDateTime(d) {
-  // d is a JS Date; format as YYYY-MM-DD HH:mm:ss in UTC.
-  // Change getUTC* -> get* if you want server-local time instead.
-  return (
-    `${d.getUTCFullYear()}-${pad2(d.getUTCMonth() + 1)}-${pad2(d.getUTCDate())} ` +
-    `${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}:${pad2(d.getUTCSeconds())}`
-  );
-}
-
-function excelSerialToDate(serial) {
-  // Excel epoch is 1899-12-30 (accounting for the 1900 leap-year bug).
-  const MS_PER_DAY = 86400 * 1000;
-  return new Date(Math.round((serial - 25569) * MS_PER_DAY));
-}
-
-/**
- * Accepts:
- *   - number            -> Excel serial         (e.g. 46154)
- *   - "46154"           -> Excel serial string
- *   - "2024-05-15"      -> ISO date
- *   - "2024-05-15 10:20:30"
- *   - ISO 8601 with tz
- * Returns a MySQL-ready string "YYYY-MM-DD HH:mm:ss", or null if unparseable.
- */
-function parseAllotmentDate(input) {
-  if (input === undefined || input === null || input === '') return null;
-
-  // Numeric (Excel serial)
-  if (typeof input === 'number' && Number.isFinite(input)) {
-    // Sanity range: Excel serials for plausible dates are ~20000 (1954) to ~60000 (2064)
-    if (input > 1000 && input < 100000) {
-      return toMysqlDateTime(excelSerialToDate(input));
-    }
-  }
-
-  // Numeric string (Excel serial)
-  if (typeof input === 'string' && /^\d+(\.\d+)?$/.test(input.trim())) {
-    const n = Number(input);
-    if (n > 1000 && n < 100000) {
-      return toMysqlDateTime(excelSerialToDate(n));
-    }
-  }
-
-  // Date string
-  const s = String(input).trim();
-
-  // Bare date: append time
-  const bare = /^\d{4}-\d{2}-\d{2}$/.test(s) ? `${s} 00:00:00` : s;
-  const d = new Date(bare);
-  if (Number.isNaN(d.getTime())) return null;
-
-  return toMysqlDateTime(d);
-}
-
-
-// ==========================================
-// MAIN ADMIN APIs:
-// ==========================================
-
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/* -------------------------------------------------------------------------- */
+/* Upload endpoint                                                            */
+/* -------------------------------------------------------------------------- */
+
 app.post('/uploadIssuers', async (req, res) => {
-  console.log('\n========================================');
-  console.log('[uploadIssuers] Request received at', new Date().toISOString());
-  console.log('[uploadIssuers] Body:', JSON.stringify(req.body, null, 2));
-  console.log('========================================\n');
+  const REQ_ID = `REQ-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+  const TAG = `uploadIssuers:${REQ_ID}`;
+  const startedAt = Date.now();
 
-  const items = req.body;
+  logInfo(TAG, '▶ Request received');
 
-  if (!Array.isArray(items)) {
-    console.error('[uploadIssuers] Invalid body: not an array');
-    return res.status(400).json({ error: 'Request body must be an array' });
-  }
+  try {
+    const items = req.body;
+    logDebug(TAG, 'Request body preview', {
+      isArray: Array.isArray(items),
+      length: Array.isArray(items) ? items.length : null,
+    });
 
-  console.log(`[uploadIssuers] Processing ${items.length} item(s)`);
-  const results = [];
+    if (!Array.isArray(items) || items.length === 0) {
+      logWarn(TAG, 'Invalid request body — must be a non-empty array');
+      return res.status(400).json({ error: 'Request body must be a non-empty array' });
+    }
 
-  for (let idx = 0; idx < items.length; idx++) {
+    /* ------------------------------------------------------------------ */
+    /* STEP 1 — Deduplicate                                                */
+    /* ------------------------------------------------------------------ */
+    logInfo(TAG, `STEP 1: Deduplicating ${items.length} incoming items`);
 
-    await delay(500);
+    const seen = new Set();
+    const uniqueItems = [];
+    let duplicateCount = 0;
 
-    const item = items[idx];
-    const isin = String(item.isin || '').trim();
-    const issuerName = String(item.issuerName || '').trim();
-    const faceValue = Number(item.faceValue || 0) * 100000;
-    const baseIssueSize = Number(item.baseIssueSize || 0);
-    const greenShoeOption = Number(item.greenShoeOption || 0);
-    const issueSize = (baseIssueSize + greenShoeOption) * 10000000;
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const key = JSON.stringify({
+        isin: item.isin ?? null,
+        issuerName: item.issuerName ?? null,
+        allotmentDate: item.allotmentDate ?? null,
+        faceValue: item.faceValue ?? null,
+        baseIssueSize: item.baseIssueSize ?? null,
+        greenShoeOption: item.greenShoeOption ?? null,
+      });
 
-    // ---- NEW: allotment date handling ----
-    const rawAllot = item.allotmentDate;
+      if (seen.has(key)) {
+        duplicateCount++;
+        logDebug(TAG, `  Item[${i}] DUPLICATE — skipped`, {
+          isin: item.isin,
+          issuerName: item.issuerName,
+        });
+      } else {
+        seen.add(key);
+        uniqueItems.push(item);
+        logDebug(TAG, `  Item[${i}] unique — kept`, {
+          isin: item.isin,
+          issuerName: item.issuerName,
+        });
+      }
+    }
 
-    let allotmentDate = parseAllotmentDate(rawAllot);
+    logInfo(
+      TAG,
+      `STEP 1 DONE: ${uniqueItems.length} unique / ${duplicateCount} duplicates removed`
+    );
 
-    if (!allotmentDate) {
-      console.warn(
-        `[Item ${idx + 1}] allotmentDate missing or invalid (raw=${JSON.stringify(rawAllot)}). Defaulting to today.`
+    /* ------------------------------------------------------------------ */
+    /* STEP 2 — Load existing issuers                                      */
+    /* ------------------------------------------------------------------ */
+    logInfo(TAG, 'STEP 2: Loading existing issuer_details for fuzzy matching');
+
+    let existingIssuers = await prisma.$queryRawUnsafe(
+      `SELECT id, issuer_name FROM issuer_details`
+    );
+
+    logInfo(TAG, `STEP 2 DONE: Loaded ${existingIssuers.length} existing issuers`);
+
+    const results = [];
+
+    /* ------------------------------------------------------------------ */
+    /* STEP 3 — Process each unique item                                   */
+    /* ------------------------------------------------------------------ */
+    logInfo(TAG, `STEP 3: Processing ${uniqueItems.length} unique items`);
+
+    for (let idx = 0; idx < uniqueItems.length; idx++) {
+      await delay(500);
+
+      const item = uniqueItems[idx];
+      const itemTag = `${TAG}:item[${idx}]`;
+
+      const {
+        isin,
+        issuerName,
+        allotmentDate,
+        faceValue,
+        baseIssueSize,
+        greenShoeOption,
+      } = item;
+
+      logInfo(itemTag, `▶ Processing ISIN=${isin} issuer="${issuerName}"`);
+      logDebug(itemTag, 'Raw payload', item);
+
+      /* ---- Validation ---- */
+      if (!isin || !issuerName) {
+        logWarn(itemTag, 'Skipped — missing isin or issuerName');
+        results.push({
+          isin,
+          issuerName,
+          status: 'skipped',
+          reason: 'Missing isin or issuerName',
+        });
+        continue;
+      }
+
+      const parsedDate = parseAllotmentDate(allotmentDate);
+      if (!parsedDate) {
+        logWarn(itemTag, `Skipped — invalid allotmentDate: ${allotmentDate}`);
+        results.push({
+          isin,
+          issuerName,
+          status: 'skipped',
+          reason: 'Invalid allotmentDate',
+        });
+        continue;
+      }
+      logDebug(itemTag, `Parsed allotmentDate ${allotmentDate} -> ${parsedDate}`);
+
+      const issueSize =
+        ((Number(baseIssueSize) || 0) + (Number(greenShoeOption) || 0)) * 10000000 || null;
+      const faceValueNum = Number(faceValue) * 100000 || null;
+
+      logDebug(itemTag, 'Computed values', {
+        issueSize,
+        faceValueNum,
+        baseIssueSize,
+        greenShoeOption,
+      });
+
+      /* ---- Fuzzy match ---- */
+      const match = findBestMatch(issuerName, existingIssuers, itemTag);
+      const existingIssuerId = match ? match.issuer.id : null;
+
+      logDebug(
+        itemTag,
+        existingIssuerId
+          ? `Reusing existing issuer id=${existingIssuerId}`
+          : 'No existing issuer matched — will create new one'
       );
-      allotmentDate = toMysqlDateTime(new Date());
-    }
 
-    console.log(`[Item ${idx + 1}] Allotment Date (raw=${JSON.stringify(rawAllot)}) -> ${allotmentDate}`);
+      /* ---- Transaction ---- */
+      try {
+        logDebug(itemTag, 'BEGIN transaction');
+        const txStart = Date.now();
 
-    if (!isin || !issuerName || Number.isNaN(faceValue) || Number.isNaN(issueSize)) {
-      console.warn(`[Item ${idx + 1}] Invalid input – skipping`);
-      results.push({ isin, issuerName, status: 'error', message: 'Invalid input' });
-      continue;
-    }
+        const txResult = await prisma.$transaction(async (tx) => {
+          let issuerId = existingIssuerId;
+          let createdNew = false;
 
-    try {
-      const result = await prisma.$transaction(async (tx) => {
-        /* -------------------------------------------------------------- */
-        /* 1. Check if ISIN exists                                        */
-        /* -------------------------------------------------------------- */
-        console.log(`[Item ${idx + 1}] Checking if ISIN exists in master_issuer...`);
-        const masterRows = await tx.$queryRawUnsafe(
-          `SELECT id, issuer_master_id FROM master_issuer WHERE isin = ? LIMIT 1`,
-          isin
-        );
-        console.log(`[Item ${idx + 1}] master_issuer rows found: ${masterRows.length}`);
-
-        console.log(`[Item ${idx + 1}] Checking if ISIN exists in isin_re_issuance...`);
-        const reRows = await tx.$queryRawUnsafe(
-          `SELECT id, issuer_master_id FROM isin_re_issuance WHERE isin = ? LIMIT 1`,
-          isin
-        );
-        console.log(`[Item ${idx + 1}] isin_re_issuance rows found: ${reRows.length}`);
-
-        const isinExists = masterRows.length > 0 || reRows.length > 0;
-        console.log(`[Item ${idx + 1}] ISIN exists overall: ${isinExists}`);
-
-        /* -------------------------------------------------------------- */
-        /* 2. ISIN exists                                                 */
-        /* -------------------------------------------------------------- */
-        if (isinExists) {
-          console.log(`[Item ${idx + 1}] ISIN already exists. Collecting existing issuer IDs...`);
-          const existingIssuerIds = new Set();
-          masterRows.forEach(r => { if (r.issuer_master_id) existingIssuerIds.add(Number(r.issuer_master_id)); });
-          reRows.forEach(r => { if (r.issuer_master_id) existingIssuerIds.add(Number(r.issuer_master_id)); });
-          console.log(`[Item ${idx + 1}] Existing issuer IDs:`, [...existingIssuerIds]);
-
-          let matchedIssuer = null;
-          let matchScore = 0;
-
-          if (existingIssuerIds.size > 0) {
-            const ids = [...existingIssuerIds];
-            const placeholders = ids.map(() => '?').join(',');
-
-            console.log(`[Item ${idx + 1}] Fetching issuer names for IDs: ${ids.join(', ')}`);
-            const issuers = (await tx.$queryRawUnsafe(
-              `SELECT id, issuer_name FROM issuer_details WHERE id IN (${placeholders})`,
-              ...ids
-            )).map(r => ({ id: Number(r.id), issuer_name: r.issuer_name }));
-            console.log(`[Item ${idx + 1}] Issuers fetched:`, issuers.map(i => `${i.id}: ${i.issuer_name}`));
-
-            console.log(`[Item ${idx + 1}] Performing fuzzy match for "${issuerName}"...`);
-            const match = findBestMatch(issuerName, issuers);
-            if (match) {
-              matchedIssuer = match.issuer;
-              matchScore = match.score;
-              console.log(
-                `[Item ${idx + 1}] Fuzzy match FOUND: "${matchedIssuer.issuer_name}" (id=${matchedIssuer.id}) score=${matchScore.toFixed(4)}`
-              );
-            } else {
-              console.log(`[Item ${idx + 1}] No fuzzy match found (threshold 70%)`);
-            }
-          } else {
-            console.log(`[Item ${idx + 1}] No existing issuer IDs linked to this ISIN.`);
-          }
-
-          let issuerId;
-          let action;
-
-          if (matchedIssuer) {
-            issuerId = matchedIssuer.id;
-            console.log(`[Item ${idx + 1}] Updating existing issuer data (id=${issuerId})...`);
-
-            await tx.$executeRawUnsafe(
-              `UPDATE master_issuer
-                  SET face_value = ?, issue_size = ?, allotment_date = ?
-              WHERE isin = ?`,
-              faceValue, issueSize, allotmentDate, isin
-            );
-
-            await tx.$executeRawUnsafe(
-              `UPDATE isin_re_issuance
-                SET face_value = ?, issue_size = ?, allotment_date = ?
-              WHERE isin = ?`,
-              faceValue, issueSize, allotmentDate, isin
-            );
-            console.log(`[Item ${idx + 1}] Updated isin_re_issuance for ISIN ${isin}`);
-
-            action = 'updated_existing';
-          } else {
-            console.log(`[Item ${idx + 1}] No matching issuer found. Creating new issuer_details entry...`);
+          /* ---- 3a. issuer_details ---- */
+          if (!issuerId) {
+            logDebug(itemTag, 'INSERT issuer_details', { issuer_name: issuerName });
             await tx.$executeRawUnsafe(
               `INSERT INTO issuer_details (issuer_name) VALUES (?)`,
               issuerName
             );
-            issuerId = await getLastInsertId(tx);
-            console.log(`[Item ${idx + 1}] New issuer created with id=${issuerId}`);
-
-            console.log(`[Item ${idx + 1}] Linking existing ISIN records to new issuer id=${issuerId}...`);
-            await tx.$executeRawUnsafe(
-              `UPDATE master_issuer
-                SET issuer_master_id = ?, face_value = ?, issue_size = ?, allotment_date = ?
-              WHERE isin = ?`,
-              issuerId, faceValue, issueSize, allotmentDate, isin
+            const [{ id }] = await tx.$queryRawUnsafe(
+              `SELECT LAST_INSERT_ID() AS id`
             );
-
-            await tx.$executeRawUnsafe(
-              `UPDATE isin_re_issuance
-                SET issuer_master_id = ?, face_value = ?, issue_size = ?, allotment_date = ?
-              WHERE isin = ?`,
-              issuerId, faceValue, issueSize, allotmentDate, isin
-            );
-            console.log(`[Item ${idx + 1}] Updated both tables with new issuer link`);
-
-            action = 'updated_with_new_issuer';
+            issuerId = Number(id);
+            createdNew = true;
+            logInfo(itemTag, `  → Created issuer_details id=${issuerId}`);
+          } else {
+            logDebug(itemTag, `  → Reused issuer_details id=${issuerId}`);
           }
 
-          return { isin, issuerName, issuerId, action, issueSize, faceValue };
-        }
-
-        /* -------------------------------------------------------------- */
-        /* 3. ISIN does not exist                                         */
-        /* -------------------------------------------------------------- */
-        console.log(`[Item ${idx + 1}] ISIN does not exist. Searching for matching issuer...`);
-        const allIssuers = await tx.$queryRawUnsafe(`SELECT id, issuer_name FROM issuer_details`);
-        console.log(`[Item ${idx + 1}] Total issuers in DB: ${allIssuers.length}`);
-
-        console.log(`[Item ${idx + 1}] Performing fuzzy match for "${issuerName}"...`);
-        const match = findBestMatch(issuerName, allIssuers);
-
-        let issuerId;
-        let action;
-
-        if (match) {
-          issuerId = match.issuer.id;
-          action = 'created_isin_existing_issuer';
-          console.log(
-            `[Item ${idx + 1}] Fuzzy match FOUND: "${match.issuer.issuer_name}" (id=${issuerId}) score=${match.score.toFixed(4)}`
-          );
-        } else {
-          console.log(`[Item ${idx + 1}] No fuzzy match found. Creating new issuer_details entry...`);
+          /* ---- 3b. master_issuer ---- */
+          logDebug(itemTag, 'INSERT master_issuer', {
+            issuer_master_id: issuerId,
+            isin,
+            allotment_date: parsedDate,
+            face_value: faceValueNum,
+            issue_size: issueSize,
+          });
           await tx.$executeRawUnsafe(
-            `INSERT INTO issuer_details (issuer_name) VALUES (?)`,
-            issuerName
+            `INSERT INTO master_issuer
+               (issuer_master_id, isin, allotment_date, face_value, issue_size,
+                is_visible, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+            issuerId,
+            isin,
+            parsedDate,
+            faceValueNum,
+            issueSize,
+            1
           );
-          issuerId = await getLastInsertId(tx);
-          action = 'created_isin_new_issuer';
-          console.log(`[Item ${idx + 1}] New issuer created with id=${issuerId}`);
+          const [{ id: masterIssuerId }] = await tx.$queryRawUnsafe(
+            `SELECT LAST_INSERT_ID() AS id`
+          );
+          logInfo(itemTag, `  → Created master_issuer id=${Number(masterIssuerId)}`);
+
+          /* ---- 3c. isin_re_issuance ---- */
+          logDebug(itemTag, 'INSERT isin_re_issuance', {
+            isin_id: Number(masterIssuerId),
+            isin,
+            issuer_master_id: issuerId,
+          });
+          await tx.$executeRawUnsafe(
+            `INSERT INTO isin_re_issuance
+               (isin_id, isin, issuer_master_id, allotment_date, issue_size,
+                face_value, source, is_visible, is_updated, is_main,
+                created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+            Number(masterIssuerId),
+            isin,
+            issuerId,
+            parsedDate,
+            issueSize,
+            faceValueNum,
+            'UPLOAD',
+            1,
+            0,
+            1
+          );
+          const [{ id: reIssuanceId }] = await tx.$queryRawUnsafe(
+            `SELECT LAST_INSERT_ID() AS id`
+          );
+          logInfo(itemTag, `  → Created isin_re_issuance id=${Number(reIssuanceId)}`);
+
+
+          return {
+            issuerId,
+            masterIssuerId: Number(masterIssuerId),
+            reIssuanceId: Number(reIssuanceId),
+            createdNew,
+          };
+        });
+
+        logInfo(
+          itemTag,
+          `COMMIT transaction (${Date.now() - txStart} ms) — issuerId=${txResult.issuerId}, masterIssuerId=${txResult.masterIssuerId}, reIssuanceId=${txResult.reIssuanceId}`
+        );
+
+        /* ---- Cache new issuer for subsequent items in same request ---- */
+        if (txResult.createdNew) {
+          existingIssuers.push({
+            id: txResult.issuerId,
+            issuer_name: issuerName,
+          });
+          logDebug(itemTag, `Cached new issuer id=${txResult.issuerId} for later items in this request`);
         }
 
-        console.log(`[Item ${idx + 1}] Inserting into master_issuer...`);
-        console.log(`[Item ${idx + 1}] Inserting into master_issuer...`);
-        await tx.$executeRawUnsafe(
-          `INSERT INTO master_issuer
-              (issuer_master_id, isin, issue_size, face_value, allotment_date)
-            VALUES (?, ?, ?, ?, ?)`,
-          issuerId, isin, issueSize, faceValue, allotmentDate
-        );
-        const masterId = await getLastInsertId(tx);
-        console.log(`[Item ${idx + 1}] master_issuer inserted with id=${masterId}`);
+        results.push({
+          isin,
+          issuerName,
+          status: 'inserted',
+          issuerId: txResult.issuerId,
+          masterIssuerId: txResult.masterIssuerId,
+          reIssuanceId: txResult.reIssuanceId,
+          matchScore: match ? match.score : null,
+        });
 
-        console.log(`[Item ${idx + 1}] Inserting into isin_re_issuance...`);
-        await tx.$executeRawUnsafe(
-          `INSERT INTO isin_re_issuance
-            (isin_id, isin, issuer_master_id, face_value, issue_size, allotment_date)
-          VALUES (?, ?, ?, ?, ?, ?)`,
-          masterId, isin, issuerId, faceValue, issueSize, allotmentDate
-        );
-        console.log(`[Item ${idx + 1}] isin_re_issuance inserted successfully`);
-
-        return { isin, issuerName, issuerId, action, issueSize, faceValue, allotmentDate };
-      });
-
-      console.log(`[Item ${idx + 1}] Transaction completed successfully. Result:`, result);
-      results.push(result);
-    } catch (err) {
-      console.error(`[Item ${idx + 1}] ERROR:`, err.message);
-      console.error(err.stack);
-      results.push({ isin, issuerName, status: 'error', message: err.message });
+        logInfo(itemTag, `✔ Item done — SUCCESS`);
+      } catch (err) {
+        logError(itemTag, `ROLLBACK transaction — ${err.message}`, {
+          stack: err.stack,
+        });
+        results.push({
+          isin,
+          issuerName,
+          status: 'error',
+          reason: err.message,
+        });
+      }
     }
+
+    /* ------------------------------------------------------------------ */
+    /* Summary                                                             */
+    /* ------------------------------------------------------------------ */
+    const inserted = results.filter(r => r.status === 'inserted').length;
+    const skipped = results.filter(r => r.status === 'skipped').length;
+    const errored = results.filter(r => r.status === 'error').length;
+
+    logInfo(TAG, '──────── SUMMARY ────────');
+    logInfo(TAG, `  received : ${items.length}`);
+    logInfo(TAG, `  unique   : ${uniqueItems.length}`);
+    logInfo(TAG, `  inserted : ${inserted}`);
+    logInfo(TAG, `  skipped  : ${skipped}`);
+    logInfo(TAG, `  errored  : ${errored}`);
+    logInfo(TAG, `  duration : ${Date.now() - startedAt} ms`);
+    logInfo(TAG, '◀ Request completed');
+
+    res.json({
+      requestId: REQ_ID,
+      received: items.length,
+      unique: uniqueItems.length,
+      inserted,
+      skipped,
+      errored,
+      durationMs: Date.now() - startedAt,
+      results,
+    });
+  } catch (error) {
+    logError(TAG, `FATAL — ${error.message}`, { stack: error.stack });
+    res.status(500).json({ error: error.message, requestId: REQ_ID });
   }
-
-  console.log('\n========================================');
-  console.log('[uploadIssuers] All items processed. Final results:');
-  console.log(JSON.stringify(results, null, 2));
-  console.log('========================================\n');
-
-  res.json({ success: true, results });
 });
 
 app.post('/issuances-upload', async (req, res) => {
