@@ -212,6 +212,7 @@ function tenorToFloat(t) {
 }
 
 
+
 /* -------------------------------------------------------------------------- */
 /* Logger utility                                                             */
 /* -------------------------------------------------------------------------- */
@@ -415,10 +416,16 @@ app.post('/uploadIssuers', async (req, res) => {
 
     const results = [];
 
-    // Track keys already inserted in THIS request so we don't re-insert
-    // the same (isin, allotment_date, issue_size, face_value, issuer_master_id)
-    // combination even if the DB query returns stale data.
-    const insertedKeys = new Set(); // `${isin}|${date}|${size}|${fv}|${issuerId}`
+    // ------------------------------------------------------------------
+    // In-request caches
+    // ------------------------------------------------------------------
+    // ISIN -> master_issuer.id  (ensures same isin always shares same isin_id)
+    const isinToMasterIssuerId = new Map();
+
+    // Track isin_re_issuance rows created/updated in this request so we don't
+    // re-query the DB for the same tuple.
+    // key = `${isin}|${allotment_date}|${issuer_master_id}` -> { id, action }
+    const reIssuanceKeyState = new Map();
 
     /* ------------------------------------------------------------------ */
     /* STEP 3 — Process each unique item                                   */
@@ -426,8 +433,7 @@ app.post('/uploadIssuers', async (req, res) => {
     logInfo(TAG, `STEP 3: Processing ${uniqueItems.length} unique items`);
 
     for (let idx = 0; idx < uniqueItems.length; idx++) {
-
-      await delay(100);
+      await delay(50);
       const item = uniqueItems[idx];
       const itemTag = `${TAG}:item[${idx}]`;
 
@@ -457,214 +463,192 @@ app.post('/uploadIssuers', async (req, res) => {
 
       logDebug(itemTag, 'Computed values', { issueSize, faceValueNum, baseIssueSize, greenShoeOption });
 
-      /* ---- Fuzzy match ---- */
+      /* ---- Fuzzy match issuer_name ---- */
       const match = findBestMatch(issuerName, existingIssuers, itemTag);
       const existingIssuerId = match ? match.issuer.id : null;
-
-      /* ================================================================== */
-      /* BRANCH A — issuer_name EXISTS in DB (fuzzy match ≥ 70%)            */
-      /* ================================================================== */
-      if (existingIssuerId) {
-        logInfo(itemTag, `Issuer exists in DB → id=${existingIssuerId} (score=${match.score.toFixed(4)})`);
-
-        const dupKey = `${isin}|${parsedDate}|${issueSize}|${faceValueNum}|${existingIssuerId}`;
-
-        // -- In-memory duplicate check (same request) --
-        if (insertedKeys.has(dupKey)) {
-          logInfo(itemTag, `Already inserted earlier in THIS request — SKIP (key=${dupKey})`);
-          results.push({
-            isin, issuerName, status: 'duplicate_in_request',
-            issuerId: existingIssuerId,
-            matchScore: match.score,
-          });
-          continue;
-        }
-
-        // -- DB duplicate check on isin_re_issuance --
-        logDebug(itemTag, 'Checking isin_re_issuance for existing row', {
-          isin, allotment_date: parsedDate, issue_size: issueSize,
-          face_value: faceValueNum, issuer_master_id: existingIssuerId,
-        });
-
-        const existingRow = await prisma.$queryRawUnsafe(
-          `SELECT id FROM isin_re_issuance
-             WHERE isin = ?
-               AND allotment_date = ?
-               AND issue_size = ?
-               AND face_value = ?
-               AND issuer_master_id = ?
-             LIMIT 1`,
-          isin, parsedDate, issueSize, faceValueNum, existingIssuerId
-        );
-
-        if (existingRow && existingRow.length > 0) {
-          logInfo(itemTag, `Already exists in isin_re_issuance (id=${existingRow[0].id}) — SKIP insert`);
-          insertedKeys.add(dupKey);
-          results.push({
-            isin, issuerName, status: 'already_exists',
-            issuerId: existingIssuerId,
-            existingReIssuanceId: Number(existingRow[0].id),
-            matchScore: match.score,
-          });
-          continue;
-        }
-
-        logDebug(itemTag, 'No existing row in isin_re_issuance — proceeding with insert');
-
-        // ---- Insert: master_issuer + isin_re_issuance + isin_re_issuance_details ----
-        try {
-          logDebug(itemTag, 'BEGIN transaction');
-          const txStart = Date.now();
-
-          const txResult = await prisma.$transaction(async (tx) => {
-            /* master_issuer */
-            logDebug(itemTag, 'INSERT master_issuer (reusing issuerId)', {
-              issuer_master_id: existingIssuerId, isin,
-              allotment_date: parsedDate, face_value: faceValueNum, issue_size: issueSize,
-            });
-            await tx.$executeRawUnsafe(
-              `INSERT INTO master_issuer
-                 (issuer_master_id, isin, allotment_date, face_value, issue_size,
-                  is_visible, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-              existingIssuerId, isin, parsedDate, faceValueNum, issueSize, 1
-            );
-            const [{ id: masterIssuerId }] = await tx.$queryRawUnsafe(
-              `SELECT LAST_INSERT_ID() AS id`
-            );
-            logInfo(itemTag, `  → Created master_issuer id=${Number(masterIssuerId)}`);
-
-            /* isin_re_issuance */
-            logDebug(itemTag, 'INSERT isin_re_issuance', {
-              isin_id: Number(masterIssuerId), isin,
-              issuer_master_id: existingIssuerId,
-            });
-            await tx.$executeRawUnsafe(
-              `INSERT INTO isin_re_issuance
-                 (isin_id, isin, issuer_master_id, allotment_date, issue_size,
-                  face_value, is_visible, is_updated, is_main,
-                  created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-              Number(masterIssuerId), isin, existingIssuerId, parsedDate, issueSize,
-              faceValueNum, 1, 0, 1
-            );
-            const [{ id: reIssuanceId }] = await tx.$queryRawUnsafe(
-              `SELECT LAST_INSERT_ID() AS id`
-            );
-            logInfo(itemTag, `  → Created isin_re_issuance id=${Number(reIssuanceId)}`);
-
-            return {
-              issuerId: existingIssuerId,
-              masterIssuerId: Number(masterIssuerId),
-              reIssuanceId: Number(reIssuanceId),
-              createdNew: false,
-            };
-          });
-
-          logInfo(itemTag, `COMMIT transaction (${Date.now() - txStart} ms) — issuerId=${txResult.issuerId}, masterIssuerId=${txResult.masterIssuerId}, reIssuanceId=${txResult.reIssuanceId}`);
-
-          insertedKeys.add(dupKey);
-          results.push({
-            isin, issuerName, status: 'inserted',
-            issuerId: txResult.issuerId,
-            masterIssuerId: txResult.masterIssuerId,
-            reIssuanceId: txResult.reIssuanceId,
-            matchScore: match.score,
-          });
-
-          logInfo(itemTag, `✔ Item done — SUCCESS (inserted, existing issuer)`);
-        } catch (err) {
-          logError(itemTag, `ROLLBACK transaction — ${err.message}`, { stack: err.stack });
-          results.push({ isin, issuerName, status: 'error', reason: err.message });
-        }
-        continue;
-      }
-
-      /* ================================================================== */
-      /* BRANCH B — issuer_name does NOT exist in DB → create it            */
-      /* ================================================================== */
-      logInfo(itemTag, 'Issuer not found in DB — will create new issuer_details + inserts');
 
       try {
         logDebug(itemTag, 'BEGIN transaction');
         const txStart = Date.now();
 
         const txResult = await prisma.$transaction(async (tx) => {
-          /* issuer_details */
-          logDebug(itemTag, 'INSERT issuer_details', { issuer_name: issuerName });
-          await tx.$executeRawUnsafe(
-            `INSERT INTO issuer_details (issuer_name) VALUES (?)`,
-            issuerName
-          );
-          const [{ id }] = await tx.$queryRawUnsafe(
-            `SELECT LAST_INSERT_ID() AS id`
-          );
-          const newIssuerId = Number(id);
-          logInfo(itemTag, `  → Created issuer_details id=${newIssuerId}`);
+          /* ============================================================== */
+          /* 3a. issuer_details — find or create                            */
+          /* ============================================================== */
+          let issuerId = existingIssuerId;
+          let createdNewIssuer = false;
 
-          /* master_issuer */
-          logDebug(itemTag, 'INSERT master_issuer (new issuer)', {
-            issuer_master_id: newIssuerId, isin,
-            allotment_date: parsedDate, face_value: faceValueNum, issue_size: issueSize,
-          });
-          await tx.$executeRawUnsafe(
-            `INSERT INTO master_issuer
-               (issuer_master_id, isin, allotment_date, face_value, issue_size,
-                is_visible, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-            newIssuerId, isin, parsedDate, faceValueNum, issueSize, 1
-          );
-          const [{ id: masterIssuerId }] = await tx.$queryRawUnsafe(
-            `SELECT LAST_INSERT_ID() AS id`
-          );
-          logInfo(itemTag, `  → Created master_issuer id=${Number(masterIssuerId)}`);
+          if (!issuerId) {
+            logDebug(itemTag, 'INSERT issuer_details', { issuer_name: issuerName });
+            await tx.$executeRawUnsafe(
+              `INSERT INTO issuer_details (issuer_name) VALUES (?)`,
+              issuerName
+            );
+            const [{ id }] = await tx.$queryRawUnsafe(
+              `SELECT LAST_INSERT_ID() AS id`
+            );
+            issuerId = Number(id);
+            createdNewIssuer = true;
+            logInfo(itemTag, `  → Created issuer_details id=${issuerId}`);
+          } else {
+            logDebug(itemTag, `  → Reused issuer_details id=${issuerId} (score=${match.score.toFixed(4)})`);
+          }
 
-          /* isin_re_issuance */
-          logDebug(itemTag, 'INSERT isin_re_issuance', {
-            isin_id: Number(masterIssuerId), isin, issuer_master_id: newIssuerId,
-          });
-          await tx.$executeRawUnsafe(
-            `INSERT INTO isin_re_issuance
-               (isin_id, isin, issuer_master_id, allotment_date, issue_size,
-                face_value, is_visible, is_updated, is_main,
-                created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-            Number(masterIssuerId), isin, newIssuerId, parsedDate, issueSize,
-            faceValueNum, 1, 0, 1
-          );
-          const [{ id: reIssuanceId }] = await tx.$queryRawUnsafe(
-            `SELECT LAST_INSERT_ID() AS id`
-          );
-          logInfo(itemTag, `  → Created isin_re_issuance id=${Number(reIssuanceId)}`);
+          /* ============================================================== */
+          /* 3b. master_issuer — ONE row per ISIN, reuse if exists          */
+          /* ============================================================== */
+          let masterIssuerId = isinToMasterIssuerId.get(isin);
+          let createdNewMaster = false;
+
+          if (masterIssuerId) {
+            logDebug(itemTag, `  → master_issuer id=${masterIssuerId} reused from in-request cache for ISIN=${isin}`);
+          } else {
+            // Look up by ISIN in DB
+            const existingMaster = await tx.$queryRawUnsafe(
+              `SELECT id FROM master_issuer WHERE isin = ? LIMIT 1`,
+              isin
+            );
+
+            if (existingMaster && existingMaster.length > 0) {
+              masterIssuerId = Number(existingMaster[0].id);
+              logInfo(itemTag, `  → master_issuer id=${masterIssuerId} found in DB for ISIN=${isin}`);
+            } else {
+              logDebug(itemTag, 'INSERT master_issuer (new ISIN)', {
+                issuer_master_id: issuerId, isin,
+                allotment_date: parsedDate, face_value: faceValueNum, issue_size: issueSize,
+              });
+              await tx.$executeRawUnsafe(
+                `INSERT INTO master_issuer
+                   (issuer_master_id, isin, allotment_date, face_value, issue_size,
+                    is_visible, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+                issuerId, isin, parsedDate, faceValueNum, issueSize, 1
+              );
+              const [{ id }] = await tx.$queryRawUnsafe(
+                `SELECT LAST_INSERT_ID() AS id`
+              );
+              masterIssuerId = Number(id);
+              createdNewMaster = true;
+              logInfo(itemTag, `  → Created master_issuer id=${masterIssuerId} (new ISIN)`);
+            }
+
+            isinToMasterIssuerId.set(isin, masterIssuerId);
+          }
+
+          /* ============================================================== */
+          /* 3c. isin_re_issuance — check by (isin, allotment_date,         */
+          /*     issuer_master_id). If exists → UPDATE; else → INSERT.      */
+          /* ============================================================== */
+          const key = `${isin}|${parsedDate}|${issuerId}`;
+          let reIssuanceId = null;
+          let action = null;
+
+          const cachedState = reIssuanceKeyState.get(key);
+          if (cachedState) {
+            // Same tuple already handled earlier in this request.
+            reIssuanceId = cachedState.id;
+            // Even if cached, we should still apply the latest values if update.
+            if (cachedState.action === 'inserted') {
+              logInfo(itemTag, `  → isin_re_issuance id=${reIssuanceId} already INSERTED earlier in this request — updating fields to latest values`);
+              await tx.$executeRawUnsafe(
+                `UPDATE isin_re_issuance
+                    SET face_value = ?, issue_size = ?, updated_at = NOW()
+                  WHERE id = ?`,
+                faceValueNum, issueSize, reIssuanceId
+              );
+              action = 'updated_in_request';
+            } else {
+              logInfo(itemTag, `  → isin_re_issuance id=${reIssuanceId} already UPDATED earlier in this request — updating fields again`);
+              await tx.$executeRawUnsafe(
+                `UPDATE isin_re_issuance
+                    SET face_value = ?, issue_size = ?, updated_at = NOW()
+                  WHERE id = ?`,
+                faceValueNum, issueSize, reIssuanceId
+              );
+              action = 'updated_in_request';
+            }
+          } else {
+            const existingRe = await tx.$queryRawUnsafe(
+              `SELECT id FROM isin_re_issuance
+                 WHERE isin = ?
+                   AND allotment_date = ?
+                   AND issuer_master_id = ?
+                 LIMIT 1`,
+              isin, parsedDate, issuerId
+            );
+
+            if (existingRe && existingRe.length > 0) {
+              /* --- UPDATE existing row --- */
+              reIssuanceId = Number(existingRe[0].id);
+              logInfo(itemTag, `  → isin_re_issuance id=${reIssuanceId} EXISTS — updating face_value=${faceValueNum}, issue_size=${issueSize}`);
+              await tx.$executeRawUnsafe(
+                `UPDATE isin_re_issuance
+                    SET face_value = ?, issue_size = ?, updated_at = NOW()
+                  WHERE id = ?`,
+                faceValueNum, issueSize, reIssuanceId
+              );
+              action = 'updated';
+            } else {
+              /* --- INSERT new row --- */
+              logDebug(itemTag, 'INSERT isin_re_issuance (new row)', {
+                isin_id: masterIssuerId, isin, issuer_master_id: issuerId,
+                allotment_date: parsedDate, issue_size: issueSize, face_value: faceValueNum,
+              });
+              await tx.$executeRawUnsafe(
+                `INSERT INTO isin_re_issuance
+                   (isin_id, isin, issuer_master_id, allotment_date, issue_size,
+                    face_value, is_visible, is_updated, is_main,
+                    created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+                masterIssuerId, isin, issuerId, parsedDate, issueSize,
+                faceValueNum, 1, 0, 1
+              );
+              const [{ id }] = await tx.$queryRawUnsafe(
+                `SELECT LAST_INSERT_ID() AS id`
+              );
+              reIssuanceId = Number(id);
+              action = 'inserted';
+              logInfo(itemTag, `  → Created isin_re_issuance id=${reIssuanceId} (isin_id=${masterIssuerId})`);
+            }
+
+            reIssuanceKeyState.set(key, { id: reIssuanceId, action });
+          }
 
           return {
-            issuerId: newIssuerId,
-            masterIssuerId: Number(masterIssuerId),
-            reIssuanceId: Number(reIssuanceId),
-            createdNew: true,
+            issuerId,
+            masterIssuerId,
+            reIssuanceId,
+            createdNewIssuer,
+            createdNewMaster,
+            action,
+            matchScore: match ? match.score : null,
           };
         });
 
-        logInfo(itemTag, `COMMIT transaction (${Date.now() - txStart} ms) — issuerId=${txResult.issuerId}, masterIssuerId=${txResult.masterIssuerId}, reIssuanceId=${txResult.reIssuanceId}`);
+        logInfo(
+          itemTag,
+          `COMMIT transaction (${Date.now() - txStart} ms) — action=${txResult.action}, issuerId=${txResult.issuerId}, isin_id(master_issuer)=${txResult.masterIssuerId}, reIssuanceId=${txResult.reIssuanceId}`
+        );
 
-        // Cache newly created issuer so subsequent items in the same request can match it
-        if (txResult.createdNew) {
+        /* ---- Cache new issuer for later items in this request ---- */
+        if (txResult.createdNewIssuer) {
           existingIssuers.push({ id: txResult.issuerId, issuer_name: issuerName });
           logDebug(itemTag, `Cached new issuer id=${txResult.issuerId} for later items in this request`);
         }
 
-        // Track inserted key so subsequent items with same tuple are skipped
-        insertedKeys.add(`${isin}|${parsedDate}|${issueSize}|${faceValueNum}|${txResult.issuerId}`);
-
         results.push({
-          isin, issuerName, status: 'inserted',
+          isin,
+          issuerName,
+          status: txResult.action,
           issuerId: txResult.issuerId,
-          masterIssuerId: txResult.masterIssuerId,
+          isinId: txResult.masterIssuerId,
           reIssuanceId: txResult.reIssuanceId,
-          matchScore: null,
+          createdNewIssuer: txResult.createdNewIssuer,
+          createdNewMasterIssuer: txResult.createdNewMaster,
+          matchScore: txResult.matchScore,
         });
 
-        logInfo(itemTag, `✔ Item done — SUCCESS (inserted, new issuer)`);
+        logInfo(itemTag, `✔ Item done — ${txResult.action.toUpperCase()}`);
       } catch (err) {
         logError(itemTag, `ROLLBACK transaction — ${err.message}`, { stack: err.stack });
         results.push({ isin, issuerName, status: 'error', reason: err.message });
@@ -674,22 +658,22 @@ app.post('/uploadIssuers', async (req, res) => {
     /* ------------------------------------------------------------------ */
     /* Summary                                                             */
     /* ------------------------------------------------------------------ */
-    const inserted          = results.filter(r => r.status === 'inserted').length;
-    const alreadyExists     = results.filter(r => r.status === 'already_exists').length;
-    const dupInRequest      = results.filter(r => r.status === 'duplicate_in_request').length;
-    const skipped           = results.filter(r => r.status === 'skipped').length;
-    const errored           = results.filter(r => r.status === 'error').length;
+    const inserted       = results.filter(r => r.status === 'inserted').length;
+    const updated        = results.filter(r => r.status === 'updated').length;
+    const updatedInReq   = results.filter(r => r.status === 'updated_in_request').length;
+    const skipped        = results.filter(r => r.status === 'skipped').length;
+    const errored        = results.filter(r => r.status === 'error').length;
 
     logInfo(TAG, '──────── SUMMARY ────────');
-    logInfo(TAG, `  received             : ${items.length}`);
-    logInfo(TAG, `  unique (in-request)  : ${uniqueItems.length}`);
-    logInfo(TAG, `  in-body duplicates   : ${inRequestBodyDupCount}`);
-    logInfo(TAG, `  inserted             : ${inserted}`);
-    logInfo(TAG, `  already_exists (DB)  : ${alreadyExists}`);
-    logInfo(TAG, `  duplicate_in_request : ${dupInRequest}`);
-    logInfo(TAG, `  skipped (invalid)    : ${skipped}`);
-    logInfo(TAG, `  errored              : ${errored}`);
-    logInfo(TAG, `  duration             : ${Date.now() - startedAt} ms`);
+    logInfo(TAG, `  received            : ${items.length}`);
+    logInfo(TAG, `  unique (in-request) : ${uniqueItems.length}`);
+    logInfo(TAG, `  in-body duplicates  : ${inRequestBodyDupCount}`);
+    logInfo(TAG, `  inserted            : ${inserted}`);
+    logInfo(TAG, `  updated             : ${updated}`);
+    logInfo(TAG, `  updated_in_request  : ${updatedInReq}`);
+    logInfo(TAG, `  skipped (invalid)   : ${skipped}`);
+    logInfo(TAG, `  errored             : ${errored}`);
+    logInfo(TAG, `  duration            : ${Date.now() - startedAt} ms`);
     logInfo(TAG, '◀ Request completed');
 
     res.json({
@@ -697,8 +681,8 @@ app.post('/uploadIssuers', async (req, res) => {
       received: items.length,
       unique: uniqueItems.length,
       inserted,
-      alreadyExists,
-      duplicateInRequest: dupInRequest,
+      updated,
+      updatedInRequest: updatedInReq,
       skipped,
       errored,
       durationMs: Date.now() - startedAt,
