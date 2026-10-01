@@ -228,8 +228,8 @@ function log(level, tag, message, meta) {
   else console.log(`${prefix} ${message}`);
 }
 const logDebug = (tag, msg, meta) => log('DEBUG', tag, msg, meta);
-const logInfo  = (tag, msg, meta) => log('INFO',  tag, msg, meta);
-const logWarn  = (tag, msg, meta) => log('WARN',  tag, msg, meta);
+const logInfo = (tag, msg, meta) => log('INFO', tag, msg, meta);
+const logWarn = (tag, msg, meta) => log('WARN', tag, msg, meta);
 const logError = (tag, msg, meta) => log('ERROR', tag, msg, meta);
 
 /* -------------------------------------------------------------------------- */
@@ -464,10 +464,9 @@ app.post('/uploadIntermediaries', async (req, res) => {
       prisma.$queryRawUnsafe(`SELECT id, registrar_name AS name FROM master_registrar`),
     ]);
 
-    // Normalize into plain objects { id, name }
     const intermediaryCache = {
-      arranger:  arrangerRows.map(r  => ({ id: Number(r.id), name: r.name })),
-      trustee:   trusteeRows.map(r   => ({ id: Number(r.id), name: r.name })),
+      arranger: arrangerRows.map(r => ({ id: Number(r.id), name: r.name })),
+      trustee: trusteeRows.map(r => ({ id: Number(r.id), name: r.name })),
       registrar: registrarRows.map(r => ({ id: Number(r.id), name: r.name })),
     };
 
@@ -487,7 +486,7 @@ app.post('/uploadIntermediaries', async (req, res) => {
     logInfo(TAG, `STEP 3: Processing ${uniqueItems.length} unique items`);
 
     for (let idx = 0; idx < uniqueItems.length; idx++) {
-      await delay(5000);
+      await delay(50);
       const item = uniqueItems[idx];
       const itemTag = `${TAG}:item[${idx}]`;
 
@@ -558,8 +557,8 @@ app.post('/uploadIntermediaries', async (req, res) => {
         isinId,
         matchedReIssuanceId,
         resolutionMode,
-        arranger:  null,
-        trustee:   null,
+        arranger: null,
+        trustee: null,
         registrar: null,
       };
 
@@ -575,7 +574,7 @@ app.post('/uploadIntermediaries', async (req, res) => {
         }
 
         const cfg = INTERMEDIARY_CONFIG[kind];
-        const listKey = kind; // cache key
+        const listKey = kind;
 
         logInfo(kindTag, `▶ Processing ${kind}="${value}"`);
 
@@ -605,12 +604,10 @@ app.post('/uploadIntermediaries', async (req, res) => {
             intermediaryId = Number(id);
             createdNew = true;
 
-            // Cache it so later items in this same request can match it
             intermediaryCache[listKey].push({ id: intermediaryId, name: value });
 
             logInfo(kindTag, `  → Created ${cfg.masterTable} id=${intermediaryId}`);
           } catch (insertErr) {
-            // Could be a UNIQUE race — re-query
             logWarn(kindTag, `INSERT failed (${insertErr.message}) — re-querying`);
             const rows = await prisma.$queryRawUnsafe(
               `SELECT id, ${cfg.nameColumn} AS name FROM ${cfg.masterTable}
@@ -643,8 +640,9 @@ app.post('/uploadIntermediaries', async (req, res) => {
           continue;
         }
 
+        // NOTE: link table has NO `id` column — use SELECT 1
         const existingLink = await prisma.$queryRawUnsafe(
-          `SELECT id FROM ${cfg.linkTable}
+          `SELECT 1 AS found FROM ${cfg.linkTable}
              WHERE issuer_id = ? AND ${cfg.linkIdColumn} = ?
              LIMIT 1`,
           isinId, intermediaryId
@@ -652,19 +650,17 @@ app.post('/uploadIntermediaries', async (req, res) => {
 
         if (existingLink && existingLink.length > 0) {
           pairCache.add(pairKey);
-          logInfo(kindTag,
-            `Pair already exists in ${cfg.linkTable} (id=${existingLink[0].id}) — already_exists`);
+          logInfo(kindTag, `Pair already exists in ${cfg.linkTable} — already_exists`);
           itemResults[kind] = {
             status: 'already_exists',
             id: intermediaryId,
-            linkId: Number(existingLink[0].id),
             createdNew,
             matchScore,
           };
           continue;
         }
 
-        /* ---- Insert into issuer_X ---- */
+        /* ---- Insert into issuer_X (no id column) ---- */
         logDebug(kindTag, `INSERT ${cfg.linkTable}`, {
           issuer_id: isinId,
           [cfg.linkIdColumn]: intermediaryId,
@@ -675,18 +671,14 @@ app.post('/uploadIntermediaries', async (req, res) => {
             `INSERT INTO ${cfg.linkTable} (issuer_id, ${cfg.linkIdColumn}) VALUES (?, ?)`,
             isinId, intermediaryId
           );
-          const [{ id: linkId }] = await prisma.$queryRawUnsafe(
-            `SELECT LAST_INSERT_ID() AS id`
-          );
           pairCache.add(pairKey);
 
           logInfo(kindTag,
-            `  → Created ${cfg.linkTable} id=${Number(linkId)} (${cfg.linkIdColumn}=${intermediaryId})`);
+            `  → Created ${cfg.linkTable} (issuer_id=${isinId}, ${cfg.linkIdColumn}=${intermediaryId})`);
 
           itemResults[kind] = {
             status: 'inserted',
             id: intermediaryId,
-            linkId: Number(linkId),
             createdNew,
             matchScore,
           };
@@ -706,16 +698,16 @@ app.post('/uploadIntermediaries', async (req, res) => {
     /* Summary                                                             */
     /* ------------------------------------------------------------------ */
     const tally = (status) => ({
-      arranger:  results.filter(r => r.arranger  && r.arranger.status  === status).length,
-      trustee:   results.filter(r => r.trustee   && r.trustee.status   === status).length,
+      arranger: results.filter(r => r.arranger && r.arranger.status === status).length,
+      trustee: results.filter(r => r.trustee && r.trustee.status === status).length,
       registrar: results.filter(r => r.registrar && r.registrar.status === status).length,
     });
 
-    const inserted          = tally('inserted');
-    const alreadyExists     = tally('already_exists');
-    const dupInRequest      = tally('duplicate_in_request');
-    const skipped           = tally('skipped');
-    const errored           = tally('error');
+    const inserted = tally('inserted');
+    const alreadyExists = tally('already_exists');
+    const dupInRequest = tally('duplicate_in_request');
+    const skipped = tally('skipped');
+    const errored = tally('error');
 
     const itemsSkipped = results.filter(r => r.status === 'skipped').length;
     const itemsErrored = results.filter(r => r.status === 'error').length;
@@ -740,7 +732,7 @@ app.post('/uploadIntermediaries', async (req, res) => {
       unique: uniqueItems.length,
       inserted,
       alreadyExists,
-      duplicateInRequest: dupInReq,
+      duplicateInRequest: dupInRequest,
       skipped,
       errored,
       itemsSkipped,
@@ -1060,11 +1052,11 @@ app.post('/uploadIssuers', async (req, res) => {
     /* ------------------------------------------------------------------ */
     /* Summary                                                             */
     /* ------------------------------------------------------------------ */
-    const inserted       = results.filter(r => r.status === 'inserted').length;
-    const updated        = results.filter(r => r.status === 'updated').length;
-    const updatedInReq   = results.filter(r => r.status === 'updated_in_request').length;
-    const skipped        = results.filter(r => r.status === 'skipped').length;
-    const errored        = results.filter(r => r.status === 'error').length;
+    const inserted = results.filter(r => r.status === 'inserted').length;
+    const updated = results.filter(r => r.status === 'updated').length;
+    const updatedInReq = results.filter(r => r.status === 'updated_in_request').length;
+    const skipped = results.filter(r => r.status === 'skipped').length;
+    const errored = results.filter(r => r.status === 'error').length;
 
     logInfo(TAG, '──────── SUMMARY ────────');
     logInfo(TAG, `  received            : ${items.length}`);
