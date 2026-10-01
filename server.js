@@ -211,6 +211,7 @@ function tenorToFloat(t) {
   return (t.years || 0) + (t.months || 0) / 12 + (t.days || 0) / 365;
 }
 
+
 /* -------------------------------------------------------------------------- */
 /* Logger utility                                                             */
 /* -------------------------------------------------------------------------- */
@@ -220,29 +221,21 @@ const CURRENT_LOG_LEVEL = LOG_LEVELS.DEBUG; // change to INFO/WARN in prod
 
 function log(level, tag, message, meta) {
   if (LOG_LEVELS[level] < CURRENT_LOG_LEVEL) return;
-
   const ts = new Date().toISOString();
   const prefix = `[${ts}] [${level}] [${tag}]`;
-
-  if (meta !== undefined) {
-    console.log(`${prefix} ${message}`, meta);
-  } else {
-    console.log(`${prefix} ${message}`);
-  }
+  if (meta !== undefined) console.log(`${prefix} ${message}`, meta);
+  else console.log(`${prefix} ${message}`);
 }
-
 const logDebug = (tag, msg, meta) => log('DEBUG', tag, msg, meta);
-const logInfo = (tag, msg, meta) => log('INFO', tag, msg, meta);
-const logWarn = (tag, msg, meta) => log('WARN', tag, msg, meta);
+const logInfo  = (tag, msg, meta) => log('INFO',  tag, msg, meta);
+const logWarn  = (tag, msg, meta) => log('WARN',  tag, msg, meta);
 const logError = (tag, msg, meta) => log('ERROR', tag, msg, meta);
 
 /* -------------------------------------------------------------------------- */
 /* Date helpers                                                               */
 /* -------------------------------------------------------------------------- */
 
-function pad2(n) {
-  return String(n).padStart(2, '0');
-}
+function pad2(n) { return String(n).padStart(2, '0'); }
 
 function toMysqlDateTime(d) {
   return (
@@ -264,19 +257,16 @@ function parseAllotmentDate(input) {
       return toMysqlDateTime(excelSerialToDate(input));
     }
   }
-
   if (typeof input === 'string' && /^\d+(\.\d+)?$/.test(input.trim())) {
     const n = Number(input);
     if (n > 1000 && n < 100000) {
       return toMysqlDateTime(excelSerialToDate(n));
     }
   }
-
   const s = String(input).trim();
   const bare = /^\d{4}-\d{2}-\d{2}$/.test(s) ? `${s} 00:00:00` : s;
   const d = new Date(bare);
   if (Number.isNaN(d.getTime())) return null;
-
   return toMysqlDateTime(d);
 }
 
@@ -300,93 +290,60 @@ function normalizeName(name) {
 }
 
 function levenshtein(a, b) {
-  const m = a.length;
-  const n = b.length;
-
+  const m = a.length, n = b.length;
   if (m === 0) return n;
   if (n === 0) return m;
-
   const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
-
   for (let i = 0; i <= m; i++) dp[i][0] = i;
   for (let j = 0; j <= n; j++) dp[0][j] = j;
-
   for (let i = 1; i <= m; i++) {
     for (let j = 1; j <= n; j++) {
       const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      dp[i][j] = Math.min(
-        dp[i - 1][j] + 1,
-        dp[i][j - 1] + 1,
-        dp[i - 1][j - 1] + cost
-      );
+      dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
     }
   }
-
   return dp[m][n];
 }
 
 function nameSimilarity(a, b) {
   const na = normalizeName(a);
   const nb = normalizeName(b);
-
   if (!na || !nb) return 0;
-
   const lev = 1 - levenshtein(na, nb) / Math.max(na.length, nb.length);
-
   const ta = new Set(na.split(' ').filter(Boolean));
   const tb = new Set(nb.split(' ').filter(Boolean));
-
   const inter = [...ta].filter(t => tb.has(t)).length;
   const union = new Set([...ta, ...tb]).size;
   const jaccard = union === 0 ? 0 : inter / union;
-
   const shorter = ta.size <= tb.size ? ta : tb;
   const longer = ta.size <= tb.size ? tb : ta;
   const containsAll = [...shorter].every(t => longer.has(t));
   const containment = containsAll ? 1 : inter / shorter.size;
-
   return Math.max(lev, jaccard, containment);
 }
 
 function findBestMatch(issuerName, issuers, tag = 'findBestMatch') {
-  let best = null;
-  let bestScore = 0;
-
+  let best = null, bestScore = 0;
   logDebug(tag, `Looking for match for: "${issuerName}" (${issuers.length} candidates)`);
 
   for (const issuer of issuers) {
     if (!issuer) continue;
-
-    const candidateName =
-      issuer.issuer_name ?? issuer.issuerName ?? issuer.name ?? null;
-
-    if (!candidateName) {
-      logWarn(tag, 'Skipping candidate with no name', issuer);
-      continue;
-    }
-
+    const candidateName = issuer.issuer_name ?? issuer.issuerName ?? issuer.name ?? null;
+    if (!candidateName) continue;
     const score = nameSimilarity(issuerName, String(candidateName));
-
     if (score > bestScore) {
       bestScore = score;
       best = issuer;
       logDebug(tag, `New best: "${candidateName}" -> ${score.toFixed(4)}`);
     }
   }
-
   if (bestScore >= 0.7 && best) {
-    logInfo(
-      tag,
-      `Match accepted: "${best.issuer_name}" (id=${best.id}) score=${bestScore.toFixed(4)}`
-    );
+    logInfo(tag, `Match accepted: "${best.issuer_name}" (id=${best.id}) score=${bestScore.toFixed(4)}`);
     return { issuer: { ...best, id: Number(best.id) }, score: bestScore };
   }
-
   logInfo(tag, `No match found (bestScore=${bestScore.toFixed(4)}) for "${issuerName}"`);
   return null;
 }
-
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /* -------------------------------------------------------------------------- */
 /* Upload endpoint                                                            */
@@ -412,13 +369,13 @@ app.post('/uploadIssuers', async (req, res) => {
     }
 
     /* ------------------------------------------------------------------ */
-    /* STEP 1 — Deduplicate                                                */
+    /* STEP 1 — In-request deduplication                                   */
     /* ------------------------------------------------------------------ */
-    logInfo(TAG, `STEP 1: Deduplicating ${items.length} incoming items`);
+    logInfo(TAG, `STEP 1: Deduplicating ${items.length} incoming items (in-request)`);
 
     const seen = new Set();
     const uniqueItems = [];
-    let duplicateCount = 0;
+    let inRequestBodyDupCount = 0;
 
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
@@ -430,40 +387,36 @@ app.post('/uploadIssuers', async (req, res) => {
         baseIssueSize: item.baseIssueSize ?? null,
         greenShoeOption: item.greenShoeOption ?? null,
       });
-
       if (seen.has(key)) {
-        duplicateCount++;
-        logDebug(TAG, `  Item[${i}] DUPLICATE — skipped`, {
-          isin: item.isin,
-          issuerName: item.issuerName,
+        inRequestBodyDupCount++;
+        logDebug(TAG, `  Item[${i}] DUPLICATE in body — skipped`, {
+          isin: item.isin, issuerName: item.issuerName,
         });
       } else {
         seen.add(key);
         uniqueItems.push(item);
         logDebug(TAG, `  Item[${i}] unique — kept`, {
-          isin: item.isin,
-          issuerName: item.issuerName,
+          isin: item.isin, issuerName: item.issuerName,
         });
       }
     }
-
-    logInfo(
-      TAG,
-      `STEP 1 DONE: ${uniqueItems.length} unique / ${duplicateCount} duplicates removed`
-    );
+    logInfo(TAG, `STEP 1 DONE: ${uniqueItems.length} unique / ${inRequestBodyDupCount} in-request duplicates removed`);
 
     /* ------------------------------------------------------------------ */
-    /* STEP 2 — Load existing issuers                                      */
+    /* STEP 2 — Load existing issuers for fuzzy matching                   */
     /* ------------------------------------------------------------------ */
     logInfo(TAG, 'STEP 2: Loading existing issuer_details for fuzzy matching');
-
     let existingIssuers = await prisma.$queryRawUnsafe(
       `SELECT id, issuer_name FROM issuer_details`
     );
-
     logInfo(TAG, `STEP 2 DONE: Loaded ${existingIssuers.length} existing issuers`);
 
     const results = [];
+
+    // Track keys already inserted in THIS request so we don't re-insert
+    // the same (isin, allotment_date, issue_size, face_value, issuer_master_id)
+    // combination even if the DB query returns stale data.
+    const insertedKeys = new Set(); // `${isin}|${date}|${size}|${fv}|${issuerId}`
 
     /* ------------------------------------------------------------------ */
     /* STEP 3 — Process each unique item                                   */
@@ -471,19 +424,10 @@ app.post('/uploadIssuers', async (req, res) => {
     logInfo(TAG, `STEP 3: Processing ${uniqueItems.length} unique items`);
 
     for (let idx = 0; idx < uniqueItems.length; idx++) {
-      await delay(500);
-
       const item = uniqueItems[idx];
       const itemTag = `${TAG}:item[${idx}]`;
 
-      const {
-        isin,
-        issuerName,
-        allotmentDate,
-        faceValue,
-        baseIssueSize,
-        greenShoeOption,
-      } = item;
+      const { isin, issuerName, allotmentDate, faceValue, baseIssueSize, greenShoeOption } = item;
 
       logInfo(itemTag, `▶ Processing ISIN=${isin} issuer="${issuerName}"`);
       logDebug(itemTag, 'Raw payload', item);
@@ -491,24 +435,14 @@ app.post('/uploadIssuers', async (req, res) => {
       /* ---- Validation ---- */
       if (!isin || !issuerName) {
         logWarn(itemTag, 'Skipped — missing isin or issuerName');
-        results.push({
-          isin,
-          issuerName,
-          status: 'skipped',
-          reason: 'Missing isin or issuerName',
-        });
+        results.push({ isin, issuerName, status: 'skipped', reason: 'Missing isin or issuerName' });
         continue;
       }
 
       const parsedDate = parseAllotmentDate(allotmentDate);
       if (!parsedDate) {
         logWarn(itemTag, `Skipped — invalid allotmentDate: ${allotmentDate}`);
-        results.push({
-          isin,
-          issuerName,
-          status: 'skipped',
-          reason: 'Invalid allotmentDate',
-        });
+        results.push({ isin, issuerName, status: 'skipped', reason: 'Invalid allotmentDate' });
         continue;
       }
       logDebug(itemTag, `Parsed allotmentDate ${allotmentDate} -> ${parsedDate}`);
@@ -517,80 +451,173 @@ app.post('/uploadIssuers', async (req, res) => {
         ((Number(baseIssueSize) || 0) + (Number(greenShoeOption) || 0)) * 10000000 || null;
       const faceValueNum = Number(faceValue) * 100000 || null;
 
-      logDebug(itemTag, 'Computed values', {
-        issueSize,
-        faceValueNum,
-        baseIssueSize,
-        greenShoeOption,
-      });
+      logDebug(itemTag, 'Computed values', { issueSize, faceValueNum, baseIssueSize, greenShoeOption });
 
       /* ---- Fuzzy match ---- */
       const match = findBestMatch(issuerName, existingIssuers, itemTag);
       const existingIssuerId = match ? match.issuer.id : null;
 
-      logDebug(
-        itemTag,
-        existingIssuerId
-          ? `Reusing existing issuer id=${existingIssuerId}`
-          : 'No existing issuer matched — will create new one'
-      );
+      /* ================================================================== */
+      /* BRANCH A — issuer_name EXISTS in DB (fuzzy match ≥ 70%)            */
+      /* ================================================================== */
+      if (existingIssuerId) {
+        logInfo(itemTag, `Issuer exists in DB → id=${existingIssuerId} (score=${match.score.toFixed(4)})`);
 
-      /* ---- Transaction ---- */
+        const dupKey = `${isin}|${parsedDate}|${issueSize}|${faceValueNum}|${existingIssuerId}`;
+
+        // -- In-memory duplicate check (same request) --
+        if (insertedKeys.has(dupKey)) {
+          logInfo(itemTag, `Already inserted earlier in THIS request — SKIP (key=${dupKey})`);
+          results.push({
+            isin, issuerName, status: 'duplicate_in_request',
+            issuerId: existingIssuerId,
+            matchScore: match.score,
+          });
+          continue;
+        }
+
+        // -- DB duplicate check on isin_re_issuance --
+        logDebug(itemTag, 'Checking isin_re_issuance for existing row', {
+          isin, allotment_date: parsedDate, issue_size: issueSize,
+          face_value: faceValueNum, issuer_master_id: existingIssuerId,
+        });
+
+        const existingRow = await prisma.$queryRawUnsafe(
+          `SELECT id FROM isin_re_issuance
+             WHERE isin = ?
+               AND allotment_date = ?
+               AND issue_size = ?
+               AND face_value = ?
+               AND issuer_master_id = ?
+             LIMIT 1`,
+          isin, parsedDate, issueSize, faceValueNum, existingIssuerId
+        );
+
+        if (existingRow && existingRow.length > 0) {
+          logInfo(itemTag, `Already exists in isin_re_issuance (id=${existingRow[0].id}) — SKIP insert`);
+          insertedKeys.add(dupKey);
+          results.push({
+            isin, issuerName, status: 'already_exists',
+            issuerId: existingIssuerId,
+            existingReIssuanceId: Number(existingRow[0].id),
+            matchScore: match.score,
+          });
+          continue;
+        }
+
+        logDebug(itemTag, 'No existing row in isin_re_issuance — proceeding with insert');
+
+        // ---- Insert: master_issuer + isin_re_issuance + isin_re_issuance_details ----
+        try {
+          logDebug(itemTag, 'BEGIN transaction');
+          const txStart = Date.now();
+
+          const txResult = await prisma.$transaction(async (tx) => {
+            /* master_issuer */
+            logDebug(itemTag, 'INSERT master_issuer (reusing issuerId)', {
+              issuer_master_id: existingIssuerId, isin,
+              allotment_date: parsedDate, face_value: faceValueNum, issue_size: issueSize,
+            });
+            await tx.$executeRawUnsafe(
+              `INSERT INTO master_issuer
+                 (issuer_master_id, isin, allotment_date, face_value, issue_size,
+                  is_visible, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+              existingIssuerId, isin, parsedDate, faceValueNum, issueSize, 1
+            );
+            const [{ id: masterIssuerId }] = await tx.$queryRawUnsafe(
+              `SELECT LAST_INSERT_ID() AS id`
+            );
+            logInfo(itemTag, `  → Created master_issuer id=${Number(masterIssuerId)}`);
+
+            /* isin_re_issuance */
+            logDebug(itemTag, 'INSERT isin_re_issuance', {
+              isin_id: Number(masterIssuerId), isin,
+              issuer_master_id: existingIssuerId,
+            });
+            await tx.$executeRawUnsafe(
+              `INSERT INTO isin_re_issuance
+                 (isin_id, isin, issuer_master_id, allotment_date, issue_size,
+                  face_value, is_visible, is_updated, is_main,
+                  created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+              Number(masterIssuerId), isin, existingIssuerId, parsedDate, issueSize,
+              faceValueNum, 1, 0, 1
+            );
+            const [{ id: reIssuanceId }] = await tx.$queryRawUnsafe(
+              `SELECT LAST_INSERT_ID() AS id`
+            );
+            logInfo(itemTag, `  → Created isin_re_issuance id=${Number(reIssuanceId)}`);
+
+            return {
+              issuerId: existingIssuerId,
+              masterIssuerId: Number(masterIssuerId),
+              reIssuanceId: Number(reIssuanceId),
+              createdNew: false,
+            };
+          });
+
+          logInfo(itemTag, `COMMIT transaction (${Date.now() - txStart} ms) — issuerId=${txResult.issuerId}, masterIssuerId=${txResult.masterIssuerId}, reIssuanceId=${txResult.reIssuanceId}`);
+
+          insertedKeys.add(dupKey);
+          results.push({
+            isin, issuerName, status: 'inserted',
+            issuerId: txResult.issuerId,
+            masterIssuerId: txResult.masterIssuerId,
+            reIssuanceId: txResult.reIssuanceId,
+            matchScore: match.score,
+          });
+
+          logInfo(itemTag, `✔ Item done — SUCCESS (inserted, existing issuer)`);
+        } catch (err) {
+          logError(itemTag, `ROLLBACK transaction — ${err.message}`, { stack: err.stack });
+          results.push({ isin, issuerName, status: 'error', reason: err.message });
+        }
+        continue;
+      }
+
+      /* ================================================================== */
+      /* BRANCH B — issuer_name does NOT exist in DB → create it            */
+      /* ================================================================== */
+      logInfo(itemTag, 'Issuer not found in DB — will create new issuer_details + inserts');
+
       try {
         logDebug(itemTag, 'BEGIN transaction');
         const txStart = Date.now();
 
         const txResult = await prisma.$transaction(async (tx) => {
-          let issuerId = existingIssuerId;
-          let createdNew = false;
+          /* issuer_details */
+          logDebug(itemTag, 'INSERT issuer_details', { issuer_name: issuerName });
+          await tx.$executeRawUnsafe(
+            `INSERT INTO issuer_details (issuer_name) VALUES (?)`,
+            issuerName
+          );
+          const [{ id }] = await tx.$queryRawUnsafe(
+            `SELECT LAST_INSERT_ID() AS id`
+          );
+          const newIssuerId = Number(id);
+          logInfo(itemTag, `  → Created issuer_details id=${newIssuerId}`);
 
-          /* ---- 3a. issuer_details ---- */
-          if (!issuerId) {
-            logDebug(itemTag, 'INSERT issuer_details', { issuer_name: issuerName });
-            await tx.$executeRawUnsafe(
-              `INSERT INTO issuer_details (issuer_name) VALUES (?)`,
-              issuerName
-            );
-            const [{ id }] = await tx.$queryRawUnsafe(
-              `SELECT LAST_INSERT_ID() AS id`
-            );
-            issuerId = Number(id);
-            createdNew = true;
-            logInfo(itemTag, `  → Created issuer_details id=${issuerId}`);
-          } else {
-            logDebug(itemTag, `  → Reused issuer_details id=${issuerId}`);
-          }
-
-          /* ---- 3b. master_issuer ---- */
-          logDebug(itemTag, 'INSERT master_issuer', {
-            issuer_master_id: issuerId,
-            isin,
-            allotment_date: parsedDate,
-            face_value: faceValueNum,
-            issue_size: issueSize,
+          /* master_issuer */
+          logDebug(itemTag, 'INSERT master_issuer (new issuer)', {
+            issuer_master_id: newIssuerId, isin,
+            allotment_date: parsedDate, face_value: faceValueNum, issue_size: issueSize,
           });
           await tx.$executeRawUnsafe(
             `INSERT INTO master_issuer
                (issuer_master_id, isin, allotment_date, face_value, issue_size,
                 is_visible, created_at, updated_at)
              VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-            issuerId,
-            isin,
-            parsedDate,
-            faceValueNum,
-            issueSize,
-            1
+            newIssuerId, isin, parsedDate, faceValueNum, issueSize, 1
           );
           const [{ id: masterIssuerId }] = await tx.$queryRawUnsafe(
             `SELECT LAST_INSERT_ID() AS id`
           );
           logInfo(itemTag, `  → Created master_issuer id=${Number(masterIssuerId)}`);
 
-          /* ---- 3c. isin_re_issuance ---- */
+          /* isin_re_issuance */
           logDebug(itemTag, 'INSERT isin_re_issuance', {
-            isin_id: Number(masterIssuerId),
-            isin,
-            issuer_master_id: issuerId,
+            isin_id: Number(masterIssuerId), isin, issuer_master_id: newIssuerId,
           });
           await tx.$executeRawUnsafe(
             `INSERT INTO isin_re_issuance
@@ -598,82 +625,67 @@ app.post('/uploadIssuers', async (req, res) => {
                 face_value, is_visible, is_updated, is_main,
                 created_at, updated_at)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-            Number(masterIssuerId),
-            isin,
-            issuerId,
-            parsedDate,
-            issueSize,
-            faceValueNum,
-            1,
-            0,
-            1
+            Number(masterIssuerId), isin, newIssuerId, parsedDate, issueSize,
+            faceValueNum, 1, 0, 1
           );
           const [{ id: reIssuanceId }] = await tx.$queryRawUnsafe(
             `SELECT LAST_INSERT_ID() AS id`
           );
           logInfo(itemTag, `  → Created isin_re_issuance id=${Number(reIssuanceId)}`);
 
-
           return {
-            issuerId,
+            issuerId: newIssuerId,
             masterIssuerId: Number(masterIssuerId),
             reIssuanceId: Number(reIssuanceId),
-            createdNew,
+            createdNew: true,
           };
         });
 
-        logInfo(
-          itemTag,
-          `COMMIT transaction (${Date.now() - txStart} ms) — issuerId=${txResult.issuerId}, masterIssuerId=${txResult.masterIssuerId}, reIssuanceId=${txResult.reIssuanceId}`
-        );
+        logInfo(itemTag, `COMMIT transaction (${Date.now() - txStart} ms) — issuerId=${txResult.issuerId}, masterIssuerId=${txResult.masterIssuerId}, reIssuanceId=${txResult.reIssuanceId}`);
 
-        /* ---- Cache new issuer for subsequent items in same request ---- */
+        // Cache newly created issuer so subsequent items in the same request can match it
         if (txResult.createdNew) {
-          existingIssuers.push({
-            id: txResult.issuerId,
-            issuer_name: issuerName,
-          });
+          existingIssuers.push({ id: txResult.issuerId, issuer_name: issuerName });
           logDebug(itemTag, `Cached new issuer id=${txResult.issuerId} for later items in this request`);
         }
 
+        // Track inserted key so subsequent items with same tuple are skipped
+        insertedKeys.add(`${isin}|${parsedDate}|${issueSize}|${faceValueNum}|${txResult.issuerId}`);
+
         results.push({
-          isin,
-          issuerName,
-          status: 'inserted',
+          isin, issuerName, status: 'inserted',
           issuerId: txResult.issuerId,
           masterIssuerId: txResult.masterIssuerId,
           reIssuanceId: txResult.reIssuanceId,
-          matchScore: match ? match.score : null,
+          matchScore: null,
         });
 
-        logInfo(itemTag, `✔ Item done — SUCCESS`);
+        logInfo(itemTag, `✔ Item done — SUCCESS (inserted, new issuer)`);
       } catch (err) {
-        logError(itemTag, `ROLLBACK transaction — ${err.message}`, {
-          stack: err.stack,
-        });
-        results.push({
-          isin,
-          issuerName,
-          status: 'error',
-          reason: err.message,
-        });
+        logError(itemTag, `ROLLBACK transaction — ${err.message}`, { stack: err.stack });
+        results.push({ isin, issuerName, status: 'error', reason: err.message });
       }
     }
 
     /* ------------------------------------------------------------------ */
     /* Summary                                                             */
     /* ------------------------------------------------------------------ */
-    const inserted = results.filter(r => r.status === 'inserted').length;
-    const skipped = results.filter(r => r.status === 'skipped').length;
-    const errored = results.filter(r => r.status === 'error').length;
+    const inserted          = results.filter(r => r.status === 'inserted').length;
+    const alreadyExists     = results.filter(r => r.status === 'already_exists').length;
+    const dupInRequest      = results.filter(r => r.status === 'duplicate_in_request').length;
+    const skipped           = results.filter(r => r.status === 'skipped').length;
+    const errored           = results.filter(r => r.status === 'error').length;
 
     logInfo(TAG, '──────── SUMMARY ────────');
-    logInfo(TAG, `  received : ${items.length}`);
-    logInfo(TAG, `  unique   : ${uniqueItems.length}`);
-    logInfo(TAG, `  inserted : ${inserted}`);
-    logInfo(TAG, `  skipped  : ${skipped}`);
-    logInfo(TAG, `  errored  : ${errored}`);
-    logInfo(TAG, `  duration : ${Date.now() - startedAt} ms`);
+    logInfo(TAG, `  received             : ${items.length}`);
+    logInfo(TAG, `  unique (in-request)  : ${uniqueItems.length}`);
+    logInfo(TAG, `  in-body duplicates   : ${inRequestBodyDupCount}`);
+    logInfo(TAG, `  inserted             : ${inserted}`);
+    logInfo(TAG, `  already_exists (DB)  : ${alreadyExists}`);
+    logInfo(TAG, `  duplicate_in_request : ${dupInRequest}`);
+    logInfo(TAG, `  skipped (invalid)    : ${skipped}`);
+    logInfo(TAG, `  errored              : ${errored}`);
+    logInfo(TAG, `  duration             : ${Date.now() - startedAt} ms`);
     logInfo(TAG, '◀ Request completed');
 
     res.json({
@@ -681,6 +693,8 @@ app.post('/uploadIssuers', async (req, res) => {
       received: items.length,
       unique: uniqueItems.length,
       inserted,
+      alreadyExists,
+      duplicateInRequest: dupInRequest,
       skipped,
       errored,
       durationMs: Date.now() - startedAt,
