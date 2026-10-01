@@ -345,6 +345,8 @@ function findBestMatch(issuerName, issuers, tag = 'findBestMatch') {
   return null;
 }
 
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 /* -------------------------------------------------------------------------- */
 /* Upload endpoint                                                            */
 /* -------------------------------------------------------------------------- */
@@ -424,6 +426,8 @@ app.post('/uploadIssuers', async (req, res) => {
     logInfo(TAG, `STEP 3: Processing ${uniqueItems.length} unique items`);
 
     for (let idx = 0; idx < uniqueItems.length; idx++) {
+
+      await delay(100);
       const item = uniqueItems[idx];
       const itemTag = `${TAG}:item[${idx}]`;
 
