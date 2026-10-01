@@ -595,16 +595,15 @@ app.post('/uploadIssuers', async (req, res) => {
           await tx.$executeRawUnsafe(
             `INSERT INTO isin_re_issuance
                (isin_id, isin, issuer_master_id, allotment_date, issue_size,
-                face_value, source, is_visible, is_updated, is_main,
+                face_value, is_visible, is_updated, is_main,
                 created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
             Number(masterIssuerId),
             isin,
             issuerId,
             parsedDate,
             issueSize,
             faceValueNum,
-            'UPLOAD',
             1,
             0,
             1
