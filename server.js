@@ -54,6 +54,99 @@ function formatDate(date) {
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
+// ─── Helper: Calculate Similarity Percentage (Levenshtein) ──────────
+function calculateSimilarity(str1, str2) {
+  if (!str1 || !str2) return 0;
+
+  const s1 = str1.toLowerCase().trim();
+  const s2 = str2.toLowerCase().trim();
+
+  if (s1 === s2) return 100;
+
+  const distance = levenshteinDistance(s1, s2);
+  const maxLength = Math.max(s1.length, s2.length);
+
+  if (maxLength === 0) return 100;
+
+  return ((maxLength - distance) / maxLength) * 100;
+}
+
+// ─── Helper: Token-based Word Matching (improved) ──────────────────
+function tokenSimilarity(str1, str2) {
+  const tokens1 = str1.toLowerCase().trim().split(/\s+/).filter(Boolean);
+  const tokens2 = str2.toLowerCase().trim().split(/\s+/).filter(Boolean);
+
+  if (tokens1.length === 0 || tokens2.length === 0) return 0;
+
+  // Use the shorter token list as the base to avoid penalizing extra words
+  const baseTokens = tokens1.length <= tokens2.length ? tokens1 : tokens2;
+  const compareTokens = tokens1.length <= tokens2.length ? tokens2 : tokens1;
+
+  let totalBestSim = 0;
+  const usedIndices = new Set();
+
+  for (const baseToken of baseTokens) {
+    let bestSim = 0;
+    let bestIdx = -1;
+
+    for (let i = 0; i < compareTokens.length; i++) {
+      if (usedIndices.has(i)) continue;
+      const sim = calculateSimilarity(baseToken, compareTokens[i]);
+      if (sim > bestSim) {
+        bestSim = sim;
+        bestIdx = i;
+      }
+    }
+
+    if (bestIdx !== -1) {
+      usedIndices.add(bestIdx);
+      totalBestSim += bestSim;
+    }
+  }
+
+  // Average similarity of the shorter string's tokens
+  return totalBestSim / baseTokens.length;
+}
+
+// ─── Helper: Normalize string for containment check ────────────────
+function normalizeForContainment(str) {
+  return str.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+// ─── Helper: Containment Similarity ────────────────────────────────
+function containmentSimilarity(str1, str2) {
+  const norm1 = normalizeForContainment(str1);
+  const norm2 = normalizeForContainment(str2);
+
+  if (!norm1 || !norm2) return 0;
+  if (norm1 === norm2) return 100;
+
+  if (norm1.includes(norm2) || norm2.includes(norm1)) {
+    const shorter = Math.min(norm1.length, norm2.length);
+    const longer = Math.max(norm1.length, norm2.length);
+    // Base 80 + up to 20 bonus based on length ratio
+    return 80 + (shorter / longer) * 20;
+  }
+
+  return 0;
+}
+
+// ─── Helper: Combined Similarity Score ──────────────────────────────
+function getCombinedSimilarity(str1, str2) {
+  // First, check containment (handles extra words, concatenation, punctuation)
+  const containmentSim = containmentSimilarity(str1, str2);
+  if (containmentSim >= 80) {
+    return containmentSim;
+  }
+
+  // Fallback to character + token similarity
+  const charSim = calculateSimilarity(str1, str2);
+  const tokenSim = tokenSimilarity(str1, str2);
+
+  // Weighted: character-level 60%, token-level 40%
+  return (charSim * 0.6) + (tokenSim * 0.4);
+}
+
 // ─── Helper: Calculate Levenshtein Distance ─────────────────────────
 function levenshteinDistance(str1, str2) {
   const len1 = str1.length;
@@ -79,59 +172,6 @@ function levenshteinDistance(str1, str2) {
   }
 
   return matrix[len1][len2];
-}
-
-// ─── Helper: Calculate Similarity Percentage ────────────────────────
-function calculateSimilarity(str1, str2) {
-  if (!str1 || !str2) return 0;
-
-  const s1 = str1.toLowerCase().trim();
-  const s2 = str2.toLowerCase().trim();
-
-  if (s1 === s2) return 100;
-
-  const distance = levenshteinDistance(s1, s2);
-  const maxLength = Math.max(s1.length, s2.length);
-
-  if (maxLength === 0) return 100;
-
-  return ((maxLength - distance) / maxLength) * 100;
-}
-
-// ─── Helper: Token-based Word Matching (bonus similarity) ─────────
-function tokenSimilarity(str1, str2) {
-  const tokens1 = str1.toLowerCase().trim().split(/\s+/).filter(Boolean);
-  const tokens2 = str2.toLowerCase().trim().split(/\s+/).filter(Boolean);
-
-  if (tokens1.length === 0 || tokens2.length === 0) return 0;
-
-  let matchingTokens = 0;
-  const usedTokens2 = new Set();
-
-  for (const token1 of tokens1) {
-    for (let i = 0; i < tokens2.length; i++) {
-      if (usedTokens2.has(i)) continue;
-
-      const sim = calculateSimilarity(token1, tokens2[i]);
-      if (sim >= 70) { // token-level match threshold
-        matchingTokens++;
-        usedTokens2.add(i);
-        break;
-      }
-    }
-  }
-
-  const maxTokens = Math.max(tokens1.length, tokens2.length);
-  return (matchingTokens / maxTokens) * 100;
-}
-
-// ─── Helper: Combined Similarity Score ──────────────────────────────
-function getCombinedSimilarity(str1, str2) {
-  const charSim = calculateSimilarity(str1, str2);
-  const tokenSim = tokenSimilarity(str1, str2);
-
-  // Weighted: character-level 60%, token-level 40%
-  return (charSim * 0.6) + (tokenSim * 0.4);
 }
 
 
