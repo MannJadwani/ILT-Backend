@@ -440,7 +440,6 @@ app.post('/uploadIntermediaries', async (req, res) => {
       const item = items[i];
       const key = JSON.stringify({
         isin: item.isin ?? null,
-        allotmentDate: item.allotmentDate ?? null,
         arranger: item.arranger ?? null,
         trustee: item.trustee ?? null,
         registrar: item.registrar ?? null,
@@ -493,7 +492,7 @@ app.post('/uploadIntermediaries', async (req, res) => {
       const item = uniqueItems[idx];
       const itemTag = `${TAG}:item[${idx}]`;
 
-      const { isin, issuerName, allotmentDate, arranger, trustee, registrar } = item;
+      const { isin, issuerName, arranger, trustee, registrar } = item;
 
       logInfo(itemTag, `▶ Processing ISIN=${isin} issuer="${issuerName || 'N/A'}"`);
       logDebug(itemTag, 'Raw payload', item);
@@ -505,36 +504,17 @@ app.post('/uploadIntermediaries', async (req, res) => {
         continue;
       }
 
-      const parsedDate = parseAllotmentDate(allotmentDate);
-      if (!parsedDate) {
-        logWarn(itemTag, `Skipped — invalid allotmentDate: ${allotmentDate}`);
-        results.push({ isin, issuerName, status: 'skipped', reason: 'Invalid allotmentDate' });
-        continue;
-      }
-      logDebug(itemTag, `Parsed allotmentDate ${allotmentDate} -> ${parsedDate}`);
+      /* ---- Resolve isin_id — by ISIN ONLY ---- */
+      logDebug(itemTag, 'Resolving isin_id from isin_re_issuance (by isin only)');
 
-      /* ---- Resolve isin_id ---- */
-      logDebug(itemTag, 'Resolving isin_id from isin_re_issuance');
-
-      let isinRow = await prisma.$queryRawUnsafe(
+      const isinRow = await prisma.$queryRawUnsafe(
         `SELECT id, isin_id FROM isin_re_issuance
-           WHERE isin = ? AND allotment_date = ?
+           WHERE isin = ?
            ORDER BY id DESC LIMIT 1`,
-        isin, parsedDate
+        isin
       );
 
-      let resolutionMode = 'exact';
-
-      if (!isinRow || isinRow.length === 0) {
-        logWarn(itemTag, `No isin_re_issuance row for (isin=${isin}, allotment_date=${parsedDate}) — trying fallback (latest for isin)`);
-        isinRow = await prisma.$queryRawUnsafe(
-          `SELECT id, isin_id FROM isin_re_issuance
-             WHERE isin = ?
-             ORDER BY id DESC LIMIT 1`,
-          isin
-        );
-        resolutionMode = 'fallback_latest';
-      }
+      const resolutionMode = 'by_isin';
 
       if (!isinRow || isinRow.length === 0) {
         logError(itemTag, `No isin_re_issuance row found for isin=${isin} — SKIP (will not create ISIN)`);
@@ -592,7 +572,6 @@ app.post('/uploadIntermediaries', async (req, res) => {
           intermediaryId = Number(match.entity.id);
           matchScore = match.score;
           logDebug(kindTag, `Reusing existing ${cfg.masterTable} id=${intermediaryId}`);
-
         } else {
           /* ---- Create new intermediary in master_X (name + short_name) ---- */
           logDebug(kindTag, `INSERT ${cfg.masterTable}`, {
@@ -603,8 +582,8 @@ app.post('/uploadIntermediaries', async (req, res) => {
           try {
             await prisma.$executeRawUnsafe(
               `INSERT INTO ${cfg.masterTable}
-         (${cfg.nameColumn}, ${cfg.shortNameColumn})
-       VALUES (?, ?)`,
+                 (${cfg.nameColumn}, ${cfg.shortNameColumn})
+               VALUES (?, ?)`,
               value, value
             );
             const [{ id }] = await prisma.$queryRawUnsafe(
@@ -620,7 +599,7 @@ app.post('/uploadIntermediaries', async (req, res) => {
             logWarn(kindTag, `INSERT failed (${insertErr.message}) — re-querying`);
             const rows = await prisma.$queryRawUnsafe(
               `SELECT id, ${cfg.nameColumn} AS name FROM ${cfg.masterTable}
-         WHERE ${cfg.nameColumn} = ? LIMIT 1`,
+                 WHERE ${cfg.nameColumn} = ? LIMIT 1`,
               value
             );
             if (rows && rows.length > 0) {
@@ -3666,7 +3645,6 @@ app.get('/trustees/similar/:trusteeId', async (req, res) => {
       SELECT id, short_name, trustee_name, trustshpd, website, is_active, is_deleted, parent_id
       FROM master_trustee
       WHERE id != ${trusteeIdNum}
-      AND parent_id = 0
       ORDER BY short_name ASC
     `);
 
