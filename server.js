@@ -489,7 +489,7 @@ app.post('/uploadIntermediaries', async (req, res) => {
     logInfo(TAG, `STEP 3: Processing ${uniqueItems.length} unique items`);
 
     for (let idx = 0; idx < uniqueItems.length; idx++) {
-      await delay(50);
+      await delay(30);
       const item = uniqueItems[idx];
       const itemTag = `${TAG}:item[${idx}]`;
 
@@ -836,7 +836,7 @@ app.post('/uploadIssuers', async (req, res) => {
     logInfo(TAG, `STEP 3: Processing ${uniqueItems.length} unique items`);
 
     for (let idx = 0; idx < uniqueItems.length; idx++) {
-      await delay(50);
+      await delay(30);
       const item = uniqueItems[idx];
       const itemTag = `${TAG}:item[${idx}]`;
 
