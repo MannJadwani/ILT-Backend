@@ -131,7 +131,7 @@ function getCombinedSimilarity(str1, str2) {
   const tokenSim = tokenSimilarity(str1, str2);
 
   // Weighted: character-level 60%, token-level 40%
-  return (charSim * 0.6) + (tokenSim * 0.4);
+  return (charSim * 0.3) + (tokenSim * 0.2);
 }
 
 
