@@ -552,10 +552,8 @@ app.post('/uploadCreditRatings', async (req, res) => {
   logInfo(TAG, '▶ Request received');
   const items = parseCreditRatings(req.body);
 
-
   try {
-    
-    logDebug(TAG, 'Request body preview', {
+      logDebug(TAG, 'Request body preview', {
       isArray: Array.isArray(items),
       length: Array.isArray(items) ? items.length : null,
     });
@@ -566,279 +564,269 @@ app.post('/uploadCreditRatings', async (req, res) => {
     }
 
     /* ------------------------------------------------------------------ */
-    /* STEP 1 — In-request deduplication                                   */
-    /*     Key: (ISIN, agency) — a later item with the same key wins       */
-    /*     (since it just means "update with the newest values").          */
+    /* STEP 1 — Validate + dedupe (same ISIN+agency → last item wins)      */
     /* ------------------------------------------------------------------ */
-    logInfo(TAG, `STEP 1: Deduplicating ${items.length} incoming items`);
+    logInfo(TAG, `STEP 1: Validating & deduping ${items.length} incoming items`);
 
     const seen = new Set();
-    const uniqueItems = [];
+    const validItems = [];
+    let invalidCount = 0;
     let inRequestBodyDupCount = 0;
 
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
-      const key = JSON.stringify({
-        ISIN: item.ISIN ?? item.isin ?? null,
-        agency: item.agency ?? null,
-      });
-      if (seen.has(key)) {
-        inRequestBodyDupCount++;
-        logDebug(TAG, `  Item[${i}] DUPLICATE in body — skipped`, {
-          ISIN: item.ISIN, agency: item.agency,
-        });
-      } else {
-        seen.add(key);
-        uniqueItems.push(item);
-        logDebug(TAG, `  Item[${i}] unique — kept`, {
-          ISIN: item.ISIN, agency: item.agency,
-        });
-      }
-    }
-    logInfo(TAG, `STEP 1 DONE: ${uniqueItems.length} unique / ${inRequestBodyDupCount} in-request duplicates removed`);
-
-    /* ------------------------------------------------------------------ */
-    /* STEP 2 — Load existing agencies for fuzzy matching                  */
-    /* ------------------------------------------------------------------ */
-    logInfo(TAG, 'STEP 2: Loading existing master_agency');
-
-    const agencyRows = await prisma.$queryRawUnsafe(
-      `SELECT id, agency_name AS name FROM master_agency`
-    );
-
-    const agencyCache = agencyRows.map(r => ({ id: Number(r.id), name: r.name }));
-
-    logInfo(TAG, `STEP 2 DONE: agencies=${agencyCache.length}`);
-
-    /* ------------------------------------------------------------------ */
-    /* In-request caches                                                   */
-    /* ------------------------------------------------------------------ */
-    // ISIN -> master_issuer.id
-    const isinToIssuerId = new Map();
-
-    // `${masterIssuerId}|${agencyId}` -> { id, action }  (rating row state)
-    const ratingKeyState = new Map();
-
-    const results = [];
-
-    /* ------------------------------------------------------------------ */
-    /* STEP 3 — Process each unique item                                   */
-    /* ------------------------------------------------------------------ */
-    logInfo(TAG, `STEP 3: Processing ${uniqueItems.length} unique items`);
-
-    for (let idx = 0; idx < uniqueItems.length; idx++) {
-      await delay(30);
-      const item = uniqueItems[idx];
-      const itemTag = `${TAG}:item[${idx}]`;
-
-      // Accept both `ISIN` and `isin`
       const isin    = item.ISIN ?? item.isin ?? null;
       const agency  = item.agency ?? null;
       const rating  = item.rating ?? null;
       const outlook = item.outlook ?? null;
 
-      logInfo(itemTag, `▶ Processing ISIN=${isin} agency="${agency}" rating="${rating}"`);
-      logDebug(itemTag, 'Raw payload', item);
-
-      /* ---- Validation ---- */
       if (!isin || !agency || !rating) {
-        logWarn(itemTag, 'Skipped — missing ISIN, agency, or rating');
-        results.push({
-          ISIN: isin,
-          agency,
-          rating,
-          status: 'skipped',
-          reason: 'Missing ISIN, agency, or rating',
-        });
+        invalidCount++;
+        logWarn(TAG, `  Item[${i}] invalid — skipped`, { isin, agency, rating });
         continue;
       }
 
-      /* ---- Resolve master_issuer.id from ISIN ---- */
-      let masterIssuerId = isinToIssuerId.get(isin);
-
-      if (masterIssuerId) {
-        logDebug(itemTag, `  → master_issuer.id=${masterIssuerId} reused from in-request cache`);
-      } else {
-        logDebug(itemTag, 'Resolving master_issuer.id from ISIN');
-
-        const issuerRow = await prisma.$queryRawUnsafe(
-          `SELECT id FROM master_issuer
-             WHERE isin = ?
-             ORDER BY id DESC LIMIT 1`,
-          isin
-        );
-
-        if (!issuerRow || issuerRow.length === 0) {
-          logError(itemTag, `No master_issuer row found for ISIN=${isin} — SKIP (will not create ISIN)`);
-          results.push({
-            ISIN: isin,
-            agency,
-            rating,
-            status: 'error',
-            reason: `No master_issuer row found for ISIN=${isin}`,
-          });
-          continue;
-        }
-
-        masterIssuerId = Number(issuerRow[0].id);
-        isinToIssuerId.set(isin, masterIssuerId);
-        logInfo(itemTag, `  → Resolved master_issuer.id=${masterIssuerId} for ISIN=${isin}`);
+      const key = JSON.stringify({ isin, agency });
+      if (seen.has(key)) {
+        inRequestBodyDupCount++;
+        logDebug(TAG, `  Item[${i}] DUPLICATE (same ISIN+agency) — skipped`, { isin, agency });
+        continue;
       }
+      seen.add(key);
+      validItems.push({ isin, agency, rating, outlook });
+    }
 
-      /* ---- Resolve agency_id (fuzzy match → reuse; else create) ---- */
-      const agencyTag = `${itemTag}:agency`;
-      logInfo(agencyTag, `▶ Resolving agency="${agency}"`);
+    logInfo(TAG, `STEP 1 DONE: ${validItems.length} valid unique / ${inRequestBodyDupCount} dupes / ${invalidCount} invalid`);
 
-      const match = findBestMatchInterMediateries(agency, agencyCache, agencyTag);
+    /* ------------------------------------------------------------------ */
+    /* STEP 2 — Group by ISIN                                              */
+    /* ------------------------------------------------------------------ */
+    const byIsin = new Map();
+    for (const it of validItems) {
+      if (!byIsin.has(it.isin)) byIsin.set(it.isin, []);
+      byIsin.get(it.isin).push(it);
+    }
+    logInfo(TAG, `STEP 2 DONE: ${byIsin.size} distinct ISIN(s) to process`);
 
-      let agencyId;
-      let createdNewAgency = false;
-      let matchScore = null;
+    /* ------------------------------------------------------------------ */
+    /* STEP 3 — Load existing master_agency for fuzzy matching             */
+    /* ------------------------------------------------------------------ */
+    logInfo(TAG, 'STEP 3: Loading existing master_agency');
+    const agencyRows = await prisma.$queryRawUnsafe(
+      `SELECT id, agency_name AS name FROM master_agency`
+    );
+    let agencyCache = agencyRows.map(r => ({ id: Number(r.id), name: r.name }));
+    logInfo(TAG, `STEP 3 DONE: ${agencyCache.length} existing agencies`);
 
-      if (match) {
-        agencyId = Number(match.entity.id);
-        matchScore = match.score;
-        logDebug(agencyTag, `Reusing existing ${AGENCY_CONFIG.masterTable} id=${agencyId} (score=${matchScore.toFixed(4)})`);
-      } else {
-        logDebug(agencyTag, `INSERT ${AGENCY_CONFIG.masterTable}`, {
-          [AGENCY_CONFIG.nameColumn]: agency,
-          [AGENCY_CONFIG.shortNameColumn]: agency,
-        });
+    const results = [];
+    let totalDeletedRatings   = 0;
+    let totalInsertedRatings  = 0;
+    let totalDeletedAgencies  = 0;
+    let totalCreatedAgencies  = 0;
 
-        try {
-          await prisma.$executeRawUnsafe(
-            `INSERT INTO ${AGENCY_CONFIG.masterTable}
-               (${AGENCY_CONFIG.nameColumn}, ${AGENCY_CONFIG.shortNameColumn})
-             VALUES (?, ?)`,
-            agency, agency
-          );
-          const [{ id }] = await prisma.$queryRawUnsafe(
-            `SELECT LAST_INSERT_ID() AS id`
-          );
-          agencyId = Number(id);
-          createdNewAgency = true;
+    /* ------------------------------------------------------------------ */
+    /* STEP 4 — Process each ISIN group in its own transaction             */
+    /* ------------------------------------------------------------------ */
+    logInfo(TAG, `STEP 4: Processing ${byIsin.size} ISIN group(s)`);
 
-          agencyCache.push({ id: agencyId, name: agency });
+    for (const [isin, group] of byIsin) {
+      await delay(30);
+      const isinTag = `${TAG}:isin[${isin}]`;
 
-          logInfo(agencyTag, `  → Created ${AGENCY_CONFIG.masterTable} id=${agencyId} (short_name="${agency}")`);
-        } catch (insertErr) {
-          logWarn(agencyTag, `INSERT failed (${insertErr.message}) — re-querying`);
-          const rows = await prisma.$queryRawUnsafe(
-            `SELECT id, ${AGENCY_CONFIG.nameColumn} AS name FROM ${AGENCY_CONFIG.masterTable}
-               WHERE ${AGENCY_CONFIG.nameColumn} = ? LIMIT 1`,
-            agency
-          );
-          if (rows && rows.length > 0) {
-            agencyId = Number(rows[0].id);
-            logInfo(agencyTag, `  → Recovered existing id=${agencyId} after conflict`);
-          } else {
-            logError(agencyTag, `Could not create or find ${AGENCY_CONFIG.masterTable} for "${agency}"`);
-            results.push({
-              ISIN: isin,
-              agency,
-              rating,
-              status: 'error',
-              reason: insertErr.message,
-            });
-            continue;
-          }
-        }
-      }
-
-      /* ---- Upsert into master_issuer_rating ---- */
-      const ratingKey = `${masterIssuerId}|${agencyId}`;
-      let ratingId = null;
-      let action = null;
+      logInfo(isinTag, `▶ Processing ISIN=${isin} with ${group.length} rating(s)`);
 
       try {
-        logDebug(itemTag, 'BEGIN transaction');
         const txStart = Date.now();
 
         const txResult = await prisma.$transaction(async (tx) => {
-          const cached = ratingKeyState.get(ratingKey);
+          /* ---------------------------------------------------------- */
+          /* 4a. Resolve master_issuer.id                                */
+          /* ---------------------------------------------------------- */
+          const issuerRow = await tx.$queryRawUnsafe(
+            `SELECT id FROM master_issuer WHERE isin = ? ORDER BY id DESC LIMIT 1`,
+            isin
+          );
 
-          if (cached) {
-            // Same (issuer, agency) already handled in this request → update again
-            logInfo(itemTag,
-              `  → master_issuer_rating id=${cached.id} already handled in this request — updating to latest values`);
+          if (!issuerRow || issuerRow.length === 0) {
+            throw new Error(`No master_issuer row found for ISIN=${isin}`);
+          }
+          const masterIssuerId = Number(issuerRow[0].id);
+          logInfo(isinTag, `  → master_issuer.id=${masterIssuerId}`);
+
+          /* ---------------------------------------------------------- */
+          /* 4b. Snapshot old ratings for this issuer                    */
+          /* ---------------------------------------------------------- */
+          const oldRatings = await tx.$queryRawUnsafe(
+            `SELECT id, agency_id FROM master_issuer_rating WHERE issuer_id = ?`,
+            masterIssuerId
+          );
+          const oldRatingIds = oldRatings.map(r => Number(r.id));
+          const oldAgencyIds = [...new Set(oldRatings.map(r => Number(r.agency_id)))];
+
+          logInfo(isinTag,
+            `  → Found ${oldRatingIds.length} old rating(s); ${oldAgencyIds.length} distinct agency id(s)`);
+
+          /* ---------------------------------------------------------- */
+          /* 4c. DELETE old ratings for this issuer                      */
+          /* ---------------------------------------------------------- */
+          if (oldRatingIds.length > 0) {
             await tx.$executeRawUnsafe(
-              `UPDATE master_issuer_rating
-                  SET rating = ?, outlook = ?, rating_date = NOW()
-                WHERE id = ?`,
-              rating, outlook, cached.id
+              `DELETE FROM master_issuer_rating WHERE issuer_id = ?`,
+              masterIssuerId
             );
-            return { ratingId: cached.id, action: 'updated_in_request' };
+            logInfo(isinTag, `  → Deleted ${oldRatingIds.length} old rating row(s)`);
           }
 
-          // Check DB for existing (issuer_id, agency_id)
-          const existing = await tx.$queryRawUnsafe(
-            `SELECT id FROM master_issuer_rating
-               WHERE issuer_id = ? AND agency_id = ?
-               ORDER BY id DESC LIMIT 1`,
-            masterIssuerId, agencyId
-          );
+          /* ---------------------------------------------------------- */
+          /* 4d. INSERT the new ratings from the input group             */
+          /* ---------------------------------------------------------- */
+          const inserted = [];
+          const usedAgencyIdsThisGroup = new Set();
 
-          if (existing && existing.length > 0) {
-            /* --- UPDATE existing --- */
-            const rid = Number(existing[0].id);
-            logInfo(itemTag,
-              `  → master_issuer_rating id=${rid} EXISTS for (issuer_id=${masterIssuerId}, agency_id=${agencyId}) — updating`);
-            await tx.$executeRawUnsafe(
-              `UPDATE master_issuer_rating
-                  SET rating = ?, outlook = ?, rating_date = NOW()
-                WHERE id = ?`,
-              rating, outlook, rid
+          for (const it of group) {
+            /* ---- Resolve / create agency ---- */
+            const match = findBestMatchInterMediateries(
+              it.agency,
+              agencyCache,
+              `${isinTag}:agency`
             );
-            return { ratingId: rid, action: 'updated' };
+
+            let agencyId;
+            let createdNewAgency = false;
+            let matchScore = null;
+
+            if (match) {
+              agencyId = Number(match.entity.id);
+              matchScore = match.score;
+              logDebug(isinTag,
+                `  → Reusing master_agency id=${agencyId} (score=${matchScore.toFixed(4)}) for "${it.agency}"`);
+            } else {
+              logDebug(isinTag, `  → INSERT master_agency for "${it.agency}"`);
+              try {
+                await tx.$executeRawUnsafe(
+                  `INSERT INTO master_agency (agency_name, short_name) VALUES (?, ?)`,
+                  it.agency, it.agency
+                );
+                const [{ id }] = await tx.$queryRawUnsafe(
+                  `SELECT LAST_INSERT_ID() AS id`
+                );
+                agencyId = Number(id);
+                createdNewAgency = true;
+                agencyCache.push({ id: agencyId, name: it.agency });
+                logInfo(isinTag, `    → Created master_agency id=${agencyId}`);
+              } catch (insertErr) {
+                logWarn(isinTag,
+                  `    INSERT master_agency failed (${insertErr.message}) — re-querying`);
+                const rows = await tx.$queryRawUnsafe(
+                  `SELECT id, agency_name AS name FROM master_agency WHERE agency_name = ? LIMIT 1`,
+                  it.agency
+                );
+                if (rows && rows.length > 0) {
+                  agencyId = Number(rows[0].id);
+                  logInfo(isinTag, `    → Recovered agency id=${agencyId}`);
+                } else {
+                  throw insertErr;
+                }
+              }
+            }
+
+            usedAgencyIdsThisGroup.add(agencyId);
+
+            /* ---- Insert master_issuer_rating ---- */
+            await tx.$executeRawUnsafe(
+              `INSERT INTO master_issuer_rating
+                 (rating, outlook, rating_date, agency_id, issuer_id)
+               VALUES (?, ?, NOW(), ?, ?)`,
+              it.rating, it.outlook, agencyId, masterIssuerId
+            );
+            const [{ id: ratingId }] = await tx.$queryRawUnsafe(
+              `SELECT LAST_INSERT_ID() AS id`
+            );
+
+            logInfo(isinTag,
+              `  → Inserted master_issuer_rating id=${Number(ratingId)} ` +
+              `(agency_id=${agencyId}, rating=${it.rating}, outlook=${it.outlook})`);
+
+            inserted.push({
+              isin: it.isin,
+              agency: it.agency,
+              rating: it.rating,
+              outlook: it.outlook,
+              agencyId,
+              ratingId: Number(ratingId),
+              createdNewAgency,
+              matchScore,
+            });
           }
 
-          /* --- INSERT new --- */
-          logDebug(itemTag, 'INSERT master_issuer_rating (new row)', {
-            issuer_id: masterIssuerId, agency_id: agencyId,
-            rating, outlook,
-          });
-          await tx.$executeRawUnsafe(
-            `INSERT INTO master_issuer_rating
-               (rating, outlook, rating_date, agency_id, issuer_id)
-             VALUES (?, ?, NOW(), ?, ?)`,
-            rating, outlook, agencyId, masterIssuerId
-          );
-          const [{ id }] = await tx.$queryRawUnsafe(
-            `SELECT LAST_INSERT_ID() AS id`
-          );
-          const rid = Number(id);
-          logInfo(itemTag, `  → Created master_issuer_rating id=${rid} (issuer_id=${masterIssuerId}, agency_id=${agencyId})`);
-          return { ratingId: rid, action: 'inserted' };
+          /* ---------------------------------------------------------- */
+          /* 4e. Cleanup orphan agencies from the old ratings            */
+          /*     (agency no longer referenced by ANY rating anywhere)     */
+          /* ---------------------------------------------------------- */
+          const orphanAgenciesDeleted = [];
+          for (const aid of oldAgencyIds) {
+            if (usedAgencyIdsThisGroup.has(aid)) continue;
+
+            const ref = await tx.$queryRawUnsafe(
+              `SELECT 1 AS found FROM master_issuer_rating WHERE agency_id = ? LIMIT 1`,
+              aid
+            );
+            if (ref && ref.length > 0) continue;
+
+            await tx.$executeRawUnsafe(
+              `DELETE FROM master_agency WHERE id = ?`,
+              aid
+            );
+            orphanAgenciesDeleted.push(aid);
+            logInfo(isinTag, `  → Deleted orphan master_agency id=${aid}`);
+          }
+
+          return {
+            masterIssuerId,
+            deletedRatingIds: oldRatingIds,
+            orphanAgenciesDeleted,
+            inserted,
+          };
         });
 
-        ratingId = txResult.ratingId;
-        action = txResult.action;
+        /* Remove deleted orphan agencies from the in-memory cache */
+        if (txResult.orphanAgenciesDeleted.length > 0) {
+          agencyCache = agencyCache.filter(
+            a => !txResult.orphanAgenciesDeleted.includes(a.id)
+          );
+        }
 
-        ratingKeyState.set(ratingKey, { id: ratingId, action });
+        totalDeletedRatings  += txResult.deletedRatingIds.length;
+        totalInsertedRatings += txResult.inserted.length;
+        totalDeletedAgencies += txResult.orphanAgenciesDeleted.length;
+        totalCreatedAgencies += txResult.inserted.filter(r => r.createdNewAgency).length;
 
-        logInfo(itemTag, `COMMIT transaction (${Date.now() - txStart} ms) — action=${action}, ratingId=${ratingId}`);
+        logInfo(isinTag,
+          `COMMIT (${Date.now() - txStart} ms) — ` +
+          `deletedRatings=${txResult.deletedRatingIds.length}, ` +
+          `insertedRatings=${txResult.inserted.length}, ` +
+          `orphanAgenciesDeleted=${txResult.orphanAgenciesDeleted.length}`);
 
         results.push({
           ISIN: isin,
-          agency,
-          rating,
-          outlook,
-          status: action,
-          issuerId: masterIssuerId,
-          agencyId,
-          ratingId,
-          createdNewAgency,
-          matchScore,
+          status: 'replaced',
+          issuerId: txResult.masterIssuerId,
+          deletedRatingCount: txResult.deletedRatingIds.length,
+          deletedOrphanAgencyCount: txResult.orphanAgenciesDeleted.length,
+          ratings: txResult.inserted.map(r => ({
+            agency: r.agency,
+            rating: r.rating,
+            outlook: r.outlook,
+            agencyId: r.agencyId,
+            ratingId: r.ratingId,
+            createdNewAgency: r.createdNewAgency,
+            matchScore: r.matchScore,
+          })),
         });
-
-        logInfo(itemTag, `✔ Item done — ${action.toUpperCase()}`);
       } catch (err) {
-        logError(itemTag, `ROLLBACK transaction — ${err.message}`, { stack: err.stack });
+        logError(isinTag, `ROLLBACK transaction — ${err.message}`, { stack: err.stack });
         results.push({
           ISIN: isin,
-          agency,
-          rating,
-          outlook,
           status: 'error',
           reason: err.message,
         });
@@ -848,33 +836,37 @@ app.post('/uploadCreditRatings', async (req, res) => {
     /* ------------------------------------------------------------------ */
     /* Summary                                                             */
     /* ------------------------------------------------------------------ */
-    const inserted     = results.filter(r => r.status === 'inserted').length;
-    const updated      = results.filter(r => r.status === 'updated').length;
-    const updatedInReq = results.filter(r => r.status === 'updated_in_request').length;
-    const skipped      = results.filter(r => r.status === 'skipped').length;
-    const errored      = results.filter(r => r.status === 'error').length;
+    const replaced = results.filter(r => r.status === 'replaced').length;
+    const errored  = results.filter(r => r.status === 'error').length;
 
     logInfo(TAG, '──────── SUMMARY ────────');
-    logInfo(TAG, `  received            : ${items.length}`);
-    logInfo(TAG, `  unique (in-request) : ${uniqueItems.length}`);
-    logInfo(TAG, `  in-body duplicates  : ${inRequestBodyDupCount}`);
-    logInfo(TAG, `  inserted            : ${inserted}`);
-    logInfo(TAG, `  updated             : ${updated}`);
-    logInfo(TAG, `  updated_in_request  : ${updatedInReq}`);
-    logInfo(TAG, `  skipped (invalid)   : ${skipped}`);
-    logInfo(TAG, `  errored             : ${errored}`);
-    logInfo(TAG, `  duration            : ${Date.now() - startedAt} ms`);
+    logInfo(TAG, `  received               : ${items.length}`);
+    logInfo(TAG, `  valid unique           : ${validItems.length}`);
+    logInfo(TAG, `  in-body duplicates     : ${inRequestBodyDupCount}`);
+    logInfo(TAG, `  invalid                : ${invalidCount}`);
+    logInfo(TAG, `  distinct ISINs         : ${byIsin.size}`);
+    logInfo(TAG, `  ISINs replaced         : ${replaced}`);
+    logInfo(TAG, `  ISINs errored          : ${errored}`);
+    logInfo(TAG, `  total ratings deleted  : ${totalDeletedRatings}`);
+    logInfo(TAG, `  total ratings inserted : ${totalInsertedRatings}`);
+    logInfo(TAG, `  orphan agencies deleted: ${totalDeletedAgencies}`);
+    logInfo(TAG, `  new agencies created   : ${totalCreatedAgencies}`);
+    logInfo(TAG, `  duration               : ${Date.now() - startedAt} ms`);
     logInfo(TAG, '◀ Request completed');
 
     res.json({
       requestId: REQ_ID,
       received: items.length,
-      unique: uniqueItems.length,
-      inserted,
-      updated,
-      updatedInRequest: updatedInReq,
-      skipped,
+      validUnique: validItems.length,
+      inBodyDuplicates: inRequestBodyDupCount,
+      invalid: invalidCount,
+      distinctIsins: byIsin.size,
+      replaced,
       errored,
+      totalRatingsDeleted,
+      totalRatingsInserted,
+      orphanAgenciesDeleted: totalDeletedAgencies,
+      newAgenciesCreated: totalCreatedAgencies,
       durationMs: Date.now() - startedAt,
       results,
     });
