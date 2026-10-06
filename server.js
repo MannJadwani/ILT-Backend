@@ -414,6 +414,47 @@ function findBestMatchInterMediateries(query, entities, tag = 'findBestMatchInte
   return null;
 }
 
+function parseCreditRatings(data) {
+  const result = [];
+
+  if (!Array.isArray(data)) return result;
+
+  data.forEach((item) => {
+    const isin = item?.isin;
+    const creditRating = item?.creditRating;
+
+    if (!isin || !creditRating || typeof creditRating !== "string") return;
+
+    // Multiple ratings are comma-separated:
+    // "CARE/AAA/STABLE, CRISIL/AAA/STABLE."
+    creditRating
+      .split(",")
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .forEach((part) => {
+        // Split agency/rating/outlook by slash
+        const pieces = part
+          .split("/")
+          .map((p) => p.trim().replace(/\.+$/, "")); // remove trailing dots
+
+        if (pieces.length < 3) return;
+
+        const [agency, rating, outlook] = pieces;
+
+        if (!agency || !rating || !outlook) return;
+
+        result.push({
+          agency: agency.toUpperCase(),
+          rating: rating.toUpperCase(),
+          outlook: outlook.toLowerCase(),
+          ISIN: isin,
+        });
+      });
+  });
+
+  return result;
+}
+
 /* -------------------------------------------------------------------------- */
 /* Intermediary configuration (whitelisted — prevents SQL injection)          */
 /* -------------------------------------------------------------------------- */
@@ -444,9 +485,354 @@ const INTERMEDIARY_CONFIG = {
   },
 };
 
+
+const AGENCY_CONFIG = {
+  masterTable: 'master_agency',
+  nameColumn: 'agency_name',
+  shortNameColumn: 'short_name',
+};
+
 /* -------------------------------------------------------------------------- */
 /* Endpoint                                                                   */
 /* -------------------------------------------------------------------------- */
+
+app.post('/uploadCreditRatings', async (req, res) => {
+  const REQ_ID = `REQ-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+  const TAG = `uploadCreditRatings:${REQ_ID}`;
+  const startedAt = Date.now();
+
+  logInfo(TAG, '▶ Request received');
+
+  try {
+    const items = parseCreditRatings(req.body)
+    logDebug(TAG, 'Request body preview', {
+      isArray: Array.isArray(items),
+      length: Array.isArray(items) ? items.length : null,
+    });
+
+    if (!Array.isArray(items) || items.length === 0) {
+      logWarn(TAG, 'Invalid request body — must be a non-empty array');
+      return res.status(400).json({ error: 'Request body must be a non-empty array' });
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* STEP 1 — In-request deduplication                                   */
+    /*     Key: (ISIN, agency) — a later item with the same key wins       */
+    /*     (since it just means "update with the newest values").          */
+    /* ------------------------------------------------------------------ */
+    logInfo(TAG, `STEP 1: Deduplicating ${items.length} incoming items`);
+
+    const seen = new Set();
+    const uniqueItems = [];
+    let inRequestBodyDupCount = 0;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const key = JSON.stringify({
+        ISIN: item.ISIN ?? item.isin ?? null,
+        agency: item.agency ?? null,
+      });
+      if (seen.has(key)) {
+        inRequestBodyDupCount++;
+        logDebug(TAG, `  Item[${i}] DUPLICATE in body — skipped`, {
+          ISIN: item.ISIN, agency: item.agency,
+        });
+      } else {
+        seen.add(key);
+        uniqueItems.push(item);
+        logDebug(TAG, `  Item[${i}] unique — kept`, {
+          ISIN: item.ISIN, agency: item.agency,
+        });
+      }
+    }
+    logInfo(TAG, `STEP 1 DONE: ${uniqueItems.length} unique / ${inRequestBodyDupCount} in-request duplicates removed`);
+
+    /* ------------------------------------------------------------------ */
+    /* STEP 2 — Load existing agencies for fuzzy matching                  */
+    /* ------------------------------------------------------------------ */
+    logInfo(TAG, 'STEP 2: Loading existing master_agency');
+
+    const agencyRows = await prisma.$queryRawUnsafe(
+      `SELECT id, agency_name AS name FROM master_agency`
+    );
+
+    const agencyCache = agencyRows.map(r => ({ id: Number(r.id), name: r.name }));
+
+    logInfo(TAG, `STEP 2 DONE: agencies=${agencyCache.length}`);
+
+    /* ------------------------------------------------------------------ */
+    /* In-request caches                                                   */
+    /* ------------------------------------------------------------------ */
+    // ISIN -> master_issuer.id
+    const isinToIssuerId = new Map();
+
+    // `${masterIssuerId}|${agencyId}` -> { id, action }  (rating row state)
+    const ratingKeyState = new Map();
+
+    const results = [];
+
+    /* ------------------------------------------------------------------ */
+    /* STEP 3 — Process each unique item                                   */
+    /* ------------------------------------------------------------------ */
+    logInfo(TAG, `STEP 3: Processing ${uniqueItems.length} unique items`);
+
+    for (let idx = 0; idx < uniqueItems.length; idx++) {
+      await delay(30);
+      const item = uniqueItems[idx];
+      const itemTag = `${TAG}:item[${idx}]`;
+
+      // Accept both `ISIN` and `isin`
+      const isin    = item.ISIN ?? item.isin ?? null;
+      const agency  = item.agency ?? null;
+      const rating  = item.rating ?? null;
+      const outlook = item.outlook ?? null;
+
+      logInfo(itemTag, `▶ Processing ISIN=${isin} agency="${agency}" rating="${rating}"`);
+      logDebug(itemTag, 'Raw payload', item);
+
+      /* ---- Validation ---- */
+      if (!isin || !agency || !rating) {
+        logWarn(itemTag, 'Skipped — missing ISIN, agency, or rating');
+        results.push({
+          ISIN: isin,
+          agency,
+          rating,
+          status: 'skipped',
+          reason: 'Missing ISIN, agency, or rating',
+        });
+        continue;
+      }
+
+      /* ---- Resolve master_issuer.id from ISIN ---- */
+      let masterIssuerId = isinToIssuerId.get(isin);
+
+      if (masterIssuerId) {
+        logDebug(itemTag, `  → master_issuer.id=${masterIssuerId} reused from in-request cache`);
+      } else {
+        logDebug(itemTag, 'Resolving master_issuer.id from ISIN');
+
+        const issuerRow = await prisma.$queryRawUnsafe(
+          `SELECT id FROM master_issuer
+             WHERE isin = ?
+             ORDER BY id DESC LIMIT 1`,
+          isin
+        );
+
+        if (!issuerRow || issuerRow.length === 0) {
+          logError(itemTag, `No master_issuer row found for ISIN=${isin} — SKIP (will not create ISIN)`);
+          results.push({
+            ISIN: isin,
+            agency,
+            rating,
+            status: 'error',
+            reason: `No master_issuer row found for ISIN=${isin}`,
+          });
+          continue;
+        }
+
+        masterIssuerId = Number(issuerRow[0].id);
+        isinToIssuerId.set(isin, masterIssuerId);
+        logInfo(itemTag, `  → Resolved master_issuer.id=${masterIssuerId} for ISIN=${isin}`);
+      }
+
+      /* ---- Resolve agency_id (fuzzy match → reuse; else create) ---- */
+      const agencyTag = `${itemTag}:agency`;
+      logInfo(agencyTag, `▶ Resolving agency="${agency}"`);
+
+      const match = findBestMatchInterMediateries(agency, agencyCache, agencyTag);
+
+      let agencyId;
+      let createdNewAgency = false;
+      let matchScore = null;
+
+      if (match) {
+        agencyId = Number(match.entity.id);
+        matchScore = match.score;
+        logDebug(agencyTag, `Reusing existing ${AGENCY_CONFIG.masterTable} id=${agencyId} (score=${matchScore.toFixed(4)})`);
+      } else {
+        logDebug(agencyTag, `INSERT ${AGENCY_CONFIG.masterTable}`, {
+          [AGENCY_CONFIG.nameColumn]: agency,
+          [AGENCY_CONFIG.shortNameColumn]: agency,
+        });
+
+        try {
+          await prisma.$executeRawUnsafe(
+            `INSERT INTO ${AGENCY_CONFIG.masterTable}
+               (${AGENCY_CONFIG.nameColumn}, ${AGENCY_CONFIG.shortNameColumn})
+             VALUES (?, ?)`,
+            agency, agency
+          );
+          const [{ id }] = await prisma.$queryRawUnsafe(
+            `SELECT LAST_INSERT_ID() AS id`
+          );
+          agencyId = Number(id);
+          createdNewAgency = true;
+
+          agencyCache.push({ id: agencyId, name: agency });
+
+          logInfo(agencyTag, `  → Created ${AGENCY_CONFIG.masterTable} id=${agencyId} (short_name="${agency}")`);
+        } catch (insertErr) {
+          logWarn(agencyTag, `INSERT failed (${insertErr.message}) — re-querying`);
+          const rows = await prisma.$queryRawUnsafe(
+            `SELECT id, ${AGENCY_CONFIG.nameColumn} AS name FROM ${AGENCY_CONFIG.masterTable}
+               WHERE ${AGENCY_CONFIG.nameColumn} = ? LIMIT 1`,
+            agency
+          );
+          if (rows && rows.length > 0) {
+            agencyId = Number(rows[0].id);
+            logInfo(agencyTag, `  → Recovered existing id=${agencyId} after conflict`);
+          } else {
+            logError(agencyTag, `Could not create or find ${AGENCY_CONFIG.masterTable} for "${agency}"`);
+            results.push({
+              ISIN: isin,
+              agency,
+              rating,
+              status: 'error',
+              reason: insertErr.message,
+            });
+            continue;
+          }
+        }
+      }
+
+      /* ---- Upsert into master_issuer_rating ---- */
+      const ratingKey = `${masterIssuerId}|${agencyId}`;
+      let ratingId = null;
+      let action = null;
+
+      try {
+        logDebug(itemTag, 'BEGIN transaction');
+        const txStart = Date.now();
+
+        const txResult = await prisma.$transaction(async (tx) => {
+          const cached = ratingKeyState.get(ratingKey);
+
+          if (cached) {
+            // Same (issuer, agency) already handled in this request → update again
+            logInfo(itemTag,
+              `  → master_issuer_rating id=${cached.id} already handled in this request — updating to latest values`);
+            await tx.$executeRawUnsafe(
+              `UPDATE master_issuer_rating
+                  SET rating = ?, outlook = ?, rating_date = NOW()
+                WHERE id = ?`,
+              rating, outlook, cached.id
+            );
+            return { ratingId: cached.id, action: 'updated_in_request' };
+          }
+
+          // Check DB for existing (issuer_id, agency_id)
+          const existing = await tx.$queryRawUnsafe(
+            `SELECT id FROM master_issuer_rating
+               WHERE issuer_id = ? AND agency_id = ?
+               ORDER BY id DESC LIMIT 1`,
+            masterIssuerId, agencyId
+          );
+
+          if (existing && existing.length > 0) {
+            /* --- UPDATE existing --- */
+            const rid = Number(existing[0].id);
+            logInfo(itemTag,
+              `  → master_issuer_rating id=${rid} EXISTS for (issuer_id=${masterIssuerId}, agency_id=${agencyId}) — updating`);
+            await tx.$executeRawUnsafe(
+              `UPDATE master_issuer_rating
+                  SET rating = ?, outlook = ?, rating_date = NOW()
+                WHERE id = ?`,
+              rating, outlook, rid
+            );
+            return { ratingId: rid, action: 'updated' };
+          }
+
+          /* --- INSERT new --- */
+          logDebug(itemTag, 'INSERT master_issuer_rating (new row)', {
+            issuer_id: masterIssuerId, agency_id: agencyId,
+            rating, outlook,
+          });
+          await tx.$executeRawUnsafe(
+            `INSERT INTO master_issuer_rating
+               (rating, outlook, rating_date, agency_id, issuer_id)
+             VALUES (?, ?, NOW(), ?, ?)`,
+            rating, outlook, agencyId, masterIssuerId
+          );
+          const [{ id }] = await tx.$queryRawUnsafe(
+            `SELECT LAST_INSERT_ID() AS id`
+          );
+          const rid = Number(id);
+          logInfo(itemTag, `  → Created master_issuer_rating id=${rid} (issuer_id=${masterIssuerId}, agency_id=${agencyId})`);
+          return { ratingId: rid, action: 'inserted' };
+        });
+
+        ratingId = txResult.ratingId;
+        action = txResult.action;
+
+        ratingKeyState.set(ratingKey, { id: ratingId, action });
+
+        logInfo(itemTag, `COMMIT transaction (${Date.now() - txStart} ms) — action=${action}, ratingId=${ratingId}`);
+
+        results.push({
+          ISIN: isin,
+          agency,
+          rating,
+          outlook,
+          status: action,
+          issuerId: masterIssuerId,
+          agencyId,
+          ratingId,
+          createdNewAgency,
+          matchScore,
+        });
+
+        logInfo(itemTag, `✔ Item done — ${action.toUpperCase()}`);
+      } catch (err) {
+        logError(itemTag, `ROLLBACK transaction — ${err.message}`, { stack: err.stack });
+        results.push({
+          ISIN: isin,
+          agency,
+          rating,
+          outlook,
+          status: 'error',
+          reason: err.message,
+        });
+      }
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Summary                                                             */
+    /* ------------------------------------------------------------------ */
+    const inserted     = results.filter(r => r.status === 'inserted').length;
+    const updated      = results.filter(r => r.status === 'updated').length;
+    const updatedInReq = results.filter(r => r.status === 'updated_in_request').length;
+    const skipped      = results.filter(r => r.status === 'skipped').length;
+    const errored      = results.filter(r => r.status === 'error').length;
+
+    logInfo(TAG, '──────── SUMMARY ────────');
+    logInfo(TAG, `  received            : ${items.length}`);
+    logInfo(TAG, `  unique (in-request) : ${uniqueItems.length}`);
+    logInfo(TAG, `  in-body duplicates  : ${inRequestBodyDupCount}`);
+    logInfo(TAG, `  inserted            : ${inserted}`);
+    logInfo(TAG, `  updated             : ${updated}`);
+    logInfo(TAG, `  updated_in_request  : ${updatedInReq}`);
+    logInfo(TAG, `  skipped (invalid)   : ${skipped}`);
+    logInfo(TAG, `  errored             : ${errored}`);
+    logInfo(TAG, `  duration            : ${Date.now() - startedAt} ms`);
+    logInfo(TAG, '◀ Request completed');
+
+    res.json({
+      requestId: REQ_ID,
+      received: items.length,
+      unique: uniqueItems.length,
+      inserted,
+      updated,
+      updatedInRequest: updatedInReq,
+      skipped,
+      errored,
+      durationMs: Date.now() - startedAt,
+      results,
+    });
+  } catch (error) {
+    logError(TAG, `FATAL — ${error.message}`, { stack: error.stack });
+    res.status(500).json({ error: error.message, requestId: REQ_ID });
+  }
+});
 
 app.post('/uploadIntermediaries', async (req, res) => {
   const REQ_ID = `REQ-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
@@ -3433,7 +3819,6 @@ app.get('/arrangers/similar/:arrangerId', async (req, res) => {
       SELECT id, short_name, arranger_name, parent_id
       FROM master_arranger
       WHERE id != ${arrangerIdNum}
-      AND parent_id = 0
       ORDER BY short_name ASC
     `);
 
