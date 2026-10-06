@@ -419,37 +419,85 @@ function parseCreditRatings(data) {
 
   if (!Array.isArray(data)) return result;
 
+  const AGENCIES = [
+    "INDIA RATINGS",
+    "INDIA_RATINGS",
+    "CRISIL",
+    "CARE",
+    "ICRA",
+    "ACUITE",
+    "INFOMERICS",
+    "BRICKWORK",
+    "BWR",
+    "IVR",
+    "INDIA",
+    "IND",
+  ];
+
+  const agencyAlt = AGENCIES
+    .sort((a, b) => b.length - a.length)
+    .map((a) => a.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .join("|");
+
+  const agencyRegex = new RegExp(`\\b(${agencyAlt})\\b`, "gi");
+
+  const ratingRegex =
+    /(?:^|[^A-Z0-9])((?:AAA|AA\+|AA-|AA|A\+|A-|A|BBB\+|BBB-|BBB|BB\+|BB-|BB|B\+|B-|B|C|D)(?:\s+CE)?)(?![A-Z0-9])/i;
+
+  const outlookRegex =
+    /(?:^|[^A-Z])((?:WATCH\s+(?:DEVELOPING|NEGATIVE|POSITIVE)|STABLE|POSITIVE|NEGATIVE|RWN|NA))(?![A-Z])/i;
+
   data.forEach((item) => {
     const isin = item?.isin;
     const creditRating = item?.creditRating;
 
     if (!isin || !creditRating || typeof creditRating !== "string") return;
 
-    // Multiple ratings are comma-separated:
-    // "CARE/AAA/STABLE, CRISIL/AAA/STABLE."
-    creditRating
-      .split(",")
-      .map((part) => part.trim())
-      .filter(Boolean)
-      .forEach((part) => {
-        // Split agency/rating/outlook by slash
-        const pieces = part
-          .split("/")
-          .map((p) => p.trim().replace(/\.+$/, "")); // remove trailing dots
+    const s = creditRating.toUpperCase().replace(/\s+/g, " ").trim();
 
-        if (pieces.length < 3) return;
+    const agencyMatches = [...s.matchAll(agencyRegex)];
 
-        const [agency, rating, outlook] = pieces;
+    // No agency found: try to parse as one rating/outlook pair
+    if (agencyMatches.length === 0) {
+      const ratingMatch = s.match(ratingRegex);
+      const outlookMatch = s.match(outlookRegex);
 
-        if (!agency || !rating || !outlook) return;
-
+      if (ratingMatch) {
         result.push({
-          agency: agency.toUpperCase(),
-          rating: rating.toUpperCase(),
-          outlook: outlook.toLowerCase(),
+          agency: null,
+          rating: ratingMatch[1].trim().toUpperCase(),
+          outlook: outlookMatch ? outlookMatch[1].trim().toLowerCase() : null,
           ISIN: isin,
         });
+      }
+
+      return;
+    }
+
+    // Split by agency boundaries so multiple ratings are handled
+    agencyMatches.forEach((match, index) => {
+      const start = match.index;
+      const end =
+        index + 1 < agencyMatches.length
+          ? agencyMatches[index + 1].index
+          : s.length;
+
+      const segment = s.slice(start, end);
+      const agency = match[1].toUpperCase();
+      const rest = segment.slice(match[0].length);
+
+      const ratingMatch = rest.match(ratingRegex);
+      const outlookMatch = rest.match(outlookRegex);
+
+      if (!ratingMatch) return;
+
+      result.push({
+        agency,
+        rating: ratingMatch[1].trim().toUpperCase(),
+        outlook: outlookMatch ? outlookMatch[1].trim().toLowerCase() : null,
+        ISIN: isin,
       });
+    });
   });
 
   return result;
