@@ -544,6 +544,329 @@ const AGENCY_CONFIG = {
 /* Endpoint                                                                   */
 /* -------------------------------------------------------------------------- */
 
+/* -------------------------------------------------------------------------- */
+/* Explicit request-field → DB-column mapping                                 */
+/* -------------------------------------------------------------------------- */
+/*
+ * Only the keys in this map are read from the request and written to
+ * `isin_re_issuance_details`. Anything else (e.g. arranger/trustee/registrar)
+ * is silently ignored.
+ */
+const DETAIL_FIELD_MAP = {
+  // request key            : DB column
+  isin                     : 'isin',
+  issuerName               : 'issuer_name',
+  issueDescription         : 'issue_description',
+  typeOfIssuance           : 'type_of_issuance',
+  allotmentDate            : 'allotment_date',
+  faceValue                : 'face_value',
+  amountRaised             : 'amount_raised',
+  maturityDate             : 'maturity_date',
+  coupon                   : 'coupon',
+  price                    : 'price',
+  spread                   : 'spread',
+  yield                    : 'yield',
+  creditRating             : 'credit_rating',
+  typeOfBookBidding        : 'type_of_book_bidding',
+  mannerOfAllotment        : 'manner_of_allotment',
+  mannerOfSettlement       : 'manner_of_settlement',
+  noOfSuccesfulBidders     : 'successful_bidders_category',
+  baseIssueSize            : 'base_issue_size',
+  greenShoeOption          : 'green_shoe_option',
+  tenor                    : 'tenor',
+  securedUnsecured         : 'secured_unsecured',
+  typeOfBidding            : 'type_of_bidding',
+  couponFrequency          : 'coupon_frequency',
+  maturityType             : 'maturity_type',
+  interestPaymentType      : 'interest_payment_type',
+  noOfAnchorInvestors      : 'number_of_anchor_investors',
+  anchorAmount             : 'anchor_amount',
+  totalQibbidding          : 'total_qib_bidding',
+  totalQibamountAccepted   : 'total_qib_amount_accepted',
+  totalNonQibbidding       : 'total_non_qib_bidding',
+  totalNonQibamountAccepted: 'total_non_qib_amount_accepted',
+  cutOffYield              : 'cutoff_yield_price',
+  weightedAverageCutOffYield: 'weighted_average_cutoff_yield_price',
+};
+
+const DETAIL_DATE_COLUMNS = new Set(['allotment_date', 'maturity_date']);
+
+/* -------------------------------------------------------------------------- */
+/* Endpoint                                                                   */
+/* -------------------------------------------------------------------------- */
+
+app.post('/uploadIsinReIssuanceDetails', async (req, res) => {
+  const REQ_ID = `REQ-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+  const TAG = `uploadIsinReIssuanceDetails:${REQ_ID}`;
+  const startedAt = Date.now();
+
+  logInfo(TAG, '▶ Request received');
+
+  try {
+    const items = req.body;
+    logDebug(TAG, 'Request body preview', {
+      isArray: Array.isArray(items),
+      length: Array.isArray(items) ? items.length : null,
+    });
+
+    if (!Array.isArray(items) || items.length === 0) {
+      logWarn(TAG, 'Invalid request body — must be a non-empty array');
+      return res.status(400).json({ error: 'Request body must be a non-empty array' });
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* STEP 1 — In-request deduplication by isin                           */
+    /* ------------------------------------------------------------------ */
+    logInfo(TAG, `STEP 1: Deduplicating ${items.length} incoming items`);
+
+    const seen = new Set();
+    const uniqueItems = [];
+    let inRequestBodyDupCount = 0;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const isin = item.isin ?? item.ISIN ?? null;
+      if (!isin) {
+        uniqueItems.push(item); // keep — will be flagged later
+        continue;
+      }
+      if (seen.has(isin)) {
+        inRequestBodyDupCount++;
+        logDebug(TAG, `  Item[${i}] DUPLICATE isin — skipped`, { isin });
+      } else {
+        seen.add(isin);
+        uniqueItems.push(item);
+        logDebug(TAG, `  Item[${i}] unique — kept`, { isin });
+      }
+    }
+    logInfo(TAG, `STEP 1 DONE: ${uniqueItems.length} unique / ${inRequestBodyDupCount} in-request duplicates removed`);
+
+    // In-request cache: re_issuance_id -> details row id
+    const detailsIdCache = new Map();
+
+    const results = [];
+
+    /* ------------------------------------------------------------------ */
+    /* STEP 2 — Process each unique item                                   */
+    /* ------------------------------------------------------------------ */
+    logInfo(TAG, `STEP 2: Processing ${uniqueItems.length} unique items`);
+
+    for (let idx = 0; idx < uniqueItems.length; idx++) {
+      await delay(30);
+      const item = uniqueItems[idx];
+      const itemTag = `${TAG}:item[${idx}]`;
+
+      const isin = item.isin ?? item.ISIN ?? null;
+
+      logInfo(itemTag, `▶ Processing ISIN=${isin ?? 'N/A'}`);
+      logDebug(itemTag, 'Raw payload', item);
+
+      /* ---- Validation ---- */
+      if (!isin) {
+        logWarn(itemTag, 'Skipped — missing isin');
+        results.push({ isin: null, status: 'skipped', reason: 'Missing isin' });
+        continue;
+      }
+
+      /* ---- Resolve re_issuance_id from isin_re_issuance ---- */
+      logDebug(itemTag, 'Resolving re_issuance_id from isin_re_issuance by isin');
+
+      const reIssuanceRow = await prisma.$queryRawUnsafe(
+        `SELECT id, isin FROM isin_re_issuance
+           WHERE isin = ?
+           ORDER BY id DESC LIMIT 1`,
+        isin
+      );
+
+      if (!reIssuanceRow || reIssuanceRow.length === 0) {
+        logError(itemTag, `No isin_re_issuance row found for isin=${isin} — SKIP`);
+        results.push({
+          isin,
+          status: 'error',
+          reason: "the id doesn't exist",
+        });
+        continue;
+      }
+
+      const reIssuanceId = Number(reIssuanceRow[0].id);
+      logInfo(itemTag, `Resolved re_issuance_id=${reIssuanceId} for ISIN=${isin}`);
+
+      /* ---- Build the set of provided columns & values ---- */
+      const providedColumns = [];
+      const providedValues  = [];
+
+      for (const [reqKey, column] of Object.entries(DETAIL_FIELD_MAP)) {
+        let val = item[reqKey];
+        if (val === undefined) continue;
+
+        // Normalise date fields
+        if (val !== null && val !== '' && DETAIL_DATE_COLUMNS.has(column)) {
+          const parsed = parseAllotmentDate(val);
+          if (!parsed) {
+            logWarn(itemTag, `Invalid date for "${reqKey}": ${val} — will be written as NULL`);
+            val = null;
+          } else {
+            val = parsed;
+          }
+        }
+
+        providedColumns.push(column);
+        providedValues.push(val);
+      }
+
+      // Ensure isin is always present in the write
+      if (!providedColumns.includes('isin')) {
+        providedColumns.push('isin');
+        providedValues.push(isin);
+      }
+
+      logDebug(itemTag, `Provided columns (${providedColumns.length})`, providedColumns);
+
+      /* ---- Upsert into isin_re_issuance_details ---- */
+      try {
+        logDebug(itemTag, 'BEGIN transaction');
+        const txStart = Date.now();
+
+        const txResult = await prisma.$transaction(async (tx) => {
+          /* Check in-request cache first */
+          const cached = detailsIdCache.get(reIssuanceId);
+
+          if (cached) {
+            logInfo(itemTag,
+              `  → isin_re_issuance_details id=${cached.id} already handled in this request — updating to latest values`);
+
+            const setClause = providedColumns.map(c => `${c} = ?`).join(', ');
+            const params = [...providedValues, cached.id];
+
+            await tx.$executeRawUnsafe(
+              `UPDATE isin_re_issuance_details
+                  SET ${setClause}
+                WHERE id = ?`,
+              ...params
+            );
+
+            return { detailsId: cached.id, action: 'updated_in_request' };
+          }
+
+          /* Look up existing row by re_issuance_id */
+          const existing = await tx.$queryRawUnsafe(
+            `SELECT id FROM isin_re_issuance_details
+               WHERE re_issuance_id = ?
+               ORDER BY id DESC LIMIT 1`,
+            reIssuanceId
+          );
+
+          if (existing && existing.length > 0) {
+            /* ---- UPDATE ---- */
+            const detailsId = Number(existing[0].id);
+            logInfo(itemTag,
+              `  → isin_re_issuance_details id=${detailsId} EXISTS for re_issuance_id=${reIssuanceId} — updating`);
+
+            const setClause = providedColumns.map(c => `${c} = ?`).join(', ');
+            const params = [...providedValues, detailsId];
+
+            await tx.$executeRawUnsafe(
+              `UPDATE isin_re_issuance_details
+                  SET ${setClause}
+                WHERE id = ?`,
+              ...params
+            );
+
+            return { detailsId, action: 'updated' };
+          }
+
+          /* ---- INSERT ---- */
+          logDebug(itemTag, 'INSERT isin_re_issuance_details (new row)', {
+            re_issuance_id: reIssuanceId,
+            columns: providedColumns,
+          });
+
+          const insertColumns = ['re_issuance_id', ...providedColumns];
+          const placeholders  = insertColumns.map(() => '?').join(', ');
+          const params        = [reIssuanceId, ...providedValues];
+
+          await tx.$executeRawUnsafe(
+            `INSERT INTO isin_re_issuance_details
+               (${insertColumns.join(', ')})
+             VALUES (${placeholders})`,
+            ...params
+          );
+          const [{ id }] = await tx.$queryRawUnsafe(
+            `SELECT LAST_INSERT_ID() AS id`
+          );
+          const detailsId = Number(id);
+          logInfo(itemTag,
+            `  → Created isin_re_issuance_details id=${detailsId} (re_issuance_id=${reIssuanceId})`);
+
+          return { detailsId, action: 'inserted' };
+        });
+
+        detailsIdCache.set(reIssuanceId, {
+          id: txResult.detailsId,
+          action: txResult.action,
+        });
+
+        logInfo(itemTag,
+          `COMMIT transaction (${Date.now() - txStart} ms) — action=${txResult.action}, detailsId=${txResult.detailsId}`);
+
+        results.push({
+          isin,
+          status: txResult.action,
+          reIssuanceId,
+          detailsId: txResult.detailsId,
+          updatedFields: providedColumns,
+        });
+
+        logInfo(itemTag, `✔ Item done — ${txResult.action.toUpperCase()}`);
+      } catch (err) {
+        logError(itemTag, `ROLLBACK transaction — ${err.message}`, { stack: err.stack });
+        results.push({
+          isin,
+          status: 'error',
+          reason: err.message,
+        });
+      }
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Summary                                                             */
+    /* ------------------------------------------------------------------ */
+    const inserted     = results.filter(r => r.status === 'inserted').length;
+    const updated      = results.filter(r => r.status === 'updated').length;
+    const updatedInReq = results.filter(r => r.status === 'updated_in_request').length;
+    const skipped      = results.filter(r => r.status === 'skipped').length;
+    const errored      = results.filter(r => r.status === 'error').length;
+
+    logInfo(TAG, '──────── SUMMARY ────────');
+    logInfo(TAG, `  received            : ${items.length}`);
+    logInfo(TAG, `  unique (in-request) : ${uniqueItems.length}`);
+    logInfo(TAG, `  in-body duplicates  : ${inRequestBodyDupCount}`);
+    logInfo(TAG, `  inserted            : ${inserted}`);
+    logInfo(TAG, `  updated             : ${updated}`);
+    logInfo(TAG, `  updated_in_request  : ${updatedInReq}`);
+    logInfo(TAG, `  skipped (invalid)   : ${skipped}`);
+    logInfo(TAG, `  errored             : ${errored}`);
+    logInfo(TAG, `  duration            : ${Date.now() - startedAt} ms`);
+    logInfo(TAG, '◀ Request completed');
+
+    res.json({
+      requestId: REQ_ID,
+      received: items.length,
+      unique: uniqueItems.length,
+      inserted,
+      updated,
+      updatedInRequest: updatedInReq,
+      skipped,
+      errored,
+      durationMs: Date.now() - startedAt,
+      results,
+    });
+  } catch (error) {
+    logError(TAG, `FATAL — ${error.message}`, { stack: error.stack });
+    res.status(500).json({ error: error.message, requestId: REQ_ID });
+  }
+});
+
 app.post('/uploadCreditRatings', async (req, res) => {
   const REQ_ID = `REQ-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
   const TAG = `uploadCreditRatings:${REQ_ID}`;
