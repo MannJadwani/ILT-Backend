@@ -533,17 +533,6 @@ const INTERMEDIARY_CONFIG = {
   },
 };
 
-
-const AGENCY_CONFIG = {
-  masterTable: 'master_agency',
-  nameColumn: 'agency_name',
-  shortNameColumn: 'short_name',
-};
-
-/* -------------------------------------------------------------------------- */
-/* Endpoint                                                                   */
-/* -------------------------------------------------------------------------- */
-
 /* -------------------------------------------------------------------------- */
 /* Explicit request-field → DB-column mapping                                 */
 /* -------------------------------------------------------------------------- */
@@ -552,44 +541,109 @@ const AGENCY_CONFIG = {
  * `isin_re_issuance_details`. Anything else (e.g. arranger/trustee/registrar)
  * is silently ignored.
  */
-const DETAIL_FIELD_MAP = {
-  // request key            : DB column
-  isin                     : 'isin',
-  issuerName               : 'issuer_name',
-  issueDescription         : 'issue_description',
-  typeOfIssuance           : 'type_of_issuance',
-  allotmentDate            : 'allotment_date',
-  faceValue                : 'face_value',
-  amountRaised             : 'amount_raised',
-  coupon                   : 'coupon',
-  price                    : 'price',
-  spread                   : 'spread',
-  yield                    : 'yield',
-  creditRating             : 'credit_rating',
-  typeOfBookBidding        : 'type_of_book_bidding',
-  mannerOfAllotment        : 'manner_of_allotment',
-  mannerOfSettlement       : 'manner_of_settlement',
-  noOfSuccesfulBidders     : 'successful_bidders_category',
-  baseIssueSize            : 'base_issue_size',
-  greenShoeOption          : 'green_shoe_option',
-  tenor                    : 'tenor',
-  securedUnsecured         : 'secured_unsecured',
-  typeOfBidding            : 'type_of_bidding',
-  couponFrequency          : 'coupon_frequency',
-  maturityType             : 'maturity_type',
-  interestPaymentType      : 'interest_payment_type',
-  noOfAnchorInvestors      : 'number_of_anchor_investors',
-  anchorAmount             : 'anchor_amount',
-  totalQibbidding          : 'total_qib_bidding',
-  totalQibamountAccepted   : 'total_qib_amount_accepted',
-  totalNonQibbidding       : 'total_non_qib_bidding',
-  totalNonQibamountAccepted: 'total_non_qib_amount_accepted',
-  cutOffYield              : 'cutoff_yield_price',
-  weightedAverageCutOffYield: 'weighted_average_cutoff_yield_price',
-};
 
-const DETAIL_DATE_COLUMNS = new Set(['allotment_date', 'maturity_date']);
+/* -------------------------------------------------------------------------- */
+/* Type-conversion helpers                                                    */
+/* -------------------------------------------------------------------------- */
 
+/** Strip time from the ISO-derived datetime → "YYYY-MM-DD" (MySQL DATE) */
+function toMysqlDateOnly(input) {
+  const full = parseAllotmentDate(input);
+  if (!full) return null;
+  return full.split(' ')[0];
+}
+
+/** Convert to a JS number for Decimal/Int columns, or null */
+function toNumberOrNull(v) {
+  if (v === null || v === undefined) return null;
+  if (typeof v === 'number') return Number.isFinite(v) ? v : null;
+  const s = String(v).trim();
+  if (s === '' || s === '-' || s === 'N/A' || s === 'NA' || s.toUpperCase() === 'NULL') return null;
+  // Strip currency / commas / whitespace just in case
+  const cleaned = s.replace(/[,\s]/g, '');
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? n : null;
+}
+
+/** Same as above but truncate to integer (for Int columns) */
+function toIntOrNull(v) {
+  const n = toNumberOrNull(v);
+  return n === null ? null : Math.trunc(n);
+}
+
+/** Trim strings; empty / "-" become null so we don't pollute text columns */
+function toStringOrNull(v) {
+  if (v === null || v === undefined) return null;
+  const s = String(v).trim();
+  if (s === '' || s === '-') return null;
+  return s;
+}
+
+/** Uppercase a string for ENUM columns (value is validated by DB) */
+function toEnumOrNull(v) {
+  if (v === null || v === undefined) return null;
+  const s = String(v).trim();
+  if (s === '' || s === '-') return null;
+  return s.toUpperCase();
+}
+
+/** Map coupon frequency text → Int code via master_frequency, or pass through numbers */
+function makeFrequencyConverter(freqMap) {
+  return (v) => {
+    if (v === null || v === undefined) return null;
+    // Numeric pass-through
+    const asNum = toNumberOrNull(v);
+    if (asNum !== null && String(v).trim() !== '' && !/^[a-zA-Z]/.test(String(v).trim())) {
+      return Math.trunc(asNum);
+    }
+    // Lookup by description (case-insensitive)
+    const key = String(v).trim().toUpperCase();
+    if (freqMap.has(key)) return freqMap.get(key);
+    return null;
+  };
+}
+
+/**
+ * Each entry:  requestKey -> { column, convert }
+ * `convert` normalises the raw request value to the DB column's type.
+ * Build the frequency converter lazily after we load master_frequency.
+ */
+function buildFieldMap(freqMap) {
+  return {
+    isin:                      { column: 'isin',                                 convert: v => String(v) },
+    issuerName:                { column: 'issuer_name',                          convert: toStringOrNull },
+    issueDescription:          { column: 'issue_description',                    convert: toStringOrNull },
+    typeOfIssuance:            { column: 'type_of_issuance',                     convert: toStringOrNull },
+    allotmentDate:             { column: 'allotment_date',                       convert: toMysqlDateOnly },
+    faceValue:                 { column: 'face_value',                           convert: toNumberOrNull },
+    amountRaised:              { column: 'amount_raised',                        convert: toNumberOrNull },
+    coupon:                    { column: 'coupon',                               convert: toNumberOrNull },
+    price:                     { column: 'price',                                convert: toNumberOrNull },
+    spread:                    { column: 'spread',                               convert: toNumberOrNull },
+    yield:                     { column: 'yield',                                convert: toNumberOrNull },
+    creditRating:              { column: 'credit_rating',                        convert: toStringOrNull },
+    typeOfBookBidding:         { column: 'type_of_book_bidding',                 convert: toEnumOrNull },
+    mannerOfAllotment:         { column: 'manner_of_allotment',                  convert: toStringOrNull },
+    mannerOfSettlement:        { column: 'manner_of_settlement',                 convert: toStringOrNull },
+    noOfSuccesfulBidders:      { column: 'successful_bidders_category',          convert: toStringOrNull },
+    baseIssueSize:             { column: 'base_issue_size',                      convert: toNumberOrNull },
+    greenShoeOption:           { column: 'green_shoe_option',                    convert: toNumberOrNull },
+    tenor:                     { column: 'tenor',                                convert: toStringOrNull },
+    securedUnsecured:          { column: 'secured_unsecured',                    convert: toEnumOrNull },
+    typeOfBidding:             { column: 'type_of_bidding',                      convert: toStringOrNull },
+    couponFrequency:           { column: 'coupon_frequency',                     convert: makeFrequencyConverter(freqMap) },
+    maturityType:              { column: 'maturity_type',                        convert: toStringOrNull },
+    interestPaymentType:       { column: 'interest_payment_type',                convert: toStringOrNull },
+    noOfAnchorInvestors:       { column: 'number_of_anchor_investors',           convert: toIntOrNull },
+    anchorAmount:              { column: 'anchor_amount',                        convert: toNumberOrNull },
+    totalQibbidding:           { column: 'total_qib_bidding',                    convert: toNumberOrNull },
+    totalQibamountAccepted:    { column: 'total_qib_amount_accepted',            convert: toNumberOrNull },
+    totalNonQibbidding:        { column: 'total_non_qib_bidding',                convert: toNumberOrNull },
+    totalNonQibamountAccepted: { column: 'total_non_qib_amount_accepted',        convert: toNumberOrNull },
+    cutOffYield:               { column: 'cutoff_yield_price',                   convert: toNumberOrNull },
+    weightedAverageCutOffYield:{ column: 'weighted_average_cutoff_yield_price',  convert: toNumberOrNull },
+  };
+}
 /* -------------------------------------------------------------------------- */
 /* Endpoint                                                                   */
 /* -------------------------------------------------------------------------- */
@@ -614,6 +668,22 @@ app.post('/uploadIsinReIssuanceDetails', async (req, res) => {
     }
 
     /* ------------------------------------------------------------------ */
+    /* STEP 0 — Preload master_frequency (for couponFrequency lookup)      */
+    /* ------------------------------------------------------------------ */
+    logInfo(TAG, 'STEP 0: Loading master_frequency');
+    const frequencyRows = await prisma.$queryRawUnsafe(
+      `SELECT code, description FROM master_frequency`
+    );
+    const freqMap = new Map();
+    for (const r of frequencyRows) {
+      const desc = String(r.description || '').trim().toUpperCase();
+      if (desc) freqMap.set(desc, Number(r.code));
+    }
+    logInfo(TAG, `STEP 0 DONE: ${freqMap.size} frequency descriptors cached`);
+
+    const DETAIL_FIELD_MAP = buildFieldMap(freqMap);
+
+    /* ------------------------------------------------------------------ */
     /* STEP 1 — In-request deduplication by isin                           */
     /* ------------------------------------------------------------------ */
     logInfo(TAG, `STEP 1: Deduplicating ${items.length} incoming items`);
@@ -626,7 +696,7 @@ app.post('/uploadIsinReIssuanceDetails', async (req, res) => {
       const item = items[i];
       const isin = item.isin ?? item.ISIN ?? null;
       if (!isin) {
-        uniqueItems.push(item); // keep — will be flagged later
+        uniqueItems.push(item);
         continue;
       }
       if (seen.has(isin)) {
@@ -640,9 +710,7 @@ app.post('/uploadIsinReIssuanceDetails', async (req, res) => {
     }
     logInfo(TAG, `STEP 1 DONE: ${uniqueItems.length} unique / ${inRequestBodyDupCount} in-request duplicates removed`);
 
-    // In-request cache: re_issuance_id -> details row id
-    const detailsIdCache = new Map();
-
+    const detailsIdCache = new Map(); // re_issuance_id -> { id, action }
     const results = [];
 
     /* ------------------------------------------------------------------ */
@@ -667,11 +735,11 @@ app.post('/uploadIsinReIssuanceDetails', async (req, res) => {
         continue;
       }
 
-      /* ---- Resolve re_issuance_id from isin_re_issuance ---- */
+      /* ---- Resolve re_issuance_id ---- */
       logDebug(itemTag, 'Resolving re_issuance_id from isin_re_issuance by isin');
 
       const reIssuanceRow = await prisma.$queryRawUnsafe(
-        `SELECT id, isin FROM isin_re_issuance
+        `SELECT id FROM isin_re_issuance
            WHERE isin = ?
            ORDER BY id DESC LIMIT 1`,
         isin
@@ -688,32 +756,35 @@ app.post('/uploadIsinReIssuanceDetails', async (req, res) => {
       }
 
       const reIssuanceId = Number(reIssuanceRow[0].id);
-      logInfo(itemTag, `Resolved re_issuance_id=${reIssuanceId} for ISIN=${isin}`);
+      logInfo(itemTag, `Resolved re_issuance_id=${reIssuanceId}`);
 
-      /* ---- Build the set of provided columns & values ---- */
+      /* ---- Build the column/value lists using per-field converters ---- */
       const providedColumns = [];
       const providedValues  = [];
 
-      for (const [reqKey, column] of Object.entries(DETAIL_FIELD_MAP)) {
-        let val = item[reqKey];
-        if (val === undefined) continue;
+      for (const [reqKey, { column, convert }] of Object.entries(DETAIL_FIELD_MAP)) {
+        if (!(reqKey in item)) continue;
 
-        // Normalise date fields
-        if (val !== null && val !== '' && DETAIL_DATE_COLUMNS.has(column)) {
-          const parsed = parseAllotmentDate(val);
-          if (!parsed) {
-            logWarn(itemTag, `Invalid date for "${reqKey}": ${val} — will be written as NULL`);
-            val = null;
-          } else {
-            val = parsed;
-          }
+        let converted;
+        try {
+          converted = convert(item[reqKey]);
+        } catch (convErr) {
+          logWarn(itemTag, `Conversion failed for "${reqKey}" (value=${item[reqKey]}) — writing NULL`, {
+            error: convErr.message,
+          });
+          converted = null;
         }
 
         providedColumns.push(column);
-        providedValues.push(val);
+        providedValues.push(converted);
+
+        logDebug(itemTag, `  field ${reqKey} -> ${column}`, {
+          raw: item[reqKey],
+          converted,
+        });
       }
 
-      // Ensure isin is always present in the write
+      // Ensure `isin` is always included
       if (!providedColumns.includes('isin')) {
         providedColumns.push('isin');
         providedValues.push(isin);
@@ -721,33 +792,29 @@ app.post('/uploadIsinReIssuanceDetails', async (req, res) => {
 
       logDebug(itemTag, `Provided columns (${providedColumns.length})`, providedColumns);
 
-      /* ---- Upsert into isin_re_issuance_details ---- */
+      /* ---- Upsert ---- */
       try {
         logDebug(itemTag, 'BEGIN transaction');
         const txStart = Date.now();
 
         const txResult = await prisma.$transaction(async (tx) => {
-          /* Check in-request cache first */
           const cached = detailsIdCache.get(reIssuanceId);
 
           if (cached) {
             logInfo(itemTag,
-              `  → isin_re_issuance_details id=${cached.id} already handled in this request — updating to latest values`);
+              `  → isin_re_issuance_details id=${cached.id} already handled in this request — updating`);
 
-            const setClause = providedColumns.map(c => `${c} = ?`).join(', ');
+            const setClause = providedColumns.map(c => `\`${c}\` = ?`).join(', ');
             const params = [...providedValues, cached.id];
 
             await tx.$executeRawUnsafe(
-              `UPDATE isin_re_issuance_details
-                  SET ${setClause}
-                WHERE id = ?`,
+              `UPDATE isin_re_issuance_details SET ${setClause} WHERE id = ?`,
               ...params
             );
 
             return { detailsId: cached.id, action: 'updated_in_request' };
           }
 
-          /* Look up existing row by re_issuance_id */
           const existing = await tx.$queryRawUnsafe(
             `SELECT id FROM isin_re_issuance_details
                WHERE re_issuance_id = ?
@@ -756,37 +823,29 @@ app.post('/uploadIsinReIssuanceDetails', async (req, res) => {
           );
 
           if (existing && existing.length > 0) {
-            /* ---- UPDATE ---- */
             const detailsId = Number(existing[0].id);
             logInfo(itemTag,
-              `  → isin_re_issuance_details id=${detailsId} EXISTS for re_issuance_id=${reIssuanceId} — updating`);
+              `  → isin_re_issuance_details id=${detailsId} EXISTS — updating`);
 
-            const setClause = providedColumns.map(c => `${c} = ?`).join(', ');
+            const setClause = providedColumns.map(c => `\`${c}\` = ?`).join(', ');
             const params = [...providedValues, detailsId];
 
             await tx.$executeRawUnsafe(
-              `UPDATE isin_re_issuance_details
-                  SET ${setClause}
-                WHERE id = ?`,
+              `UPDATE isin_re_issuance_details SET ${setClause} WHERE id = ?`,
               ...params
             );
 
             return { detailsId, action: 'updated' };
           }
 
-          /* ---- INSERT ---- */
-          logDebug(itemTag, 'INSERT isin_re_issuance_details (new row)', {
-            re_issuance_id: reIssuanceId,
-            columns: providedColumns,
-          });
-
+          /* INSERT */
           const insertColumns = ['re_issuance_id', ...providedColumns];
           const placeholders  = insertColumns.map(() => '?').join(', ');
           const params        = [reIssuanceId, ...providedValues];
 
           await tx.$executeRawUnsafe(
             `INSERT INTO isin_re_issuance_details
-               (${insertColumns.join(', ')})
+               (${insertColumns.map(c => `\`${c}\``).join(', ')})
              VALUES (${placeholders})`,
             ...params
           );
@@ -795,7 +854,7 @@ app.post('/uploadIsinReIssuanceDetails', async (req, res) => {
           );
           const detailsId = Number(id);
           logInfo(itemTag,
-            `  → Created isin_re_issuance_details id=${detailsId} (re_issuance_id=${reIssuanceId})`);
+            `  → Created isin_re_issuance_details id=${detailsId}`);
 
           return { detailsId, action: 'inserted' };
         });
@@ -806,7 +865,7 @@ app.post('/uploadIsinReIssuanceDetails', async (req, res) => {
         });
 
         logInfo(itemTag,
-          `COMMIT transaction (${Date.now() - txStart} ms) — action=${txResult.action}, detailsId=${txResult.detailsId}`);
+          `COMMIT (${Date.now() - txStart} ms) — action=${txResult.action}, detailsId=${txResult.detailsId}`);
 
         results.push({
           isin,
@@ -819,11 +878,7 @@ app.post('/uploadIsinReIssuanceDetails', async (req, res) => {
         logInfo(itemTag, `✔ Item done — ${txResult.action.toUpperCase()}`);
       } catch (err) {
         logError(itemTag, `ROLLBACK transaction — ${err.message}`, { stack: err.stack });
-        results.push({
-          isin,
-          status: 'error',
-          reason: err.message,
-        });
+        results.push({ isin, status: 'error', reason: err.message });
       }
     }
 
@@ -843,7 +898,7 @@ app.post('/uploadIsinReIssuanceDetails', async (req, res) => {
     logInfo(TAG, `  inserted            : ${inserted}`);
     logInfo(TAG, `  updated             : ${updated}`);
     logInfo(TAG, `  updated_in_request  : ${updatedInReq}`);
-    logInfo(TAG, `  skipped (invalid)   : ${skipped}`);
+    logInfo(TAG, `  skipped             : ${skipped}`);
     logInfo(TAG, `  errored             : ${errored}`);
     logInfo(TAG, `  duration            : ${Date.now() - startedAt} ms`);
     logInfo(TAG, '◀ Request completed');
