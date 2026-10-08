@@ -561,7 +561,6 @@ const DETAIL_FIELD_MAP = {
   allotmentDate            : 'allotment_date',
   faceValue                : 'face_value',
   amountRaised             : 'amount_raised',
-  maturityDate             : 'maturity_date',
   coupon                   : 'coupon',
   price                    : 'price',
   spread                   : 'spread',
