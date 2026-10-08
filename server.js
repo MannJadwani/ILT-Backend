@@ -579,12 +579,48 @@ function toStringOrNull(v) {
   return s;
 }
 
-/** Uppercase a string for ENUM columns (value is validated by DB) */
-function toEnumOrNull(v) {
+
+/* -------------------------------------------------------------------------- */
+/* ENUM normalizers                                                           */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * type_of_book_bidding: enum('open','closed')
+ * Request values seen: "OPEN", "CLOSE", "CLOSED" → normalise to "open" / "closed"
+ */
+function toBookBiddingEnum(v) {
   if (v === null || v === undefined) return null;
-  const s = String(v).trim();
+  const s = String(v).trim().toUpperCase();
   if (s === '' || s === '-') return null;
-  return s.toUpperCase();
+
+  // explicit synonym map
+  if (s === 'OPEN' || s === 'OPENED')                    return 'open';
+  if (s === 'CLOSE' || s === 'CLOSED' || s === 'CLOSING') return 'closed';
+
+  // already one of the canonical values (any case)
+  const lower = s.toLowerCase();
+  if (lower === 'open' || lower === 'closed') return lower;
+
+  return null;
+}
+
+/**
+ * secured_unsecured: enum('secured','unsecured')
+ * Request values seen: "SECURED", "UNSECURED" → normalise to lowercase
+ */
+function toSecuredEnum(v) {
+  if (v === null || v === undefined) return null;
+  const s = String(v).trim().toUpperCase();
+  if (s === '' || s === '-') return null;
+
+  const lower = s.toLowerCase();
+  if (lower === 'secured' || lower === 'unsecured') return lower;
+
+  // fallback synonyms
+  if (s === 'SEC' || s === 'SECURE') return 'secured';
+  if (s === 'UNSEC' || s === 'UNSECURE') return 'unsecured';
+
+  return null;
 }
 
 /** Map coupon frequency text → Int code via master_frequency, or pass through numbers */
@@ -622,14 +658,14 @@ function buildFieldMap(freqMap) {
     spread:                    { column: 'spread',                               convert: toNumberOrNull },
     yield:                     { column: 'yield',                                convert: toNumberOrNull },
     creditRating:              { column: 'credit_rating',                        convert: toStringOrNull },
-    typeOfBookBidding:         { column: 'type_of_book_bidding',                 convert: toEnumOrNull },
+    typeOfBookBidding:         { column: 'type_of_book_bidding',                 convert: toBookBiddingEnum  }, // ← CHANGED
     mannerOfAllotment:         { column: 'manner_of_allotment',                  convert: toStringOrNull },
     mannerOfSettlement:        { column: 'manner_of_settlement',                 convert: toStringOrNull },
     noOfSuccesfulBidders:      { column: 'successful_bidders_category',          convert: toStringOrNull },
     baseIssueSize:             { column: 'base_issue_size',                      convert: toNumberOrNull },
     greenShoeOption:           { column: 'green_shoe_option',                    convert: toNumberOrNull },
     tenor:                     { column: 'tenor',                                convert: toStringOrNull },
-    securedUnsecured:          { column: 'secured_unsecured',                    convert: toEnumOrNull },
+    securedUnsecured:          { column: 'secured_unsecured',                    convert: toSecuredEnum       }, // ← CHANGED
     typeOfBidding:             { column: 'type_of_bidding',                      convert: toStringOrNull },
     couponFrequency:           { column: 'coupon_frequency',                     convert: makeFrequencyConverter(freqMap) },
     maturityType:              { column: 'maturity_type',                        convert: toStringOrNull },
