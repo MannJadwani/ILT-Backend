@@ -1697,7 +1697,7 @@ app.post('/uploadIssuers', async (req, res) => {
     logInfo(TAG, `STEP 3: Processing ${uniqueItems.length} unique items`);
 
     for (let idx = 0; idx < uniqueItems.length; idx++) {
-      await delay(30);
+      await delay(20);
       const item = uniqueItems[idx];
       const itemTag = `${TAG}:item[${idx}]`;
 
