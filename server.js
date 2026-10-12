@@ -7365,7 +7365,7 @@ app.post('/issuePage_detailed_data', async (req, res) => {
     const securityType = toArray(req.body.securityType);
     const modeOfIssue = toArray(req.body.modeOfIssue);
 
-    const parsedLimit = Math.min(Math.max(parseInt(limit) || 25, 1), 1000);
+    const parsedLimit = Math.min(Math.max(parseInt(limit) || 25, 1), 10000);
     const parsedOffset = Math.max(parseInt(offset) || 0, 0);
 
     if (!startDate || !endDate) {
@@ -10677,7 +10677,7 @@ app.post('/arrangerPage_detailed_data', async (req, res) => {
     )));
 
     // Validate and sanitize limit/offset
-    const safeLimit = Math.max(1, Math.min(1000, parseInt(limit, 10) || 25));
+    const safeLimit = Math.min(Math.max(parseInt(limit) || 25, 1), 10000);
     const safeOffset = Math.max(0, parseInt(offset, 10) || 0);
 
     // ---------------------
@@ -14736,7 +14736,7 @@ app.post('/trusteePage_detailed_data', async (req, res) => {
     )));
 
     // Validate and sanitize limit/offset
-    const safeLimit = Math.max(1, Math.min(1000, parseInt(limit, 10) || 25));
+    const safeLimit = Math.min(Math.max(parseInt(limit) || 25, 1), 10000);
     const safeOffset = Math.max(0, parseInt(offset, 10) || 0);
 
     // ─────────────────────
@@ -18203,7 +18203,7 @@ app.post('/agencyPage_detailed_data', async (req, res) => {
     )));
 
     // Validate and sanitize limit/offset
-    const safeLimit = Math.max(1, Math.min(1000, parseInt(limit, 10) || 25));
+    const safeLimit = Math.min(Math.max(parseInt(limit) || 25, 1), 10000);
     const safeOffset = Math.max(0, parseInt(offset, 10) || 0);
 
     // ─────────────────────
@@ -21392,7 +21392,7 @@ app.post('/registrarPage_detailed_data', async (req, res) => {
     const registrar = req.body.registrar || "";
 
     // ── VALIDATION ──
-    const parsedLimit = parseInt(limit, 10);
+    const parsedLimit = Math.min(Math.max(parseInt(limit) || 25, 1), 10000);
     const parsedOffset = parseInt(offset, 10);
 
     if (isNaN(parsedLimit) || parsedLimit < 0) {
