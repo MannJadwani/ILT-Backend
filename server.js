@@ -350,39 +350,121 @@ function nameSimilarity(a, b) {
   const na = normalizeName(a);
   const nb = normalizeName(b);
   if (!na || !nb) return 0;
+
+  // Exact normalized match is always best.
+  if (na === nb) return 1;
+
   const lev = 1 - levenshtein(na, nb) / Math.max(na.length, nb.length);
+
   const ta = new Set(na.split(' ').filter(Boolean));
   const tb = new Set(nb.split(' ').filter(Boolean));
+
   const inter = [...ta].filter(t => tb.has(t)).length;
   const union = new Set([...ta, ...tb]).size;
   const jaccard = union === 0 ? 0 : inter / union;
-  const shorter = ta.size <= tb.size ? ta : tb;
-  const longer = ta.size <= tb.size ? tb : ta;
-  const containsAll = [...shorter].every(t => longer.has(t));
-  const containment = containsAll ? 1 : inter / shorter.size;
-  return Math.max(lev, jaccard, containment);
+
+  // Token F1 penalizes extra tokens.
+  // "piramal finance ltd" vs "piramal capital and housing finance ltd"
+  // will NOT be 1 anymore.
+  const precision = tb.size === 0 ? 0 : inter / tb.size;
+  const recall = ta.size === 0 ? 0 : inter / ta.size;
+  const f1 = precision + recall === 0
+    ? 0
+    : (2 * precision * recall) / (precision + recall);
+
+  return Math.max(lev, jaccard, f1);
 }
 
 function findBestMatch(issuerName, issuers, tag = 'findBestMatch') {
-  let best = null, bestScore = 0;
-  logDebug(tag, `Looking for match for: "${issuerName}" (${issuers.length} candidates)`);
+  const targetNorm = normalizeName(issuerName);
+
+  // 1. Exact normalized match wins immediately.
+  for (const issuer of issuers) {
+    if (!issuer) continue;
+
+    const candidateName =
+      issuer.issuer_name ?? issuer.issuerName ?? issuer.name ?? null;
+
+    if (!candidateName) continue;
+
+    if (normalizeName(candidateName) === targetNorm) {
+      logInfo(
+        tag,
+        `Exact normalized match: "${candidateName}" (id=${issuer.id})`
+      );
+      return {
+        issuer: { ...issuer, id: Number(issuer.id) },
+        score: 1,
+      };
+    }
+  }
+
+  // 2. Fuzzy matching only if no exact normalized match exists.
+  let best = null;
+  let bestScore = 0;
+  let bestTokenDiff = Infinity;
+  let bestLevDist = Infinity;
+
+  logDebug(
+    tag,
+    `No exact match for "${issuerName}", running fuzzy match against ${issuers.length} candidates`
+  );
 
   for (const issuer of issuers) {
     if (!issuer) continue;
-    const candidateName = issuer.issuer_name ?? issuer.issuerName ?? issuer.name ?? null;
+
+    const candidateName =
+      issuer.issuer_name ?? issuer.issuerName ?? issuer.name ?? null;
+
     if (!candidateName) continue;
-    const score = nameSimilarity(issuerName, String(candidateName));
-    if (score > bestScore) {
+
+    const candidateNorm = normalizeName(candidateName);
+    const score = nameSimilarity(issuerName, candidateName);
+
+    const tokenDiff = Math.abs(
+      targetNorm.split(' ').length - candidateNorm.split(' ').length
+    );
+    const levDist = levenshtein(targetNorm, candidateNorm);
+
+    const isBetter =
+      score > bestScore ||
+      (score === bestScore && tokenDiff < bestTokenDiff) ||
+      (score === bestScore &&
+        tokenDiff === bestTokenDiff &&
+        levDist < bestLevDist);
+
+    if (isBetter) {
       bestScore = score;
+      bestTokenDiff = tokenDiff;
+      bestLevDist = levDist;
       best = issuer;
-      logDebug(tag, `New best: "${candidateName}" -> ${score.toFixed(4)}`);
+
+      logDebug(
+        tag,
+        `New best: "${candidateName}" -> score=${score.toFixed(4)}, tokenDiff=${tokenDiff}, lev=${levDist}`
+      );
     }
   }
+
   if (bestScore >= 0.7 && best) {
-    logInfo(tag, `Match accepted: "${best.issuer_name}" (id=${best.id}) score=${bestScore.toFixed(4)}`);
-    return { issuer: { ...best, id: Number(best.id) }, score: bestScore };
+    const bestName =
+      best.issuer_name ?? best.issuerName ?? best.name ?? '(unknown)';
+
+    logInfo(
+      tag,
+      `Match accepted: "${bestName}" (id=${best.id}) score=${bestScore.toFixed(4)}`
+    );
+
+    return {
+      issuer: { ...best, id: Number(best.id) },
+      score: bestScore,
+    };
   }
-  logInfo(tag, `No match found (bestScore=${bestScore.toFixed(4)}) for "${issuerName}"`);
+
+  logInfo(
+    tag,
+    `No match found (bestScore=${bestScore.toFixed(4)}) for "${issuerName}"`
+  );
   return null;
 }
 
