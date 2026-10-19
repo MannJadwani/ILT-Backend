@@ -4145,286 +4145,10 @@ app.post('/bulk-arrangers', async (req, res) => {
   }
 });
 
-// merge arrangers 
-app.post('/merge-arrangers', async (req, res) => {
-  try {
-    const { mainArrangerId, mergeArrangerIds } = req.body;
 
-    // ─── Step 1: Validate Request ──────────────────────────────────────
-    if (!mainArrangerId || typeof mainArrangerId !== 'number') {
-      return res.status(400).json({
-        success: false,
-        message: 'mainArrangerId is required and must be a number'
-      });
-    }
-
-    if (!Array.isArray(mergeArrangerIds) || mergeArrangerIds.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'mergeArrangerIds must be a non-empty array'
-      });
-    }
-
-    if (mergeArrangerIds.includes(mainArrangerId)) {
-      return res.status(400).json({
-        success: false,
-        message: 'mergeArrangerIds cannot include the mainArrangerId'
-      });
-    }
-
-    const mergeIdsString = mergeArrangerIds.join(', ');
-
-    // ─── Execute everything inside a single Prisma transaction ───────
-    const result = await prisma.$transaction(async (tx) => {
-
-      // ── Step 1b: Verify main arranger exists ──────────────────────
-      const mainArrangers = await tx.$queryRawUnsafe(`
-        SELECT id, arranger_name, parent_id 
-        FROM master_arranger 
-        WHERE id = ${mainArrangerId} 
-        LIMIT 1
-      `);
-
-      if (!mainArrangers || mainArrangers.length === 0) {
-        throw new Error(`Main arranger with id ${mainArrangerId} not found`);
-      }
-
-      const parentId = parseInt(mainArrangers[0].parent_id, 10) || 0;
-
-      if (parentId !== 0) {
-        throw new Error(`Cannot merge into arranger ${mainArrangerId} because it is already merged into arranger ${parentId}`);
-      }
-
-      // ── Step 2: Update duplicate arrangers' parent_id ─────────────
-      await tx.$queryRawUnsafe(`
-        UPDATE master_arranger 
-        SET parent_id = ${mainArrangerId} 
-        WHERE id IN (${mergeIdsString})
-      `);
-
-      // ── Step 3: Fetch ALL issuer_arranger records to be migrated ──
-      // Get full rows (issuer_id + arranger_id) not just distinct
-      const mappingsToMigrate = await tx.$queryRawUnsafe(`
-        SELECT issuer_id, arranger_id 
-        FROM issuer_arranger 
-        WHERE arranger_id IN (${mergeIdsString})
-      `);
-
-      if (!mappingsToMigrate || mappingsToMigrate.length === 0) {
-        return {
-          mainArrangerId,
-          mergedArrangers: mergeArrangerIds,
-          migratedMappings: 0,
-          skippedDuplicates: 0,
-          updatedIssuers: []
-        };
-      }
-
-      const affectedIssuerIds = [];
-      let skippedDuplicates = 0;
-
-      // ── Steps 4-7: Process each mapping individually ──────────────
-      for (const mapping of mappingsToMigrate) {
-        const { issuer_id, arranger_id: oldArrangerId } = mapping;
-
-        // Collect unique affected issuer IDs for Step 8
-        if (!affectedIssuerIds.includes(issuer_id)) {
-          affectedIssuerIds.push(issuer_id);
-        }
-
-        // Step 5: Delete the old mapping
-        await tx.$queryRawUnsafe(`
-          DELETE FROM issuer_arranger 
-          WHERE issuer_id = ${issuer_id} 
-          AND arranger_id = ${oldArrangerId}
-        `);
-
-        // Step 7: Check if new mapping already exists
-        const existingMapping = await tx.$queryRawUnsafe(`
-          SELECT issuer_id, arranger_id 
-          FROM issuer_arranger 
-          WHERE issuer_id = ${issuer_id} 
-          AND arranger_id = ${mainArrangerId} 
-          LIMIT 1
-        `);
-
-        if (existingMapping && existingMapping.length > 0) {
-          // Duplicate exists — skip insert
-          skippedDuplicates++;
-        } else {
-          // Step 6: Create new mapping
-          await tx.$queryRawUnsafe(`
-            INSERT INTO issuer_arranger (issuer_id, arranger_id) 
-            VALUES (${issuer_id}, ${mainArrangerId})
-          `);
-        }
-      }
-
-      // ── Step 8: Update master_issuer.is_updated for all affected ──
-      if (affectedIssuerIds.length > 0) {
-        const issuerIdsString = affectedIssuerIds.join(', ');
-
-        await tx.$queryRawUnsafe(`
-          UPDATE master_issuer 
-          SET is_updated = true 
-          WHERE id IN (${issuerIdsString})
-        `);
-      }
-
-      return {
-        mainArrangerId,
-        mergedArrangers: mergeArrangerIds,
-        migratedMappings: mappingsToMigrate.length,
-        skippedDuplicates,
-        updatedIssuers: affectedIssuerIds
-      };
-
-    }, {
-      maxWait: 10000,
-      timeout: 60000  // Increased to 60 seconds for large datasets
-    });
-
-    return res.status(200).json({
-      success: true,
-      message: 'Arrangers merged successfully',
-      data: result
-    });
-
-  } catch (err) {
-    console.error('Merge arrangers error:', err);
-
-    const statusCode = err.message?.includes('not found') ||
-      err.message?.includes('Cannot merge')
-      ? 400 : 500;
-
-    return res.status(statusCode).json({
-      success: false,
-      message: err.message || 'Internal server error during merge operation'
-    });
-  }
-});
 
 // ─── API: Get Similar Arrangers ────────────────────────────────────
-app.get('/arrangers/similar/:arrangerId', async (req, res) => {
-  try {
-    const { arrangerId } = req.params;
-    const { threshold = 50 } = req.query; // default 50% similarity
 
-    const similarityThreshold = parseFloat(threshold);
-    if (isNaN(similarityThreshold) || similarityThreshold < 0 || similarityThreshold > 100) {
-      return res.status(400).json({
-        success: false,
-        message: 'threshold must be a number between 0 and 100'
-      });
-    }
-
-    const arrangerIdNum = parseInt(arrangerId, 10);
-    if (isNaN(arrangerIdNum)) {
-      return res.status(400).json({
-        success: false,
-        message: 'arrangerId must be a valid number'
-      });
-    }
-
-    // ── Step 1: Fetch the main arranger ───────────────────────────
-    const mainArrangers = await prisma.$queryRawUnsafe(`
-      SELECT id, short_name, arranger_name, parent_id
-      FROM master_arranger
-      WHERE id = ${arrangerIdNum}
-      LIMIT 1
-    `);
-
-    if (!mainArrangers || mainArrangers.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: `Arranger with id ${arrangerIdNum} not found`
-      });
-    }
-
-    const mainArranger = mainArrangers[0];
-    const mainName = mainArranger.short_name || mainArranger.arranger_name;
-
-    if (!mainName || !mainName.trim()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Main arranger has no name to compare against'
-      });
-    }
-
-    // ── Step 2: Fetch all other arrangers (exclude main + already merged) ─
-    const allArrangers = await prisma.$queryRawUnsafe(`
-      SELECT id, short_name, arranger_name, parent_id
-      FROM master_arranger
-      WHERE id != ${arrangerIdNum}
-      ORDER BY short_name ASC
-    `);
-
-    if (!allArrangers || allArrangers.length === 0) {
-      return res.status(200).json({
-        success: true,
-        message: 'No other arrangers found to compare',
-        data: {
-          mainArranger: {
-            id: mainArranger.id,
-            name: mainName,
-            short_name: mainArranger.short_name,
-            arranger_name: mainArranger.arranger_name
-          },
-          similarArrangers: [],
-          totalFound: 0
-        }
-      });
-    }
-
-    // ── Step 3: Calculate similarity for each arranger ────────────
-    const similarArrangers = [];
-
-    for (const arranger of allArrangers) {
-      const compareName = arranger.arranger_name || arranger.short_name;
-
-      if (!compareName || !compareName.trim()) continue;
-
-      const similarity = getCombinedSimilarity(mainName, compareName);
-
-      if (similarity >= similarityThreshold) {
-        similarArrangers.push({
-          id: arranger.id,
-          name: compareName,
-          short_name: arranger.short_name,
-          arranger_name: arranger.arranger_name,
-          similarity: parseFloat(similarity.toFixed(2)),
-          similarityFormatted: `${similarity.toFixed(2)}%`
-        });
-      }
-    }
-
-    // ── Step 4: Sort by similarity (highest first) ────────────────
-    similarArrangers.sort((a, b) => b.similarity - a.similarity);
-
-    return res.status(200).json({
-      success: true,
-      message: `Found ${similarArrangers.length} similar arrangers`,
-      data: {
-        mainArranger: {
-          id: mainArranger.id,
-          name: mainName,
-          short_name: mainArranger.short_name,
-          arranger_name: mainArranger.arranger_name
-        },
-        similarArrangers,
-        totalFound: similarArrangers.length,
-        threshold: similarityThreshold
-      }
-    });
-
-  } catch (err) {
-    console.error('Get similar arrangers error:', err);
-    return res.status(500).json({
-      success: false,
-      message: err.message || 'Internal server error'
-    });
-  }
-});
 
 app.post('/admin-arrangers', async (req, res) => {
   try {
@@ -4556,6 +4280,187 @@ app.post('/admin-trustees', async (req, res) => {
 
 })
 
+app.post('/admin-agencies', async (req, res) => {
+  try {
+    const { limit = 10, offset = 0 } = req.body;
+
+    // Validate pagination params
+    const take = parseInt(limit, 10);
+    const skip = parseInt(offset, 10);
+
+    if (isNaN(take) || take < 1) {
+      return res.status(400).json({ error: 'Invalid limit. Must be a positive number.' });
+    }
+    if (isNaN(skip) || skip < 0) {
+      return res.status(400).json({ error: 'Invalid offset. Must be a non-negative number.' });
+    }
+
+    // Fetch paginated data
+    // (parameterized: Prisma binds take/skip, no string interpolation into SQL)
+    const agencies = await prisma.$queryRaw`
+      SELECT
+        id,
+        agency_code,
+        short_name,
+        agency_name,
+        is_active,
+        is_deleted,
+        parent_id
+      FROM master_agency
+      WHERE parent_id = 0
+      ORDER BY agency_name ASC
+      LIMIT ${take} OFFSET ${skip}
+    `;
+
+    // Fetch total count for pagination metadata
+    const countResult = await prisma.$queryRaw`
+      SELECT COUNT(*) AS total
+      FROM master_agency
+      WHERE parent_id = 0
+    `;
+    const total = parseInt(countResult[0].total, 10);
+
+    return res.json({
+      success: true,
+      data: agencies,
+      pagination: {
+        total,
+        limit: take,
+        offset: skip,
+        hasMore: skip + agencies.length < total
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching agencies:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to fetch agencies'
+    });
+  }
+});
+
+app.get('/arrangers/similar/:arrangerId', async (req, res) => {
+  try {
+    const { arrangerId } = req.params;
+    const { threshold = 50 } = req.query; // default 50% similarity
+
+    const similarityThreshold = parseFloat(threshold);
+    if (isNaN(similarityThreshold) || similarityThreshold < 0 || similarityThreshold > 100) {
+      return res.status(400).json({
+        success: false,
+        message: 'threshold must be a number between 0 and 100'
+      });
+    }
+
+    const arrangerIdNum = parseInt(arrangerId, 10);
+    if (isNaN(arrangerIdNum)) {
+      return res.status(400).json({
+        success: false,
+        message: 'arrangerId must be a valid number'
+      });
+    }
+
+    // ── Step 1: Fetch the main arranger ───────────────────────────
+    const mainArrangers = await prisma.$queryRawUnsafe(`
+      SELECT id, short_name, arranger_name, parent_id
+      FROM master_arranger
+      WHERE id = ${arrangerIdNum}
+      LIMIT 1
+    `);
+
+    if (!mainArrangers || mainArrangers.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: `Arranger with id ${arrangerIdNum} not found`
+      });
+    }
+
+    const mainArranger = mainArrangers[0];
+    const mainName = mainArranger.short_name || mainArranger.arranger_name;
+
+    if (!mainName || !mainName.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Main arranger has no name to compare against'
+      });
+    }
+
+    // ── Step 2: Fetch all other arrangers (exclude main + already merged) ─
+    const allArrangers = await prisma.$queryRawUnsafe(`
+      SELECT id, short_name, arranger_name, parent_id
+      FROM master_arranger
+      WHERE id != ${arrangerIdNum}
+      ORDER BY short_name ASC
+    `);
+
+    if (!allArrangers || allArrangers.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: 'No other arrangers found to compare',
+        data: {
+          mainArranger: {
+            id: mainArranger.id,
+            name: mainName,
+            short_name: mainArranger.short_name,
+            arranger_name: mainArranger.arranger_name
+          },
+          similarArrangers: [],
+          totalFound: 0
+        }
+      });
+    }
+
+    // ── Step 3: Calculate similarity for each arranger ────────────
+    const similarArrangers = [];
+
+    for (const arranger of allArrangers) {
+      const compareName = arranger.arranger_name || arranger.short_name;
+
+      if (!compareName || !compareName.trim()) continue;
+
+      const similarity = getCombinedSimilarity(mainName, compareName);
+
+      if (similarity >= similarityThreshold) {
+        similarArrangers.push({
+          id: arranger.id,
+          name: compareName,
+          short_name: arranger.short_name,
+          arranger_name: arranger.arranger_name,
+          similarity: parseFloat(similarity.toFixed(2)),
+          similarityFormatted: `${similarity.toFixed(2)}%`
+        });
+      }
+    }
+
+    // ── Step 4: Sort by similarity (highest first) ────────────────
+    similarArrangers.sort((a, b) => b.similarity - a.similarity);
+
+    return res.status(200).json({
+      success: true,
+      message: `Found ${similarArrangers.length} similar arrangers`,
+      data: {
+        mainArranger: {
+          id: mainArranger.id,
+          name: mainName,
+          short_name: mainArranger.short_name,
+          arranger_name: mainArranger.arranger_name
+        },
+        similarArrangers,
+        totalFound: similarArrangers.length,
+        threshold: similarityThreshold
+      }
+    });
+
+  } catch (err) {
+    console.error('Get similar arrangers error:', err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || 'Internal server error'
+    });
+  }
+});
+
 app.get('/trustees/similar/:trusteeId', async (req, res) => {
   try {
     const { trusteeId } = req.params;
@@ -4682,6 +4587,136 @@ app.get('/trustees/similar/:trusteeId', async (req, res) => {
 
   } catch (err) {
     console.error('Get similar trustees error:', err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || 'Internal server error'
+    });
+  }
+});
+
+app.get('/agencies/similar/:agencyId', async (req, res) => {
+  try {
+    const { agencyId } = req.params;
+    const { threshold = 50 } = req.query; // default 50% similarity
+
+    const similarityThreshold = parseFloat(threshold);
+    if (isNaN(similarityThreshold) || similarityThreshold < 0 || similarityThreshold > 100) {
+      return res.status(400).json({
+        success: false,
+        message: 'threshold must be a number between 0 and 100'
+      });
+    }
+
+    const agencyIdNum = parseInt(agencyId, 10);
+    if (isNaN(agencyIdNum)) {
+      return res.status(400).json({
+        success: false,
+        message: 'agencyId must be a valid number'
+      });
+    }
+
+    // ── Step 1: Fetch the main agency ────────────────────────────
+    const mainAgencies = await prisma.$queryRawUnsafe(`
+      SELECT id, agency_code, short_name, agency_name, parent_id, is_active, is_deleted
+      FROM master_agency
+      WHERE id = ${agencyIdNum}
+      LIMIT 1
+    `);
+
+    if (!mainAgencies || mainAgencies.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: `Agency with id ${agencyIdNum} not found`
+      });
+    }
+
+    const mainAgency = mainAgencies[0];
+    const mainName = mainAgency.agency_name || mainAgency.short_name;
+
+    if (!mainName || !mainName.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Main agency has no name to compare against'
+      });
+    }
+
+    // ── Step 2: Fetch all other agencies (exclude main + already merged) ─
+    const allAgencies = await prisma.$queryRawUnsafe(`
+      SELECT id, agency_code, short_name, agency_name, parent_id, is_active, is_deleted
+      FROM master_agency
+      WHERE id != ${agencyIdNum}
+      ORDER BY agency_name ASC
+    `);
+
+    if (!allAgencies || allAgencies.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: 'No other agencies found to compare',
+        data: {
+          mainAgency: {
+            id: mainAgency.id,
+            name: mainName,
+            short_name: mainAgency.short_name,
+            agency_name: mainAgency.agency_name,
+            agency_code: mainAgency.agency_code,
+            is_active: mainAgency.is_active,
+            is_deleted: mainAgency.is_deleted
+          },
+          similarAgencies: [],
+          totalFound: 0
+        }
+      });
+    }
+
+    // ── Step 3: Calculate similarity for each agency ────────────
+    const similarAgencies = [];
+
+    for (const agency of allAgencies) {
+      const compareName = agency.agency_name || agency.short_name;
+
+      if (!compareName || !compareName.trim()) continue;
+
+      const similarity = getCombinedSimilarity(mainName, compareName);
+
+      if (similarity >= similarityThreshold) {
+        similarAgencies.push({
+          id: agency.id,
+          name: compareName,
+          short_name: agency.short_name,
+          agency_name: agency.agency_name,
+          agency_code: agency.agency_code,
+          is_active: agency.is_active,
+          is_deleted: agency.is_deleted,
+          similarity: parseFloat(similarity.toFixed(2)),
+          similarityFormatted: `${similarity.toFixed(2)}%`
+        });
+      }
+    }
+
+    // ── Step 4: Sort by similarity (highest first) ────────────────
+    similarAgencies.sort((a, b) => b.similarity - a.similarity);
+
+    return res.status(200).json({
+      success: true,
+      message: `Found ${similarAgencies.length} similar agencies`,
+      data: {
+        mainAgency: {
+          id: mainAgency.id,
+          name: mainName,
+          short_name: mainAgency.short_name,
+          agency_name: mainAgency.agency_name,
+          agency_code: mainAgency.agency_code,
+          is_active: mainAgency.is_active,
+          is_deleted: mainAgency.is_deleted
+        },
+        similarAgencies,
+        totalFound: similarAgencies.length,
+        threshold: similarityThreshold
+      }
+    });
+
+  } catch (err) {
+    console.error('Get similar agencies error:', err);
     return res.status(500).json({
       success: false,
       message: err.message || 'Internal server error'
@@ -4835,6 +4870,353 @@ app.post('/merge-trustees', async (req, res) => {
 
   } catch (err) {
     console.error('Merge trustees error:', err);
+
+    const statusCode = err.message?.includes('not found') ||
+      err.message?.includes('Cannot merge')
+      ? 400 : 500;
+
+    return res.status(statusCode).json({
+      success: false,
+      message: err.message || 'Internal server error during merge operation'
+    });
+  }
+});
+
+app.post('/merge-agencies', async (req, res) => {
+  try {
+    const { mainAgencyId, mergeAgencyIds: rawMergeAgencyIds } = req.body;
+
+    // ─── Step 1: Validate Request ──────────────────────────────────────
+    if (!mainAgencyId || typeof mainAgencyId !== 'number') {
+      return res.status(400).json({
+        success: false,
+        message: 'mainAgencyId is required and must be a number'
+      });
+    }
+
+    if (!Array.isArray(rawMergeAgencyIds) || rawMergeAgencyIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'mergeAgencyIds must be a non-empty array'
+      });
+    }
+
+    if (rawMergeAgencyIds.some((id) => typeof id !== 'number')) {
+      return res.status(400).json({
+        success: false,
+        message: 'mergeAgencyIds must contain only numbers'
+      });
+    }
+
+    // De-duplicate so a repeated id doesn't break the existence check
+    const mergeAgencyIds = [...new Set(rawMergeAgencyIds)];
+
+    if (mergeAgencyIds.includes(mainAgencyId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'mergeAgencyIds cannot include the mainAgencyId'
+      });
+    }
+
+    // ─── Execute everything inside a single Prisma transaction ───────
+    const result = await prisma.$transaction(async (tx) => {
+
+      // ── Step 1b: Verify main agency exists and is not already merged ──
+      const mainAgencies = await tx.$queryRaw`
+        SELECT id, agency_name, parent_id, is_deleted
+        FROM master_agency
+        WHERE id = ${mainAgencyId}
+        LIMIT 1
+      `;
+
+      if (!mainAgencies || mainAgencies.length === 0) {
+        throw new Error(`Main agency with id ${mainAgencyId} not found`);
+      }
+
+      if (mainAgencies[0].is_deleted) {
+        throw new Error(`Cannot merge into agency ${mainAgencyId} because it is deleted`);
+      }
+
+      const parentId = parseInt(mainAgencies[0].parent_id, 10) || 0;
+
+      if (parentId !== 0) {
+        throw new Error(`Cannot merge into agency ${mainAgencyId} because it is already merged into agency ${parentId}`);
+      }
+
+      // ── Step 1c: Verify all duplicate agencies exist ─────────────
+      const mergeAgencies = await tx.$queryRaw`
+        SELECT id, parent_id
+        FROM master_agency
+        WHERE id IN (${mergeAgencyIds})
+      `;
+
+      if (mergeAgencies.length !== mergeAgencyIds.length) {
+        const foundIds = mergeAgencies.map((a) => Number(a.id));
+        const missingIds = mergeAgencyIds.filter((id) => !foundIds.includes(id));
+        throw new Error(`Agency ids not found: ${missingIds.join(', ')}`);
+      }
+
+      // ── Step 2: Update duplicate agencies' parent_id ─────────────
+      await tx.$executeRaw`
+        UPDATE master_agency
+        SET parent_id = ${mainAgencyId}
+        WHERE id IN (${mergeAgencyIds})
+      `;
+
+      // ── Step 3: Fetch ALL master_issuer_rating rows to be migrated ──
+      const ratingsToMigrate = await tx.$queryRaw`
+        SELECT id, issuer_id, rating, watch, outlook, rating_date
+        FROM master_issuer_rating
+        WHERE agency_id IN (${mergeAgencyIds})
+      `;
+
+      if (!ratingsToMigrate || ratingsToMigrate.length === 0) {
+        return {
+          mainAgencyId,
+          mergedAgencies: mergeAgencyIds,
+          migratedRatings: 0,
+          skippedDuplicates: 0,
+          updatedIssuers: []
+        };
+      }
+
+      const affectedIssuerIds = [];
+      let skippedDuplicates = 0;
+
+      // ── Steps 4-7: Process each rating row individually ──────────
+      for (const row of ratingsToMigrate) {
+        const ratingId   = Number(row.id);
+        const issuerId   = Number(row.issuer_id);
+        const rating     = row.rating;
+        const watch      = row.watch;
+        const outlook    = row.outlook;
+        const ratingDate = row.rating_date;
+
+        // Collect unique affected issuer IDs for Step 8
+        if (!affectedIssuerIds.includes(issuerId)) {
+          affectedIssuerIds.push(issuerId);
+        }
+
+        // Step 5: Does an identical rating already exist under the main agency?
+        //         "<=>" is MySQL's NULL-safe equality (works for NULL watch/outlook/rating_date)
+        const existingRating = await tx.$queryRaw`
+          SELECT id
+          FROM master_issuer_rating
+          WHERE issuer_id    =  ${issuerId}
+            AND agency_id    =  ${mainAgencyId}
+            AND rating       <=> ${rating}
+            AND watch        <=> ${watch}
+            AND outlook      <=> ${outlook}
+            AND rating_date  <=> ${ratingDate}
+          LIMIT 1
+        `;
+
+        if (existingRating && existingRating.length > 0) {
+          // Duplicate exists — drop the old row
+          await tx.$executeRaw`
+            DELETE FROM master_issuer_rating
+            WHERE id = ${ratingId}
+          `;
+          skippedDuplicates++;
+        } else {
+          // Step 6: Re-point the rating to the main agency
+          await tx.$executeRaw`
+            UPDATE master_issuer_rating
+            SET agency_id = ${mainAgencyId}
+            WHERE id = ${ratingId}
+          `;
+        }
+      }
+
+      // ── Step 8: Update master_issuer.is_updated for all affected ──
+      if (affectedIssuerIds.length > 0) {
+        await tx.$executeRaw`
+          UPDATE master_issuer
+          SET is_updated = true
+          WHERE id IN (${Prisma.join(affectedIssuerIds)})
+        `;
+      }
+
+      return {
+        mainAgencyId,
+        mergedAgencies: mergeAgencyIds,
+        migratedRatings: ratingsToMigrate.length,
+        skippedDuplicates,
+        updatedIssuers: affectedIssuerIds
+      };
+
+    }, {
+      maxWait: 10000,
+      timeout: 60000  // Increased to 60 seconds for large datasets
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Agencies merged successfully',
+      data: result
+    });
+
+  } catch (err) {
+    console.error('Merge agencies error:', err);
+
+    const statusCode = err.message?.includes('not found') ||
+      err.message?.includes('Cannot merge')
+      ? 400 : 500;
+
+    return res.status(statusCode).json({
+      success: false,
+      message: err.message || 'Internal server error during merge operation'
+    });
+  }
+});
+
+// merge arrangers 
+app.post('/merge-arrangers', async (req, res) => {
+  try {
+    const { mainArrangerId, mergeArrangerIds } = req.body;
+
+    // ─── Step 1: Validate Request ──────────────────────────────────────
+    if (!mainArrangerId || typeof mainArrangerId !== 'number') {
+      return res.status(400).json({
+        success: false,
+        message: 'mainArrangerId is required and must be a number'
+      });
+    }
+
+    if (!Array.isArray(mergeArrangerIds) || mergeArrangerIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'mergeArrangerIds must be a non-empty array'
+      });
+    }
+
+    if (mergeArrangerIds.includes(mainArrangerId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'mergeArrangerIds cannot include the mainArrangerId'
+      });
+    }
+
+    const mergeIdsString = mergeArrangerIds.join(', ');
+
+    // ─── Execute everything inside a single Prisma transaction ───────
+    const result = await prisma.$transaction(async (tx) => {
+
+      // ── Step 1b: Verify main arranger exists ──────────────────────
+      const mainArrangers = await tx.$queryRawUnsafe(`
+        SELECT id, arranger_name, parent_id 
+        FROM master_arranger 
+        WHERE id = ${mainArrangerId} 
+        LIMIT 1
+      `);
+
+      if (!mainArrangers || mainArrangers.length === 0) {
+        throw new Error(`Main arranger with id ${mainArrangerId} not found`);
+      }
+
+      const parentId = parseInt(mainArrangers[0].parent_id, 10) || 0;
+
+      if (parentId !== 0) {
+        throw new Error(`Cannot merge into arranger ${mainArrangerId} because it is already merged into arranger ${parentId}`);
+      }
+
+      // ── Step 2: Update duplicate arrangers' parent_id ─────────────
+      await tx.$queryRawUnsafe(`
+        UPDATE master_arranger 
+        SET parent_id = ${mainArrangerId} 
+        WHERE id IN (${mergeIdsString})
+      `);
+
+      // ── Step 3: Fetch ALL issuer_arranger records to be migrated ──
+      // Get full rows (issuer_id + arranger_id) not just distinct
+      const mappingsToMigrate = await tx.$queryRawUnsafe(`
+        SELECT issuer_id, arranger_id 
+        FROM issuer_arranger 
+        WHERE arranger_id IN (${mergeIdsString})
+      `);
+
+      if (!mappingsToMigrate || mappingsToMigrate.length === 0) {
+        return {
+          mainArrangerId,
+          mergedArrangers: mergeArrangerIds,
+          migratedMappings: 0,
+          skippedDuplicates: 0,
+          updatedIssuers: []
+        };
+      }
+
+      const affectedIssuerIds = [];
+      let skippedDuplicates = 0;
+
+      // ── Steps 4-7: Process each mapping individually ──────────────
+      for (const mapping of mappingsToMigrate) {
+        const { issuer_id, arranger_id: oldArrangerId } = mapping;
+
+        // Collect unique affected issuer IDs for Step 8
+        if (!affectedIssuerIds.includes(issuer_id)) {
+          affectedIssuerIds.push(issuer_id);
+        }
+
+        // Step 5: Delete the old mapping
+        await tx.$queryRawUnsafe(`
+          DELETE FROM issuer_arranger 
+          WHERE issuer_id = ${issuer_id} 
+          AND arranger_id = ${oldArrangerId}
+        `);
+
+        // Step 7: Check if new mapping already exists
+        const existingMapping = await tx.$queryRawUnsafe(`
+          SELECT issuer_id, arranger_id 
+          FROM issuer_arranger 
+          WHERE issuer_id = ${issuer_id} 
+          AND arranger_id = ${mainArrangerId} 
+          LIMIT 1
+        `);
+
+        if (existingMapping && existingMapping.length > 0) {
+          // Duplicate exists — skip insert
+          skippedDuplicates++;
+        } else {
+          // Step 6: Create new mapping
+          await tx.$queryRawUnsafe(`
+            INSERT INTO issuer_arranger (issuer_id, arranger_id) 
+            VALUES (${issuer_id}, ${mainArrangerId})
+          `);
+        }
+      }
+
+      // ── Step 8: Update master_issuer.is_updated for all affected ──
+      if (affectedIssuerIds.length > 0) {
+        const issuerIdsString = affectedIssuerIds.join(', ');
+
+        await tx.$queryRawUnsafe(`
+          UPDATE master_issuer 
+          SET is_updated = true 
+          WHERE id IN (${issuerIdsString})
+        `);
+      }
+
+      return {
+        mainArrangerId,
+        mergedArrangers: mergeArrangerIds,
+        migratedMappings: mappingsToMigrate.length,
+        skippedDuplicates,
+        updatedIssuers: affectedIssuerIds
+      };
+
+    }, {
+      maxWait: 10000,
+      timeout: 60000  // Increased to 60 seconds for large datasets
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Arrangers merged successfully',
+      data: result
+    });
+
+  } catch (err) {
+    console.error('Merge arrangers error:', err);
 
     const statusCode = err.message?.includes('not found') ||
       err.message?.includes('Cannot merge')
