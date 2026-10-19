@@ -4678,7 +4678,7 @@ app.get('/agencies/similar/:agencyId', async (req, res) => {
 
       const similarity = getCombinedSimilarity(mainName, compareName);
 
-      if (similarity >= similarityThreshold) {
+      if (similarity >= 0) {
         similarAgencies.push({
           id: agency.id,
           name: compareName,
