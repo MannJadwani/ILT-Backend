@@ -4910,6 +4910,7 @@ app.post('/merge-agencies', async (req, res) => {
 
     // De-duplicate so a repeated id doesn't break the existence check
     const mergeAgencyIds = [...new Set(rawMergeAgencyIds)];
+    
 
     if (mergeAgencyIds.includes(mainAgencyId)) {
       return res.status(400).json({
@@ -4917,6 +4918,8 @@ app.post('/merge-agencies', async (req, res) => {
         message: 'mergeAgencyIds cannot include the mainAgencyId'
       });
     }
+
+    const mergeIdsString = mergeAgencyIds.join(', ');
 
     // ─── Execute everything inside a single Prisma transaction ───────
     const result = await prisma.$transaction(async (tx) => {
@@ -4947,7 +4950,7 @@ app.post('/merge-agencies', async (req, res) => {
       const mergeAgencies = await tx.$queryRaw`
         SELECT id, parent_id
         FROM master_agency
-        WHERE id IN (${mergeAgencyIds})
+        WHERE id IN (${mergeIdsString})
       `;
 
       if (mergeAgencies.length !== mergeAgencyIds.length) {
@@ -4960,14 +4963,14 @@ app.post('/merge-agencies', async (req, res) => {
       await tx.$executeRaw`
         UPDATE master_agency
         SET parent_id = ${mainAgencyId}
-        WHERE id IN (${mergeAgencyIds})
+        WHERE id IN (${mergeIdsString})
       `;
 
       // ── Step 3: Fetch ALL master_issuer_rating rows to be migrated ──
       const ratingsToMigrate = await tx.$queryRaw`
         SELECT id, issuer_id, rating, watch, outlook, rating_date
         FROM master_issuer_rating
-        WHERE agency_id IN (${mergeAgencyIds})
+        WHERE agency_id IN (${mergeIdsString})
       `;
 
       if (!ratingsToMigrate || ratingsToMigrate.length === 0) {
