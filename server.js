@@ -5033,10 +5033,11 @@ app.post('/merge-agencies', async (req, res) => {
 
       // ── Step 8: Update master_issuer.is_updated for all affected ──
       if (affectedIssuerIds.length > 0) {
+        const issuerIdsString = affectedIssuerIds.join(', ');
         await tx.$executeRaw`
           UPDATE master_issuer
           SET is_updated = true
-          WHERE id IN (${Prisma.join(affectedIssuerIds)})
+          WHERE id IN (${issuerIdsString})
         `;
       }
 
