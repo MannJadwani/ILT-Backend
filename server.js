@@ -12,6 +12,7 @@ app.use(cors({
     'https://*.vercel.app',// Allow all subdomains of vercel.app
     'https://uat-indialeaguestables.debtcircle.in',
     'https://*.debtcircle.in',
+    'https://indialeaguetables.com',
     '*'
   ],
   credentials: true
