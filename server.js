@@ -1732,6 +1732,8 @@ app.post('/upload-arrangers', async (req, res) => {
       const item = items[index] && typeof items[index] === 'object' ? items[index] : {};
       const rawIsin = item.isin;
       const rawArranger = item.arranger;
+      console.log('processing index: ',index);
+      
 
       await prisma.$transaction(async (tx) => {
 
@@ -1820,7 +1822,7 @@ app.post('/upload-arrangers', async (req, res) => {
 
           // ─── Step 4: check issuer_arranger pair ───────────────────
           const pairRows = await tx.$queryRawUnsafe(
-            `SELECT id FROM issuer_arranger
+            `SELECT issuer_id, arranger_id FROM issuer_arranger
              WHERE issuer_id = ? AND arranger_id = ?
              LIMIT 1`,
             issuerId,
@@ -1940,6 +1942,8 @@ app.post('/upload-trustees', async (req, res) => {
       const rawIsin = item.isin;
       const rawTrustee = item.trustee;
 
+      console.log('processing index: ',index);
+
       await prisma.$transaction(async (tx) => {
 
         // ─── Step 1: null / empty check ────────────────────────────────
@@ -2026,7 +2030,7 @@ app.post('/upload-trustees', async (req, res) => {
 
           // ─── Step 4: does this issuer already have trustee rows? ─────
           const existingRows = await tx.$queryRawUnsafe(
-            `SELECT id, trustee_id FROM issuer_trustee
+            `SELECT issuer_id, trustee_id FROM issuer_trustee
              WHERE issuer_id = ?`,
             issuerId
           );
@@ -2157,6 +2161,8 @@ app.post('/upload-registrars', async (req, res) => {
       const rawIsin = item.isin;
       const rawRegistrar = item.registrar;
 
+      console.log('processing index: ',index);
+
       await prisma.$transaction(async (tx) => {
 
         // ─── Step 1: null / empty check ────────────────────────────────
@@ -2243,7 +2249,7 @@ app.post('/upload-registrars', async (req, res) => {
 
           // ─── Step 4: does this issuer already have registrar rows? ───
           const existingRows = await tx.$queryRawUnsafe(
-            `SELECT id, registrar_id FROM issuer_registrar
+            `SELECT issuer_id, registrar_id FROM issuer_registrar
              WHERE issuer_id = ?`,
             issuerId
           );
@@ -6117,7 +6123,7 @@ app.post('/merge-registrars', async (req, res) => {
 
         // Check if the new mapping already exists
         const existing = await tx.$queryRaw`
-          SELECT id FROM issuer_registrar
+          SELECT issuer_id, registrar_id FROM issuer_registrar
           WHERE issuer_id = ${issuerId} AND registrar_id = ${mainRegistrarId}
           LIMIT 1
         `;
