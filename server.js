@@ -4340,6 +4340,56 @@ app.post('/admin-agencies', async (req, res) => {
   }
 });
 
+app.post('/admin-registrars', async (req, res) => {
+  try {
+    const { limit = 10, offset = 0 } = req.body;
+
+    const take = parseInt(limit, 10);
+    const skip = parseInt(offset, 10);
+
+    if (isNaN(take) || take < 1) {
+      return res.status(400).json({ error: 'Invalid limit. Must be a positive number.' });
+    }
+    if (isNaN(skip) || skip < 0) {
+      return res.status(400).json({ error: 'Invalid offset. Must be a non-negative number.' });
+    }
+
+    const registrars = await prisma.$queryRaw`
+      SELECT
+        id,
+        short_name,
+        registrar_name,
+        parent_id
+      FROM master_registrar
+      WHERE parent_id = 0
+      ORDER BY registrar_name ASC
+      LIMIT ${take} OFFSET ${skip}
+    `;
+
+    const countResult = await prisma.$queryRaw`
+      SELECT COUNT(*) AS total
+      FROM master_registrar
+      WHERE parent_id = 0
+    `;
+    const total = parseInt(countResult[0].total, 10);
+
+    return res.json({
+      success: true,
+      data: registrars,
+      pagination: {
+        total,
+        limit: take,
+        offset: skip,
+        hasMore: skip + registrars.length < total
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching registrars:', error);
+    return res.status(500).json({ success: false, error: 'Failed to fetch registrars' });
+  }
+});
+
 app.get('/arrangers/similar/:arrangerId', async (req, res) => {
   try {
     const { arrangerId } = req.params;
@@ -4724,6 +4774,106 @@ app.get('/agencies/similar/:agencyId', async (req, res) => {
   }
 });
 
+app.get('/registrars/similar/:registrarId', async (req, res) => {
+  try {
+    const { registrarId } = req.params;
+    const { threshold = 50 } = req.query;
+
+    const similarityThreshold = parseFloat(threshold);
+    if (isNaN(similarityThreshold) || similarityThreshold < 0 || similarityThreshold > 100) {
+      return res.status(400).json({ success: false, message: 'threshold must be a number between 0 and 100' });
+    }
+
+    const registrarIdNum = parseInt(registrarId, 10);
+    if (isNaN(registrarIdNum)) {
+      return res.status(400).json({ success: false, message: 'registrarId must be a valid number' });
+    }
+
+    // ── Step 1: Fetch the main registrar ──────────────────────────
+    const mainRows = await prisma.$queryRaw`
+      SELECT id, short_name, registrar_name, parent_id
+      FROM master_registrar
+      WHERE id = ${registrarIdNum}
+      LIMIT 1
+    `;
+    if (!mainRows || mainRows.length === 0) {
+      return res.status(404).json({ success: false, message: `Registrar with id ${registrarIdNum} not found` });
+    }
+
+    const mainRegistrar = mainRows[0];
+    const mainName = mainRegistrar.registrar_name || mainRegistrar.short_name;
+    if (!mainName || !mainName.trim()) {
+      return res.status(400).json({ success: false, message: 'Main registrar has no name to compare against' });
+    }
+
+    // ── Step 2: Fetch all other unmerged registrars ───────────────
+    const allRegistrars = await prisma.$queryRaw`
+      SELECT id, short_name, registrar_name
+      FROM master_registrar
+      WHERE id != ${registrarIdNum}
+      ORDER BY registrar_name ASC
+    `;
+
+    if (!allRegistrars || allRegistrars.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: 'No other registrars found to compare',
+        data: {
+          mainRegistrar: {
+            id: mainRegistrar.id,
+            name: mainName,
+            short_name: mainRegistrar.short_name,
+            registrar_name: mainRegistrar.registrar_name
+          },
+          similarRegistrars: [],
+          totalFound: 0
+        }
+      });
+    }
+
+    // ── Step 3: Compute similarity ────────────────────────────────
+    const similarRegistrars = [];
+    for (const registrar of allRegistrars) {
+      const compareName = registrar.registrar_name || registrar.short_name;
+      if (!compareName || !compareName.trim()) continue;
+
+      const similarity = getCombinedSimilarity(mainName, compareName);
+      if (similarity >= similarityThreshold) {
+        similarRegistrars.push({
+          id: registrar.id,
+          name: compareName,
+          short_name: registrar.short_name,
+          registrar_name: registrar.registrar_name,
+          similarity: parseFloat(similarity.toFixed(2)),
+          similarityFormatted: `${similarity.toFixed(2)}%`
+        });
+      }
+    }
+
+    similarRegistrars.sort((a, b) => b.similarity - a.similarity);
+
+    return res.status(200).json({
+      success: true,
+      message: `Found ${similarRegistrars.length} similar registrars`,
+      data: {
+        mainRegistrar: {
+          id: mainRegistrar.id,
+          name: mainName,
+          short_name: mainRegistrar.short_name,
+          registrar_name: mainRegistrar.registrar_name
+        },
+        similarRegistrars,
+        totalFound: similarRegistrars.length,
+        threshold: similarityThreshold
+      }
+    });
+
+  } catch (err) {
+    console.error('Get similar registrars error:', err);
+    return res.status(500).json({ success: false, message: err.message || 'Internal server error' });
+  }
+});
+
 app.post('/merge-trustees', async (req, res) => {
   try {
     const { mainTrusteeId, mergeTrusteeIds } = req.body;
@@ -5074,7 +5224,6 @@ app.post('/merge-agencies', async (req, res) => {
   }
 });
 
-// merge arrangers 
 app.post('/merge-arrangers', async (req, res) => {
   try {
     const { mainArrangerId, mergeArrangerIds } = req.body;
@@ -5226,6 +5375,147 @@ app.post('/merge-arrangers', async (req, res) => {
       err.message?.includes('Cannot merge')
       ? 400 : 500;
 
+    return res.status(statusCode).json({
+      success: false,
+      message: err.message || 'Internal server error during merge operation'
+    });
+  }
+});
+
+app.post('/merge-registrars', async (req, res) => {
+  try {
+    const { mainRegistrarId, mergeRegistrarIds: rawMergeRegistrarIds } = req.body;
+
+    // ─── Step 1: Validate Request ──────────────────────────────────────
+    if (!mainRegistrarId || typeof mainRegistrarId !== 'number') {
+      return res.status(400).json({ success: false, message: 'mainRegistrarId is required and must be a number' });
+    }
+    if (!Array.isArray(rawMergeRegistrarIds) || rawMergeRegistrarIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'mergeRegistrarIds must be a non-empty array' });
+    }
+    if (rawMergeRegistrarIds.some((id) => typeof id !== 'number')) {
+      return res.status(400).json({ success: false, message: 'mergeRegistrarIds must contain only numbers' });
+    }
+    const mergeRegistrarIds = [...new Set(rawMergeRegistrarIds)];
+    if (mergeRegistrarIds.includes(mainRegistrarId)) {
+      return res.status(400).json({ success: false, message: 'mergeRegistrarIds cannot include the mainRegistrarId' });
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+
+      // ── Step 1b: Verify main registrar exists ─────────────────────
+      const mainRows = await tx.$queryRaw`
+        SELECT id, registrar_name, parent_id
+        FROM master_registrar
+        WHERE id = ${mainRegistrarId}
+        LIMIT 1
+      `;
+      if (!mainRows || mainRows.length === 0) {
+        throw new Error(`Main registrar with id ${mainRegistrarId} not found`);
+      }
+      const parentId = parseInt(mainRows[0].parent_id, 10) || 0;
+      if (parentId !== 0) {
+        throw new Error(`Cannot merge into registrar ${mainRegistrarId} because it is already merged into registrar ${parentId}`);
+      }
+
+      const mergeIdsString = mergeRegistrarIds.join(', ');
+
+      // ── Step 1c: Verify all duplicates exist ──────────────────────
+      const found = await tx.$queryRaw`
+        SELECT id FROM master_registrar WHERE id IN (${mergeIdsString})
+      `;
+      if (found.length !== mergeRegistrarIds.length) {
+        const foundIds = found.map((r) => Number(r.id));
+        const missing = mergeRegistrarIds.filter((id) => !foundIds.includes(id));
+        throw new Error(`Registrar ids not found: ${missing.join(', ')}`);
+      }
+
+      // ── Step 2: Mark duplicates as merged ─────────────────────────
+      await tx.$executeRaw`
+        UPDATE master_registrar
+        SET parent_id = ${mainRegistrarId}
+        WHERE id IN (${mergeIdsString})
+      `;
+
+      // ── Step 3: Fetch all issuer_registrar mappings to migrate ────
+      const mappingsToMigrate = await tx.$queryRaw`
+        SELECT issuer_id, registrar_id
+        FROM issuer_registrar
+        WHERE registrar_id IN (${mergeIdsString})
+      `;
+
+      if (!mappingsToMigrate || mappingsToMigrate.length === 0) {
+        return {
+          mainRegistrarId,
+          mergedRegistrars: mergeRegistrarIds,
+          migratedMappings: 0,
+          skippedDuplicates: 0,
+          updatedIssuers: []
+        };
+      }
+
+      const affectedIssuerIds = [];
+      let skippedDuplicates = 0;
+
+      // ── Steps 4-7: Process each mapping individually ──────────────
+      for (const mapping of mappingsToMigrate) {
+        const issuerId = Number(mapping.issuer_id);
+        const oldRegistrarId = Number(mapping.registrar_id);
+
+        if (!affectedIssuerIds.includes(issuerId)) affectedIssuerIds.push(issuerId);
+
+        // Delete the old mapping
+        await tx.$executeRaw`
+          DELETE FROM issuer_registrar
+          WHERE issuer_id = ${issuerId} AND registrar_id = ${oldRegistrarId}
+        `;
+
+        // Check if the new mapping already exists
+        const existing = await tx.$queryRaw`
+          SELECT id FROM issuer_registrar
+          WHERE issuer_id = ${issuerId} AND registrar_id = ${mainRegistrarId}
+          LIMIT 1
+        `;
+
+        if (existing && existing.length > 0) {
+          skippedDuplicates++;
+        } else {
+          await tx.$executeRaw`
+            INSERT INTO issuer_registrar (issuer_id, registrar_id)
+            VALUES (${issuerId}, ${mainRegistrarId})
+          `;
+        }
+      }
+
+      // ── Step 8: Flag affected issuers ─────────────────────────────
+      if (affectedIssuerIds.length > 0) {
+        const issuerIdsString = affectedIssuerIds.join(', ');
+        await tx.$executeRaw`
+          UPDATE master_issuer
+          SET is_updated = true
+          WHERE id IN (${issuerIdsString})
+        `;
+      }
+
+      return {
+        mainRegistrarId,
+        mergedRegistrars: mergeRegistrarIds,
+        migratedMappings: mappingsToMigrate.length,
+        skippedDuplicates,
+        updatedIssuers: affectedIssuerIds
+      };
+
+    }, { maxWait: 10000, timeout: 60000 });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Registrars merged successfully',
+      data: result
+    });
+
+  } catch (err) {
+    console.error('Merge registrars error:', err);
+    const statusCode = (err.message?.includes('not found') || err.message?.includes('Cannot merge')) ? 400 : 500;
     return res.status(statusCode).json({
       success: false,
       message: err.message || 'Internal server error during merge operation'
