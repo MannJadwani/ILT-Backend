@@ -677,7 +677,7 @@ function toBookBiddingEnum(v) {
   if (s === '' || s === '-') return null;
 
   // explicit synonym map
-  if (s === 'OPEN' || s === 'OPENED')                    return 'open';
+  if (s === 'OPEN' || s === 'OPENED') return 'open';
   if (s === 'CLOSE' || s === 'CLOSED' || s === 'CLOSING') return 'closed';
 
   // already one of the canonical values (any case)
@@ -729,38 +729,38 @@ function makeFrequencyConverter(freqMap) {
  */
 function buildFieldMap(freqMap) {
   return {
-    isin:                      { column: 'isin',                                 convert: v => String(v) },
-    issuerName:                { column: 'issuer_name',                          convert: toStringOrNull },
-    issueDescription:          { column: 'issue_description',                    convert: toStringOrNull },
-    typeOfIssuance:            { column: 'type_of_issuance',                     convert: toStringOrNull },
-    allotmentDate:             { column: 'allotment_date',                       convert: toMysqlDateOnly },
-    faceValue:                 { column: 'face_value',                           convert: toNumberOrNull },
-    amountRaised:              { column: 'amount_raised',                        convert: toNumberOrNull },
-    coupon:                    { column: 'coupon',                               convert: toNumberOrNull },
-    price:                     { column: 'price',                                convert: toNumberOrNull },
-    spread:                    { column: 'spread',                               convert: toNumberOrNull },
-    yield:                     { column: 'yield',                                convert: toNumberOrNull },
-    creditRating:              { column: 'credit_rating',                        convert: toStringOrNull },
-    typeOfBookBidding:         { column: 'type_of_book_bidding',                 convert: toBookBiddingEnum  }, // ← CHANGED
-    mannerOfAllotment:         { column: 'manner_of_allotment',                  convert: toStringOrNull },
-    mannerOfSettlement:        { column: 'manner_of_settlement',                 convert: toStringOrNull },
-    noOfSuccesfulBidders:      { column: 'successful_bidders_category',          convert: toStringOrNull },
-    baseIssueSize:             { column: 'base_issue_size',                      convert: toNumberOrNull },
-    greenShoeOption:           { column: 'green_shoe_option',                    convert: toNumberOrNull },
-    tenor:                     { column: 'tenor',                                convert: toStringOrNull },
-    securedUnsecured:          { column: 'secured_unsecured',                    convert: toSecuredEnum       }, // ← CHANGED
-    typeOfBidding:             { column: 'type_of_bidding',                      convert: toStringOrNull },
-    couponFrequency:           { column: 'coupon_frequency',                     convert: makeFrequencyConverter(freqMap) },
-    maturityType:              { column: 'maturity_type',                        convert: toStringOrNull },
-    interestPaymentType:       { column: 'interest_payment_type',                convert: toStringOrNull },
-    noOfAnchorInvestors:       { column: 'number_of_anchor_investors',           convert: toIntOrNull },
-    anchorAmount:              { column: 'anchor_amount',                        convert: toNumberOrNull },
-    totalQibbidding:           { column: 'total_qib_bidding',                    convert: toNumberOrNull },
-    totalQibamountAccepted:    { column: 'total_qib_amount_accepted',            convert: toNumberOrNull },
-    totalNonQibbidding:        { column: 'total_non_qib_bidding',                convert: toNumberOrNull },
-    totalNonQibamountAccepted: { column: 'total_non_qib_amount_accepted',        convert: toNumberOrNull },
-    cutOffYield:               { column: 'cutoff_yield_price',                   convert: toNumberOrNull },
-    weightedAverageCutOffYield:{ column: 'weighted_average_cutoff_yield_price',  convert: toNumberOrNull },
+    isin: { column: 'isin', convert: v => String(v) },
+    issuerName: { column: 'issuer_name', convert: toStringOrNull },
+    issueDescription: { column: 'issue_description', convert: toStringOrNull },
+    typeOfIssuance: { column: 'type_of_issuance', convert: toStringOrNull },
+    allotmentDate: { column: 'allotment_date', convert: toMysqlDateOnly },
+    faceValue: { column: 'face_value', convert: toNumberOrNull },
+    amountRaised: { column: 'amount_raised', convert: toNumberOrNull },
+    coupon: { column: 'coupon', convert: toNumberOrNull },
+    price: { column: 'price', convert: toNumberOrNull },
+    spread: { column: 'spread', convert: toNumberOrNull },
+    yield: { column: 'yield', convert: toNumberOrNull },
+    creditRating: { column: 'credit_rating', convert: toStringOrNull },
+    typeOfBookBidding: { column: 'type_of_book_bidding', convert: toBookBiddingEnum }, // ← CHANGED
+    mannerOfAllotment: { column: 'manner_of_allotment', convert: toStringOrNull },
+    mannerOfSettlement: { column: 'manner_of_settlement', convert: toStringOrNull },
+    noOfSuccesfulBidders: { column: 'successful_bidders_category', convert: toStringOrNull },
+    baseIssueSize: { column: 'base_issue_size', convert: toNumberOrNull },
+    greenShoeOption: { column: 'green_shoe_option', convert: toNumberOrNull },
+    tenor: { column: 'tenor', convert: toStringOrNull },
+    securedUnsecured: { column: 'secured_unsecured', convert: toSecuredEnum }, // ← CHANGED
+    typeOfBidding: { column: 'type_of_bidding', convert: toStringOrNull },
+    couponFrequency: { column: 'coupon_frequency', convert: makeFrequencyConverter(freqMap) },
+    maturityType: { column: 'maturity_type', convert: toStringOrNull },
+    interestPaymentType: { column: 'interest_payment_type', convert: toStringOrNull },
+    noOfAnchorInvestors: { column: 'number_of_anchor_investors', convert: toIntOrNull },
+    anchorAmount: { column: 'anchor_amount', convert: toNumberOrNull },
+    totalQibbidding: { column: 'total_qib_bidding', convert: toNumberOrNull },
+    totalQibamountAccepted: { column: 'total_qib_amount_accepted', convert: toNumberOrNull },
+    totalNonQibbidding: { column: 'total_non_qib_bidding', convert: toNumberOrNull },
+    totalNonQibamountAccepted: { column: 'total_non_qib_amount_accepted', convert: toNumberOrNull },
+    cutOffYield: { column: 'cutoff_yield_price', convert: toNumberOrNull },
+    weightedAverageCutOffYield: { column: 'weighted_average_cutoff_yield_price', convert: toNumberOrNull },
   };
 }
 /* -------------------------------------------------------------------------- */
@@ -879,7 +879,7 @@ app.post('/uploadIsinReIssuanceDetails', async (req, res) => {
 
       /* ---- Build the column/value lists using per-field converters ---- */
       const providedColumns = [];
-      const providedValues  = [];
+      const providedValues = [];
 
       for (const [reqKey, { column, convert }] of Object.entries(DETAIL_FIELD_MAP)) {
         if (!(reqKey in item)) continue;
@@ -959,8 +959,8 @@ app.post('/uploadIsinReIssuanceDetails', async (req, res) => {
 
           /* INSERT */
           const insertColumns = ['re_issuance_id', ...providedColumns];
-          const placeholders  = insertColumns.map(() => '?').join(', ');
-          const params        = [reIssuanceId, ...providedValues];
+          const placeholders = insertColumns.map(() => '?').join(', ');
+          const params = [reIssuanceId, ...providedValues];
 
           await tx.$executeRawUnsafe(
             `INSERT INTO isin_re_issuance_details
@@ -1004,11 +1004,11 @@ app.post('/uploadIsinReIssuanceDetails', async (req, res) => {
     /* ------------------------------------------------------------------ */
     /* Summary                                                             */
     /* ------------------------------------------------------------------ */
-    const inserted     = results.filter(r => r.status === 'inserted').length;
-    const updated      = results.filter(r => r.status === 'updated').length;
+    const inserted = results.filter(r => r.status === 'inserted').length;
+    const updated = results.filter(r => r.status === 'updated').length;
     const updatedInReq = results.filter(r => r.status === 'updated_in_request').length;
-    const skipped      = results.filter(r => r.status === 'skipped').length;
-    const errored      = results.filter(r => r.status === 'error').length;
+    const skipped = results.filter(r => r.status === 'skipped').length;
+    const errored = results.filter(r => r.status === 'error').length;
 
     logInfo(TAG, '──────── SUMMARY ────────');
     logInfo(TAG, `  received            : ${items.length}`);
@@ -1049,7 +1049,7 @@ app.post('/uploadCreditRatings', async (req, res) => {
   const items = parseCreditRatings(req.body);
 
   try {
-      logDebug(TAG, 'Request body preview', {
+    logDebug(TAG, 'Request body preview', {
       isArray: Array.isArray(items),
       length: Array.isArray(items) ? items.length : null,
     });
@@ -1071,9 +1071,9 @@ app.post('/uploadCreditRatings', async (req, res) => {
 
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
-      const isin    = item.ISIN ?? item.isin ?? null;
-      const agency  = item.agency ?? null;
-      const rating  = item.rating ?? null;
+      const isin = item.ISIN ?? item.isin ?? null;
+      const agency = item.agency ?? null;
+      const rating = item.rating ?? null;
       const outlook = item.outlook ?? null;
 
       if (!isin || !agency || !rating) {
@@ -1115,10 +1115,10 @@ app.post('/uploadCreditRatings', async (req, res) => {
     logInfo(TAG, `STEP 3 DONE: ${agencyCache.length} existing agencies`);
 
     const results = [];
-    let totalDeletedRatings   = 0;
-    let totalInsertedRatings  = 0;
-    let totalDeletedAgencies  = 0;
-    let totalCreatedAgencies  = 0;
+    let totalDeletedRatings = 0;
+    let totalInsertedRatings = 0;
+    let totalDeletedAgencies = 0;
+    let totalCreatedAgencies = 0;
 
     /* ------------------------------------------------------------------ */
     /* STEP 4 — Process each ISIN group in its own transaction             */
@@ -1136,18 +1136,18 @@ app.post('/uploadCreditRatings', async (req, res) => {
 
         const txResult = await prisma.$transaction(async (tx) => {
           /* ---------------------------------------------------------- */
-          /* 4a. Resolve master_issuer.id                                */
+          /* 4a. Resolve isin_re_issuance.isin_id                                */
           /* ---------------------------------------------------------- */
           const issuerRow = await tx.$queryRawUnsafe(
-            `SELECT id FROM master_issuer WHERE isin = ? ORDER BY id DESC LIMIT 1`,
+            `SELECT isin_id FROM isin_re_issuance WHERE isin = ? ORDER BY id DESC LIMIT 1`,
             isin
           );
 
           if (!issuerRow || issuerRow.length === 0) {
-            throw new Error(`No master_issuer row found for ISIN=${isin}`);
+            throw new Error(`No isin_re_issuance row found for ISIN=${isin}`);
           }
-          const masterIssuerId = Number(issuerRow[0].id);
-          logInfo(isinTag, `  → master_issuer.id=${masterIssuerId}`);
+          const masterIssuerId = Number(issuerRow[0].isin_id);
+          logInfo(isinTag, `  → isin_re_issuance.isin_id=${masterIssuerId}`);
 
           /* ---------------------------------------------------------- */
           /* 4b. Snapshot old ratings for this issuer                    */
@@ -1292,7 +1292,7 @@ app.post('/uploadCreditRatings', async (req, res) => {
           );
         }
 
-        totalDeletedRatings  += txResult.deletedRatingIds.length;
+        totalDeletedRatings += txResult.deletedRatingIds.length;
         totalInsertedRatings += txResult.inserted.length;
         totalDeletedAgencies += txResult.orphanAgenciesDeleted.length;
         totalCreatedAgencies += txResult.inserted.filter(r => r.createdNewAgency).length;
@@ -1333,7 +1333,7 @@ app.post('/uploadCreditRatings', async (req, res) => {
     /* Summary                                                             */
     /* ------------------------------------------------------------------ */
     const replaced = results.filter(r => r.status === 'replaced').length;
-    const errored  = results.filter(r => r.status === 'error').length;
+    const errored = results.filter(r => r.status === 'error').length;
 
     logInfo(TAG, '──────── SUMMARY ────────');
     logInfo(TAG, `  received               : ${items.length}`);
@@ -1698,6 +1698,650 @@ app.post('/uploadIntermediaries', async (req, res) => {
   }
 });
 
+const isFilledString = (v) => typeof v === 'string' && v.trim().length > 0;
+const toPlainId = (v) => (typeof v === 'bigint' ? Number(v) : v);
+
+app.post('/upload-arrangers', async (req, res) => {
+  try {
+    const items = req.body;
+
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Request body must be a non-empty array of { isin, arranger }'
+      });
+    }
+
+    const results = [];
+    const counters = {
+      totalReceived: items.length,
+      inserted: 0,
+      alreadyExists: 0,
+      skippedNull: 0,
+      errors: 0,
+      newArrangersCreated: 0
+    };
+
+    const isinCache = new Map();
+    const arrangerCache = new Map();
+    const seenIsins = new Set();
+    const seenArrangers = new Map();
+
+    for (let index = 0; index < items.length; index++) {
+      await delay(20);
+      const item = items[index] && typeof items[index] === 'object' ? items[index] : {};
+      const rawIsin = item.isin;
+      const rawArranger = item.arranger;
+
+      await prisma.$transaction(async (tx) => {
+
+        // ─── Step 1: null / empty check ─────────────────────────────
+        if (!isFilledString(rawIsin) || !isFilledString(rawArranger)) {
+          counters.skippedNull++;
+          results.push({
+            index,
+            isin: rawIsin ?? null,
+            arranger: rawArranger ?? null,
+            status: 'skipped',
+            reason: 'Skipped insertion due to null/empty isin or arranger'
+          });
+          return;                 // ← was `continue;`
+        }
+
+        const isin = rawIsin.trim().toUpperCase();
+        const arrangerName = rawArranger.trim();
+        const arrangerKey = arrangerName.toLowerCase();
+
+        seenIsins.add(isin);
+        seenArrangers.set(arrangerKey, arrangerName);
+
+        try {
+          // ─── Step 2: resolve issuer_id ────────────────────────────
+          let issuerId;
+          if (isinCache.has(isin)) {
+            issuerId = isinCache.get(isin);
+          } else {
+            const isinRows = await tx.$queryRawUnsafe(
+              `SELECT isin_id FROM isin_re_issuance
+               WHERE UPPER(TRIM(isin)) = ?
+               LIMIT 1`,
+              isin
+            );
+            issuerId = isinRows.length ? toPlainId(isinRows[0].isin_id) : null;
+            isinCache.set(isin, issuerId);
+          }
+
+          if (issuerId === null) {
+            counters.errors++;
+            results.push({
+              index,
+              isin,
+              arranger: arrangerName,
+              status: 'error',
+              reason: `No issuer found for ISIN ${isin}`
+            });
+            return;               // ← was `continue;`
+          }
+
+          // ─── Step 3: resolve arranger_id, create if missing ───────
+          let arrangerId;
+          let arrangerCreated = false;
+
+          if (arrangerCache.has(arrangerKey)) {
+            arrangerId = arrangerCache.get(arrangerKey);
+          } else {
+            const arrangerRows = await tx.$queryRawUnsafe(
+              `SELECT id FROM master_arranger
+               WHERE LOWER(TRIM(short_name)) = ?
+               LIMIT 1`,
+              arrangerKey
+            );
+
+            if (arrangerRows.length) {
+              arrangerId = toPlainId(arrangerRows[0].id);
+            } else {
+              // MySQL-safe insert (no RETURNING)
+              await tx.$executeRawUnsafe(
+                `INSERT INTO master_arranger (arranger_name, short_name)
+                 VALUES (?, ?)`,
+                arrangerName,
+                arrangerName
+              );
+              const idRows = await tx.$queryRawUnsafe(
+                `SELECT LAST_INSERT_ID() AS id`
+              );
+              arrangerId = toPlainId(idRows[0].id);
+              arrangerCreated = true;
+              counters.newArrangersCreated++;
+            }
+
+            arrangerCache.set(arrangerKey, arrangerId);
+          }
+
+          // ─── Step 4: check issuer_arranger pair ───────────────────
+          const pairRows = await tx.$queryRawUnsafe(
+            `SELECT id FROM issuer_arranger
+             WHERE issuer_id = ? AND arranger_id = ?
+             LIMIT 1`,
+            issuerId,
+            arrangerId
+          );
+
+          if (pairRows.length) {
+            counters.alreadyExists++;
+            results.push({
+              index,
+              isin,
+              arranger: arrangerName,
+              issuerId,
+              arrangerId,
+              status: 'already_exists',
+              reason: 'issuer_arranger mapping already exists — skipped'
+            });
+            return;               // ← was `continue;`
+          }
+
+          // ─── Step 5: insert the new pair ──────────────────────────
+          await tx.$executeRawUnsafe(
+            `INSERT INTO issuer_arranger (issuer_id, arranger_id)
+             VALUES (?, ?)`,
+            issuerId,
+            arrangerId
+          );
+
+          counters.inserted++;
+          results.push({
+            index,
+            isin,
+            arranger: arrangerName,
+            issuerId,
+            arrangerId,
+            status: 'inserted',
+            arrangerCreated
+          });
+        } catch (itemErr) {
+          counters.errors++;
+          results.push({
+            index,
+            isin,
+            arranger: arrangerName,
+            status: 'error',
+            reason: itemErr.message || 'Unknown error while processing this row'
+          });
+        }
+      });
+    }
+
+    const inserted = results.filter((r) => r.status === 'inserted');
+    const notInserted = results.filter((r) => r.status !== 'inserted');
+
+    return res.status(200).json({
+      success: true,
+      message:
+        `Processed ${counters.totalReceived} row(s): ` +
+        `${counters.inserted} inserted, ${counters.alreadyExists} already existed, ` +
+        `${counters.skippedNull} skipped (null), ${counters.errors} error(s)`,
+      data: {
+        summary: {
+          totalReceived: counters.totalReceived,
+          inserted: counters.inserted,
+          alreadyExists: counters.alreadyExists,
+          skippedNull: counters.skippedNull,
+          errors: counters.errors,
+          newArrangersCreated: counters.newArrangersCreated,
+          distinctIsins: seenIsins.size,
+          distinctArrangers: seenArrangers.size
+        },
+        isins: [...seenIsins],
+        arrangers: [...seenArrangers.values()],
+        inserted,
+        notInserted
+      }
+    });
+  } catch (err) {
+    console.error('Upload arrangers error:', err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || 'Internal server error during arranger upload'
+    });
+  }
+});
+
+app.post('/upload-trustees', async (req, res) => {
+  try {
+    const items = req.body;
+
+    // ─── Step 0: validate body ─────────────────────────────────────────
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Request body must be a non-empty array of { isin, trustee }'
+      });
+    }
+
+    const results = [];
+    const counters = {
+      totalReceived: items.length,
+      inserted: 0,
+      updated: 0,
+      skippedNull: 0,
+      errors: 0,
+      newTrusteesCreated: 0
+    };
+
+    const isinCache = new Map();      // "INE660A07RN7"              -> issuer_id | null
+    const trusteeCache = new Map();   // "catalyst trusteeship ltd" -> trustee_id
+    const seenIsins = new Set();
+    const seenTrustees = new Map();   // lower(name) -> original name
+
+    for (let index = 0; index < items.length; index++) {
+      await delay(20);
+      const item = items[index] && typeof items[index] === 'object' ? items[index] : {};
+      const rawIsin = item.isin;
+      const rawTrustee = item.trustee;
+
+      await prisma.$transaction(async (tx) => {
+
+        // ─── Step 1: null / empty check ────────────────────────────────
+        if (!isFilledString(rawIsin) || !isFilledString(rawTrustee)) {
+          counters.skippedNull++;
+          results.push({
+            index,
+            isin: rawIsin ?? null,
+            trustee: rawTrustee ?? null,
+            status: 'skipped',
+            reason: 'Skipped insertion due to null/empty isin or trustee'
+          });
+          return;                              // ← was `continue;`
+        }
+
+        const isin = rawIsin.trim().toUpperCase();
+        const trusteeName = rawTrustee.trim();
+        const trusteeKey = trusteeName.toLowerCase();
+
+        seenIsins.add(isin);
+        seenTrustees.set(trusteeKey, trusteeName);
+
+        try {
+          // ─── Step 2: resolve issuer_id (case-insensitive) ────────────
+          let issuerId;
+          if (isinCache.has(isin)) {
+            issuerId = isinCache.get(isin);
+          } else {
+            const isinRows = await tx.$queryRawUnsafe(
+              `SELECT isin_id FROM isin_re_issuance
+               WHERE UPPER(TRIM(isin)) = ?
+               LIMIT 1`,
+              isin
+            );
+            issuerId = isinRows.length ? toPlainId(isinRows[0].isin_id) : null;
+            isinCache.set(isin, issuerId);
+          }
+
+          if (issuerId === null) {
+            counters.errors++;
+            results.push({
+              index,
+              isin,
+              trustee: trusteeName,
+              status: 'error',
+              reason: `No issuer found for ISIN ${isin}`
+            });
+            return;                            // ← was `continue;`
+          }
+
+          // ─── Step 3: resolve trustee_id, create if missing ───────────
+          let trusteeId;
+          let trusteeCreated = false;
+
+          if (trusteeCache.has(trusteeKey)) {
+            trusteeId = trusteeCache.get(trusteeKey);
+          } else {
+            const trusteeRows = await tx.$queryRawUnsafe(
+              `SELECT id FROM master_trustee
+               WHERE LOWER(TRIM(short_name)) = ?
+               LIMIT 1`,
+              trusteeKey
+            );
+
+            if (trusteeRows.length) {
+              trusteeId = toPlainId(trusteeRows[0].id);
+            } else {
+              await tx.$executeRawUnsafe(
+                `INSERT INTO master_trustee (trustee_name, short_name)
+                 VALUES (?, ?)`,
+                trusteeName,
+                trusteeName
+              );
+              const idRows = await tx.$queryRawUnsafe(
+                `SELECT LAST_INSERT_ID() AS id`
+              );
+              trusteeId = toPlainId(idRows[0].id);
+              trusteeCreated = true;
+              counters.newTrusteesCreated++;
+            }
+
+            trusteeCache.set(trusteeKey, trusteeId);
+          }
+
+          // ─── Step 4: does this issuer already have trustee rows? ─────
+          const existingRows = await tx.$queryRawUnsafe(
+            `SELECT id, trustee_id FROM issuer_trustee
+             WHERE issuer_id = ?`,
+            issuerId
+          );
+
+          if (existingRows.length > 0) {
+            // ── Step 5a: replace trustee_id on every row for this issuer
+            await tx.$executeRawUnsafe(
+              `UPDATE issuer_trustee
+               SET trustee_id = ?
+               WHERE issuer_id = ?`,
+              trusteeId,
+              issuerId
+            );
+
+            counters.updated++;
+            results.push({
+              index,
+              isin,
+              trustee: trusteeName,
+              issuerId,
+              trusteeId,
+              rowsAffected: existingRows.length,
+              status: 'updated',
+              trusteeCreated
+            });
+          } else {
+            // ── Step 5b: no existing row → insert a new mapping
+            await tx.$executeRawUnsafe(
+              `INSERT INTO issuer_trustee (trustee_id, issuer_id)
+               VALUES (?, ?)`,
+              trusteeId,
+              issuerId
+            );
+
+            counters.inserted++;
+            results.push({
+              index,
+              isin,
+              trustee: trusteeName,
+              issuerId,
+              trusteeId,
+              status: 'inserted',
+              trusteeCreated
+            });
+          }
+        } catch (itemErr) {
+          counters.errors++;
+          results.push({
+            index,
+            isin,
+            trustee: trusteeName,
+            status: 'error',
+            reason: itemErr.message || 'Unknown error while processing this row'
+          });
+        }
+      });
+    }
+
+    const inserted = results.filter((r) => r.status === 'inserted');
+    const updated = results.filter((r) => r.status === 'updated');
+    const notProcessed = results.filter(
+      (r) => r.status !== 'inserted' && r.status !== 'updated'
+    );
+
+    // ─── Final response ────────────────────────────────────────────────
+    return res.status(200).json({
+      success: true,
+      message:
+        `Processed ${counters.totalReceived} row(s): ` +
+        `${counters.inserted} inserted, ${counters.updated} updated, ` +
+        `${counters.skippedNull} skipped (null), ${counters.errors} error(s)`,
+      data: {
+        summary: {
+          totalReceived: counters.totalReceived,
+          inserted: counters.inserted,
+          updated: counters.updated,
+          skippedNull: counters.skippedNull,
+          errors: counters.errors,
+          newTrusteesCreated: counters.newTrusteesCreated,
+          distinctIsins: seenIsins.size,
+          distinctTrustees: seenTrustees.size
+        },
+        isins: [...seenIsins],
+        trustees: [...seenTrustees.values()],
+        inserted,
+        updated,
+        notProcessed
+      }
+    });
+  } catch (err) {
+    console.error('Upload trustees error:', err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || 'Internal server error during trustee upload'
+    });
+  }
+});
+
+app.post('/upload-registrars', async (req, res) => {
+  try {
+    const items = req.body;
+
+    // ─── Step 0: validate body ─────────────────────────────────────────
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Request body must be a non-empty array of { isin, registrar }'
+      });
+    }
+
+    const results = [];
+    const counters = {
+      totalReceived: items.length,
+      inserted: 0,
+      updated: 0,
+      skippedNull: 0,
+      errors: 0,
+      newRegistrarsCreated: 0
+    };
+
+    const isinCache = new Map();      // "INE660A07RN7"            -> issuer_id | null
+    const registrarCache = new Map(); // "link intime india pvt ltd" -> registrar_id
+    const seenIsins = new Set();
+    const seenRegistrars = new Map(); // lower(name) -> original name
+
+    for (let index = 0; index < items.length; index++) {
+      const item = items[index] && typeof items[index] === 'object' ? items[index] : {};
+      const rawIsin = item.isin;
+      const rawRegistrar = item.registrar;
+
+      await prisma.$transaction(async (tx) => {
+
+        // ─── Step 1: null / empty check ────────────────────────────────
+        if (!isFilledString(rawIsin) || !isFilledString(rawRegistrar)) {
+          counters.skippedNull++;
+          results.push({
+            index,
+            isin: rawIsin ?? null,
+            registrar: rawRegistrar ?? null,
+            status: 'skipped',
+            reason: 'Skipped insertion due to null/empty isin or registrar'
+          });
+          return;                              // ← was `continue;`
+        }
+
+        const isin = rawIsin.trim().toUpperCase();
+        const registrarName = rawRegistrar.trim();
+        const registrarKey = registrarName.toLowerCase();
+
+        seenIsins.add(isin);
+        seenRegistrars.set(registrarKey, registrarName);
+
+        try {
+          // ─── Step 2: resolve issuer_id (case-insensitive) ────────────
+          let issuerId;
+          if (isinCache.has(isin)) {
+            issuerId = isinCache.get(isin);
+          } else {
+            const isinRows = await tx.$queryRawUnsafe(
+              `SELECT isin_id FROM isin_re_issuance
+               WHERE UPPER(TRIM(isin)) = ?
+               LIMIT 1`,
+              isin
+            );
+            issuerId = isinRows.length ? toPlainId(isinRows[0].isin_id) : null;
+            isinCache.set(isin, issuerId);
+          }
+
+          if (issuerId === null) {
+            counters.errors++;
+            results.push({
+              index,
+              isin,
+              registrar: registrarName,
+              status: 'error',
+              reason: `No issuer found for ISIN ${isin}`
+            });
+            return;                            // ← was `continue;`
+          }
+
+          // ─── Step 3: resolve registrar_id, create if missing ─────────
+          let registrarId;
+          let registrarCreated = false;
+
+          if (registrarCache.has(registrarKey)) {
+            registrarId = registrarCache.get(registrarKey);
+          } else {
+            const registrarRows = await tx.$queryRawUnsafe(
+              `SELECT id FROM master_registrar
+               WHERE LOWER(TRIM(short_name)) = ?
+               LIMIT 1`,
+              registrarKey
+            );
+
+            if (registrarRows.length) {
+              registrarId = toPlainId(registrarRows[0].id);
+            } else {
+              await tx.$executeRawUnsafe(
+                `INSERT INTO master_registrar (registrar_name, short_name)
+                 VALUES (?, ?)`,
+                registrarName,
+                registrarName
+              );
+              const idRows = await tx.$queryRawUnsafe(
+                `SELECT LAST_INSERT_ID() AS id`
+              );
+              registrarId = toPlainId(idRows[0].id);
+              registrarCreated = true;
+              counters.newRegistrarsCreated++;
+            }
+
+            registrarCache.set(registrarKey, registrarId);
+          }
+
+          // ─── Step 4: does this issuer already have registrar rows? ───
+          const existingRows = await tx.$queryRawUnsafe(
+            `SELECT id, registrar_id FROM issuer_registrar
+             WHERE issuer_id = ?`,
+            issuerId
+          );
+
+          if (existingRows.length > 0) {
+            // ── Step 5a: replace registrar_id on every row for this issuer
+            await tx.$executeRawUnsafe(
+              `UPDATE issuer_registrar
+               SET registrar_id = ?
+               WHERE issuer_id = ?`,
+              registrarId,
+              issuerId
+            );
+
+            counters.updated++;
+            results.push({
+              index,
+              isin,
+              registrar: registrarName,
+              issuerId,
+              registrarId,
+              rowsAffected: existingRows.length,
+              status: 'updated',
+              registrarCreated
+            });
+          } else {
+            // ── Step 5b: no existing row → insert a new mapping
+            await tx.$executeRawUnsafe(
+              `INSERT INTO issuer_registrar (registrar_id, issuer_id)
+               VALUES (?, ?)`,
+              registrarId,
+              issuerId
+            );
+
+            counters.inserted++;
+            results.push({
+              index,
+              isin,
+              registrar: registrarName,
+              issuerId,
+              registrarId,
+              status: 'inserted',
+              registrarCreated
+            });
+          }
+        } catch (itemErr) {
+          counters.errors++;
+          results.push({
+            index,
+            isin,
+            registrar: registrarName,
+            status: 'error',
+            reason: itemErr.message || 'Unknown error while processing this row'
+          });
+        }
+      });
+    }
+
+    const inserted = results.filter((r) => r.status === 'inserted');
+    const updated = results.filter((r) => r.status === 'updated');
+    const notProcessed = results.filter(
+      (r) => r.status !== 'inserted' && r.status !== 'updated'
+    );
+
+    // ─── Final response ────────────────────────────────────────────────
+    return res.status(200).json({
+      success: true,
+      message:
+        `Processed ${counters.totalReceived} row(s): ` +
+        `${counters.inserted} inserted, ${counters.updated} updated, ` +
+        `${counters.skippedNull} skipped (null), ${counters.errors} error(s)`,
+      data: {
+        summary: {
+          totalReceived: counters.totalReceived,
+          inserted: counters.inserted,
+          updated: counters.updated,
+          skippedNull: counters.skippedNull,
+          errors: counters.errors,
+          newRegistrarsCreated: counters.newRegistrarsCreated,
+          distinctIsins: seenIsins.size,
+          distinctRegistrars: seenRegistrars.size
+        },
+        isins: [...seenIsins],
+        registrars: [...seenRegistrars.values()],
+        inserted,
+        updated,
+        notProcessed
+      }
+    });
+  } catch (err) {
+    console.error('Upload registrars error:', err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || 'Internal server error during registrar upload'
+    });
+  }
+});
+
 app.post('/uploadIssuers', async (req, res) => {
   const REQ_ID = `REQ-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
   const TAG = `uploadIssuers:${REQ_ID}`;
@@ -2044,11 +2688,11 @@ app.post('/uploadIssuers', async (req, res) => {
     /* ------------------------------------------------------------------ */
     /* Summary                                                             */
     /* ------------------------------------------------------------------ */
-    const inserted     = results.filter(r => r.status === 'inserted').length;
-    const updated      = results.filter(r => r.status === 'updated').length;
+    const inserted = results.filter(r => r.status === 'inserted').length;
+    const updated = results.filter(r => r.status === 'updated').length;
     const updatedInReq = results.filter(r => r.status === 'updated_in_request').length;
-    const skipped      = results.filter(r => r.status === 'skipped').length;
-    const errored      = results.filter(r => r.status === 'error').length;
+    const skipped = results.filter(r => r.status === 'skipped').length;
+    const errored = results.filter(r => r.status === 'error').length;
 
     logInfo(TAG, '──────── SUMMARY ────────');
     logInfo(TAG, `  received            : ${items.length}`);
@@ -5061,7 +5705,7 @@ app.post('/merge-agencies', async (req, res) => {
 
     // De-duplicate so a repeated id doesn't break the existence check
     const mergeAgencyIds = [...new Set(rawMergeAgencyIds)];
-    
+
 
     if (mergeAgencyIds.includes(mainAgencyId)) {
       return res.status(400).json({
@@ -5139,11 +5783,11 @@ app.post('/merge-agencies', async (req, res) => {
 
       // ── Steps 4-7: Process each rating row individually ──────────
       for (const row of ratingsToMigrate) {
-        const ratingId   = Number(row.id);
-        const issuerId   = Number(row.issuer_id);
-        const rating     = row.rating;
-        const watch      = row.watch;
-        const outlook    = row.outlook;
+        const ratingId = Number(row.id);
+        const issuerId = Number(row.issuer_id);
+        const rating = row.rating;
+        const watch = row.watch;
+        const outlook = row.outlook;
         const ratingDate = row.rating_date;
 
         // Collect unique affected issuer IDs for Step 8
