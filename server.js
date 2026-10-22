@@ -2447,6 +2447,20 @@ app.post('/upload-registrars', async (req, res) => {
   }
 });
 
+// ---------------------------------------------------------------------------
+// Helper: returns true if the row's current issue_size is zero/null in DB.
+// Table names are hardcoded strings (not user input) so interpolation is safe.
+// ---------------------------------------------------------------------------
+async function isIssueSizeZeroOrNull(tx, table, id) {
+  const rows = await tx.$queryRawUnsafe(
+    `SELECT issue_size FROM ${table} WHERE id = ? LIMIT 1`,
+    id
+  );
+  if (!rows || rows.length === 0) return false; // row missing → not "zero/null"
+  const val = rows[0].issue_size;
+  return val === null || val === undefined || Number(val) === 0;
+}
+
 app.post('/uploadIssuers', async (req, res) => {
   const REQ_ID = `REQ-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
   const TAG = `uploadIssuers:${REQ_ID}`;
@@ -2518,8 +2532,6 @@ app.post('/uploadIssuers', async (req, res) => {
     const isinToMasterIssuerId = new Map();
 
     // Track isin_re_issuance rows handled in this request.
-    // Since isin_id is deterministic per isin (via isinToMasterIssuerId),
-    // the effective dedup key within a request is just `isin`.
     // key = isin -> { id, action }
     const reIssuanceKeyState = new Map();
 
@@ -2565,7 +2577,6 @@ app.post('/uploadIssuers', async (req, res) => {
         : null;
       logDebug(itemTag, `Parsed maturityDate ${maturityDate} -> ${parsedMaturityDate}`);
 
-      // issue_size now comes directly from amountRaised (NOT baseIssueSize + greenShoeOption)
       const issueSize = Number(amountRaised) * 10000000 || null;
       const faceValueNum = Number(faceValue) * 100000 || null;
 
@@ -2610,24 +2621,31 @@ app.post('/uploadIssuers', async (req, res) => {
 
           /* ============================================================== */
           /* 3b. master_issuer — ONE row per ISIN, reuse if exists          */
+          /*     maturity_date refresh is skipped if issue_size is 0/null   */
           /* ============================================================== */
           let masterIssuerId = isinToMasterIssuerId.get(isin);
           let createdNewMaster = false;
           let masterMaturityUpdated = false;
+          let masterMaturityUpdateSkipped = false;
 
           if (masterIssuerId) {
             logDebug(itemTag, `  → master_issuer id=${masterIssuerId} reused from in-request cache for ISIN=${isin}`);
 
-            // Also update maturity_date on the master_issuer (per requirement)
             if (parsedMaturityDate) {
-              await tx.$executeRawUnsafe(
-                `UPDATE master_issuer
-                    SET maturity_date = ?, updated_at = NOW()
-                  WHERE id = ?`,
-                parsedMaturityDate, masterIssuerId
-              );
-              masterMaturityUpdated = true;
-              logDebug(itemTag, `  → Updated master_issuer id=${masterIssuerId} maturity_date=${parsedMaturityDate}`);
+              const skipMaster = await isIssueSizeZeroOrNull(tx, 'master_issuer', masterIssuerId);
+              if (skipMaster) {
+                masterMaturityUpdateSkipped = true;
+                logInfo(itemTag, `  → SKIPPED master_issuer id=${masterIssuerId} maturity_date update — issue_size is zero/null in DB`);
+              } else {
+                await tx.$executeRawUnsafe(
+                  `UPDATE master_issuer
+                      SET maturity_date = ?, updated_at = NOW()
+                    WHERE id = ?`,
+                  parsedMaturityDate, masterIssuerId
+                );
+                masterMaturityUpdated = true;
+                logDebug(itemTag, `  → Updated master_issuer id=${masterIssuerId} maturity_date=${parsedMaturityDate}`);
+              }
             }
           } else {
             // Look up by ISIN in DB
@@ -2667,46 +2685,22 @@ app.post('/uploadIssuers', async (req, res) => {
 
           /* ============================================================== */
           /* 3c. isin_re_issuance — dedup by (isin, isin_id) ONLY           */
-          /*     If exists → UPDATE issuer_master_id, allotment_date,       */
-          /*                maturity_date, face_value, issue_size           */
-          /*     Else     → INSERT new row                                  */
+          /*     Updates are skipped if the row's issue_size is zero/null   */
           /* ============================================================== */
-          const key = isin; // isin_id is deterministic per isin within this request
+          const key = isin;
           let reIssuanceId = null;
           let action = null;
 
           const cachedState = reIssuanceKeyState.get(key);
           if (cachedState) {
-            // Same (isin, isin_id) already handled earlier in this request → UPDATE again
             reIssuanceId = cachedState.id;
-            logInfo(itemTag, `  → isin_re_issuance id=${reIssuanceId} already handled in this request — updating to latest values`);
 
-            await tx.$executeRawUnsafe(
-              `UPDATE isin_re_issuance
-                  SET issuer_master_id = ?,
-                      allotment_date   = ?,
-                      maturity_date    = ?,
-                      face_value       = ?,
-                      issue_size       = ?,
-                      updated_at       = NOW()
-                WHERE id = ?`,
-              issuerId, parsedDate, parsedMaturityDate,
-              faceValueNum, issueSize, reIssuanceId
-            );
-            action = 'updated_in_request';
-          } else {
-            const existingRe = await tx.$queryRawUnsafe(
-              `SELECT id FROM isin_re_issuance
-                 WHERE isin = ? AND isin_id = ?
-                 LIMIT 1`,
-              isin, masterIssuerId
-            );
-
-            if (existingRe && existingRe.length > 0) {
-              /* --- UPDATE existing row --- */
-              reIssuanceId = Number(existingRe[0].id);
-              logInfo(itemTag, `  → isin_re_issuance id=${reIssuanceId} EXISTS for (isin=${isin}, isin_id=${masterIssuerId}) — updating`);
-
+            const skipUpdate = await isIssueSizeZeroOrNull(tx, 'isin_re_issuance', reIssuanceId);
+            if (skipUpdate) {
+              action = 'skipped_zero_issue_size';
+              logInfo(itemTag, `  → SKIP isin_re_issuance id=${reIssuanceId} update — issue_size is zero/null in DB`);
+            } else {
+              logInfo(itemTag, `  → isin_re_issuance id=${reIssuanceId} already handled in this request — updating to latest values`);
               await tx.$executeRawUnsafe(
                 `UPDATE isin_re_issuance
                     SET issuer_master_id = ?,
@@ -2719,7 +2713,44 @@ app.post('/uploadIssuers', async (req, res) => {
                 issuerId, parsedDate, parsedMaturityDate,
                 faceValueNum, issueSize, reIssuanceId
               );
-              action = 'updated';
+              action = 'updated_in_request';
+            }
+          } else {
+            const existingRe = await tx.$queryRawUnsafe(
+              `SELECT id, issue_size FROM isin_re_issuance
+                 WHERE isin = ? AND isin_id = ?
+                 LIMIT 1`,
+              isin, masterIssuerId
+            );
+
+            if (existingRe && existingRe.length > 0) {
+              reIssuanceId = Number(existingRe[0].id);
+
+              const dbIssueSize = existingRe[0].issue_size;
+              const dbIsZeroOrNull =
+                dbIssueSize === null ||
+                dbIssueSize === undefined ||
+                Number(dbIssueSize) === 0;
+
+              if (dbIsZeroOrNull) {
+                action = 'skipped_zero_issue_size';
+                logInfo(itemTag, `  → SKIP isin_re_issuance id=${reIssuanceId} update — issue_size is zero/null in DB`);
+              } else {
+                logInfo(itemTag, `  → isin_re_issuance id=${reIssuanceId} EXISTS for (isin=${isin}, isin_id=${masterIssuerId}) — updating`);
+                await tx.$executeRawUnsafe(
+                  `UPDATE isin_re_issuance
+                      SET issuer_master_id = ?,
+                          allotment_date   = ?,
+                          maturity_date    = ?,
+                          face_value       = ?,
+                          issue_size       = ?,
+                          updated_at       = NOW()
+                    WHERE id = ?`,
+                  issuerId, parsedDate, parsedMaturityDate,
+                  faceValueNum, issueSize, reIssuanceId
+                );
+                action = 'updated';
+              }
             } else {
               /* --- INSERT new row --- */
               logDebug(itemTag, 'INSERT isin_re_issuance (new row)', {
@@ -2754,6 +2785,7 @@ app.post('/uploadIssuers', async (req, res) => {
             createdNewIssuer,
             createdNewMaster,
             masterMaturityUpdated,
+            masterMaturityUpdateSkipped,
             action,
             matchScore: match ? match.score : null,
           };
@@ -2780,6 +2812,7 @@ app.post('/uploadIssuers', async (req, res) => {
           createdNewIssuer: txResult.createdNewIssuer,
           createdNewMasterIssuer: txResult.createdNewMaster,
           masterMaturityUpdated: txResult.masterMaturityUpdated,
+          masterMaturityUpdateSkipped: txResult.masterMaturityUpdateSkipped,
           matchScore: txResult.matchScore,
         });
 
@@ -2796,19 +2829,21 @@ app.post('/uploadIssuers', async (req, res) => {
     const inserted = results.filter(r => r.status === 'inserted').length;
     const updated = results.filter(r => r.status === 'updated').length;
     const updatedInReq = results.filter(r => r.status === 'updated_in_request').length;
+    const skippedZeroIssueSize = results.filter(r => r.status === 'skipped_zero_issue_size').length;
     const skipped = results.filter(r => r.status === 'skipped').length;
     const errored = results.filter(r => r.status === 'error').length;
 
     logInfo(TAG, '──────── SUMMARY ────────');
-    logInfo(TAG, `  received            : ${items.length}`);
-    logInfo(TAG, `  unique (in-request) : ${uniqueItems.length}`);
-    logInfo(TAG, `  in-body duplicates  : ${inRequestBodyDupCount}`);
-    logInfo(TAG, `  inserted            : ${inserted}`);
-    logInfo(TAG, `  updated             : ${updated}`);
-    logInfo(TAG, `  updated_in_request  : ${updatedInReq}`);
-    logInfo(TAG, `  skipped (invalid)   : ${skipped}`);
-    logInfo(TAG, `  errored             : ${errored}`);
-    logInfo(TAG, `  duration            : ${Date.now() - startedAt} ms`);
+    logInfo(TAG, `  received                : ${items.length}`);
+    logInfo(TAG, `  unique (in-request)     : ${uniqueItems.length}`);
+    logInfo(TAG, `  in-body duplicates      : ${inRequestBodyDupCount}`);
+    logInfo(TAG, `  inserted                : ${inserted}`);
+    logInfo(TAG, `  updated                 : ${updated}`);
+    logInfo(TAG, `  updated_in_request      : ${updatedInReq}`);
+    logInfo(TAG, `  skipped (zero/null size): ${skippedZeroIssueSize}`);
+    logInfo(TAG, `  skipped (invalid)       : ${skipped}`);
+    logInfo(TAG, `  errored                 : ${errored}`);
+    logInfo(TAG, `  duration                : ${Date.now() - startedAt} ms`);
     logInfo(TAG, '◀ Request completed');
 
     res.json({
@@ -2818,6 +2853,7 @@ app.post('/uploadIssuers', async (req, res) => {
       inserted,
       updated,
       updatedInRequest: updatedInReq,
+      skippedZeroIssueSize,
       skipped,
       errored,
       durationMs: Date.now() - startedAt,
