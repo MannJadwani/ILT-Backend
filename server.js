@@ -763,18 +763,18 @@ function buildFieldMap(freqMap) {
     weightedAverageCutOffYield: { column: 'weighted_average_cutoff_yield_price', convert: toNumberOrNull },
   };
 }
-/* -------------------------------------------------------------------------- */
-/* Endpoint                                                                   */
-/* -------------------------------------------------------------------------- */
+
 
 /* -------------------------------------------------------------------------- */
 /* Whitelist — only these keys are allowed as `masterTable`                   */
+/* `hasParentId: true` means the table has a parent_id column and only rows  */
+/* with parent_id = 0 (not merged) should be returned.                        */
 /* -------------------------------------------------------------------------- */
 const MASTER_TABLE_MAP = {
-  arranger:  { table: 'master_arranger',  idCol: 'id', nameCol: 'arranger_name'  },
-  trustee:   { table: 'master_trustee',   idCol: 'id', nameCol: 'trustee_name'   },
-  registrar: { table: 'master_registrar', idCol: 'id', nameCol: 'registrar_name' },
-  agency:    { table: 'master_agency',    idCol: 'id', nameCol: 'agency_name'    },
+  arranger:  { table: 'master_arranger',  idCol: 'id', nameCol: 'arranger_name',  hasParentId: true  },
+  trustee:   { table: 'master_trustee',   idCol: 'id', nameCol: 'trustee_name',   hasParentId: true  },
+  registrar: { table: 'master_registrar', idCol: 'id', nameCol: 'registrar_name', hasParentId: true  },
+  agency:    { table: 'master_agency',    idCol: 'id', nameCol: 'agency_name',    hasParentId: true  },
 };
 
 /* -------------------------------------------------------------------------- */
@@ -804,46 +804,60 @@ app.post('/masterSearch', async (req, res) => {
       });
     }
 
-    /* ---- Build query — conditionally add the LIKE filter ---- */
+    /* ---- Build query ---- */
     const trimmed = typeof searchQuery === 'string' ? searchQuery.trim() : '';
     const hasFilter = trimmed.length > 0;
 
-    let sql = `
+    const whereClauses = [];
+    const params = [];
+
+    // Always exclude merged-away rows
+    if (cfg.hasParentId) {
+      whereClauses.push('parent_id = 0');
+    }
+
+    // Optional LIKE filter
+    if (hasFilter) {
+      const escaped = trimmed.replace(/[\\%_]/g, ch => '\\' + ch);
+      const likePattern = `%${escaped}%`;
+      whereClauses.push('short_name LIKE ?');
+      params.push(likePattern);
+      logDebug(TAG, `Filtering ${cfg.table}.short_name LIKE "${likePattern}"`);
+    } else {
+      logDebug(TAG, `No searchQuery — fetching ALL (unmerged) rows from ${cfg.table}`);
+    }
+
+    const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+    const sql = `
       SELECT
         \`${cfg.idCol}\`    AS id,
         short_name          AS short_name,
         \`${cfg.nameCol}\`  AS name
+        ${cfg.hasParentId ? ', parent_id AS parent_id' : ''}
       FROM \`${cfg.table}\`
+      ${whereSql}
+      ORDER BY short_name ASC
+      LIMIT 500
     `;
-    const params = [];
-
-    if (hasFilter) {
-      const escaped = trimmed.replace(/[\\%_]/g, ch => '\\' + ch);
-      const likePattern = `%${escaped}%`;
-      sql += ` WHERE short_name LIKE ? `;
-      params.push(likePattern);
-      logDebug(TAG, `Filtering ${cfg.table}.short_name LIKE "${likePattern}"`);
-    } else {
-      logDebug(TAG, `No searchQuery — fetching ALL rows from ${cfg.table}`);
-    }
-
-    sql += ` ORDER BY short_name ASC LIMIT 500`;
 
     /* ---- Query ---- */
     const rows = await prisma.$queryRawUnsafe(sql, ...params);
 
-    logInfo(TAG, `✔ ${rows.length} row(s) returned from ${cfg.table} (filtered=${hasFilter})`);
+    logInfo(TAG, `✔ ${rows.length} row(s) returned from ${cfg.table}`);
 
     res.json({
       requestId: REQ_ID,
       masterTable: cfg.table,
       searchQuery: hasFilter ? searchQuery : null,
       filtered: hasFilter,
+      parentIdFilter: cfg.hasParentId ? 0 : null,
       count: rows.length,
       data: rows.map(r => ({
         id:        Number(r.id),
         shortName: r.short_name,
         name:      r.name,
+        ...(cfg.hasParentId ? { parentId: Number(r.parent_id) } : {}),
       })),
     });
   } catch (error) {
