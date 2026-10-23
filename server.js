@@ -6190,12 +6190,12 @@ app.post('/merge-registrars', async (req, res) => {
     const result = await prisma.$transaction(async (tx) => {
 
       // ── Step 1b: Verify main registrar exists ─────────────────────
-      const mainRows = await tx.$queryRaw`
+      const mainRows = await tx.$queryRawUnsafe(`
         SELECT id, registrar_name, parent_id
         FROM master_registrar
         WHERE id = ${mainRegistrarId}
         LIMIT 1
-      `;
+      `);
       if (!mainRows || mainRows.length === 0) {
         throw new Error(`Main registrar with id ${mainRegistrarId} not found`);
       }
@@ -6207,9 +6207,9 @@ app.post('/merge-registrars', async (req, res) => {
       const mergeIdsString = mergeRegistrarIds.join(', ');
 
       // ── Step 1c: Verify all duplicates exist ──────────────────────
-      const found = await tx.$queryRaw`
+      const found = await tx.$queryRawUnsafe(`
         SELECT id FROM master_registrar WHERE id IN (${mergeIdsString})
-      `;
+      `);
       if (found.length !== mergeRegistrarIds.length) {
         const foundIds = found.map((r) => Number(r.id));
         const missing = mergeRegistrarIds.filter((id) => !foundIds.includes(id));
@@ -6217,18 +6217,18 @@ app.post('/merge-registrars', async (req, res) => {
       }
 
       // ── Step 2: Mark duplicates as merged ─────────────────────────
-      await tx.$executeRaw`
+      await tx.$queryRawUnsafe(`
         UPDATE master_registrar
         SET parent_id = ${mainRegistrarId}
         WHERE id IN (${mergeIdsString})
-      `;
+      `);
 
       // ── Step 3: Fetch all issuer_registrar mappings to migrate ────
-      const mappingsToMigrate = await tx.$queryRaw`
+      const mappingsToMigrate = await tx.$queryRawUnsafe(`
         SELECT issuer_id, registrar_id
         FROM issuer_registrar
         WHERE registrar_id IN (${mergeIdsString})
-      `;
+      `);
 
       if (!mappingsToMigrate || mappingsToMigrate.length === 0) {
         return {
@@ -6251,36 +6251,36 @@ app.post('/merge-registrars', async (req, res) => {
         if (!affectedIssuerIds.includes(issuerId)) affectedIssuerIds.push(issuerId);
 
         // Delete the old mapping
-        await tx.$executeRaw`
+        await tx.$queryRawUnsafe(`
           DELETE FROM issuer_registrar
           WHERE issuer_id = ${issuerId} AND registrar_id = ${oldRegistrarId}
-        `;
+        `);
 
         // Check if the new mapping already exists
-        const existing = await tx.$queryRaw`
+        const existing = await tx.$queryRawUnsafe(`
           SELECT issuer_id, registrar_id FROM issuer_registrar
           WHERE issuer_id = ${issuerId} AND registrar_id = ${mainRegistrarId}
           LIMIT 1
-        `;
+        `);
 
         if (existing && existing.length > 0) {
           skippedDuplicates++;
         } else {
-          await tx.$executeRaw`
+          await tx.$queryRawUnsafe(`
             INSERT INTO issuer_registrar (issuer_id, registrar_id)
             VALUES (${issuerId}, ${mainRegistrarId})
-          `;
+          `);
         }
       }
 
       // ── Step 8: Flag affected issuers ─────────────────────────────
       if (affectedIssuerIds.length > 0) {
         const issuerIdsString = affectedIssuerIds.join(', ');
-        await tx.$executeRaw`
+        await tx.$queryRawUnsafe(`
           UPDATE master_issuer
           SET is_updated = true
           WHERE id IN (${issuerIdsString})
-        `;
+        `);
       }
 
       return {
