@@ -5226,7 +5226,7 @@ app.get('/arrangers/similar/:arrangerId', async (req, res) => {
     const allArrangers = await prisma.$queryRawUnsafe(`
       SELECT id, short_name, arranger_name, parent_id
       FROM master_arranger
-      WHERE id != ${arrangerIdNum}  AND parent_id = 0
+      WHERE id != ${arrangerIdNum}
       ORDER BY short_name ASC
     `);
 
@@ -5347,7 +5347,7 @@ app.get('/trustees/similar/:trusteeId', async (req, res) => {
     const allTrustees = await prisma.$queryRawUnsafe(`
       SELECT id, short_name, trustee_name, trustshpd, website, is_active, is_deleted, parent_id
       FROM master_trustee
-      WHERE id != ${trusteeIdNum} AND parent_id = 0
+      WHERE id != ${trusteeIdNum}
       ORDER BY short_name ASC
     `);
 
@@ -5480,7 +5480,7 @@ app.get('/agencies/similar/:agencyId', async (req, res) => {
     const allAgencies = await prisma.$queryRawUnsafe(`
       SELECT id, agency_code, short_name, agency_name, parent_id, is_active, is_deleted
       FROM master_agency
-      WHERE id != ${agencyIdNum} AND parent_id = 0
+      WHERE id != ${agencyIdNum}
       ORDER BY agency_name ASC
     `);
 
@@ -5596,7 +5596,7 @@ app.get('/registrars/similar/:registrarId', async (req, res) => {
     const allRegistrars = await prisma.$queryRaw`
       SELECT id, short_name, registrar_name
       FROM master_registrar
-      WHERE id != ${registrarIdNum} AND parent_id = 0
+      WHERE id != ${registrarIdNum}
       ORDER BY registrar_name ASC
     `;
 
