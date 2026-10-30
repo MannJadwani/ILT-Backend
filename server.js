@@ -865,7 +865,7 @@ app.post('/masterSearch', async (req, res) => {
     res.status(500).json({ error: error.message, requestId: REQ_ID });
   }
 });
-
+//SIXTH
 app.post('/uploadIsinReIssuanceDetails', async (req, res) => {
   const REQ_ID = `REQ-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
   const TAG = `uploadIsinReIssuanceDetails:${REQ_ID}`;
@@ -1138,7 +1138,7 @@ app.post('/uploadIsinReIssuanceDetails', async (req, res) => {
     res.status(500).json({ error: error.message, requestId: REQ_ID });
   }
 });
-
+//FIFTH
 app.post('/uploadCreditRatings', async (req, res) => {
   const REQ_ID = `REQ-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
   const TAG = `uploadCreditRatings:${REQ_ID}`;
@@ -1471,335 +1471,335 @@ app.post('/uploadCreditRatings', async (req, res) => {
   }
 });
 
-app.post('/uploadIntermediaries', async (req, res) => {
-  const REQ_ID = `REQ-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
-  const TAG = `uploadIntermediaries:${REQ_ID}`;
-  const startedAt = Date.now();
+// app.post('/uploadIntermediaries', async (req, res) => {
+//   const REQ_ID = `REQ-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+//   const TAG = `uploadIntermediaries:${REQ_ID}`;
+//   const startedAt = Date.now();
 
-  logInfo(TAG, '▶ Request received');
+//   logInfo(TAG, '▶ Request received');
 
-  try {
-    const items = req.body;
-    logDebug(TAG, 'Request body preview', {
-      isArray: Array.isArray(items),
-      length: Array.isArray(items) ? items.length : null,
-    });
+//   try {
+//     const items = req.body;
+//     logDebug(TAG, 'Request body preview', {
+//       isArray: Array.isArray(items),
+//       length: Array.isArray(items) ? items.length : null,
+//     });
 
-    if (!Array.isArray(items) || items.length === 0) {
-      logWarn(TAG, 'Invalid request body — must be a non-empty array');
-      return res.status(400).json({ error: 'Request body must be a non-empty array' });
-    }
+//     if (!Array.isArray(items) || items.length === 0) {
+//       logWarn(TAG, 'Invalid request body — must be a non-empty array');
+//       return res.status(400).json({ error: 'Request body must be a non-empty array' });
+//     }
 
-    /* ------------------------------------------------------------------ */
-    /* STEP 1 — In-request deduplication                                   */
-    /* ------------------------------------------------------------------ */
-    logInfo(TAG, `STEP 1: Deduplicating ${items.length} incoming items`);
+//     /* ------------------------------------------------------------------ */
+//     /* STEP 1 — In-request deduplication                                   */
+//     /* ------------------------------------------------------------------ */
+//     logInfo(TAG, `STEP 1: Deduplicating ${items.length} incoming items`);
 
-    const seen = new Set();
-    const uniqueItems = [];
-    let inRequestBodyDupCount = 0;
+//     const seen = new Set();
+//     const uniqueItems = [];
+//     let inRequestBodyDupCount = 0;
 
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-      const key = JSON.stringify({
-        isin: item.isin ?? null,
-        arranger: item.arranger ?? null,
-        trustee: item.trustee ?? null,
-        registrar: item.registrar ?? null,
-      });
-      if (seen.has(key)) {
-        inRequestBodyDupCount++;
-        logDebug(TAG, `  Item[${i}] DUPLICATE in body — skipped`, { isin: item.isin });
-      } else {
-        seen.add(key);
-        uniqueItems.push(item);
-        logDebug(TAG, `  Item[${i}] unique — kept`, { isin: item.isin });
-      }
-    }
-    logInfo(TAG, `STEP 1 DONE: ${uniqueItems.length} unique / ${inRequestBodyDupCount} in-request duplicates removed`);
+//     for (let i = 0; i < items.length; i++) {
+//       const item = items[i];
+//       const key = JSON.stringify({
+//         isin: item.isin ?? null,
+//         arranger: item.arranger ?? null,
+//         trustee: item.trustee ?? null,
+//         registrar: item.registrar ?? null,
+//       });
+//       if (seen.has(key)) {
+//         inRequestBodyDupCount++;
+//         logDebug(TAG, `  Item[${i}] DUPLICATE in body — skipped`, { isin: item.isin });
+//       } else {
+//         seen.add(key);
+//         uniqueItems.push(item);
+//         logDebug(TAG, `  Item[${i}] unique — kept`, { isin: item.isin });
+//       }
+//     }
+//     logInfo(TAG, `STEP 1 DONE: ${uniqueItems.length} unique / ${inRequestBodyDupCount} in-request duplicates removed`);
 
-    /* ------------------------------------------------------------------ */
-    /* STEP 2 — Load existing master_X data for fuzzy matching             */
-    /* ------------------------------------------------------------------ */
-    logInfo(TAG, 'STEP 2: Loading existing master_{arranger,trustee,registrar}');
+//     /* ------------------------------------------------------------------ */
+//     /* STEP 2 — Load existing master_X data for fuzzy matching             */
+//     /* ------------------------------------------------------------------ */
+//     logInfo(TAG, 'STEP 2: Loading existing master_{arranger,trustee,registrar}');
 
-    const [arrangerRows, trusteeRows, registrarRows] = await Promise.all([
-      prisma.$queryRawUnsafe(`SELECT id, arranger_name  AS name FROM master_arranger`),
-      prisma.$queryRawUnsafe(`SELECT id, trustee_name   AS name FROM master_trustee`),
-      prisma.$queryRawUnsafe(`SELECT id, registrar_name AS name FROM master_registrar`),
-    ]);
+//     const [arrangerRows, trusteeRows, registrarRows] = await Promise.all([
+//       prisma.$queryRawUnsafe(`SELECT id, arranger_name  AS name FROM master_arranger`),
+//       prisma.$queryRawUnsafe(`SELECT id, trustee_name   AS name FROM master_trustee`),
+//       prisma.$queryRawUnsafe(`SELECT id, registrar_name AS name FROM master_registrar`),
+//     ]);
 
-    const intermediaryCache = {
-      arranger: arrangerRows.map(r => ({ id: Number(r.id), name: r.name })),
-      trustee: trusteeRows.map(r => ({ id: Number(r.id), name: r.name })),
-      registrar: registrarRows.map(r => ({ id: Number(r.id), name: r.name })),
-    };
+//     const intermediaryCache = {
+//       arranger: arrangerRows.map(r => ({ id: Number(r.id), name: r.name })),
+//       trustee: trusteeRows.map(r => ({ id: Number(r.id), name: r.name })),
+//       registrar: registrarRows.map(r => ({ id: Number(r.id), name: r.name })),
+//     };
 
-    logInfo(TAG, `STEP 2 DONE: ` +
-      `arrangers=${intermediaryCache.arranger.length}, ` +
-      `trustees=${intermediaryCache.trustee.length}, ` +
-      `registrars=${intermediaryCache.registrar.length}`);
+//     logInfo(TAG, `STEP 2 DONE: ` +
+//       `arrangers=${intermediaryCache.arranger.length}, ` +
+//       `trustees=${intermediaryCache.trustee.length}, ` +
+//       `registrars=${intermediaryCache.registrar.length}`);
 
-    // In-request pair tracker: `${isinId}|${kind}|${intermediaryId}` -> true
-    const pairCache = new Set();
+//     // In-request pair tracker: `${isinId}|${kind}|${intermediaryId}` -> true
+//     const pairCache = new Set();
 
-    const results = [];
+//     const results = [];
 
-    /* ------------------------------------------------------------------ */
-    /* STEP 3 — Process each unique item                                   */
-    /* ------------------------------------------------------------------ */
-    logInfo(TAG, `STEP 3: Processing ${uniqueItems.length} unique items`);
+//     /* ------------------------------------------------------------------ */
+//     /* STEP 3 — Process each unique item                                   */
+//     /* ------------------------------------------------------------------ */
+//     logInfo(TAG, `STEP 3: Processing ${uniqueItems.length} unique items`);
 
-    for (let idx = 0; idx < uniqueItems.length; idx++) {
-      await delay(30);
-      const item = uniqueItems[idx];
-      const itemTag = `${TAG}:item[${idx}]`;
+//     for (let idx = 0; idx < uniqueItems.length; idx++) {
+//       await delay(30);
+//       const item = uniqueItems[idx];
+//       const itemTag = `${TAG}:item[${idx}]`;
 
-      const { isin, issuerName, arranger, trustee, registrar } = item;
+//       const { isin, issuerName, arranger, trustee, registrar } = item;
 
-      logInfo(itemTag, `▶ Processing ISIN=${isin} issuer="${issuerName || 'N/A'}"`);
-      logDebug(itemTag, 'Raw payload', item);
+//       logInfo(itemTag, `▶ Processing ISIN=${isin} issuer="${issuerName || 'N/A'}"`);
+//       logDebug(itemTag, 'Raw payload', item);
 
-      /* ---- Validation ---- */
-      if (!isin) {
-        logWarn(itemTag, 'Skipped — missing isin');
-        results.push({ isin, issuerName, status: 'skipped', reason: 'Missing isin' });
-        continue;
-      }
+//       /* ---- Validation ---- */
+//       if (!isin) {
+//         logWarn(itemTag, 'Skipped — missing isin');
+//         results.push({ isin, issuerName, status: 'skipped', reason: 'Missing isin' });
+//         continue;
+//       }
 
-      /* ---- Resolve isin_id — by ISIN ONLY ---- */
-      logDebug(itemTag, 'Resolving isin_id from isin_re_issuance (by isin only)');
+//       /* ---- Resolve isin_id — by ISIN ONLY ---- */
+//       logDebug(itemTag, 'Resolving isin_id from isin_re_issuance (by isin only)');
 
-      const isinRow = await prisma.$queryRawUnsafe(
-        `SELECT id, isin_id FROM isin_re_issuance
-           WHERE isin = ?
-           ORDER BY id DESC LIMIT 1`,
-        isin
-      );
+//       const isinRow = await prisma.$queryRawUnsafe(
+//         `SELECT id, isin_id FROM isin_re_issuance
+//            WHERE isin = ?
+//            ORDER BY id DESC LIMIT 1`,
+//         isin
+//       );
 
-      const resolutionMode = 'by_isin';
+//       const resolutionMode = 'by_isin';
 
-      if (!isinRow || isinRow.length === 0) {
-        logError(itemTag, `No isin_re_issuance row found for isin=${isin} — SKIP (will not create ISIN)`);
-        results.push({
-          isin,
-          issuerName,
-          status: 'error',
-          reason: `No isin_re_issuance row found for isin=${isin}`,
-        });
-        continue;
-      }
+//       if (!isinRow || isinRow.length === 0) {
+//         logError(itemTag, `No isin_re_issuance row found for isin=${isin} — SKIP (will not create ISIN)`);
+//         results.push({
+//           isin,
+//           issuerName,
+//           status: 'error',
+//           reason: `No isin_re_issuance row found for isin=${isin}`,
+//         });
+//         continue;
+//       }
 
-      const isinId = Number(isinRow[0].isin_id);
-      const matchedReIssuanceId = Number(isinRow[0].id);
+//       const isinId = Number(isinRow[0].isin_id);
+//       const matchedReIssuanceId = Number(isinRow[0].id);
 
-      logInfo(itemTag,
-        `Resolved isin_id=${isinId} (mode=${resolutionMode}, isin_re_issuance.id=${matchedReIssuanceId})`);
+//       logInfo(itemTag,
+//         `Resolved isin_id=${isinId} (mode=${resolutionMode}, isin_re_issuance.id=${matchedReIssuanceId})`);
 
-      /* ---- Process each intermediary kind ---- */
-      const itemResults = {
-        isin,
-        issuerName,
-        isinId,
-        matchedReIssuanceId,
-        resolutionMode,
-        arranger: null,
-        trustee: null,
-        registrar: null,
-      };
+//       /* ---- Process each intermediary kind ---- */
+//       const itemResults = {
+//         isin,
+//         issuerName,
+//         isinId,
+//         matchedReIssuanceId,
+//         resolutionMode,
+//         arranger: null,
+//         trustee: null,
+//         registrar: null,
+//       };
 
-      for (const kind of INTERMEDIARY_KINDS) {
-        const kindTag = `${itemTag}:${kind}`;
-        const value = item[kind];
+//       for (const kind of INTERMEDIARY_KINDS) {
+//         const kindTag = `${itemTag}:${kind}`;
+//         const value = item[kind];
 
-        // ---- Skip null/empty ----
-        if (value === null || value === undefined || String(value).trim() === '') {
-          logDebug(kindTag, `Skipped — ${kind} is null/empty`);
-          itemResults[kind] = { status: 'skipped', reason: 'null/empty' };
-          continue;
-        }
+//         // ---- Skip null/empty ----
+//         if (value === null || value === undefined || String(value).trim() === '') {
+//           logDebug(kindTag, `Skipped — ${kind} is null/empty`);
+//           itemResults[kind] = { status: 'skipped', reason: 'null/empty' };
+//           continue;
+//         }
 
-        const cfg = INTERMEDIARY_CONFIG[kind];
-        const listKey = kind;
+//         const cfg = INTERMEDIARY_CONFIG[kind];
+//         const listKey = kind;
 
-        logInfo(kindTag, `▶ Processing ${kind}="${value}"`);
+//         logInfo(kindTag, `▶ Processing ${kind}="${value}"`);
 
-        /* ---- Fuzzy-match ---- */
-        const match = findBestMatchInterMediateries(value, intermediaryCache[listKey], kindTag);
+//         /* ---- Fuzzy-match ---- */
+//         const match = findBestMatchInterMediateries(value, intermediaryCache[listKey], kindTag);
 
-        let intermediaryId;
-        let createdNew = false;
-        let matchScore = null;
+//         let intermediaryId;
+//         let createdNew = false;
+//         let matchScore = null;
 
-        if (match) {
-          intermediaryId = Number(match.entity.id);
-          matchScore = match.score;
-          logDebug(kindTag, `Reusing existing ${cfg.masterTable} id=${intermediaryId}`);
-        } else {
-          /* ---- Create new intermediary in master_X (name + short_name) ---- */
-          logDebug(kindTag, `INSERT ${cfg.masterTable}`, {
-            [cfg.nameColumn]: value,
-            [cfg.shortNameColumn]: value,
-          });
+//         if (match) {
+//           intermediaryId = Number(match.entity.id);
+//           matchScore = match.score;
+//           logDebug(kindTag, `Reusing existing ${cfg.masterTable} id=${intermediaryId}`);
+//         } else {
+//           /* ---- Create new intermediary in master_X (name + short_name) ---- */
+//           logDebug(kindTag, `INSERT ${cfg.masterTable}`, {
+//             [cfg.nameColumn]: value,
+//             [cfg.shortNameColumn]: value,
+//           });
 
-          try {
-            await prisma.$executeRawUnsafe(
-              `INSERT INTO ${cfg.masterTable}
-                 (${cfg.nameColumn}, ${cfg.shortNameColumn})
-               VALUES (?, ?)`,
-              value, value
-            );
-            const [{ id }] = await prisma.$queryRawUnsafe(
-              `SELECT LAST_INSERT_ID() AS id`
-            );
-            intermediaryId = Number(id);
-            createdNew = true;
+//           try {
+//             await prisma.$executeRawUnsafe(
+//               `INSERT INTO ${cfg.masterTable}
+//                  (${cfg.nameColumn}, ${cfg.shortNameColumn})
+//                VALUES (?, ?)`,
+//               value, value
+//             );
+//             const [{ id }] = await prisma.$queryRawUnsafe(
+//               `SELECT LAST_INSERT_ID() AS id`
+//             );
+//             intermediaryId = Number(id);
+//             createdNew = true;
 
-            intermediaryCache[listKey].push({ id: intermediaryId, name: value });
+//             intermediaryCache[listKey].push({ id: intermediaryId, name: value });
 
-            logInfo(kindTag, `  → Created ${cfg.masterTable} id=${intermediaryId} (short_name="${value}")`);
-          } catch (insertErr) {
-            logWarn(kindTag, `INSERT failed (${insertErr.message}) — re-querying`);
-            const rows = await prisma.$queryRawUnsafe(
-              `SELECT id, ${cfg.nameColumn} AS name FROM ${cfg.masterTable}
-                 WHERE ${cfg.nameColumn} = ? LIMIT 1`,
-              value
-            );
-            if (rows && rows.length > 0) {
-              intermediaryId = Number(rows[0].id);
-              logInfo(kindTag, `  → Recovered existing id=${intermediaryId} after conflict`);
-            } else {
-              logError(kindTag, `Could not create or find ${cfg.masterTable} for "${value}"`);
-              itemResults[kind] = { status: 'error', reason: insertErr.message };
-              continue;
-            }
-          }
-        }
+//             logInfo(kindTag, `  → Created ${cfg.masterTable} id=${intermediaryId} (short_name="${value}")`);
+//           } catch (insertErr) {
+//             logWarn(kindTag, `INSERT failed (${insertErr.message}) — re-querying`);
+//             const rows = await prisma.$queryRawUnsafe(
+//               `SELECT id, ${cfg.nameColumn} AS name FROM ${cfg.masterTable}
+//                  WHERE ${cfg.nameColumn} = ? LIMIT 1`,
+//               value
+//             );
+//             if (rows && rows.length > 0) {
+//               intermediaryId = Number(rows[0].id);
+//               logInfo(kindTag, `  → Recovered existing id=${intermediaryId} after conflict`);
+//             } else {
+//               logError(kindTag, `Could not create or find ${cfg.masterTable} for "${value}"`);
+//               itemResults[kind] = { status: 'error', reason: insertErr.message };
+//               continue;
+//             }
+//           }
+//         }
 
-        /* ---- Check issuer_X for (issuer_id, <link_id>) ---- */
-        const pairKey = `${isinId}|${kind}|${intermediaryId}`;
+//         /* ---- Check issuer_X for (issuer_id, <link_id>) ---- */
+//         const pairKey = `${isinId}|${kind}|${intermediaryId}`;
 
-        // In-request duplicate
-        if (pairCache.has(pairKey)) {
-          logInfo(kindTag, `Pair already handled in THIS request (key=${pairKey}) — duplicate_in_request`);
-          itemResults[kind] = {
-            status: 'duplicate_in_request',
-            id: intermediaryId,
-            createdNew,
-            matchScore,
-          };
-          continue;
-        }
+//         // In-request duplicate
+//         if (pairCache.has(pairKey)) {
+//           logInfo(kindTag, `Pair already handled in THIS request (key=${pairKey}) — duplicate_in_request`);
+//           itemResults[kind] = {
+//             status: 'duplicate_in_request',
+//             id: intermediaryId,
+//             createdNew,
+//             matchScore,
+//           };
+//           continue;
+//         }
 
-        // NOTE: link table has NO `id` column — use SELECT 1
-        const existingLink = await prisma.$queryRawUnsafe(
-          `SELECT 1 AS found FROM ${cfg.linkTable}
-             WHERE issuer_id = ? AND ${cfg.linkIdColumn} = ?
-             LIMIT 1`,
-          isinId, intermediaryId
-        );
+//         // NOTE: link table has NO `id` column — use SELECT 1
+//         const existingLink = await prisma.$queryRawUnsafe(
+//           `SELECT 1 AS found FROM ${cfg.linkTable}
+//              WHERE issuer_id = ? AND ${cfg.linkIdColumn} = ?
+//              LIMIT 1`,
+//           isinId, intermediaryId
+//         );
 
-        if (existingLink && existingLink.length > 0) {
-          pairCache.add(pairKey);
-          logInfo(kindTag, `Pair already exists in ${cfg.linkTable} — already_exists`);
-          itemResults[kind] = {
-            status: 'already_exists',
-            id: intermediaryId,
-            createdNew,
-            matchScore,
-          };
-          continue;
-        }
+//         if (existingLink && existingLink.length > 0) {
+//           pairCache.add(pairKey);
+//           logInfo(kindTag, `Pair already exists in ${cfg.linkTable} — already_exists`);
+//           itemResults[kind] = {
+//             status: 'already_exists',
+//             id: intermediaryId,
+//             createdNew,
+//             matchScore,
+//           };
+//           continue;
+//         }
 
-        /* ---- Insert into issuer_X (no id column) ---- */
-        logDebug(kindTag, `INSERT ${cfg.linkTable}`, {
-          issuer_id: isinId,
-          [cfg.linkIdColumn]: intermediaryId,
-        });
+//         /* ---- Insert into issuer_X (no id column) ---- */
+//         logDebug(kindTag, `INSERT ${cfg.linkTable}`, {
+//           issuer_id: isinId,
+//           [cfg.linkIdColumn]: intermediaryId,
+//         });
 
-        try {
-          await prisma.$executeRawUnsafe(
-            `INSERT INTO ${cfg.linkTable} (issuer_id, ${cfg.linkIdColumn}) VALUES (?, ?)`,
-            isinId, intermediaryId
-          );
-          pairCache.add(pairKey);
+//         try {
+//           await prisma.$executeRawUnsafe(
+//             `INSERT INTO ${cfg.linkTable} (issuer_id, ${cfg.linkIdColumn}) VALUES (?, ?)`,
+//             isinId, intermediaryId
+//           );
+//           pairCache.add(pairKey);
 
-          logInfo(kindTag,
-            `  → Created ${cfg.linkTable} (issuer_id=${isinId}, ${cfg.linkIdColumn}=${intermediaryId})`);
+//           logInfo(kindTag,
+//             `  → Created ${cfg.linkTable} (issuer_id=${isinId}, ${cfg.linkIdColumn}=${intermediaryId})`);
 
-          itemResults[kind] = {
-            status: 'inserted',
-            id: intermediaryId,
-            createdNew,
-            matchScore,
-          };
-        } catch (linkErr) {
-          logError(kindTag, `INSERT ${cfg.linkTable} failed — ${linkErr.message}`);
-          itemResults[kind] = { status: 'error', reason: linkErr.message };
-        }
+//           itemResults[kind] = {
+//             status: 'inserted',
+//             id: intermediaryId,
+//             createdNew,
+//             matchScore,
+//           };
+//         } catch (linkErr) {
+//           logError(kindTag, `INSERT ${cfg.linkTable} failed — ${linkErr.message}`);
+//           itemResults[kind] = { status: 'error', reason: linkErr.message };
+//         }
 
-        logInfo(kindTag, `✔ ${kind} done — ${itemResults[kind].status}`);
-      }
+//         logInfo(kindTag, `✔ ${kind} done — ${itemResults[kind].status}`);
+//       }
 
-      results.push(itemResults);
-      logInfo(itemTag, '✔ Item done');
-    }
+//       results.push(itemResults);
+//       logInfo(itemTag, '✔ Item done');
+//     }
 
-    /* ------------------------------------------------------------------ */
-    /* Summary                                                             */
-    /* ------------------------------------------------------------------ */
-    const tally = (status) => ({
-      arranger: results.filter(r => r.arranger && r.arranger.status === status).length,
-      trustee: results.filter(r => r.trustee && r.trustee.status === status).length,
-      registrar: results.filter(r => r.registrar && r.registrar.status === status).length,
-    });
+//     /* ------------------------------------------------------------------ */
+//     /* Summary                                                             */
+//     /* ------------------------------------------------------------------ */
+//     const tally = (status) => ({
+//       arranger: results.filter(r => r.arranger && r.arranger.status === status).length,
+//       trustee: results.filter(r => r.trustee && r.trustee.status === status).length,
+//       registrar: results.filter(r => r.registrar && r.registrar.status === status).length,
+//     });
 
-    const inserted = tally('inserted');
-    const alreadyExists = tally('already_exists');
-    const dupInRequest = tally('duplicate_in_request');
-    const skipped = tally('skipped');
-    const errored = tally('error');
+//     const inserted = tally('inserted');
+//     const alreadyExists = tally('already_exists');
+//     const dupInRequest = tally('duplicate_in_request');
+//     const skipped = tally('skipped');
+//     const errored = tally('error');
 
-    const itemsSkipped = results.filter(r => r.status === 'skipped').length;
-    const itemsErrored = results.filter(r => r.status === 'error').length;
+//     const itemsSkipped = results.filter(r => r.status === 'skipped').length;
+//     const itemsErrored = results.filter(r => r.status === 'error').length;
 
-    logInfo(TAG, '──────── SUMMARY ────────');
-    logInfo(TAG, `  received            : ${items.length}`);
-    logInfo(TAG, `  unique (in-request) : ${uniqueItems.length}`);
-    logInfo(TAG, `  in-body duplicates  : ${inRequestBodyDupCount}`);
-    logInfo(TAG, `  item-level skipped  : ${itemsSkipped}`);
-    logInfo(TAG, `  item-level errored  : ${itemsErrored}`);
-    logInfo(TAG, `  inserted            : arranger=${inserted.arranger},  trustee=${inserted.trustee},  registrar=${inserted.registrar}`);
-    logInfo(TAG, `  already_exists      : arranger=${alreadyExists.arranger}, trustee=${alreadyExists.trustee}, registrar=${alreadyExists.registrar}`);
-    logInfo(TAG, `  duplicate_in_request: arranger=${dupInRequest.arranger}, trustee=${dupInRequest.trustee}, registrar=${dupInRequest.registrar}`);
-    logInfo(TAG, `  skipped (null)      : arranger=${skipped.arranger},  trustee=${skipped.trustee},  registrar=${skipped.registrar}`);
-    logInfo(TAG, `  errored             : arranger=${errored.arranger},  trustee=${errored.trustee},  registrar=${errored.registrar}`);
-    logInfo(TAG, `  duration            : ${Date.now() - startedAt} ms`);
-    logInfo(TAG, '◀ Request completed');
+//     logInfo(TAG, '──────── SUMMARY ────────');
+//     logInfo(TAG, `  received            : ${items.length}`);
+//     logInfo(TAG, `  unique (in-request) : ${uniqueItems.length}`);
+//     logInfo(TAG, `  in-body duplicates  : ${inRequestBodyDupCount}`);
+//     logInfo(TAG, `  item-level skipped  : ${itemsSkipped}`);
+//     logInfo(TAG, `  item-level errored  : ${itemsErrored}`);
+//     logInfo(TAG, `  inserted            : arranger=${inserted.arranger},  trustee=${inserted.trustee},  registrar=${inserted.registrar}`);
+//     logInfo(TAG, `  already_exists      : arranger=${alreadyExists.arranger}, trustee=${alreadyExists.trustee}, registrar=${alreadyExists.registrar}`);
+//     logInfo(TAG, `  duplicate_in_request: arranger=${dupInRequest.arranger}, trustee=${dupInRequest.trustee}, registrar=${dupInRequest.registrar}`);
+//     logInfo(TAG, `  skipped (null)      : arranger=${skipped.arranger},  trustee=${skipped.trustee},  registrar=${skipped.registrar}`);
+//     logInfo(TAG, `  errored             : arranger=${errored.arranger},  trustee=${errored.trustee},  registrar=${errored.registrar}`);
+//     logInfo(TAG, `  duration            : ${Date.now() - startedAt} ms`);
+//     logInfo(TAG, '◀ Request completed');
 
-    res.json({
-      requestId: REQ_ID,
-      received: items.length,
-      unique: uniqueItems.length,
-      inserted,
-      alreadyExists,
-      duplicateInRequest: dupInRequest,
-      skipped,
-      errored,
-      itemsSkipped,
-      itemsErrored,
-      durationMs: Date.now() - startedAt,
-      results,
-    });
-  } catch (error) {
-    logError(TAG, `FATAL — ${error.message}`, { stack: error.stack });
-    res.status(500).json({ error: error.message, requestId: REQ_ID });
-  }
-});
+//     res.json({
+//       requestId: REQ_ID,
+//       received: items.length,
+//       unique: uniqueItems.length,
+//       inserted,
+//       alreadyExists,
+//       duplicateInRequest: dupInRequest,
+//       skipped,
+//       errored,
+//       itemsSkipped,
+//       itemsErrored,
+//       durationMs: Date.now() - startedAt,
+//       results,
+//     });
+//   } catch (error) {
+//     logError(TAG, `FATAL — ${error.message}`, { stack: error.stack });
+//     res.status(500).json({ error: error.message, requestId: REQ_ID });
+//   }
+// });
 
 const isFilledString = (v) => typeof v === 'string' && v.trim().length > 0;
 const toPlainId = (v) => (typeof v === 'bigint' ? Number(v) : v);
-
+//SECOND
 app.post('/upload-arrangers', async (req, res) => {
   try {
     const items = req.body;
@@ -2007,7 +2007,7 @@ app.post('/upload-arrangers', async (req, res) => {
     });
   }
 });
-
+//THIRD
 app.post('/upload-trustees', async (req, res) => {
   try {
     const items = req.body;
@@ -2227,7 +2227,7 @@ app.post('/upload-trustees', async (req, res) => {
     });
   }
 });
-
+//FOURTH
 app.post('/upload-registrars', async (req, res) => {
   try {
     const items = req.body;
@@ -2460,7 +2460,7 @@ async function isIssueSizeZeroOrNull(tx, table, id) {
   const val = rows[0].issue_size;
   return val === null || val === undefined || Number(val) === 0;
 }
-
+//FIRST
 app.post('/uploadIssuers', async (req, res) => {
   const REQ_ID = `REQ-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
   const TAG = `uploadIssuers:${REQ_ID}`;
@@ -2865,16 +2865,16 @@ app.post('/uploadIssuers', async (req, res) => {
   }
 });
 
-app.post('/issuances-upload', async (req, res) => {
-  try {
-    const result = await prisma.$queryRawUnsafe(`
-      SELECT DISTINCT rating FROM master_issuer_rating;
-    `);
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-})
+// app.post('/issuances-upload', async (req, res) => {
+//   try {
+//     const result = await prisma.$queryRawUnsafe(`
+//       SELECT DISTINCT rating FROM master_issuer_rating;
+//     `);
+//     res.json(result);
+//   } catch (error) {
+//     res.status(500).json({ error: error.message });
+//   }
+// })
 
 app.get('/getRatings', async (req, res) => {
   try {
